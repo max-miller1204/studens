@@ -64,6 +64,22 @@ describe("scheduleItems", () => {
     expect(item.scheduleReason).toContain("7.0 days");
     expect(item.prompt).toBe("Prompt at 0");
   });
+  it.each([
+    [1, -1, 0, 1],
+    [1, 0, 1, 4],
+    [1, 1, 1, 4],
+    [4, -1, 1, 4],
+    [4, 0, 2, 11],
+    [4, 1, 2, 11],
+  ])(
+    "keeps early reviews scheduled and promotes only when due (day %i, offset %i ms)",
+    (day, offset, box, dueDay) => {
+      const history = day === 1 ? [event(0)] : [event(0), event(1)];
+      const [item] = scheduleItems([...history, event(day, { at: T0 + day * DAY_MS + offset })]);
+      expect(item.box).toBe(box);
+      expect(item.dueAt).toBe(T0 + dueDay * DAY_MS + (offset < 0 ? 0 : offset));
+    },
+  );
   it("requires delayed transfer for an application objective", () => {
     const e = evidence({ objective: { statement: "Apply cost", application: true } });
     const events = [0, 1, 8].map((day) => event(day, { evidence: e }));

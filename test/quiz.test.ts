@@ -74,11 +74,6 @@ describe("questionErrors", () => {
     expect(questionErrors(shape({ id: null, textareas: 1 }))).toContain("has no data-question-id.");
   });
 
-  it("refuses inputs that do not belong to the type", () => {
-    const errors = questionErrors(shape({ type: "short", textareas: 1, radios: 2 }));
-    expect(errors.join(" ")).toContain('must not contain input type="radio"');
-  });
-
   it("checks the parts each structured type needs", () => {
     expect(questionErrors(shape({ type: "choice", radios: 1 })).join(" ")).toContain(
       "at least 2 radio options",
@@ -104,6 +99,51 @@ describe("questionErrors", () => {
       'only a "locate" question',
     );
   });
+
+  it.each([
+    ["multi", { checkboxes: 1, options: ["a"] }],
+    ["term", { textInputs: 0 }],
+    ["term", { textInputs: 2 }],
+    ["short", { textareas: 0 }],
+    ["short", { textareas: 2 }],
+    ["numeric", { numbers: 0 }],
+    ["numeric", { numbers: 2 }],
+    ["numeric", { numbers: 1, units: 2 }],
+    ["cloze", { hasCloze: true, blanks: [] }],
+    ["order", { orderItems: ["a"] }],
+    ["match", { matchLeft: ["l1"], matchRight: ["r1", "r2"] }],
+    ["match", { matchLeft: ["l1", "l2"], matchRight: ["r1"] }],
+    ["locate", { hasStimulus: true, segments: ["s1"] }],
+  ] satisfies Array<[string, Partial<QuestionShape>]>)(
+    "rejects %s with missing or excess controls: %j",
+    (type, controls) => {
+      expect(questionErrors(shape({ type, ...controls }))).not.toEqual([]);
+    },
+  );
+
+  it.each([
+    { id: "bad id", textareas: 1 },
+    { type: "cloze", hasCloze: true, blanks: ["b1", "b1"] },
+    { type: "match", matchLeft: ["l1", "l1"], matchRight: ["r1", "r2"] },
+    { type: "locate", hasStimulus: true, segments: ["s1", "bad id"] },
+  ])("rejects invalid identities: %j", (overrides) => {
+    expect(questionErrors(shape(overrides))).not.toEqual([]);
+  });
+
+  it.each([
+    ["short", { textareas: 1, radios: 2 }, "radio"],
+    ["choice", { radios: 2, options: ["a", "b"], checkboxes: 1 }, "checkbox"],
+    ["term", { textInputs: 1, textareas: 1 }, "textarea"],
+    ["numeric", { numbers: 1, blanks: ["b1"] }, "data-blank"],
+    ["cloze", { hasCloze: true, blanks: ["b1"], units: 1 }, "cl-unit"],
+  ] satisfies Array<[string, Partial<QuestionShape>, string]>)(
+    "rejects controls that do not belong to %s",
+    (type, controls, input) => {
+      const errors = questionErrors(shape({ type, ...controls })).join(" ");
+      expect(errors).toContain("must not contain");
+      expect(errors).toContain(input);
+    },
+  );
 
   it("requires a unique, valid value on every choice and multi option", () => {
     const missing = questionErrors(shape({ type: "multi", checkboxes: 2, options: ["a", null] }));
@@ -200,16 +240,6 @@ describe("parseAnswer", () => {
         "check",
       ).parts,
     ).toEqual([{ id: "b1", value: "variable" }]);
-    expect(
-      parseAnswer(
-        {
-          questionId: "q3",
-          type: "match",
-          pairs: [{ left: "l1", right: "r2", leftLabel: "Move", rightLabel: "Elsewhere" }],
-        },
-        "check",
-      ).pairs,
-    ).toHaveLength(1);
   });
 
   it("refuses answers that break the contract", () => {
@@ -241,6 +271,78 @@ describe("parseAnswer", () => {
     expect(() => parseAnswer({ questionId: "q1", type: "term", value: "x" }, "review")).toThrow(
       "no valid reviewOf",
     );
+  });
+
+  it.each([null, 1, "answer", []])("rejects a malformed answer: %j", (raw) => {
+    expect(() => parseAnswer(raw, "check")).toThrow(AnswerError);
+  });
+
+  it.each([
+    ["multi", { parts: null }],
+    ["multi", { parts: [] }],
+    ["multi", { parts: [null] }],
+    ["multi", { parts: [{ id: "a", value: " " }] }],
+    ["cloze", { passage: "[[b1]]", parts: [] }],
+    ["locate", { parts: [] }],
+    ["match", { pairs: null }],
+    ["match", { pairs: [] }],
+    ["match", { pairs: [null] }],
+    ["match", { pairs: [{ left: "l1", right: "r1", leftLabel: "Left" }] }],
+    [
+      "match",
+      {
+        pairs: [
+          { left: "l1", right: "r1", leftLabel: "First", rightLabel: "Right" },
+          { left: "l1", right: "r2", leftLabel: "Second", rightLabel: "Other" },
+        ],
+      },
+    ],
+  ])("rejects malformed %s data: %j", (type, fields) => {
+    expect(() => parseAnswer({ questionId: "q1", type, ...fields }, "check")).toThrow(AnswerError);
+  });
+
+  it("accepts matching several left items to one right item", () => {
+    const pairs = [
+      { left: "l1", right: "r1", leftLabel: "First", rightLabel: "Right" },
+      { left: "l2", right: "r1", leftLabel: "Second", rightLabel: "Right" },
+    ];
+    expect(parseAnswer({ questionId: "q1", type: "match", pairs }, "check").pairs).toEqual(pairs);
+  });
+
+  it.each(["guess", "unsure", "sure"])("preserves reported confidence: %s", (confidence) => {
+    expect(
+      parseAnswer({ questionId: "q1", type: "term", value: "owner", confidence }, "check"),
+    ).toMatchObject({ confidence });
+  });
+
+  it.each(["none", "hint", "solution", "unknown"])(
+    "preserves reported assistance: %s",
+    (assistance) => {
+      expect(
+        parseAnswer({ questionId: "q1", type: "term", value: "owner", assistance }, "check"),
+      ).toMatchObject({ assistance });
+    },
+  );
+
+  it("rejects unknown assistance and discards client-supplied learning evidence", () => {
+    const answer = { questionId: "q1", type: "term", value: "owner" };
+    expect(() => parseAnswer({ ...answer, assistance: "invented" }, "check")).toThrow(/assistance/);
+    expect(
+      parseAnswer({ ...answer, learning: { support: "independent" } }, "check"),
+    ).not.toHaveProperty("learning");
+  });
+
+  it("preserves a valid review identity", () => {
+    expect(
+      parseAnswer(
+        { questionId: "q1", type: "term", value: "owner", reviewOf: "001-a/check/q1" },
+        "review",
+      ),
+    ).toMatchObject({ reviewOf: "001-a/check/q1" });
+  });
+
+  it.each([null, {}, "answers"])("rejects malformed submissions: %j", (raw) => {
+    expect(() => parseAnswers(raw, "check")).toThrow(AnswerError);
   });
 
   it("refuses a submission that answers one question twice", () => {
