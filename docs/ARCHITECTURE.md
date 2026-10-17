@@ -1,289 +1,121 @@
 # Architecture
 
-This repository is a standalone Pi package containing one extension, installed from
-git. A local web UI for teaching material, wired back into the live Pi session so a
-learner can ask questions from inside a lesson and hand in quizzes to be graded. The pedagogy comes from
-Matt Pocock's `teach` skill; the attribution lives in `docs/ATTRIBUTION.md` and must
-travel with any copy of `docs/`.
+[Documentation](README.md)
 
-The package root _is_ the extension root: `package.json` declares `pi.extensions:
-["./index.ts"]`, so `pi install git:github.com/max-miller1204/pi-teach` and
-`pi install /path/to/pi-teach` both work. Nothing may depend on files outside this
-directory.
+Studens is a self-contained Pi package and Claude Code/Codex plugin, installed from
+[max-miller1204/studens](https://github.com/max-miller1204/studens). It is an
+independent continuation of [joshrnoll/pi-teach](https://github.com/joshrnoll/pi-teach),
+outside the upstream fork network. It is not published to npm. Keep the upstream MIT
+notices and [teaching attribution](ATTRIBUTION.md).
 
-The same root is also a Claude Code and Codex plugin. `.claude-plugin/` and
-`.codex-plugin/` hold the manifests, `.claude-plugin/marketplace.json` and
-`.agents/plugins/marketplace.json` list the repository root as the plugin, `skills/`
-holds the two skills, and `mcp/launch.mjs` starts the MCP server. Pi ignores all of it.
+## Hosts and lifecycles
 
-This is a fork of `joshrnoll/pi-teach`, which is published to npm. This fork is not. A copy also lives in Josh's private `my-pi-packages` repo as
-`extensions/classroom`. They are all independent: a change here does not propagate.
+Pi loads `index.ts` through `pi.extensions` in `package.json`. Its HTTP server stays
+inside the live Pi session. Browser requests reach `pi.sendUserMessage` through the
+bridge. Session shutdown stops the server. Never detach it.
 
-## The three rules that shape everything
+Claude Code and Codex load the root plugin through `.claude-plugin/` and
+`.codex-plugin/`. Their marketplaces list this root. `mcp/launch.mjs` checks Node,
+installs production dependencies on first use, and starts `src/mcp-stdio.ts`.
+MCP clients attach to a persistent service over a private Unix socket. Closing
+stdin detaches that client; it does not stop HTTP or teacher work.
 
-**1. Pi keeps its in-process server and direct bridge.** Browser requests call
-`pi.sendUserMessage` in the live Pi session. Do not detach Pi's server.
+One service owns one classrooms root and stable loopback port. Each classroom has
+one selected backend and dedicated teacher session. Browser requests start teacher
+work without a listening initiating agent. A different backend, package, version,
+or configured port requires an explicit stop or error, never an automatic replacement.
 
-Claude Code and Codex use a persistent local service. MCP connections attach through
-its private local control socket. Closing MCP stdin must not stop the HTTP server.
-One service owns one classrooms root and one stable loopback port. Each classroom
-has one selected backend and one dedicated teacher session. Browser requests start
-teacher work without a listening MCP agent. The service applies teacher plans and
-owns browser SSE connections. Keep requests durable and sequential per classroom.
-Save each plan before applying writes. Do not grade a submission twice after recovery.
-Failed or interrupted work must show a specific error and require an explicit retry.
+The teaching brief is read by skills and `begin_teaching`. Keep it out of the system
+prompt and MCP `instructions`. Wake-up prompts must include the classroom, lesson,
+request content, and answering tool because they can arrive many turns later.
 
-Tailnet links are automatic while Tailscale is connected and tailnet-only. Users can
-disable them in config. Use the PhoneAccess helper. Keep the
-HTTP server on loopback. Preserve unrelated Tailscale Serve routes. Never enable
-Funnel or silently select another port or backend.
+## Runtime and files
 
-**2. TS runs in the extension, `.mjs` runs in the browser.** There is no build step.
+There is no build step. Pi loads `.ts`; Claude Code and Codex use Node 22.18+ type
+stripping. Relative imports end in `.ts`, and type-only imports use `import type`.
+No enums or parameter properties. Browser code is `.mjs`/`.js`, served directly.
+Shared browser modules need handwritten `.d.mts` sidecars for TypeScript callers.
 
-Pi loads the `.ts` files with its own loader. Claude Code and Codex run them with Node's
-built-in type stripping (Node 22.18 or later). That is why relative imports end in `.ts`,
-and why `tsconfig.json` sets `erasableSyntaxOnly` and `verbatimModuleSyntax`: no enums, no
-parameter properties, and `import type` for type-only imports. `npm run check` enforces
-it.
-
-- `.ts` (`index.ts`, `src/`): the extension process: commands, tools, server, store.
-- `.mjs` / `.js` (`assets/runtime/`): loaded by the browser over `/static/`. Anything a
-  TS file or a test imports needs a hand-written `.d.mts` sidecar (`anchor.d.mts` is the
-  example; the `preview` and `web` extensions use the same trick).
-
-`anchor.mjs` is deliberately DOM-free so the test suite exercises the same code the
-browser runs. Keep it that way: DOM work belongs in `classroom.js`.
-
-**3. Nothing goes in the system prompt.** The wake-up messages in `src/prompts.ts` are
-self-contained: they restate the classroom, the lesson, the question, and the exact tool
-that answers it, because they arrive out of band, possibly many turns later. Sessions
-that never teach pay nothing. Do not add a `before_agent_start` injection. For the same reason, the MCP server
-sends no `instructions`: the skills and `begin_teaching` carry the brief.
+All hosts share `~/.pi/agent/classrooms/`, overridden by `PI_CLASSROOMS_DIR`.
+See [configuration and storage](CONFIGURATION.md). Legacy service, socket, and Pi
+route ownership names remain stable across the Studens rename; changing them would
+hide existing owners and recovery state. Package assets resolve from `import.meta.url`,
+never the working directory or files outside the package.
 
 ## Module map
 
-Extension side (`.ts`):
+| Boundary                                        | Entry points                                                     |
+| ----------------------------------------------- | ---------------------------------------------------------------- |
+| Pi commands, origins, status                    | `index.ts`, `commands.ts`, `bridge.ts`, `status-widget.ts`       |
+| HTTP, SSE, static path guards                   | `server.ts`, `paths.ts`                                          |
+| Disk state and discovery                        | `store.ts`                                                       |
+| Shared tools and host prompts                   | `tools.ts`, `prompts.ts`                                         |
+| MCP dispatch and control transport              | `mcp.ts`, `mcp-stdio.ts`, `service-client.ts`, `service-main.ts` |
+| Durable requests and plans                      | `service-state.ts`, `teacher-service.ts`                         |
+| Model adapters, deadlines, grade decoding       | `teacher.ts`, `teacher-deadline.ts`, `teacher-grading.ts`        |
+| Resume and review publication                   | `teacher-resume.ts`, `review-session.ts`                         |
+| Quiz, rubric, pretest, plan validation          | `quiz.ts`, `rubric.ts`, `pretest.ts`, `teaching-plan.ts`         |
+| Review schedule, learning evidence, diagnostics | `review.ts`, `evidence.ts`, `health.ts`                          |
+| HTML and Markdown                               | `pages.ts`, `lesson-html.ts`, `markdown.ts`                      |
+| Tailnet route ownership and links               | `phone-access.ts`, `tailnet-links.ts`                            |
 
-- `index.ts`: wires the bridge to the server hooks, registers tools and commands, hooks
-  `session_start` / `input` / `agent_end` / `session_shutdown`.
-- `src/paths.ts`: the canonical root, slug validation, and `safeJoin`. Every static
-  route goes through it; this is the traversal guard.
-- `src/store.ts`: all disk I/O. Discovery is filesystem-first: a directory with a lesson
-  document _is_ a lesson, whether or not `lesson.json` exists, because the model often
-  writes material with plain file writes.
-- `src/server.ts`: the HTTP singleton, routes, and the SSE registry keyed by
-  `<classroom>/<lesson>`.
-- `src/bridge.ts`: waking the agent, the origin FIFO that keeps `agent_end`
-  attribution honest, and Pi's side of the teacher panel.
-- `src/tools.ts`: the seven shared tools, as plain JSON Schema. Pi's validator compiles
-  JSON Schema as-is, so there is no `typebox` import. `ToolHost` holds the one string
-  that differs between hosts.
-- `src/mcp.ts`: the MCP server for Claude Code and Codex: a pure JSON-RPC dispatcher
-  (`McpSession`), the legacy `LearnerInbox`, and the session tools (`begin_teaching`,
-  `open_classroom`, `list_classrooms`, `wait_for_learner`).
-- `src/mcp-stdio.ts`: forwards stdio MCP messages to the persistent service.
-  stdout is the transport. Closing stdin detaches this client.
-- `src/service-main.ts`: owns the HTTP server, private control socket, and teacher workers.
-- `src/service-client.ts`: starts and attaches to the service at a stable port.
-- `src/service-state.ts`: saves request identity, plans, errors, and teacher messages.
-- `src/teacher-service.ts`: runs requests in sequence and applies plans in the service.
-- `src/teacher.ts`: Codex app-server and Claude CLI structured output adapters.
-- `src/phone-access.ts`: manages only the owned Tailscale Serve route. The service and Pi
-  keep separate ownership files.
-- `src/tailnet-links.ts`: checks the route and builds tailnet links for the local server.
-- `mcp/launch.mjs`: the MCP entry point. Checks the Node version, runs
-  `npm ci --omit=dev` on the first start, then imports `src/mcp-stdio.ts`.
-- `src/commands.ts`: `/classroom` and `/teach`.
-- `src/status-widget.ts`: the "classroom server running on port N" widget below the
-  editor.
-- `src/prompts.ts`: every string sent to the model.
-- `src/quiz.ts`: quiz answers on the server: their typed shape, their validation, and
-  the text the teacher grades from.
-- `src/quiz-authoring.ts`: reads the questions a lesson document declares, for the
-  `lesson_health` authoring diagnostics. Pure. The browser still owns the contract
-  check.
-- `src/teacher-resume.ts`: validates explicit chat handoffs to graded lesson panels.
-  Pi saves private resume requests in `<classroom>/.pi-teacher-resumes.json`.
-  Service resumes use the existing durable teacher queue.
-- `src/review.ts`: the spaced-review schedule, derived from grade history. Pure.
-- `src/review-session.ts`: durable browser review requests, selected items, validation,
-  and publication. Private request state lives in `<classroom>/.reviews.json`.
-- `src/glossary.ts`: parses `GLOSSARY.md` and finds words the glossary says to avoid.
-- `src/health.ts`: the `lesson_health` report. Pure.
-- `src/pages.ts`, `src/lesson-html.ts`, `src/markdown.ts`, `src/config.ts`: pure-ish
-  helpers, all tested.
+Names in the table are under `src/` unless stated. `assets/runtime/classroom.js`
+owns lesson interactions; `shell.js` owns other pages. Pure contracts in that
+folder are imported by the server and tests as well as the browser.
+`assets/templates/quiz.html` is the markup contract; lesson and review templates
+are shells with an invalid placeholder type until authored.
 
-Browser side (`assets/runtime/`):
+Mermaid and Temml are vendored with licenses and versions. Update them through
+`scripts/vendor-mermaid.ts` and `scripts/vendor-temml.ts`. Load diagrams and math
+before text indexing. Skip generated diagram/MathML nodes in highlights and send
+source notation to grading. Answers and feedback render Markdown server-side.
 
-- `classroom.js`: the lesson runtime: highlight-to-ask, card threads, quiz harness.
-- `anchor.mjs` (+ `.d.mts`): pure text-quote anchoring.
-- `quiz.mjs` (+ `.d.mts`): the quiz contract: question types, kinds, and markup checks.
-  The server imports it too, so the page and the server enforce the same rules.
-- `diagrams.mjs` (+ `.d.mts`): draws each `<pre class="mermaid">` with the vendored
-  Mermaid build. Lessons and reference documents both load it. The build loads only
-  on a page that has a diagram.
-- `vendor/mermaid/`: `mermaid.min.js`, its `LICENSE`, and `VERSION`. Update it with
-  `node scripts/vendor-mermaid.ts <version>`. It is vendored, not an npm dependency,
-  because the package installs about 200 MB of Node modules that the browser build
-  does not use.
-- `math.mjs` (+ `.d.mts`): draws each `\( \)` and `\[ \]` formula with the vendored
-  Temml build. Lessons and reference documents both load it. The build loads only on
-  a page that has math.
-- `vendor/temml/`: the Temml ES module, its types, `Temml-Local.css`, its font,
-  `LICENSE`, and `VERSION`. Update it with `node scripts/vendor-temml.ts <version>`.
-  `src/markdown.ts` imports the same module, so Markdown math and lesson math always
-  use one version. `classroom.css` imports the stylesheet.
-- `glossary.mjs` (+ `.d.mts`): pure glossary term matching. The server imports it for
-  the avoided-word check.
-- `draft.mjs` (+ `.d.mts`): the draft contract: draft keys and the values each one
-  accepts. The server imports it to check `PUT /api/draft`.
-- `theme.mjs`: the light/dark toggle.
-- `shell.js`: the landing/classroom/document pages (just the toggle).
-- `classroom.css`: one stylesheet for every page and every lesson.
+## State invariants
 
-Authoring contracts (`assets/templates/`) and the teaching methodology (`docs/`).
+- **Requests are sequential and durable per classroom.** Save each plan before writes.
+  Save raw model output before decoding. Recovery completes saved calls and skips
+  already saved grades. Interrupted calls show specific errors and require retry.
+- **Plans are restricted by request type.** Service teachers return per-question
+  allocations through `grade_quiz_answers`; the service computes the score and
+  validates identities, rubric weights, correctness, and arithmetic. Version 2 plans
+  use this format. Older saved plans retain their original score validation.
+  Resume requests permit a teacher message only. Only chat/reflection allow gap notes.
+- **Pi attribution follows the origin FIFO.** Mark typed and initiating turns foreign.
+  Question, grade, reflection, and panel origins must receive only their own run's
+  final output. Prose cannot substitute for a grading tool call.
+- **Conversations stay on the lesson page.** Cards hold the original answer and ordered
+  follow-ups. Answer the oldest pending turn. Post quiz retrieval questions and learner
+  replies in the teacher panel. Resume the exact latest graded submission without
+  inventing a reply or grading again. Interrupted Pi resumes require retry.
+- **Submission order is total.** Timestamps increase strictly per lesson. Attempts
+  count submissions; regrades are revisions. Use `latestGrades()` consistently for
+  scores, quiz state, health, and review. Refuse another attempt while one is ungraded.
+- **Reviews are derived.** Build the schedule from graded answers and linked retrieval
+  evidence, excluding pretests. Save review requests and selected items before
+  authoring. Validate keys, rubric, controls, and plan before publication. Hide unfinished
+  reviews from lists, routes, and submissions. Repeated clicks reuse work; published
+  reviews open across hosts. Saved service plans resume without another model turn.
+- **Drafts never wake a teacher.** Restore them once on load, only into fresh quizzes.
+  Reconnect must not overwrite typing. Successful submissions clear their draft.
+- **Folder edits keep classroom paths stable.** Lock `.folders.json` edits and replace
+  state atomically. Conflicts and stale locks name the cause and require explicit retry.
 
-## Key behaviours
+## HTTP and browser boundaries
 
-- **Classroom folders keep stable paths.** The landing page reads folder names and
-  membership from `<root>/.folders.json`. Each classroom belongs to at most one
-  folder. Folder edits hold `<root>/.folders.lock` and replace the state file with
-  an atomic rename. An overlapping edit returns a conflict and requires an explicit
-  retry. If a process stops during a save, the error names the lock file that must
-  be removed before retrying. Folder edits do not move classroom directories. Deleting a folder returns its classrooms to Unfiled.
-  Invalid saved state fails with an error. The HTTP API does not serve this file.
+Bind HTTP to loopback. Connected Tailscale links use owned, tailnet-only Serve routes;
+respect config, preserve unrelated routes, and never enable Funnel. Keep Pi and service
+route ownership separate. Route errors do not select another port or backend.
 
-- **Origin FIFO.** `agent_end` fires once per run. `bridge.noteForeignTurn()` is called
-  for typed input and for `/teach`, `bridge.ask()` pushes an ask origin, and grades,
-  self-explanations, and panel replies push a panel origin, so a run's final assistant
-  text is only ever used for the request that started it. Get this wrong and answers
-  land on the wrong card or in the wrong panel. Adapted from `slack-bridge`.
-- **The learner never needs the terminal, except to start a lesson.** After grading,
-  the retrieval question and the learner's reply go through the lesson's teacher
-  panel, in every host. The service's teacher returns it as `plan.message`; in Pi, a
-  panel run's final assistant text is posted to `<lesson>/teacher-messages.json`. The
-  panel sits after the quiz handed in last. Do not reintroduce "ask in chat" wording
-  into `QUIZ_FOLLOW_UP` or the tools.
-- **Resumption is explicit.** `resume_lesson_teacher` requires exact classroom,
-  lesson, and latest graded submission identifiers. It reuses existing panel work.
-  An empty historical panel gets a separate resume request, never a fabricated
-  learner reply or a second grading request. Pi keeps the initiating turn foreign
-  and queues a panel origin. Pi resume requests survive interruption as failed work
-  and require explicit retry. The service keeps its classroom backend and session.
-  Resume plans permit only a teacher message. If the latest saved panel message is
-  a learner reply with no request, the handoff restores its original chat request.
-  Pi saves that recovered request for explicit retry. The service keeps message
-  timestamps in request order, including historical Pi messages.
-- **Quiz text can be highlighted, the quiz runtime cannot.** `QUIZ_RUNTIME_UI` (grade,
-  verdicts, footer, reports, order buttons) is outside the text index, because it
-  changes on grading. A card about a question is placed after the whole `.cl-q`, never
-  inside it: inside, `setQuizState` would lock its fields and `collectAnswer` would read
-  them. Its nested form's events bubble to the quiz, so the quiz listeners ignore them,
-  and the quiz submit button is looked up in its footer. Card markers are detached
-  while answers are read. `Annotation.quiz` records whether the quiz was graded, so the
-  teacher does not give an answer away before grading.
-- **A card is a thread, not a single Q&A.** `Annotation.question`/`answer*` are turn one;
-  `Annotation.followUps[]` are the rest. `followUps` is optional so annotation files
-  written before follow-ups existed still parse: read it as `annotation.followUps ?? []`
-  everywhere. `answer_lesson_question` still takes only an annotation id: `store.answerTarget()`
-  resolves the turn (oldest pending, else the most recent, so a revision is not lost), and
-  `applyAnswer` routes through it.
-- **The status widget is derived, never stored.** `refreshStatusWidget()` reads
-  `server.getPort()` each time rather than being handed a port, so the displayed port stays current. It uses plain string lines (the only content RPC mode
-  honours) and swallows `setWidget` failures: a mode without widgets must not take the
-  server down with it. Call it after anything that starts or stops the server.
-- **The legacy learner inbox never drops a prompt.** A prompt that arrives while nobody waits
-  stays queued for the next `wait_for_learner`. A cancelled wait (the user pressed Esc)
-  gets no response and takes nothing from the queue.
-- **Grading has no prose fallback.** A half-invented grade is worse than none, so only
-  `grade_lesson_quiz` writes a grade. The grading run's prose goes to the teacher panel,
-  never into the grade.
+Every static route uses the guards in `paths.ts`, including symlink checks.
+Never serve `quiz/`, private plans, teacher state, or recovery files. Media routes
+are deliberately narrow. Invalid stored state must throw a specific error.
 
-  Dedicated service teachers receive a plan schema for the active request only.
-  Only chat and reflection request schemas permit gap notes. Other request
-  schemas require an empty `notes_markdown` string. The service also checks this
-  rule before applying a saved plan.
+Cards live in document flow after their highlighted block, outside quiz controls.
+Ignore nested card events when collecting or locking quiz answers. Exclude mutable
+quiz runtime UI from text indexing. Preserve question IDs after submission.
+The lesson runtime adds the header before wiring the theme toggle; the inline theme
+bootstrap prevents a light flash. Widgets derive the current port from server state;
+unsupported widget APIs must not bring the server down.
 
-  Dedicated service teachers return `grade_quiz_answers` with per-question grades
-  and no total score. The service calculates the score from those allocations.
-  It then calls the public `grade_lesson_quiz` tool. That tool still validates
-  question identity, rubric weights, correctness, and score arithmetic. A supplied
-  score in `grade_quiz_answers` is an error. New saved plans use `planVersion: 2`.
-  Older saved plans keep their original `grade_lesson_quiz` calls and score checks.
-  Recovery does not replace an inconsistent saved score. The service saves the raw
-  model response in `modelOutput` before it decodes the plan.
-
-  The model returns `learning_record: null` when no record qualifies. A record uses
-  an object with a nonblank `markdown` field. The stored plan keeps its string
-  format. Unsupported pretest records fail before grading. Explicit retry of an
-  older failure preserves any saved grade and requests a corrected plan.
-
-- **Answers render server-side.** `applyAnswer` and `applyGrade` store markdown _and_
-  HTML, so the browser needs no markdown parser. Markdown math becomes MathML there
-  too. TeX that does not parse shows its error in place.
-- **Submission timestamps are strictly increasing per lesson.** "Latest submission" is
-  what the page rehydrates from, so the ordering has to be total: two submissions in the
-  same millisecond would otherwise resolve by random UUID.
-- **Transient UI floats; cards do not.** The ask pill and the composer are absolutely
-  positioned. A saved card is inserted into the document flow after the block holding
-  the highlight, so it can never cover the passage it explains: and needs no
-  repositioning on scroll or resize. Do not "improve" this back into a floating panel.
-- **Lessons get their header from the runtime.** A lesson on disk is a bare document, so
-  `buildHeader()` adds the breadcrumb and theme toggle. `initTheme()` must run _after_
-  it, since it wires up the button the header creates.
-- **Themes.** Light tokens on `:root`, dark under `prefers-color-scheme`, and explicit
-  `[data-theme]` beating both so the toggle works in either direction. The inline
-  bootstrap in `<head>` exists to stop a dark-mode reader seeing a white flash: keep it
-  inline and keep it first.
-- **The quiz contract fails loudly.** Every question needs a `data-type`. A quiz that
-  breaks `quiz.mjs` shows its errors on the page and in the console, and it cannot be
-  submitted. The server checks each answer against its type with `parseAnswer`. Only
-  submissions written before types existed have answers with no `type`; read them
-  through `answersByQuestion`, which groups their one-entry-per-box `multi` answers.
-- **A Pi regrade is a revision, not an attempt.** `grade_lesson_quiz` can grade a
-  submission again. Each grade is a new file, so the history is kept. Read grades
-  through `store.latestGrades()`, which keeps the newest grade for each submission.
-  Scores, quiz state, health, and review must all agree on that revision. Attempts
-  count submissions, never grade files.
-- **The lesson template is a shell.** `lesson.html` and `review.html` keep the runtime
-  parts and leave one question with `data-type="CHOOSE-A-TYPE"`, so an unwritten quiz
-  fails loudly. Do not add a fixed section order or a default question type back.
-  `quiz.html` stays the one complete contract. `authoringSteps()` in `prompts.ts` is
-  what the scaffold tools return.
-- **One state per quiz.** A lesson can hold several quizzes, so `/api/state` returns the
-  latest attempt at each `quizId`. A new attempt is refused (409) until the last one is
-  graded.
-- **Reviews start on the classroom page.** `Start review` saves one request and up to
-  five due items. Each request records its host and process. Another host cannot take over
-  unfinished authoring. A published review can open from any host. Pi authors the assigned files in its live session. The persistent
-  teacher returns one `publish_review` call. The service saves that plan before it
-  writes files. Normal teacher requests cannot publish pages. Validate the item keys,
-  private rubric, control shapes, and teaching plan before publication. Hide unfinished reviews from
-  lesson lists, static lesson routes, and submissions. Repeated clicks reuse the request.
-  Failures require `Retry review`. A saved service plan can resume without another model
-  turn. Pi marks interrupted review work failed. `Continue review` returns to a review
-  that has not been graded.
-- **The review schedule is derived, never stored.** `store.reviewItems()` rebuilds it
-  from every graded answer and linked chat retrieval check. Pretests are left out. A review question names its item
-  with `data-review-of`, and the server refuses a key that was never graded.
-- **Unsent text is a draft, not a submission.** The page saves quiz answers,
-  self-explanations, follow-ups, the open question composer, and the teacher reply to
-  `<lesson>/drafts.json` as the learner types, and restores them once on load. Drafts
-  never reach the teacher and never wake the agent. The handler that accepts the text
-  removes its draft. A restored quiz draft only fills a form that is still `fresh`. A
-  restored question comes back as a marker at its highlight, not as an open composer,
-  because the composer floats over the lesson. A reconnect must not replace typed text,
-  so drafts are not applied again.
-- **A diagram is drawn, not highlighted.** `initDiagrams()` swaps each
-  `pre.mermaid` for a `div.cl-diagram` before anything indexes the text. The text
-  index, the glossary, and the ask pill all skip `.cl-diagram`, so an anchor never
-  depends on whether a diagram has finished drawing. A stimulus sends the Mermaid
-  source to grading, not the SVG labels.
-- **A formula is drawn, not highlighted.** `initMath()` swaps each delimited formula
-  for a `span.cl-math` before anything indexes the text. The text index, the glossary,
-  and the ask pill skip `.cl-math`, because a `<mark>` inside MathML breaks the
-  drawing. A highlight around a formula quotes it as TeX. Grading reads each formula
-  as its TeX through `swapMathForSource()`.
-- **`quiz/` is never a static route.** It holds submissions and any answer key. Adding a
-  route that serves lesson directories wholesale would leak it; the media route is
-  deliberately narrow (`<lesson>/media/*` only).
+See [development](DEVELOPMENT.md) for verification and the
+[feature recipes](../.agents/skills/verify-studens/features/README.md) for browser checks.

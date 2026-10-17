@@ -20,7 +20,7 @@ The learner reads a lesson and asks about text without leaving the page.
 
 ## Driving it with playwright-cli
 
-Run `npm run verify -- browser --artifacts /tmp/pi-teach-reading`.
+Run `npm run verify -- browser --artifacts /tmp/studens-reading`.
 
 The suite selects text with the mouse. It uses `.cl-ask-pill`, `[data-cl-question]`, and `[data-cl-followup]`. It checks saved annotations, draft restoration, and card placement after the quiz question. Asking about an option must not select it. Sending a follow-up must not submit the quiz.
 

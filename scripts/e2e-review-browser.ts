@@ -28,7 +28,7 @@ export async function verifyReviewBrowser(artifacts: string | null): Promise<voi
     });
     const evidence = artifacts ? path.join(artifacts, host) : null;
     if (evidence) fs.mkdirSync(evidence, { recursive: true });
-    const session = `pi-teach-review-${host}-${process.pid}`;
+    const session = `studens-review-${host}-${process.pid}`;
     let browserOpen = false,
       runs = 0,
       chatRuns = 0;

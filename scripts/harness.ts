@@ -16,7 +16,7 @@ export const TEST_MODELS = {
 } as const;
 
 /** Claude Code prefixes plugin MCP tools with this. Codex reports the bare name. */
-export const CLAUDE_PREFIX = "mcp__plugin_pi-teach_classroom__";
+export const CLAUDE_PREFIX = "mcp__plugin_studens_classroom__";
 
 export function parseHarness(value: string | undefined, usage: string): Harness {
   if (value !== "claude" && value !== "codex") throw new Error(usage);
@@ -25,7 +25,7 @@ export function parseHarness(value: string | undefined, usage: string): Harness 
 
 /** A temporary CODEX_HOME with this checkout installed as a plugin. */
 export function codexHome(): string {
-  const home = fs.mkdtempSync(path.join(os.tmpdir(), "pi-teach-e2e-codex-"));
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), "studens-e2e-codex-"));
   const realHome = process.env["CODEX_HOME"] ?? path.join(os.homedir(), ".codex");
   fs.copyFileSync(path.join(realHome, "auth.json"), path.join(home, "auth.json"));
   fs.writeFileSync(
@@ -34,7 +34,7 @@ export function codexHome(): string {
   );
   for (const args of [
     ["plugin", "marketplace", "add", ROOT],
-    ["plugin", "add", "pi-teach@pi-teach"],
+    ["plugin", "add", "studens@studens"],
   ]) {
     const run = spawnSync("codex", args, { env: { ...process.env, CODEX_HOME: home } });
     if (run.status !== 0) throw new Error(`codex ${args.join(" ")} failed:\n${run.stderr}`);
@@ -43,7 +43,7 @@ export function codexHome(): string {
   const { version } = JSON.parse(fs.readFileSync(path.join(ROOT, "package.json"), "utf8"));
   const manifest = path.join(
     home,
-    "plugins/cache/pi-teach/pi-teach",
+    "plugins/cache/studens/studens",
     version,
     ".codex-plugin/mcp.json",
   );
@@ -128,7 +128,7 @@ export function harnessCommand(
 
 /**
  * The classroom tool calls in a harness's JSON event stream, in order. Claude Code
- * emits `"name":"mcp__plugin_pi-teach_classroom__<tool>"` on each tool use; Codex emits
+ * emits `"name":"mcp__plugin_studens_classroom__<tool>"` on each tool use; Codex emits
  * `"server":"classroom","tool":"<tool>"` on each MCP call's start and end events.
  */
 export function toolCalls(harness: Harness, events: string): string[] {

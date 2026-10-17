@@ -16,6 +16,25 @@ const readJson = (relative: string) =>
 
 const pkg = readJson("package.json");
 
+it.each([".claude-plugin/plugin.json", ".codex-plugin/plugin.json"])(
+  "%s keeps the Studens identity, version, and repository in sync",
+  (file) => {
+    const manifest = readJson(file);
+    expect(manifest).toMatchObject({
+      name: "studens",
+      version: pkg["version"],
+      repository: "https://github.com/max-miller1204/studens",
+      homepage: pkg["homepage"],
+    });
+    expect(pkg["name"]).toBe(manifest["name"]);
+    expect(pkg["repository"].url).toBe(`git+${manifest["repository"]}.git`);
+    const lock = readJson("package-lock.json");
+    expect(lock["name"]).toBe(pkg["name"]);
+    expect(lock["version"]).toBe(pkg["version"]);
+    expect(lock["packages"][""]).toMatchObject({ name: pkg["name"], version: pkg["version"] });
+  },
+);
+
 describe("Claude Code plugin", () => {
   const manifest = readJson(".claude-plugin/plugin.json");
 
@@ -30,6 +49,7 @@ describe("Claude Code plugin", () => {
 
   it("is listed by the marketplace at the repository root", () => {
     const marketplace = readJson(".claude-plugin/marketplace.json");
+    expect(marketplace["name"]).toBe(manifest["name"]);
     expect(marketplace["plugins"]).toEqual([
       expect.objectContaining({ name: manifest["name"], source: "./" }),
     ]);
@@ -38,10 +58,6 @@ describe("Claude Code plugin", () => {
 
 describe("Codex plugin", () => {
   const manifest = readJson(".codex-plugin/plugin.json");
-
-  it("matches the package version", () => {
-    expect(manifest["version"]).toBe(pkg["version"]);
-  });
 
   it("runs the MCP launcher and forwards the classroom settings", () => {
     const mcp = readJson(manifest["mcpServers"]);
@@ -65,6 +81,7 @@ describe("Codex plugin", () => {
 
   it("is listed by the marketplace at the repository root", () => {
     const marketplace = readJson(".agents/plugins/marketplace.json");
+    expect(marketplace["name"]).toBe(manifest["name"]);
     expect(marketplace["plugins"]).toEqual([
       expect.objectContaining({ name: manifest["name"], source: { source: "local", path: "./" } }),
     ]);

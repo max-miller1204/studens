@@ -1,5 +1,5 @@
 /** Temporary automatic tailnet route evaluation. Preserve the user's Serve config.
- * Set PI_TEACH_PHONE_PORT when 8443 holds another route. */
+ * Set STUDENS_PHONE_PORT when 8443 holds another route. */
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as net from "node:net";
@@ -14,7 +14,7 @@ const listener = net.createServer();
 await new Promise<void>((r) => listener.listen(0, "127.0.0.1", r));
 process.env.PI_CLASSROOM_SERVICE_PORT = String((listener.address() as net.AddressInfo).port);
 await new Promise<void>((r) => listener.close(() => r()));
-const httpsPort = Number(process.env.PI_TEACH_PHONE_PORT ?? 8443);
+const httpsPort = Number(process.env.STUDENS_PHONE_PORT ?? 8443);
 process.env.PI_CLASSROOM_CONFIG = fixture.write(
   "config.json",
   JSON.stringify({ tailscalePort: httpsPort }),

@@ -4,7 +4,8 @@ import * as path from "node:path";
 import * as net from "node:net";
 import * as readline from "node:readline";
 import { pathToFileURL } from "node:url";
-import { spawn } from "node:child_process";
+import { execFile, spawn } from "node:child_process";
+import { promisify } from "node:util";
 import { afterEach, beforeEach, expect, it } from "vitest";
 import { makeFixture, seedClassroom, seedHistoricalReview, type Fixture } from "./helpers.ts";
 import { _overrideClassroomsDir, packageRoot } from "../src/paths.ts";
@@ -119,6 +120,28 @@ async function waitFor(probe: () => Promise<boolean>) {
   }
   throw new Error("Process fixture did not finish.");
 }
+it.each([undefined, "", "   "])("rejects an unconfigured service root: %j", async (root) => {
+  const home = path.join(f.root, "isolated-home");
+  const bootstrap = f.write(
+    "home.mjs",
+    `import os from 'node:os';
+import { syncBuiltinESMExports } from 'node:module';
+os.homedir = () => ${JSON.stringify(home)};
+syncBuiltinESMExports();`,
+  );
+  await expect(
+    promisify(execFile)(
+      process.execPath,
+      ["--import", bootstrap, path.join(packageRoot(), "src/service-main.ts")],
+      { cwd: f.root, env: { ...env, PI_CLASSROOMS_DIR: root }, timeout: 2000 },
+    ),
+  ).rejects.toMatchObject({
+    code: 1,
+    stderr: expect.stringContaining("PI_CLASSROOMS_DIR is required"),
+  });
+  expect(fs.existsSync(path.join(home, ".pi/agent/classrooms"))).toBe(false);
+});
+
 it("keeps HTTP and submissions alive after MCP exit, reconnects, and preserves grades after restart", async () => {
   const first = client();
   await first.call("initialize", { clientInfo: { name: "codex-test" } });

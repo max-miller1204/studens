@@ -1,7 +1,9 @@
 import { describe, it, expect } from "vitest";
+import * as fs from "node:fs";
 import * as path from "node:path";
+import * as os from "node:os";
 
-import { isValidSlug, safeJoin, slugify } from "../src/paths.ts";
+import { isValidSlug, safeJoin, safeStaticFile, isDir, isFile, slugify } from "../src/paths.ts";
 
 describe("isValidSlug", () => {
   it("accepts the directory names classrooms and lessons actually use", () => {
@@ -19,6 +21,7 @@ describe("isValidSlug", () => {
   it("rejects non-strings and absurd lengths", () => {
     expect(isValidSlug(undefined)).toBe(false);
     expect(isValidSlug(42)).toBe(false);
+    expect(isValidSlug("a".repeat(128))).toBe(true);
     expect(isValidSlug("a".repeat(129))).toBe(false);
   });
 });
@@ -57,4 +60,27 @@ describe("safeJoin", () => {
   it("allows the root itself", () => {
     expect(safeJoin(root, "")).toBe(root);
   });
+});
+
+it("caps generated slugs at 64 characters and removes a separator at the cut", () => {
+  expect(slugify("a".repeat(80))).toBe("a".repeat(64));
+  expect(slugify("a".repeat(63) + " extra")).toBe("a".repeat(63));
+});
+
+it("propagates filesystem failures instead of treating them as missing paths", () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "studens-path-errors-"));
+  try {
+    const loop = path.join(root, "loop");
+    fs.symlinkSync("loop", loop);
+    const inaccessible = path.join(loop, "child");
+    for (const read of [
+      () => safeStaticFile(inaccessible, "public.txt"),
+      () => isDir(inaccessible),
+      () => isFile(inaccessible),
+    ]) {
+      expect(read).toThrow(expect.objectContaining({ code: "ELOOP" }));
+    }
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
 });

@@ -54,7 +54,7 @@ export async function verifyPiPanelBrowser(artifacts: string | null): Promise<vo
     onTeacherChat: (classroom, lesson, text, id) => bridge.chat(classroom, lesson, text, id),
     onTeacherRetry: (classroom, id) => bridge.retry(classroom, id),
   });
-  const session = `pi-teach-pi-panel-${process.pid}`;
+  const session = `studens-pi-panel-${process.pid}`;
   const evidence: Record<string, unknown> = {};
   const assert = (condition: unknown, message: string) => {
     if (!condition) throw new Error(message);

@@ -1,94 +1,56 @@
-# pi-teach
+# Studens
 
-Interactive lessons for [Pi](https://github.com/badlogic/pi-mono), Claude Code, and
-Codex. Learn a topic in a local web classroom. Highlight a passage to ask a question,
-get answers in a saved thread, and submit quizzes for feedback.
+Interactive lessons for Pi, Claude Code, and Codex. Highlight a passage to ask a
+question, get answers in a saved thread, and submit quizzes for feedback.
 
 ![An answer card below a highlighted passage](screenshots/answer.png)
 
-## What you can do
-
-- Ask questions and follow-ups directly from a lesson.
-- Take quizzes with feedback for each question.
-- Review learned ideas with spaced practice.
-- Keep lessons, reference sheets, and learning records in one place.
-- Read diagrams and glossary definitions in light or dark mode.
-
-See the [features and screenshot tour](docs/FEATURES.md) for more detail.
-
 ## Install
 
-### Pi
+**Pi**
 
-```bash
-pi install git:github.com/max-miller1204/pi-teach
+```sh
+pi install git:github.com/max-miller1204/studens
 ```
 
-### Claude Code
+**Claude Code**
 
-```bash
-claude plugin marketplace add max-miller1204/pi-teach
-claude plugin install pi-teach@pi-teach
+```sh
+claude plugin marketplace add max-miller1204/studens
+claude plugin install studens@studens
 ```
 
-### Codex
+**Codex**
 
-```bash
-codex plugin marketplace add max-miller1204/pi-teach
-codex plugin add pi-teach@pi-teach
+```sh
+codex plugin marketplace add max-miller1204/studens
+codex plugin add studens@studens
 ```
 
-Claude Code and Codex require Node 22.18 or later on your `PATH`.
-The plugin installs its runtime dependency on first start. No build step is needed.
+Claude Code and Codex need Node 22.18 or later. The plugin installs its runtime
+dependency on first start. There is no build step.
+
+Upgrading from pi-teach? Remove the old plugin before installing Studens; see the
+[upgrade guide](docs/USAGE.md#upgrading-from-pi-teach). Existing classrooms stay in place.
 
 ## Start learning
 
-**Pi:** Start a lesson, then get the classroom link.
+- **Pi:** `/teach <topic>`, then `/classroom` for the lesson link. Keep Pi open.
+- **Claude Code:** `/studens:teach <topic>` and `/studens:classroom`.
+- **Codex:** Ask it to teach you a topic, then open your classroom.
 
-```text
-/teach <topic>
-/classroom
-```
+Read, ask questions, and reply to the teacher on the lesson page. Quizzes save your
+answers and feedback. The classroom page offers spaced reviews and folders.
+Claude Code and Codex teachers run in a persistent local service.
 
-Use `/teach` without a topic to continue learning.
+All three hosts save material in `~/.pi/agent/classrooms/`.
 
-**Claude Code:** Use the plugin skills.
+## More
 
-```text
-/pi-teach:teach <topic>
-/pi-teach:classroom
-```
+- [Usage](docs/USAGE.md): commands, upgrades, service recovery, and phone access.
+- [Configuration](docs/CONFIGURATION.md): settings, storage, and lesson links.
+- [Screenshots](docs/FEATURES.md) · [Development](docs/DEVELOPMENT.md)
+- [Teaching and authoring references](docs/README.md)
 
-**Codex:** Ask it to teach you a topic. Ask it to open your classroom when you want
-the lesson link. You can also name the `teach` or `classroom` skill.
-
-Read the lesson in your browser. Highlight text to ask a question. Submit a quiz to
-get feedback. After a missed answer, reply to the teacher's follow-up question.
-
-Keep your Pi session open while you learn. Claude Code and Codex use a persistent
-local service with a dedicated teacher for each classroom. The service keeps
-running when you close the initiating chat.
-
-Your material is saved in `~/.pi/agent/classrooms/`. All three hosts use this folder.
-
-On the Classrooms page, select **New folder** to group related classrooms. Use
-**Move to folder** on a classroom to change its folder. Open a folder to rename or
-delete it. Deleting a folder returns its classrooms to **Unfiled** and keeps all
-lessons saved. Folder changes keep classroom and lesson links unchanged.
-
-## Documentation
-
-- [Features and screenshots](docs/FEATURES.md): quizzes, review, diagrams, and the web UI.
-- [Usage and service guide](docs/USAGE.md): commands, teacher sessions, phone access, and limitations.
-- [Configuration and storage](docs/CONFIGURATION.md): settings, ports, files, and document links.
-- [Tool reference](docs/TOOLS.md): authoring tools and service controls.
-- [Development](docs/DEVELOPMENT.md): local setup, checks, and end-to-end tests.
-- [Teaching method](docs/TEACHING.md): how the teacher plans lessons and checks learning.
-- [Teaching evidence](docs/EVIDENCE.md): sources, limits, and product choices.
-- [Redesign and validation](docs/RESEARCH-REDESIGN.md): implemented behavior and evaluation limits.
-- [Evaluation protocol](docs/EVALUATION.md): software checks and delayed human learning tests.
-
-## License
-
-[MIT](LICENSE). The teaching method is based on Matt Pocock's `teach` skill.
-See [attribution](docs/ATTRIBUTION.md) for details.
+[MIT](LICENSE). Derived from Josh Noll's pi-teach and Matt Pocock's teaching skill;
+see [attribution](docs/ATTRIBUTION.md).

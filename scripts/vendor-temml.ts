@@ -21,7 +21,7 @@ if (!version || !/^\d+\.\d+\.\d+$/.test(version)) {
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const target = path.join(root, "assets/runtime/vendor/temml");
-const work = fs.mkdtempSync(path.join(os.tmpdir(), "pi-teach-temml-"));
+const work = fs.mkdtempSync(path.join(os.tmpdir(), "studens-temml-"));
 try {
   const tarball = execFileSync("npm", ["pack", `temml@${version}`, "--silent"], {
     cwd: work,

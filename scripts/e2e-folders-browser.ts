@@ -8,7 +8,7 @@ import { playwright, playwrightCode } from "./playwright.ts";
 
 export async function verifyFoldersBrowser(artifacts: string | null): Promise<void> {
   const fixture = makeFixture();
-  const session = `pi-teach-folders-${process.pid}`;
+  const session = `studens-folders-${process.pid}`;
   let opened = false;
   if (artifacts) fs.mkdirSync(artifacts, { recursive: true });
   seedClassroom(fixture);

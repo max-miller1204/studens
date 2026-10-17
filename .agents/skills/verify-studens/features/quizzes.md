@@ -19,7 +19,7 @@ The learner submits typed answers and reads grades on the lesson page.
 
 ## Driving it with playwright-cli
 
-Run `npm run verify -- browser --artifacts /tmp/pi-teach-quizzes`.
+Run `npm run verify -- browser --artifacts /tmp/studens-quizzes`.
 
 The suite drives `form.cl-quiz` and checks `data-state`. It submits all contract examples, reloads, and compares stored answers with the page. It checks `Graded` is disabled, partial verdicts remain visible, and a stale grade cannot replace the active attempt.
 

@@ -1,74 +1,39 @@
-# Usage and service guide
+# Usage
 
-[Back to the README](../README.md)
+[Documentation](README.md)
 
-## Pi commands
+## Start a lesson
 
-```text
-/teach <topic>          start learning something new
-/teach                  continue where you left off
-/teach rust-ownership   continue a specific classroom
+| Host        | Teach                                         | Get the link              |
+| ----------- | --------------------------------------------- | ------------------------- |
+| Pi          | `/teach <topic>`                              | `/classroom`              |
+| Claude Code | `/studens:teach <topic>`                      | `/studens:classroom`      |
+| Codex       | Ask to learn a topic or use the `teach` skill | Ask to open the classroom |
 
-/classroom              print the classroom link (starts the server if needed)
-/classroom rust         print one classroom's link
-/classroom list         list classrooms and lessons in the TUI
-/classroom status       is the server running, and where
-/classroom start|stop   manage the server explicitly
-```
+Omit the topic to continue. In Pi, `/classroom <name>` opens one classroom,
+`/classroom list` lists saved material, and `/classroom status` reports the server.
+Links are returned to you; commands do not launch a browser.
 
-While it is running, the TUI carries a `📚 classroom server running on port <port>` widget
-below the editor. It appears when the server starts, clears when it stops or the session
-ends, and always reports the port in use.
+On the lesson page, highlight text to ask a question and use its card for follow-ups.
+Submit quizzes for per-question feedback. Reply to teacher questions below the
+quiz. Return to the initiating chat when you want new material.
 
-The server binds to `127.0.0.1` on an ephemeral port and runs **inside your Pi session**.
-That is what makes questions and grading work: a detached daemon could serve the pages,
-but it could not reach your agent. It stops when the session ends. `/classroom` starts
-it again, and nothing is lost, because all state is on disk.
+The classroom page offers reviews of due ideas. Failed requests show their specific
+error and require an explicit retry. Quiz answers, grades, question threads, and
+unsent drafts survive reloads. Rewriting a highlighted sentence may leave its card
+unanchored. Question identifiers must stay stable after submission.
 
-## Claude Code and Codex
+Use **New folder** and **Move to folder** to group classrooms. Deleting a folder
+returns its classrooms to **Unfiled** and keeps their lessons and links.
 
-The plugin gives Claude Code and Codex the same classrooms, lessons, and web UI as Pi. It
-has two skills and one MCP server, `classroom`.
+## Teacher service
 
-```text
-/pi-teach:teach <topic>     Claude Code: start or continue learning something
-/pi-teach:classroom         Claude Code: open or list your classrooms
-```
+Pi's HTTP server runs in its live session and stops with that session. Use
+`/classroom start` or `/classroom stop` to control it. The status widget shows its port.
 
-In Codex, ask it to teach you a topic, or mention the `teach` or `classroom` skill.
-
-Pi keeps its server inside the live Pi session. Claude Code and Codex attach to a
-persistent local service. Closing the initiating chat does not stop the service.
-
-1. The initiating agent writes a lesson and its private rubric.
-2. It calls `open_classroom`. The service records one teacher backend per classroom.
-3. A browser question or submission starts work in that classroom's dedicated teacher.
-4. The service validates and saves the teacher's plan. It applies answers and grades
-   in the process that owns the browser's SSE connection.
-5. After a missed answer, the teacher asks a new retrieval question in the lesson's
-   teacher panel. Reply in that panel. The graded quiz stays locked.
-
-The teacher does not advance lessons. Ask the initiating agent for new material after
-completing the check. Learning records and spaced review keep the existing teaching
-method. Historical grades remain unchanged. Skipped checks stay in notes as unresolved gaps.
-A pretest can record prior knowledge demonstrated by a correct answer.
-
-The persistent service requires Unix local sockets. The service owns one classrooms root. It binds to `127.0.0.1:43123` by default. Set
-`PI_CLASSROOM_SERVICE_PORT` to an explicit port before starting it. A port conflict
-stops startup. The service never selects another port. Pi's existing port setting
-and lifecycle remain unchanged.
-
-The initiating host selects the teacher backend. Set `PI_CLASSROOM_TEACHER` to
-`codex` or `claude`, or pass `teacher_backend` to `open_classroom`, when the host is
-unknown. An existing classroom cannot silently change backend. The service records
-the dedicated session ID. Codex uses its supported app-server `thread/start`,
-`thread/resume`, and `turn/start` calls. Claude uses its authenticated CLI with
-`--json-schema` and `--resume`. Both return structured plans. They do not write grades
-or answer files directly. The service uses the shared tool validation to apply them.
-
-### Service controls and recovery
-
-Use `classroom_service` with action start, status, or stop. You can also use:
+Claude Code and Codex use a persistent service with one dedicated teacher per
+classroom. Closing the initiating chat leaves it running. Use `classroom_service`
+with action `start`, `status`, or `stop`, or run these commands from the package:
 
 ```sh
 npm run service -- start
@@ -76,70 +41,38 @@ npm run service -- status
 npm run service -- stop
 ```
 
-Status reports the owner process, package path, classrooms root, port, and log path.
-A different package version or port must be stopped explicitly before replacement.
-The service stores control state in `<classrooms root>/.pi-teach-service/`. Its control
-socket permits access only to the local user. Classroom teacher state lives in
-`.teacher.json`, which is never a static route. The service saves each request and
-plan before applying writes. It skips grades already saved for that submission.
-An interrupted model call becomes a visible error. Use Retry request in the teacher
-panel to run it again. Saved plans finish without another model call. Model calls
-have a 180-second limit. Model and authentication errors remain visible.
+Status reports the owner process, package path, root, port, and log. The default
+address is `127.0.0.1:43123`; set `PI_CLASSROOM_SERVICE_PORT` to change it. Unix
+local sockets are required. A conflicting port, package path, version, or classroom
+backend causes an error. Stop the old service explicitly before replacing it.
+Set `PI_CLASSROOM_TEACHER=codex` or `claude` when the initiating host is unknown.
 
-### Phone and remote links
+Requests and plans are saved before writes. Recovery completes saved plans without
+another model call or duplicate grade. Interrupted calls and authentication errors
+appear on the page; resolve the cause and select **Retry request**.
 
-When the `tailscale` command reports a connected node, `open_classroom` and Pi's
-`/classroom` create a tailnet-only HTTPS Serve route and check it. Classroom and lesson links then use
-your node's tailnet name, so the same link works on a phone or from another computer,
-including over SSH. Without Tailscale, or while it is logged out or stopped, links
-use `127.0.0.1`.
+## Phone and remote links
 
-The service route uses port 8443 by default. Set `tailscalePort` in the
-[configuration](CONFIGURATION.md) to select another port. The next `open_classroom`
-moves the route. A connected node whose route fails returns that error. It never
-switches ports or falls back to a local link. The helper rejects conflicts and
-Funnel-enabled ports. It preserves unrelated Serve routes.
+While Tailscale is connected, classroom commands create tailnet-only HTTPS links.
+HTTP stays on loopback. Tailnet members allowed by your policy can read pages and
+submit requests. Without a connected tailnet, links use `127.0.0.1`.
 
-The route lasts as long as the service. Closing a Claude Code or Codex session does
-not remove it. `classroom_service` status reports it, and service stop removes it
-first. Set `"tailscale": false` to keep links local. The next `open_classroom` then
-removes the route. While Tailscale is disconnected, the route cannot be removed.
-Stop keeps its record and reports it. The next start reuses or removes it.
+The service uses HTTPS port 8443 and Pi uses 8444. Change these or disable tailnet
+links in [configuration](CONFIGURATION.md). Route errors are explicit: occupied
+ports and Funnel-enabled ports are rejected, and unrelated Serve routes stay intact.
+Service stop removes its route; Pi stop or session end removes Pi's route.
+A disconnected node cannot remove a route, so its ownership record is retained.
 
-Pi uses its own route on port 8444, or `piTailscalePort`. `/classroom stop` and the
-end of the Pi session remove it. If a Pi session exits without cleanup, the next
-session replaces its route once the old server no longer listens.
+## Upgrading from pi-teach
 
-This does not enable public access. Tailnet members allowed by your Tailscale policy
-can reach the classroom pages and submit requests.
+1. Stop the old persistent service with `classroom_service` action `stop`, or
+   `npm run service -- stop` from its package directory. End old Pi teaching sessions.
+2. Remove the old installation: `pi remove git:github.com/max-miller1204/pi-teach`,
+   `claude plugin uninstall pi-teach@pi-teach`, or `codex plugin remove pi-teach@pi-teach`.
+3. Follow the [Studens install commands](../README.md#install). Use `studens@studens`
+   for the plugin identifier and `/studens:teach` in Claude Code.
 
-The adapters follow the official [Codex app-server documentation](https://learn.chatgpt.com/docs/app-server),
-[Claude CLI documentation](https://code.claude.com/docs/en/headless), and
-[Tailscale Serve documentation](https://tailscale.com/docs/reference/tailscale-cli/serve).
-
-## Limitations
-
-- **Pi is session-scoped.** Close the Pi session and its pages stop serving.
-  Claude Code and Codex use the persistent service. Stop it explicitly.
-- **The widget needs a UI.** In non-interactive modes there is nowhere to draw it, so it
-  is silently skipped; `/classroom status` still reports the server.
-- **Asking requires a live session.** Highlight-to-ask and grading go to the agent in the
-  Pi session that started the server. With no session, lessons are still readable but
-  nothing answers.
-- **Highlights can orphan.** Anchoring uses a text-quote selector, so a highlight
-  survives reflow and edits around it. If the teacher rewrites the exact sentence you
-  highlighted, the card survives but arrives minimised and unanchored rather than
-  pointing at the wrong text.
-- **Follow-ups wait for the first answer.** The box appears once the card's original
-  question has been answered.
-- **One question at a time per card.** `answer_lesson_question` takes only an annotation
-  id and attaches the answer to the oldest turn still waiting, so firing several
-  follow-ups before any is answered is fine, but answers land in the order asked.
-- **One quiz form per `data-quiz-id`.** Reusing an id within a lesson means the second
-  form rehydrates from the first one's submission.
-- **Never renumber `data-question-id`** after a learner has submitted. Grades are
-  matched back to questions by that id.
-- **Teacher failures require a retry.** The teacher panel shows the specific error.
-  Saved requests stay on disk. Click Retry request after resolving the cause.
-- **Loopback only.** The HTTP service binds to `127.0.0.1`. Tailnet links use a
-  Tailscale Serve route. They do not use Funnel.
+Existing classrooms, `PI_CLASSROOM_*` settings, and `~/.pi/agent/classroom.json`
+keep their locations and names. The private `.pi-teach-service/` and `.pi-teach-pi/`
+folders and local socket name are retained so both versions find the same owner and
+saved recovery state. Do not run both installations against one classroom root.

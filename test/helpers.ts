@@ -8,7 +8,7 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { randomUUID } from "node:crypto";
 
-import { _overrideClassroomsDir, submissionsDir } from "../src/paths.ts";
+import { _overrideClassroomsDir, classroomsRoot, submissionsDir } from "../src/paths.ts";
 import * as store from "../src/store.ts";
 import { _overrideConfigPath } from "../src/config.ts";
 
@@ -20,8 +20,15 @@ export interface Fixture {
 }
 
 export function makeFixture(): Fixture {
+  const previousRoot = process.env.PI_CLASSROOMS_DIR;
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "pi-classroom-test-"));
+  process.env.PI_CLASSROOMS_DIR = root;
   _overrideClassroomsDir(root);
+  // Mutations can disable path redirection. Fail before accessing classroom storage.
+  if (classroomsRoot() !== root) {
+    fs.rmSync(root, { recursive: true, force: true });
+    throw new Error("Test classroom root was not redirected to its fixture.");
+  }
   _overrideConfigPath(path.join(root, "test-config.json"));
 
   return {
@@ -34,6 +41,8 @@ export function makeFixture(): Fixture {
     },
     cleanup() {
       fs.rmSync(root, { recursive: true, force: true });
+      if (previousRoot === undefined) delete process.env.PI_CLASSROOMS_DIR;
+      else process.env.PI_CLASSROOMS_DIR = previousRoot;
     },
   };
 }

@@ -36,7 +36,7 @@ if (evaluations.includes(target)) {
   if (host && !["browser", "pi", "claude", "codex"].includes(host)) throw new Error(usage);
 } else if (host) throw new Error(usage);
 
-const artifacts = requestedArtifacts ?? fs.mkdtempSync(path.join(os.tmpdir(), "pi-teach-verify-"));
+const artifacts = requestedArtifacts ?? fs.mkdtempSync(path.join(os.tmpdir(), "studens-verify-"));
 
 function doctor(surface: string): void {
   const [major, minor] = process.versions.node.split(".").map(Number);

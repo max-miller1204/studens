@@ -3,3 +3,5 @@ node_modules/
 **/package-lock.json
 assets/runtime/vendor/
 .playwright-cli/
+.stryker-tmp/
+reports/

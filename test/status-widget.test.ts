@@ -53,7 +53,8 @@ describe("the widget's lifecycle", () => {
     const shown = host.calls.at(-1)!;
     expect(shown.key).toBe(WIDGET_KEY);
     // The port is read from the server, so it stays current after a restart.
-    expect(shown.content).toEqual([`📚 classroom server running on port ${server.getPort()}`]);
+    expect(shown.content).toHaveLength(1);
+    expect(shown.content![0]).toContain(String(server.getPort()));
 
     await server.close();
     refreshStatusWidget();

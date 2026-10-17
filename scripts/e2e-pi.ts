@@ -55,7 +55,7 @@ fixture.write(
   }),
 );
 
-const session = `pi-teach-pi-${process.pid}`;
+const session = `studens-pi-${process.pid}`;
 const child = spawn(
   "pi",
   [
@@ -107,6 +107,8 @@ child.stdout.on("data", (chunk: Buffer) => {
       events.push(event);
       if (event.type === "extension_error" || (event.type === "response" && !event.success))
         failure = new Error(JSON.stringify(event));
+      if (event.type === "message_end" && event.message?.stopReason === "error")
+        failure = new Error(`Pi model request failed: ${event.message.errorMessage}`);
       if (event.type === "tool_execution_end" && event.isError)
         failure = new Error(`Tool failed: ${event.toolName}`);
     } catch (error) {

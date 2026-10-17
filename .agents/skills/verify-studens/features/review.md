@@ -24,7 +24,7 @@ it writes the review files.
 
 ## Driving it with playwright-cli
 
-Run `npm run verify -- browser --artifacts /tmp/pi-teach-review-browser`.
+Run `npm run verify -- browser --artifacts /tmp/studens-review-browser`.
 
 The review fixtures check Pi and the service. They cover creation, reload, failure,
 explicit retry, invalid controls, host ownership, automatic navigation, saved answers, mobile controls, private

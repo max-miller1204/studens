@@ -20,7 +20,7 @@ import { classroomTools, isFailure, type ClassroomTool, type ToolResult } from "
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-const SERVER_NAME = "pi-teach";
+const SERVER_NAME = "studens";
 const SERVER_VERSION = (
   JSON.parse(fs.readFileSync(path.join(packageRoot(), "package.json"), "utf8")) as {
     version: string;
