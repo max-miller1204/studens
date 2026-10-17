@@ -60,8 +60,15 @@ never the working directory or files outside the package.
 | Tailnet route ownership and links               | `phone-access.ts`, `tailnet-links.ts`                            |
 
 Names in the table are under `src/` unless stated. `assets/runtime/classroom.js`
-owns lesson interactions; `shell.js` owns other pages. Pure contracts in that
-folder are imported by the server and tests as well as the browser.
+boots the lesson features and dispatches saved state and SSE events. `highlights.mjs`
+owns selection and the question composer; `cards.mjs` owns annotation threads;
+`quiz-ui.mjs`, `reflections.mjs`, `glossary-ui.mjs`, and `teacher-panel.mjs` own their
+respective page features. Each feature keeps its own state and receives its lesson
+config, content root, and dependencies at construction. `drafts.mjs` serializes draft
+saves; each feature restores its own draft after saved state has rendered.
+`lesson-dom.mjs` holds shared DOM helpers, while `anchor.mjs` stays DOM-free.
+`shell.js` owns other pages. Pure contracts in that folder are imported by the server
+and tests as well as the browser. Browser modules are served directly without a build.
 `assets/templates/quiz.html` is the markup contract; lesson and review templates
 are shells with an invalid placeholder type until authored.
 
