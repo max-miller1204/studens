@@ -28,7 +28,8 @@ import {
   type ResumeInput,
   type PiResume,
 } from "./teacher-resume.ts";
-import { validateGrade } from "../assets/runtime/grade.mjs";
+import { completeClosedSubmission } from "./quiz-grading.ts";
+export { applyGrade } from "./quiz-grading.ts";
 import { findLastAssistantText } from "./assistant-text.ts";
 import { renderMarkdown } from "./markdown.ts";
 import {
@@ -117,6 +118,7 @@ export class ClassroomBridge {
 
   /** Ask the agent to grade a quiz submission. */
   grade(submission: store.QuizSubmission): void {
+    if (completeClosedSubmission(submission)) return;
     // Grading has no fallback path — a half-graded quiz would be worse than none —
     // so only the tool writes a grade. The run's final text is the feedback and the
     // retrieval question, and it goes to the teacher panel, never into the grade.
@@ -516,43 +518,4 @@ function markFailed(annotationId: string, turn: store.TurnId): void {
       ? store.updateAnnotation(annotationId, patch)
       : store.updateFollowUp(annotationId, turn, patch);
   if (updated) server.pushEvent(updated.classroom, updated.lesson, "answer", updated);
-}
-
-/** Persist a grade and push it to any browser watching the lesson. */
-export function applyGrade(
-  submission: store.QuizSubmission,
-  input: {
-    score: number;
-    feedbackMarkdown: string;
-    questions: store.QuizQuestionGrade[];
-  },
-): store.QuizGrade {
-  const score = validateGrade(input.score, input.questions, [
-    ...new Set(submission.answers.map((a) => a.questionId)),
-  ]);
-  const grade: store.QuizGrade = {
-    submissionId: submission.id,
-    classroom: submission.classroom,
-    lesson: submission.lesson,
-    quizId: submission.quizId,
-    score,
-    feedbackMarkdown: input.feedbackMarkdown,
-    feedbackHtml: renderMarkdown(input.feedbackMarkdown),
-    questions: input.questions.map((q) => ({
-      questionId: q.questionId,
-      correct: q.correct,
-      pointsEarned: q.pointsEarned,
-      pointsPossible: q.pointsPossible,
-      feedback: q.feedback,
-      feedbackHtml: renderMarkdown(q.feedback),
-    })),
-    gradedAt: Date.now(),
-  };
-
-  store.writeGrade(grade);
-  server.pushEvent(submission.classroom, submission.lesson, "grade", {
-    submission: store.publicSubmission(submission),
-    grade,
-  });
-  return grade;
 }

@@ -13,6 +13,8 @@ import { createHash, randomUUID } from "node:crypto";
 
 import { isAssistance, type Assistance } from "./evidence.ts";
 import { parseTeachingPlan, type TeachingPlan } from "./teaching-plan.ts";
+import { parseRubric } from "./rubric.ts";
+import { gradeClosed } from "./closed-grading.ts";
 import { questionCredit } from "../assets/runtime/grade.mjs";
 import { reviewKey } from "../assets/runtime/quiz.mjs";
 import { parseGlossary, type Glossary } from "./glossary.ts";
@@ -164,6 +166,8 @@ export interface QuizSubmission {
   assessmentContract?: 1;
   instructionalContract?: 1;
   teachingPlan?: TeachingPlan;
+  /** Private, durable allocations computed before the submission is written. */
+  deterministicGrades?: QuizQuestionGrade[];
 }
 
 export interface QuizQuestionGrade {
@@ -719,6 +723,18 @@ export function createSubmission(
     ? createHash("sha256").update(fs.readFileSync(rubric)).digest("hex")
     : undefined;
   const page = readLesson(input.classroom, input.lesson);
+  const privateKey =
+    page?.assessmentContract === 1
+      ? parseRubric(fs.readFileSync(rubric, "utf8"), fs.readFileSync(page.htmlPath, "utf8"))
+      : undefined;
+  const deterministicGrades = privateKey
+    ? input.answers.flatMap((answer) => {
+        const entry = privateKey[input.quizId]?.[answer.questionId];
+        if (!entry) throw new Error(`No rubric for ${input.quizId}/${answer.questionId}.`);
+        const grade = gradeClosed(answer, entry);
+        return grade ? [grade] : [];
+      })
+    : undefined;
   const teachingPlan =
     page?.instructionalContract === 1
       ? parseTeachingPlan(
@@ -752,6 +768,7 @@ export function createSubmission(
     ...input,
     answers,
     teachingPlan,
+    deterministicGrades,
     id: randomUUID(),
     attempt,
     submittedAt,
@@ -770,7 +787,11 @@ export function createSubmission(
 
 /** Remove private method labels from learner responses and SSE events. */
 export function publicSubmission(submission: QuizSubmission): QuizSubmission {
-  const { teachingPlan: privatePlan, ...publicFields } = submission;
+  const {
+    teachingPlan: privatePlan,
+    deterministicGrades: privateGrades,
+    ...publicFields
+  } = submission;
   return {
     ...publicFields,
     answers: submission.answers.map((answer) => {

@@ -40,6 +40,7 @@ import { stageLesson } from "./pretest.ts";
 import { authoredQuizzes } from "./quiz-authoring.ts";
 import { parseTeachingPlan } from "./teaching-plan.ts";
 import { parseRubric } from "./rubric.ts";
+import { completeClosedSubmission } from "./quiz-grading.ts";
 import {
   classroomDir,
   isFile,
@@ -869,7 +870,7 @@ async function handleQuizSubmit(
     answers,
   });
 
-  hooks?.onQuizSubmit(submission);
+  if (!completeClosedSubmission(submission)) hooks?.onQuizSubmit(submission);
   sendJson(res, store.publicSubmission(submission), 201);
 }
 
@@ -962,6 +963,12 @@ export async function start(port?: number): Promise<string> {
 
   if (starting) return starting;
   const preferredPort = port === undefined ? resolveConfiguredPort(readConfig().port) : port;
+  // A process may have stopped between saving a submission and publishing its grade.
+  // Its saved allocations are the plan; recovery never reads a changed rubric.
+  for (const classroom of store.listClassrooms())
+    for (const lesson of store.listLessons(classroom.name))
+      for (const submission of store.listSubmissions(classroom.name, lesson.name))
+        completeClosedSubmission(submission);
 
   starting = new Promise((resolve, reject) => {
     const s = http.createServer((req, res) => {

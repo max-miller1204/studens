@@ -96,3 +96,17 @@ describe("private rubric", () => {
     expect(() => parse(rubric(criteria), html)).toThrow(error);
   });
 });
+
+it("includes authored identity when a closed rubric key cannot be checked in code", () => {
+  const html = quiz(question.replace('data-type="short"', 'data-type="numeric"'));
+  expect(() => parse(rubric({ ...criteria, expected: "one" }), html)).toThrow(
+    /check\/q1.*machine-checkable/,
+  );
+});
+
+it("preserves pre-machine numeric criteria only for the explicit legacy format", () => {
+  const html = quiz(question.replace('data-type="short"', 'data-type="numeric"'));
+  const value = rubric({ ...criteria, expected: "2.5" });
+  expect(parseRubric(JSON.stringify(value), html, "legacy")).toEqual(value);
+  expect(() => parseRubric(JSON.stringify(value), html, "machine")).toThrow(/machine-checkable/);
+});

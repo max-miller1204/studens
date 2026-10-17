@@ -1,6 +1,7 @@
 /** Validate the canonical private rubric for newly scaffolded assessments. */
 import { authoredQuizzes } from "./quiz-authoring.ts";
 import { isQuestionType, isQuizKind } from "../assets/runtime/quiz.mjs";
+import { machineGraded } from "./closed-grading.ts";
 
 export interface RubricQuestion {
   grading?: "exact" | "teacher";
@@ -11,7 +12,11 @@ export interface RubricQuestion {
 }
 export type Rubric = Record<string, Record<string, RubricQuestion>>;
 
-export function parseRubric(text: string, html: string): Rubric {
+export function parseRubric(
+  text: string,
+  html: string,
+  format: "machine" | "legacy" = "machine",
+): Rubric {
   const rubric: unknown = JSON.parse(text);
   if (!rubric || typeof rubric !== "object" || Array.isArray(rubric))
     throw new Error("Private rubric must be an object keyed by quiz id.");
@@ -50,6 +55,11 @@ export function parseRubric(text: string, html: string): Rubric {
         !entry.partial.trim()
       )
         throw new Error(`Private rubric needs full and partial credit criteria for ${where}.`);
+      try {
+        if (format === "machine") machineGraded(question.type, entry);
+      } catch (error) {
+        throw new Error(`Private rubric ${where}: ${(error as Error).message}`);
+      }
     }
   }
   return rubric as Rubric;

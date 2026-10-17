@@ -79,19 +79,22 @@ const questions = [
     partial: "1 point for correct sum 5 without the mean; otherwise 0.",
   },
 ];
-const html = `<form class="cl-quiz" data-quiz-id="check">${questions.map((q) => `<li class="cl-q" data-question-id="${q.id}" data-type="short"><p class="cl-q-prompt">${q.prompt}</p><textarea></textarea></li>`).join("")}</form>`;
+const html = `<form class="cl-quiz" data-quiz-id="check"><li class="cl-q" data-question-id="closed" data-type="choice"><p class="cl-q-prompt">Which value is the mean squared error?</p><label><input type="radio" name="closed" value="a">2.5</label><label><input type="radio" name="closed" value="b">5</label></li>${questions.map((q) => `<li class="cl-q" data-question-id="${q.id}" data-type="short"><p class="cl-q-prompt">${q.prompt}</p><textarea></textarea></li>`).join("")}</form>`;
 const rubric = {
-  check: Object.fromEntries(
-    questions.map((q) => [
-      q.id,
-      {
-        expected: q.expected,
-        points: q.points,
-        full: `Award ${q.points} for an equivalent correct solution. ${q.expected}`,
-        partial: q.partial,
-      },
-    ]),
-  ),
+  check: {
+    closed: { expected: "a", points: 2, full: "The mean squared error is 2.5.", partial: "None." },
+    ...Object.fromEntries(
+      questions.map((q) => [
+        q.id,
+        {
+          expected: q.expected,
+          points: q.points,
+          full: `Award ${q.points} for an equivalent correct solution. ${q.expected}`,
+          partial: q.partial,
+        },
+      ]),
+    ),
+  },
 };
 fixture.write("rust/001-ownership/lesson.html", html);
 fixture.write(
@@ -107,14 +110,17 @@ try {
     quizId: "check",
     quizTitle: "Feedback evaluation",
     kind: "check",
-    answers: questions.map((q) => ({
-      questionId: q.id,
-      type: "short",
-      prompt: q.prompt,
-      value: q.answer,
-      ...(q.confidence ? { confidence: q.confidence } : {}),
-      ...(q.assistance ? { assistance: q.assistance } : {}),
-    })),
+    answers: [
+      { questionId: "closed", type: "choice", value: "a", label: "2.5" },
+      ...questions.map((q) => ({
+        questionId: q.id,
+        type: "short" as const,
+        prompt: q.prompt,
+        value: q.answer,
+        ...(q.confidence ? { confidence: q.confidence } : {}),
+        ...(q.assistance ? { assistance: q.assistance } : {}),
+      })),
+    ],
   });
   const definitions = classroomTools(PI_HOST)
     .filter((t) => t.name === "grade_lesson_quiz")
@@ -148,6 +154,11 @@ try {
     throw new Error("Feedback evaluation needs one grade call.");
   const args = JSON.parse(plan.calls[0].arguments_json);
   if (Object.hasOwn(args, "score")) throw new Error("The dedicated teacher must omit score.");
+  if (
+    args.questions.length !== questions.length ||
+    args.questions.some((q: { question_id: string }) => q.question_id === "closed")
+  )
+    throw new Error("The teacher must grade only judgment questions.");
   for (const q of questions) {
     const verdict = args.questions.find((g: { question_id: string }) => g.question_id === q.id);
     if (!verdict || verdict.points_earned !== q.earned || verdict.points_possible !== q.points)
@@ -163,15 +174,17 @@ try {
     throw new Error("Uncertain correct answer needs explanatory reinforcement.");
   const result = await definitions[0].execute(args);
   if (isFailure(result)) throw new Error(result.content[0].text);
-  if (result.details.score !== 87.5)
-    throw new Error(`Feedback score is ${result.details.score}, expected 87.5.`);
+  const expectedScore = (100 * 16) / 18;
+  if (result.details.score !== expectedScore)
+    throw new Error(`Feedback score is ${result.details.score}, expected ${expectedScore}.`);
   if (store.reviewItems("rust").some((i) => i.progress === "retained-evidence"))
     throw new Error("Immediate or old answers cannot prove retained knowledge.");
   const report = {
     backend,
     kind: "agent-adherence",
     humanLearningEvidence: false,
-    expectedScore: 87.5,
+    expectedScore,
+    machineQuestions: submission.deterministicGrades?.length,
     actualScore: result.details.score,
     cases: questions.map((q) => ({ id: q.id, expected: `${q.earned}/${q.points}` })),
     uncertainFeedback,
