@@ -1,0 +1,4 @@
+interface:
+  display_name: "Studens triage"
+  short_description: "Manage studens issues and its Now / Next board"
+  default_prompt: "Use $triage-studens to triage studens issues, reconcile delivery status, and update and verify the GitHub board."
