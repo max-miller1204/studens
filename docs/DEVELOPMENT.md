@@ -7,11 +7,28 @@ npm ci
 npm run verify
 ```
 
-`verify` runs formatting, types, automated tests, and isolated browser checks. It
-prints an evidence directory containing logs, exit codes, screenshots, and saved
+`verify` checks release versions, formatting, types, automated tests, and isolated
+browser checks. It prints an evidence directory containing logs, exit codes, screenshots, and saved
 state. Use [verify-studens](../.agents/skills/verify-studens/SKILL.md) to select
 additional checks for changed host behavior. Run `claude plugin validate .` after
 manifest changes. Run this checkout with `pi -e .` or `claude --plugin-dir .`.
+
+## Release versions
+
+```sh
+npm run version:bump -- 0.12.0
+npm run version:check
+```
+
+Pass an exact SemVer version, including a prerelease such as `0.12.0-beta.1` when
+needed. The bump command synchronizes `package.json`, both root version fields in
+`package-lock.json`, and `.codex-plugin/plugin.json`. It leaves dependency records
+unchanged and never invokes npm to regenerate the lockfile. It creates no commit
+or tag. Review the diff before committing.
+
+The check reports mismatched or missing versions and runs in CI and both the
+default and `checks` verification targets. A bump can repair mismatched versions;
+missing or malformed fields must be fixed before retrying.
 
 ## Select checks
 

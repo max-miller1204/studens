@@ -10,7 +10,7 @@
 - Keep learner questions and replies on the lesson page after the lesson starts.
 - Use `.ts` imports and type-only imports. Browser modules use `.mjs` or `.js`. Add a declaration sidecar when TypeScript imports a browser module.
 - Keep `.codex-plugin/plugin.json` and `package.json` versions equal. Declare new `PI_*` settings in `.codex-plugin/mcp.json`.
-- Use `npm ci`. Do not regenerate the lockfile with `npm install` on macOS. Edit both root version fields by hand for version changes.
+- Use `npm ci`. Do not regenerate the lockfile with `npm install` on macOS. Use `npm run version:bump -- <version>` to synchronize release versions without regenerating the lockfile.
 - Keep `docs/ATTRIBUTION.md` with any copy of `docs/`.
 - Read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) before changing shared state or host behavior.
 

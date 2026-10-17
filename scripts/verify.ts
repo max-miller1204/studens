@@ -102,7 +102,7 @@ try {
     target === "doctor" ? (host ?? "browser") : (host ?? (target === "local" ? "browser" : target)),
   );
   if (target === "checks" || target === "local") {
-    for (const script of ["format:check", "check", "test"])
+    for (const script of ["version:check", "format:check", "check", "test"])
       await run("npm", ["run", script], script.replace(":", "-"));
   }
   if (target === "local" || target === "browser")

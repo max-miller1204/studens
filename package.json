@@ -29,6 +29,8 @@
     "image": "https://raw.githubusercontent.com/max-miller1204/studens/main/screenshots/answer.png"
   },
   "scripts": {
+    "version:bump": "node scripts/versions.ts bump",
+    "version:check": "node scripts/versions.ts check",
     "verify": "node scripts/verify.ts",
     "test": "vitest run",
     "test:watch": "vitest",
