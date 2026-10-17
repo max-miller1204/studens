@@ -3,6 +3,7 @@ import { authoredQuizzes } from "./quiz-authoring.ts";
 import { isQuestionType, isQuizKind } from "../assets/runtime/quiz.mjs";
 
 export interface RubricQuestion {
+  grading?: "exact" | "teacher";
   expected: unknown;
   points: number;
   full: string;
