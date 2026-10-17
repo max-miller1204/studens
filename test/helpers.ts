@@ -20,7 +20,9 @@ export interface Fixture {
 }
 
 export function makeFixture(): Fixture {
+  const previousRoot = process.env.PI_CLASSROOMS_DIR;
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "pi-classroom-test-"));
+  process.env.PI_CLASSROOMS_DIR = root;
   _overrideClassroomsDir(root);
   // Mutations can disable path redirection. Fail before accessing classroom storage.
   if (classroomsRoot() !== root) {
@@ -39,6 +41,8 @@ export function makeFixture(): Fixture {
     },
     cleanup() {
       fs.rmSync(root, { recursive: true, force: true });
+      if (previousRoot === undefined) delete process.env.PI_CLASSROOMS_DIR;
+      else process.env.PI_CLASSROOMS_DIR = previousRoot;
     },
   };
 }

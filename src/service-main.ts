@@ -16,6 +16,10 @@ import type { ClassroomTool, ToolResult } from "./tools.ts";
 import * as store from "./store.ts";
 import * as server from "./server.ts";
 
+if (!process.env.PI_CLASSROOMS_DIR?.trim()) {
+  throw new Error("PI_CLASSROOMS_DIR is required for the persistent service entry point.");
+}
+
 const version = (
   JSON.parse(fs.readFileSync(path.join(packageRoot(), "package.json"), "utf8")) as {
     version: string;

@@ -1,7 +1,10 @@
 {
   "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
   "testRunner": "vitest",
-  "mutate": ["src/**/*.ts", "assets/runtime/*.mjs", "!**/*.d.mts"],
+  "mutate": [
+    "src/{paths,quiz,quiz-authoring,rubric,pretest,teaching-plan,review,evidence,health,teacher-grading,json-object-stream,teacher-deadline,authoring-html,authoring-evaluation}.ts",
+    "assets/runtime/{anchor,draft,glossary,grade,links,quiz}.mjs"
+  ],
   "concurrency": 4,
   "reporters": ["progress-append-only", "clear-text", "html", "json"],
   "clearTextReporter": { "reportTests": false, "reportMutants": false },

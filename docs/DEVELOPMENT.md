@@ -41,10 +41,17 @@ npm run test:mutate
 npm run test:mutate -- --mutate 'src/paths.ts'
 ```
 
-Stryker mutates `src/**/*.ts` and unvendored `assets/runtime/*.mjs`, then runs related
-Vitest tests. Vendored libraries, declarations, and browser-only `.js` interactions
-are outside this run. Reports are local at `reports/mutation/index.html` and
-`reports/mutation/mutation.json`. Each run uses a disposable sandbox.
+Stryker mutates the contracts and policies listed in `stryker.config.json`, then
+runs related Vitest tests. This includes paths, quizzes, grading, pretest gates,
+review schedules, evidence, and authoring validation. Process launchers, storage
+writes, network listeners, and browser interactions stay outside mutation scope;
+their ordinary process and browser checks still run. Reports are local at
+`reports/mutation/index.html` and `reports/mutation/mutation.json`.
+
+Keep fixture storage redirection intact. Mutating process launch options can drop
+the classroom environment and reach the learner's default storage; a copied source
+tree alone does not isolate disk access. The service entry point requires an
+explicit classroom root, and fixtures also set it for child processes.
 
 Inspect survivors for missing assertions and boundary cases. A surviving wording
 change does not justify a prose snapshot. Mutation scores describe this automated
