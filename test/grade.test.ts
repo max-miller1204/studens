@@ -49,7 +49,7 @@ describe("grade validation boundaries", () => {
     { pointsEarned: NaN },
     { pointsPossible: 0 },
     { pointsPossible: Infinity },
-    { correct: "true" },
+    { correct: "true", pointsEarned: undefined, pointsPossible: undefined },
   ])("rejects invalid question data: %j", (patch) => {
     expect(() =>
       gradeScore([{ ...questions[1], ...patch }] as Parameters<typeof gradeScore>[0]),
