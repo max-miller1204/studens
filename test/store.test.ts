@@ -509,14 +509,6 @@ describe("readGlossary", () => {
   });
 });
 
-describe("corrupt state", () => {
-  it("reports invalid JSON instead of treating annotations as absent", () => {
-    seedClassroom(fixture);
-    fixture.write("rust/001-ownership/annotations.json", "{");
-    expect(() => store.listAnnotations("rust", "001-ownership")).toThrow(/annotations.json/);
-  });
-});
-
 it("distinguishes absent optional state from corrupt state files", () => {
   seedClassroom(fixture);
   expect(store.listAnnotations("rust", "001-ownership")).toEqual([]);

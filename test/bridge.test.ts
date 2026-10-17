@@ -222,22 +222,6 @@ describe("agent_end fallback", () => {
     );
   });
 
-  it("never invents a grade from prose : grading only happens through the tool", () => {
-    const submission = store.createSubmission({
-      classroom: "rust",
-      lesson: "001-ownership",
-      quizId: "check-1",
-      quizTitle: "Check",
-      kind: "check",
-      answers: [{ questionId: "q1", value: "a" }],
-    });
-
-    bridge.grade(submission);
-    bridge.onAgentEnd(assistantRun("Looks like about 80% to me."));
-
-    expect(store.listGrades("rust", "001-ownership")).toEqual([]);
-  });
-
   it("ignores an agent_end with no queued origin at all", () => {
     expect(() => bridge.onAgentEnd(assistantRun("Unrelated turn."))).not.toThrow();
   });

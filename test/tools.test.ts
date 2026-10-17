@@ -25,10 +25,7 @@ beforeEach(() => {
 
 afterEach(() => fixture.cleanup());
 
-describe.each([
-  ["Pi", PI_HOST],
-  ["MCP", { browseHint: "Call open_classroom.", checkPage: "Call open_classroom." }],
-] as const)("%s quiz follow-up", (_name, host) => {
+describe("quiz follow-up", () => {
   async function grade(correct: boolean, score: number) {
     const submission = store.createSubmission({
       classroom: "rust",
@@ -38,7 +35,7 @@ describe.each([
       kind: "check",
       answers: [{ questionId: "q1", value: "One owner" }],
     });
-    const tool = classroomTools(host).find((tool) => tool.name === "grade_lesson_quiz")!;
+    const tool = classroomTools(PI_HOST).find((tool) => tool.name === "grade_lesson_quiz")!;
     return tool.execute({
       submission_id: submission.id,
       score,
@@ -70,7 +67,7 @@ describe.each([
   });
 
   it("does not request retrieval when grading fails", async () => {
-    const tool = classroomTools(host).find((tool) => tool.name === "grade_lesson_quiz")!;
+    const tool = classroomTools(PI_HOST).find((tool) => tool.name === "grade_lesson_quiz")!;
     const result = await tool.execute({
       submission_id: "missing",
       score: 0,

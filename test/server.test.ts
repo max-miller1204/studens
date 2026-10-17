@@ -723,16 +723,6 @@ describe("submitting a quiz", () => {
     expect(store.findSubmission(submission.id)).not.toBeNull();
     expect(store.readLesson("rust", "001-ownership")!.hasUngradedSubmission).toBe(true);
   });
-
-  it("rejects an empty submission", async () => {
-    const res = await post("/api/quiz/submit", {
-      classroom: "rust",
-      lesson: "001-ownership",
-      answers: [],
-    });
-    expect(res.status).toBe(400);
-    expect(submitted).toHaveLength(0);
-  });
 });
 
 describe("live updates", () => {

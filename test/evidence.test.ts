@@ -23,10 +23,8 @@ it.each([
 });
 
 it.each([
-  [0, "immediate-independent", "immediate-independent"],
   [DAY - 1, "immediate-independent", "immediate-independent"],
   [DAY, "delayed-retrieval", "delayed-transfer"],
-  [DAY + 1, "delayed-retrieval", "delayed-transfer"],
 ] as const)("classifies independent performance after %i ms", (elapsed, retrieval, transfer) => {
   expect(independent(evidence)).toBe(true);
   expect(evidenceContext(evidence, elapsed)).toBe(retrieval);

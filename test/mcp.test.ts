@@ -311,7 +311,9 @@ describe("wait_for_learner", () => {
       feedback_markdown: "Yes.",
       questions: [{ question_id: "q1", correct: true, feedback: "Right." }],
     });
-    const result = text(await call("wait_for_learner", { timeout_seconds: 1 }));
+    const reply = await call("wait_for_learner", { timeout_seconds: 1 });
+    expect(reply.isError).toBe(false);
+    const result = text(reply);
     expect(result).not.toContain(submission.id);
     expect(result).toContain("Nothing from the learner");
     inbox.reset();
@@ -331,13 +333,6 @@ describe("wait_for_learner", () => {
     });
     await call("open_classroom", { classroom: "rust" });
     expect(inbox.size).toBe(0);
-  });
-
-  it("returns nothing when the wait times out", async () => {
-    await call("open_classroom");
-    const result = await call("wait_for_learner", { timeout_seconds: 1 });
-    expect(result.isError).toBe(false);
-    expect(text(result)).toContain("Nothing from the learner");
   });
 
   it("sends no response for a cancelled wait, and keeps later questions", async () => {
