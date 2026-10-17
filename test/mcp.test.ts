@@ -93,7 +93,7 @@ describe("protocol", () => {
     const result = (response as { result: Record<string, any> }).result;
     expect(result["protocolVersion"]).toBe("2025-06-18");
     expect(result["capabilities"]).toEqual({ tools: {} });
-    expect(result["serverInfo"].name).toBe("pi-teach");
+    expect(result["serverInfo"].name).toBe("studens");
     expect(result["instructions"]).toBeUndefined();
   });
 

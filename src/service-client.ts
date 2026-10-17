@@ -19,6 +19,7 @@ export function servicePaths(): { dir: string; socket: string; log: string; lock
   if (!process.getuid) throw new Error("The persistent service requires Unix local sockets.");
   const root = path.resolve(classroomsRoot());
   const key = createHash("sha256").update(root).digest("hex").slice(0, 20);
+  // Retain legacy ownership paths so upgrades cannot start a second service for this root.
   const dir = path.join(root, ".pi-teach-service");
   return {
     dir,

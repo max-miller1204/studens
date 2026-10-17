@@ -20,7 +20,7 @@ import { verifyServiceBrowser } from "./e2e-service-browser.ts";
 import { playwright, playwrightCode } from "./playwright.ts";
 
 const fixture = makeFixture();
-const session = `pi-teach-browser-${process.pid}`;
+const session = `studens-browser-${process.pid}`;
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const artifacts = process.argv[2] ? path.resolve(process.argv[2]) : null;
 if (artifacts) fs.mkdirSync(artifacts, { recursive: true });

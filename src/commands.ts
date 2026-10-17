@@ -133,6 +133,7 @@ export function classroomReviewText(classroom: string): string {
 
 /** Pi sessions share one ownership file per classrooms root, apart from the service's. */
 export function piLinks(): TailnetLinks {
+  // Keep existing route ownership discoverable across the Studens rename.
   const file = path.join(classroomsRoot(), ".pi-teach-pi", "phone.json");
   return new TailnetLinks(new PhoneAccess(undefined, file), "pi");
 }

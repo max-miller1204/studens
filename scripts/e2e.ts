@@ -78,12 +78,12 @@ async function freePort(): Promise<number> {
   return port;
 }
 async function main(): Promise<void> {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), `pi-teach-e2e-${harness}-`));
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), `studens-e2e-${harness}-`));
   const restoreModel = useTestModel(harness);
   seedClassroom(root);
   _overrideClassroomsDir(root);
   const port = await freePort(),
-    browser = `pi-teach-${harness}-${process.pid}`;
+    browser = `studens-${harness}-${process.pid}`;
   process.env.PI_CLASSROOM_SERVICE_PORT = String(port);
   process.env.PI_CLASSROOM_TAILSCALE = "0";
   const env: NodeJS.ProcessEnv = {

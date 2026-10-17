@@ -20,7 +20,7 @@ if (!version || !/^\d+\.\d+\.\d+$/.test(version)) {
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const target = path.join(root, "assets/runtime/vendor/mermaid");
-const work = fs.mkdtempSync(path.join(os.tmpdir(), "pi-teach-mermaid-"));
+const work = fs.mkdtempSync(path.join(os.tmpdir(), "studens-mermaid-"));
 try {
   const tarball = execFileSync("npm", ["pack", `mermaid@${version}`, "--silent"], {
     cwd: work,

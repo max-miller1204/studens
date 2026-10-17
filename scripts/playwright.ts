@@ -14,7 +14,8 @@ export async function playwright(session: string, cwd: string, ...args: string[]
       : args;
   const { stdout } = await exec("playwright-cli", [`-s=${session}`, "--raw", ...command], {
     cwd,
-    timeout: 60_000,
+    // A run-code command can drive a complete regression, with many bounded browser actions.
+    timeout: args[0] === "run-code" ? 180_000 : 60_000,
     maxBuffer: 4 * 1024 * 1024,
   });
   if (stdout.includes("### Error")) throw new Error(stdout);

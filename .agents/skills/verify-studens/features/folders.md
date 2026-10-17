@@ -23,7 +23,7 @@ The learner groups classrooms in folders without changing lesson links.
 
 ## Driving it with playwright-cli
 
-Run `npm run verify -- browser --artifacts /tmp/pi-teach-folders`.
+Run `npm run verify -- browser --artifacts /tmp/studens-folders`.
 
 The suite drives `New folder`, the `Folder name` input, and `Create folder`. It
 rejects a duplicate name. It opens each classroom's `Move <title> to folder`

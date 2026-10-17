@@ -1,7 +1,7 @@
 # Teaching evidence registry
 
 Checked: 2026-10-06. This registry records principles and their limits. It does not
-claim that pi-teach improves human learning. Sources support conditional practices.
+claim that studens improves human learning. Sources support conditional practices.
 Our counts, intervals, evidence thresholds, and UI remain choices to evaluate.
 When a rule changes, update its implementation, tests, and this registry together.
 The teaching brief uses these rule ids. Keep the brief and skill consistent.

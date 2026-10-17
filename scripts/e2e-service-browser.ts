@@ -74,7 +74,7 @@ readline.createInterface({input:process.stdin}).on('line', line => {
     PI_CLASSROOMS_DIR: fixture.root,
     PI_CLASSROOM_TAILSCALE: "0",
   });
-  const session = `pi-teach-service-browser-${process.pid}`;
+  const session = `studens-service-browser-${process.pid}`;
   let browserOpen = false;
   const evidence = (name: string, value: unknown) => {
     if (artifacts) {

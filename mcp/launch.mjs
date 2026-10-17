@@ -21,7 +21,7 @@ const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 if (!process.features.typescript) {
   throw new Error(
-    `pi-teach needs Node 22.18 or later to run TypeScript without a build step. Found Node ${process.versions.node}.`,
+    `studens needs Node 22.18 or later to run TypeScript without a build step. Found Node ${process.versions.node}.`,
   );
 }
 

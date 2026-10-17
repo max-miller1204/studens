@@ -10,7 +10,7 @@ import { playwright, playwrightCode } from "./playwright.ts";
 
 export async function verifyCardBrowser(artifacts: string | null): Promise<void> {
   const fixture = makeFixture();
-  const session = `pi-teach-cards-${process.pid}`;
+  const session = `studens-cards-${process.pid}`;
   let opened = false;
   if (artifacts) fs.mkdirSync(artifacts, { recursive: true });
   seedClassroom(fixture);

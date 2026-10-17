@@ -1,11 +1,13 @@
 {
-  "name": "pi-teach",
-  "version": "0.10.1",
-  "displayName": "Teach",
+  "name": "studens",
+  "version": "0.11.0",
+  "displayName": "Studens",
   "description": "A teacher you can interrupt: interactive HTML lessons in a local web UI, with highlight-to-ask questions and graded quizzes.",
-  "author": { "name": "Josh Noll" },
-  "homepage": "https://github.com/max-miller1204/pi-teach#readme",
-  "repository": "https://github.com/max-miller1204/pi-teach",
+  "author": {
+    "name": "Josh Noll"
+  },
+  "homepage": "https://github.com/max-miller1204/studens#readme",
+  "repository": "https://github.com/max-miller1204/studens",
   "license": "MIT",
   "keywords": ["teaching", "learning", "classroom", "lessons", "quiz"],
   "mcpServers": {

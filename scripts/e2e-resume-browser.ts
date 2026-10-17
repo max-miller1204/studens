@@ -106,7 +106,7 @@ export async function verifyResumeBrowser(artifacts: string | null): Promise<voi
         teacher.connect();
         teacher.attach("rust", backend);
       }
-      const session = `pi-teach-resume-${backend}-${scenario}-${process.pid}`;
+      const session = `studens-resume-${backend}-${scenario}-${process.pid}`;
       let browserOpen = false;
       try {
         const base = await server.start();

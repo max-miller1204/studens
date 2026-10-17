@@ -446,7 +446,7 @@ interface Submitted {
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 async function main(): Promise<void> {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), "pi-teach-e2e-authoring-"));
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "studens-e2e-authoring-"));
   _overrideClassroomsDir(root);
   seedClassroom(root);
   const restoreModel = useTestModel(harness);
@@ -460,7 +460,7 @@ async function main(): Promise<void> {
     PI_CLASSROOMS_DIR: root,
     PI_CLASSROOM_TEACHER: harness,
   };
-  const browser = `pi-teach-authoring-${harness}-${process.pid}`;
+  const browser = `studens-authoring-${harness}-${process.pid}`;
   let browserOpen = false;
   const sessions: Session[] = [];
   const failures: string[] = [];

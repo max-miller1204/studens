@@ -23,7 +23,7 @@ const source = classroomDir(classroom);
 const document = store.readLesson(classroom, lesson);
 if (!document) throw new Error("The lesson does not exist.");
 const originalRoot = classroomsRoot();
-const root = fs.mkdtempSync(path.join(os.tmpdir(), "pi-teach-page-check-"));
+const root = fs.mkdtempSync(path.join(os.tmpdir(), "studens-page-check-"));
 const browser = `page-check-${process.pid}`;
 let opened = false;
 try {

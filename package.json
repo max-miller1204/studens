@@ -1,18 +1,18 @@
 {
-  "name": "pi-teach",
-  "version": "0.10.1",
+  "name": "studens",
+  "version": "0.11.0",
   "private": true,
   "description": "Interactive HTML lessons for Pi, Claude Code, and Codex, with passage questions and graded quizzes.",
   "type": "module",
   "license": "MIT",
   "author": "Josh Noll",
-  "homepage": "https://github.com/max-miller1204/pi-teach#readme",
+  "homepage": "https://github.com/max-miller1204/studens#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/max-miller1204/pi-teach.git"
+    "url": "git+https://github.com/max-miller1204/studens.git"
   },
   "bugs": {
-    "url": "https://github.com/max-miller1204/pi-teach/issues"
+    "url": "https://github.com/max-miller1204/studens/issues"
   },
   "keywords": [
     "pi-package",
@@ -26,7 +26,7 @@
     "extensions": [
       "./index.ts"
     ],
-    "image": "https://raw.githubusercontent.com/max-miller1204/pi-teach/main/screenshots/answer.png"
+    "image": "https://raw.githubusercontent.com/max-miller1204/studens/main/screenshots/answer.png"
   },
   "scripts": {
     "verify": "node scripts/verify.ts",
@@ -44,7 +44,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "service": "node scripts/classroom-service.ts",
-    "e2e:phone": "node scripts/e2e-phone.ts"
+    "e2e:phone": "node scripts/e2e-phone.ts",
+    "test:mutate": "stryker run"
   },
   "dependencies": {
     "marked": "^15.0.12"
@@ -62,7 +63,9 @@
     "@types/node": "^24.5.2",
     "prettier": "^3.8.4",
     "typescript": "^5.9.3",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "@stryker-mutator/core": "10.0.0",
+    "@stryker-mutator/vitest-runner": "10.0.0"
   },
   "engines": {
     "node": ">=22.18.0"

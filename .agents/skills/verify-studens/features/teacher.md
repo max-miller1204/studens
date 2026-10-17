@@ -28,7 +28,7 @@ The learner receives follow-up questions and answers them in the lesson's teache
 
 ## Driving it with playwright-cli
 
-Run `npm run verify -- browser --artifacts /tmp/pi-teach-teacher`.
+Run `npm run verify -- browser --artifacts /tmp/studens-teacher`.
 
 The Pi fixture checks `.cl-teacher` follows the quiz, a prose-only grading run fails, and an explicit retry permits grading. It checks the panel reply reaches the correct prompt and all three conversation messages survive reload.
 

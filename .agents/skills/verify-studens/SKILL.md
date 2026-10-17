@@ -1,16 +1,16 @@
 ---
-name: verify-pi-teach
-description: Verify pi-teach lessons in the browser and select Pi, Claude Code, Codex, or authoring checks for changes to the runtime, bridge, service, MCP, and teaching contracts.
+name: verify-studens
+description: Verify studens lessons in the browser and select Pi, Claude Code, Codex, or authoring checks for changes to the runtime, bridge, service, MCP, and teaching contracts.
 ---
 
-# Verify pi-teach
+# Verify studens
 
 Use this skill from the repository root. Read [features/README.md](features/README.md). Select checks from the changed behavior and its callers.
 
 ## Launch
 
 1. Install repository dependencies with `npm ci` when missing.
-2. Run `npm run verify -- --artifacts /tmp/pi-teach-verify-local`.
+2. Run `npm run verify -- --artifacts /tmp/studens-verify-local`.
 
 The default target runs formatting, types, automated tests, and the browser suite. The browser suite starts isolated classrooms and loopback servers. It drives reading, quizzes, the Pi bridge, and the persistent service. It closes owned sessions and removes scratch classrooms.
 

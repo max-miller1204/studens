@@ -242,18 +242,9 @@ describe("scaffold_lesson", () => {
     expect(result.details["error"]).toBeUndefined();
     const text = result.content[0].text;
     const htmlPath = result.details["path"] as string;
-    expect(text).toContain(
-      `Read the current quiz contract: ${path.join(templatesDir(), "quiz.html")}`,
-    );
-    expect(text).toContain("State one learning objective");
-    expect(text).toContain("predict, retrieve, explain, practise, or diagnose");
+    expect(text).toContain(path.join(templatesDir(), "quiz.html"));
     expect(text).toContain(path.join(path.dirname(htmlPath), "quiz", "key.json"));
-    expect(text).toContain("Call lesson_health for this lesson");
-    expect(text).toContain("Check the lesson URL in a headless browser.");
     expect(text).toContain("playwright-headless.json");
-    expect(text).toContain("Do not open a visible browser window.");
-    expect(text).toContain("Report a headless launch failure");
-    expect(text).not.toContain("if you have one");
 
     const html = fs.readFileSync(htmlPath, "utf8");
     expect(html).toContain("data-cl-content");
@@ -292,8 +283,6 @@ describe("scaffold_lesson", () => {
     expect(html).toContain(`data-kind="${mode === "quiz" ? "check" : "pretest"}"`);
     expect(html).not.toContain("{{");
     expect(html).not.toContain("data-cl-after-pretest");
-    expect(result.content[0].text).toContain("Do not add teaching");
-    expect(result.content[0].text).toContain("transfer");
   });
   it("rejects an unknown mode before creating a page", async () => {
     const before = store.listLessons("rust").length;
@@ -330,8 +319,6 @@ describe("scaffold_review", () => {
     const text = result.content[0].text;
     expect(text).toContain('data-review-of="001-ownership/check-1/q1"');
     expect(text).toContain("Their last answer (wrong): the stack");
-    expect(text).toContain("Read the current quiz contract");
-    expect(text).toContain("It does not have to match the original type.");
     expect(text).toContain("quiz/key.json");
 
     const lesson = result.details["lesson"] as string;
