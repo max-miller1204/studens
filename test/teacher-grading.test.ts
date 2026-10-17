@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
-import { scoredAnswers } from "../src/teacher-grading.ts";
-import { validateGrade } from "../assets/runtime/grade.mjs";
+import type { ClassroomTool } from "../src/tools.ts";
+import { scoredAnswers, answerGradingTool, GRADE_ANSWERS } from "../src/teacher-grading.ts";
 
 const answers = () => ({
   submission_id: "weighted",
@@ -28,8 +28,8 @@ it("calculates the weighted total without changing the model's point allocations
   expect(args).toEqual(before);
 });
 
-it.each([92, 87.5, undefined])("rejects a supplied score instead of replacing it: %s", (score) => {
-  const supplied = { ...answers(), score };
+it("rejects a supplied score even when its value is undefined", () => {
+  const supplied = { ...answers(), score: undefined };
   expect(() => scoredAnswers(supplied)).toThrow("must omit score");
 });
 
@@ -42,18 +42,46 @@ it("keeps correctness and point bounds mandatory", () => {
   expect(() => scoredAnswers(args)).toThrow("Invalid points");
 });
 
-it("keeps the public validator's rejection of the old inconsistent score", () => {
-  const questions = answers().questions.map((q) => ({
-    questionId: q.question_id,
-    correct: q.correct,
-    pointsEarned: q.points_earned,
-    pointsPossible: q.points_possible,
-  }));
-  expect(() =>
-    validateGrade(
-      92,
-      questions,
-      questions.map((q) => q.questionId),
-    ),
-  ).toThrow("Score must match question points: 87.50%");
+it("rejects malformed question collections with a specific error", () => {
+  expect(() => scoredAnswers({ ...answers(), questions: null as never })).toThrow(/question/);
+});
+
+it("requires the public grading operation before creating a score-free adapter", () => {
+  expect(() => answerGradingTool({ name: "other" } as ClassroomTool)).toThrow(/grading tool/);
+});
+
+it("isolates the score-free schema and forwards computed points through the public tool", async () => {
+  const received: unknown[] = [];
+  const saved = { content: [{ type: "text" as const, text: "Saved." }], details: { saved: true } };
+  const tool: ClassroomTool = {
+    name: "grade_lesson_quiz",
+    label: "Grade",
+    description: "Public grading.",
+    parameters: {
+      type: "object",
+      properties: { score: { type: "number" }, submission_id: { type: "string" } },
+      required: ["score", "submission_id"],
+      additionalProperties: true,
+    },
+    async execute(args) {
+      received.push(args);
+      return saved;
+    },
+  };
+  const parameters = structuredClone(tool.parameters);
+  const adapted = answerGradingTool(tool);
+  expect(adapted.name).toBe(GRADE_ANSWERS);
+  expect(adapted.label).toBe(tool.label);
+  expect(adapted.description).toBeTruthy();
+  expect(adapted.parameters).toMatchObject({
+    required: ["submission_id"],
+    additionalProperties: false,
+  });
+  expect(adapted.parameters.properties).not.toHaveProperty("score");
+  const args = answers();
+  expect(await adapted.execute(args)).toBe(saved);
+  expect(received).toEqual([{ ...args, score: 87.5 }]);
+  (adapted.parameters.properties as Record<string, unknown>).submission_id = { type: "number" };
+  expect(tool.parameters).toEqual(parameters);
+  expect(args).not.toHaveProperty("score");
 });

@@ -2,7 +2,7 @@
   "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
   "testRunner": "vitest",
   "mutate": [
-    "src/{paths,quiz,quiz-authoring,rubric,pretest,teaching-plan,review,evidence,health,teacher-grading,json-object-stream,teacher-deadline,authoring-html,authoring-evaluation}.ts",
+    "src/{closed-grading,paths,quiz,quiz-authoring,rubric,pretest,teaching-plan,review,evidence,health,teacher-grading,json-object-stream,teacher-deadline,authoring-html,authoring-evaluation}.ts",
     "assets/runtime/{anchor,draft,glossary,grade,links,quiz}.mjs"
   ],
   "concurrency": 4,
