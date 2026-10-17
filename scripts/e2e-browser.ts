@@ -1,3 +1,4 @@
+import { verifyClosedBrowser } from "./e2e-closed-browser.ts";
 import { verifyFoldersBrowser } from "./e2e-folders-browser.ts";
 import { verifyResumeBrowser } from "./e2e-resume-browser.ts";
 import { verifyCardBrowser } from "./e2e-card-browser.ts";
@@ -373,3 +374,5 @@ await verifyResumeBrowser(artifacts ? path.join(artifacts, "resume") : null);
 await verifyCardBrowser(artifacts ? path.join(artifacts, "cards") : null);
 
 await verifyFoldersBrowser(artifacts ? path.join(artifacts, "folders") : null);
+
+await verifyClosedBrowser(artifacts ? path.join(artifacts, "closed") : null);

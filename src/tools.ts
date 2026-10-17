@@ -17,6 +17,8 @@ import { createHash } from "node:crypto";
 import { ASSISTANCE, type Assistance } from "./evidence.ts";
 import { reviewKey } from "../assets/runtime/quiz.mjs";
 import { applyAnswer, applyGrade } from "./bridge.ts";
+import { mergeGrades } from "./closed-grading.ts";
+import { gradeScore, validateGrade } from "../assets/runtime/grade.mjs";
 import { avoidedUses, htmlText } from "./glossary.ts";
 import { healthReport, type LessonHealthInput } from "./health.ts";
 import { classroomDir, isValidSlug, lessonDir, slugify, templatesDir } from "./paths.ts";
@@ -313,6 +315,40 @@ export function classroomTools(host: ToolHost): ClassroomTool[] {
           });
         }
 
+        if (submission.deterministicGrades?.length) {
+          try {
+            const teacherQuestions = params.questions.map((q) => ({
+              questionId: q.question_id,
+              correct: q.correct,
+              feedback: q.feedback,
+              pointsEarned: q.points_earned,
+              pointsPossible: q.points_possible,
+            }));
+            const fixed = submission.deterministicGrades;
+            const merged = mergeGrades(fixed, teacherQuestions);
+            validateGrade(
+              params.score,
+              teacherQuestions,
+              submission.answers
+                .filter((a) => !fixed.some((q) => q.questionId === a.questionId))
+                .map((a) => a.questionId),
+            );
+            params = {
+              ...params,
+              score: gradeScore(merged),
+              questions: merged.map((q) => ({
+                question_id: q.questionId,
+                correct: q.correct,
+                feedback: q.feedback,
+                points_earned: q.pointsEarned,
+                points_possible: q.pointsPossible,
+              })),
+            };
+          } catch (error) {
+            return fail((error as Error).message);
+          }
+        }
+
         const lesson = store.readLesson(submission.classroom, submission.lesson);
         if (submission.assessmentContract === 1) {
           try {
@@ -323,6 +359,7 @@ export function classroomTools(host: ToolHost): ClassroomTool[] {
                 "utf8",
               ),
               fs.readFileSync(lesson.htmlPath, "utf8"),
+              submission.deterministicGrades === undefined ? "legacy" : "machine",
             );
             for (const question of params.questions) {
               const expected = rubric[submission.quizId]?.[question.question_id];

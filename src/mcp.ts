@@ -15,6 +15,7 @@ import {
   teachingPrompt,
 } from "./prompts.ts";
 import * as server from "./server.ts";
+import { completeClosedSubmission } from "./quiz-grading.ts";
 import * as store from "./store.ts";
 import { classroomTools, isFailure, type ClassroomTool, type ToolResult } from "./tools.ts";
 
@@ -150,6 +151,7 @@ function queueQuestion(inbox: LearnerInbox, annotation: store.Annotation): void 
 }
 
 function queueSubmission(inbox: LearnerInbox, submission: store.QuizSubmission): void {
+  if (completeClosedSubmission(submission)) return;
   inbox.push(
     gradePrompt(submission, "wait", store.previousGrade(submission)),
     `quiz:${submission.id}`,

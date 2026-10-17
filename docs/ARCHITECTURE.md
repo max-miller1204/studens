@@ -94,6 +94,15 @@ source notation to grading. Answers and feedback render Markdown server-side.
   follow-ups. Answer the oldest pending turn. Post quiz retrieval questions and learner
   replies in the teacher panel. Resume the exact latest graded submission without
   inventing a reply or grading again. Interrupted Pi resumes require retry.
+- **Closed grades are code-owned.** Validated assessments use machine-checkable
+  private keys for choice, multi, numeric, order, match, and normally cloze. Term
+  and locate can explicitly opt into exact grading. Save the computed allocations
+  privately on the submission before grade writes. HTTP completes closed-only
+  attempts without a teacher turn; startup and host recovery reuse the saved
+  allocations and skip existing grades. Mixed requests contain only judgment
+  answers. Reject teacher overrides and compute the final score with `gradeScore`
+  from merged raw points. Attempts saved before machine allocations existed retain
+  the original rubric validation and teacher grading contract.
 - **Submission order is total.** Timestamps increase strictly per lesson. Attempts
   count submissions; regrades are revisions. Use `latestGrades()` consistently for
   scores, quiz state, health, and review. Refuse another attempt while one is ungraded.

@@ -6,6 +6,7 @@ import { createHash } from "node:crypto";
 import { applyTurnAnswer, withHtml } from "./bridge.ts";
 import { classroomDir, lessonDir, safeStaticFile } from "./paths.ts";
 import { stageLesson } from "./pretest.ts";
+import { completeClosedSubmission } from "./quiz-grading.ts";
 import { validateGrade } from "../assets/runtime/grade.mjs";
 import { answerGradingTool, GRADE_ANSWERS, scoredAnswers } from "./teacher-grading.ts";
 import {
@@ -143,6 +144,7 @@ export class TeacherService {
     });
   }
   submission(s: store.QuizSubmission): void {
+    if (completeClosedSubmission(s)) return;
     this.enqueue({
       id: `quiz:${s.id}`,
       classroom: s.classroom,
@@ -311,7 +313,18 @@ export class TeacherService {
                 pointsPossible: q.points_possible,
               }),
             ),
-            [...new Set(submission.answers.map((answer) => answer.questionId))],
+            [
+              ...new Set(
+                submission.answers
+                  .filter(
+                    (answer) =>
+                      !submission.deterministicGrades?.some(
+                        (q) => q.questionId === answer.questionId,
+                      ),
+                  )
+                  .map((answer) => answer.questionId),
+              ),
+            ],
           );
         } catch {
           delete r.plan;

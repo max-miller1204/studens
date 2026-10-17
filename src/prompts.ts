@@ -312,7 +312,10 @@ export function gradePrompt(
   previous: QuizGrade | null = null,
 ): string {
   const kind = kindOf(submission);
-  const answers = answersByQuestion(submission.answers)
+  const teacherAnswers = submission.answers.filter(
+    (a) => !submission.deterministicGrades?.some((q) => q.questionId === a.questionId),
+  );
+  const answers = answersByQuestion(teacherAnswers)
     .map(([questionId, group], i) => {
       const type = group[0].type ? ` (${group[0].type})` : "";
       const prompt = group[0].prompt ?? "(question text unavailable)";
@@ -346,6 +349,11 @@ export function gradePrompt(
     ...(attemptLine ? [attemptLine] : []),
     ...(kindLine ? ["", kindLine] : []),
     "",
+    ...(submission.deterministicGrades?.length
+      ? [
+          "Closed questions have saved machine grades. Grade only the questions below; omit machine-graded questions. Any supplied score must cover only your question allocations. The server merges the saved allocations and computes the overall score.",
+        ]
+      : []),
     "Their answers:",
     "",
     answers,

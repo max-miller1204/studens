@@ -7,7 +7,7 @@
   same markup contract. Honor the request: a quiz-only page has no teaching. Put a <form class="cl-quiz"> anywhere in a lesson.
   The runtime checks it, adds the controls each question type needs, adds the submit
   button and status line, locks the form on submit, writes the answers to the lesson's
-  quiz/ directory, asks the teacher to grade them, and shows the grade inline. After a
+  quiz/ directory, grades closed answers in code, sends judgment answers to the teacher, and shows the grade inline. After a
   grade, the form stays locked. Saved attempts and grades are kept. Do not add a
   retry control. For a missed idea, the teacher asks a new question in the lesson's
   teacher panel with a different example, checks the reply, and reviews the idea
@@ -111,6 +111,38 @@
           }
         }
       }
+
+    Machine-checkable expected values (private; never put keys in HTML):
+      choice: "a" (the option value, not its label)
+      multi: ["a", "c"] (the exact set, order ignored)
+      numeric: {"value": 2.5, "tolerance": 0.01, "unit": "m"}
+        value must be finite. tolerance is an optional non-negative absolute
+        tolerance, inclusive at its boundary; omitted means exact. unit is optional;
+        when present it must match after trimming, including case. No unit conversion.
+      order: ["first", "second", "third"] (item ids in the correct order)
+      match: {"left-a": "right-x", "left-b": "right-y"} (all left ids)
+      cloze: {"blank-1": ["owner", "holder"], "blank-2": "scope"}
+        Include every blank. Each value is accepted text or a list of alternatives.
+        Text comparisons ignore case and trim/collapse whitespace.
+      term: use grading: "exact" with expected: ["owner", "holder"] for a fixed
+        vocabulary, or omit grading when equivalent answers require judgment.
+      locate: use grading: "exact" with expected: ["s1", "s3"] for an exact
+        segment set. Omit grading for edge cases needing teacher judgment.
+      short: always teacher judgment.
+
+    choice, multi, numeric, order, match, and cloze default to exact grading.
+    For cloze requiring semantic judgment, set grading: "teacher" explicitly.
+    term and locate default to teacher judgment. Never use grading: "teacher"
+    for the five always-closed types. Malformed exact keys block submission;
+    they never fall back to a model. Exact questions award all or zero points;
+    set partial to "None." Use a judgment question for reasoning partial credit.
+    Closed allocations are saved privately with the attempt before grade writes.
+    A closed-only quiz is graded immediately without a teacher turn. For mixed
+    quizzes, the teacher grades only the remaining questions; the server merges
+    allocations and calculates the overall score from raw question points.
+    The public grading tool's supplied score covers only teacher allocations.
+    Historical lessons without assessmentContract: 1 and attempts saved before
+    machine allocations existed keep their original teacher grading contract.
 
     Keep the rubric fixed for every attempt at a quiz. Do not change a question id
     or a rubric after a learner submits. grade_lesson_quiz accepts points_earned and

@@ -5,6 +5,7 @@ The learner submits typed answers and reads grades on the lesson page.
 ## Sub-features
 
 - Submit and restore all nine question types.
+- Grade closed answers immediately without a teacher turn. Keep saved machine allocations through recovery.
 - Preserve drafts and optional assistance reports.
 - Lock a graded quiz. Display partial credit.
 - Keep the newest attempt and grade revision across reload and two tabs.
@@ -27,6 +28,8 @@ The math quiz stores its prompt, stimulus, and choice label as TeX. Its grade fe
 
 Invalid option values must show contract errors and block submission. A grade that arrives before the submit response must keep the quiz graded. A pretest grade must release teaching through one reload and preserve a reflection draft.
 
+The closed pretest fixture uses real controls for all eight exact-capable types. It checks an incorrect choice and correct set, text alternatives, numeric tolerance and unit, blanks, order, pairs, and segments. Submission immediately reaches `data-state="graded"`, releases gated teaching, and remains locked after reload with no teacher calls. Private allocations and keys stay off learner routes. Inspect `closed/closed-graded.png` and `closed/closed-result.json`. Mixed-quiz point merging, rejected teacher overrides, malformed keys, and recovery are covered by the HTTP and host contract tests.
+
 ## Gotchas
 
-The fixture grading tool proves page and storage behavior. It does not prove model grading quality. API attempts from older clients are checked separately from the learner's locked quiz controls. Immediate correct answers do not prove retention.
+The fixture grading tool proves page and storage behavior. It does not prove model grading quality. API attempts from older clients are checked separately from the learner's locked quiz controls. The `feedback claude` and `feedback codex` targets combine a saved closed answer with judgment questions. They require the model to omit the closed question and verify the final score from merged point allocations. Immediate correct answers do not prove retention.
