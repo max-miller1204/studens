@@ -57,6 +57,7 @@ import * as server from "../src/server.ts";
 import * as store from "../src/store.ts";
 import {
   browserCommands,
+  isPlaywrightLaunch,
   packagedPageChecks,
   useTestModel,
   harnessCommand,
@@ -484,9 +485,7 @@ async function main(): Promise<void> {
     const pageChecks = browserCommands(harness, authoring.stream());
     log(`browser commands: ${pageChecks.length}`);
     if (pageChecks.length === 0) failures.push("The agent never opened a lesson in a browser.");
-    const launches = pageChecks.filter((command) =>
-      /\bplaywright-cli(?:\s+-[^\s]+)*\s+open(?:\s|$)/.test(command),
-    );
+    const launches = pageChecks.filter(isPlaywrightLaunch);
     for (const command of launches) {
       if (!command.includes("--config") || !command.includes("playwright-headless.json"))
         failures.push("The agent opened a browser without the packaged headless config.");

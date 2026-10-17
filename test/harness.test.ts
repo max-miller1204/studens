@@ -1,5 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
-import { harnessCommand, packagedPageChecks, useTestModel } from "../scripts/harness.ts";
+import {
+  harnessCommand,
+  isPlaywrightLaunch,
+  packagedPageChecks,
+  useTestModel,
+} from "../scripts/harness.ts";
 
 describe("test model selection", () => {
   it("overrides inherited Claude settings for child teachers and restores them", () => {
@@ -146,5 +151,24 @@ describe("packaged authoring check receipts", () => {
     { ...receipt, released: undefined },
   ])("rejects incomplete or unsafe checks", (invalid) => {
     expect(packagedPageChecks("codex", codex(invalid))).toEqual([]);
+  });
+});
+
+describe("browser launch detection", () => {
+  it.each([
+    "playwright-cli --help open",
+    "playwright-cli -h open",
+    "playwright-cli -s=lesson --help open",
+    "playwright-cli --help",
+    "playwright-cli snapshot",
+  ])("does not treat help or inspection as a launch: %s", (command) => {
+    expect(isPlaywrightLaunch(command)).toBe(false);
+  });
+  it.each([
+    "playwright-cli open",
+    "playwright-cli -s=lesson --raw open http://127.0.0.1:3000",
+    "playwright-cli --help open && playwright-cli -s=lesson open http://127.0.0.1:3000 --config=/plugin/assets/playwright-headless.json",
+  ])("recognizes actual launches: %s", (command) => {
+    expect(isPlaywrightLaunch(command)).toBe(true);
   });
 });
