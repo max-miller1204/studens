@@ -76,6 +76,12 @@ scope; they do not measure browser behavior or real model quality. Process tests
 also launch uninstrumented child runtimes, so their coverage cannot all be attributed
 to individual tests by the Vitest mutation runner.
 
+When pruning tests, keep production code and mutation scope unchanged between
+the before and after runs. Remove repeated scenarios, then compare which mutants
+were detected as well as the overall score. A test that is not a mutant's first
+killer can still protect a distinct contract. Keep recovery, ordering, private-file,
+and browser checks when they exercise behavior outside the mutation scope.
+
 For teaching quality, use the authoring, feedback, and quality targets in the
 verification skill. Mechanical checks set their verdict; semantic judgments are
 reported separately. Read every finding and preserve failed reports. See

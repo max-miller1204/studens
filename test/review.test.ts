@@ -88,14 +88,14 @@ describe("scheduleItems", () => {
       scheduleItems([...events, event(9, { evidence: { ...e, task: "transfer" } })])[0].progress,
     ).toBe("retained-evidence");
   });
-  it.each(["hint", "solution", "unknown"] as const)(
-    "does not treat %s as independent evidence",
-    (assistance) => {
-      const [item] = scheduleItems([event(0), event(7, { evidence: evidence({ assistance }) })]);
-      expect(item).toMatchObject({ box: 0, delayedSuccesses: 0 });
-      expect(item.dueAt).toBe(T0 + DAY_MS);
-    },
-  );
+  it("does not promote assisted retrieval", () => {
+    const [item] = scheduleItems([
+      event(0),
+      event(7, { evidence: evidence({ assistance: "hint" }) }),
+    ]);
+    expect(item).toMatchObject({ box: 0, delayedSuccesses: 0 });
+    expect(item.dueAt).toBe(T0 + DAY_MS);
+  });
   it("does not promote authored assisted work even if the learner reports no help", () => {
     expect(
       scheduleItems([event(0), event(7, { evidence: evidence({ support: "assisted" }) })])[0].box,

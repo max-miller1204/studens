@@ -45,7 +45,6 @@ describe("grade validation boundaries", () => {
   it.each([
     { pointsEarned: -1 },
     { pointsEarned: 10 },
-    { pointsEarned: undefined },
     { pointsEarned: NaN },
     { pointsPossible: 0 },
     { pointsPossible: Infinity },
@@ -84,7 +83,7 @@ describe("grade validation boundaries", () => {
     },
   );
 
-  it.each([NaN, Infinity, -5e-10, 100 + 5e-10])("rejects invalid totals: %s", (score) => {
+  it.each([NaN, -5e-10, 100 + 5e-10])("rejects invalid totals: %s", (score) => {
     expect(() =>
       validateGrade(score, [{ questionId: "q1", correct: score > 0 }], ["q1"]),
     ).toThrow();

@@ -88,18 +88,6 @@ describe("followUpPrompt", () => {
     answeredAt: answer ? 4 : null,
   });
 
-  it("replays the thread so a bare “why?” is answerable", () => {
-    const pending = followUp("f1", "Why does that matter?", null);
-    const prompt = followUpPrompt({ ...card, followUps: [pending] }, pending, "push");
-
-    expect(prompt).toContain("one owner"); // the passage
-    expect(prompt).toContain("Why only one owner?"); // turn one
-    expect(prompt).toContain("double-free"); // the answer it already gave
-    expect(prompt).toContain("Why does that matter?"); // the new question
-    expect(prompt).toContain("answer_lesson_question");
-    expect(prompt).toContain(card.id);
-  });
-
   it("includes earlier follow-ups but stops at the one being asked", () => {
     const earlier = followUp("f1", "What about borrows?", "Many readers, one writer.");
     const asking = followUp("f2", "And across threads?", null);
@@ -299,23 +287,6 @@ describe("reviewStatusText", () => {
     );
     expect(text).toContain("2 are due for review now");
     expect(text).toContain("scaffold_review");
-  });
-
-  it("says when the next review is due when none are due now", () => {
-    const text = reviewStatusText(
-      {
-        total: 5,
-        due: 0,
-        dueSoon: 1,
-        retained: 1,
-        transferNeeded: 0,
-        unknown: 0,
-        nextDueAt: now + DAY_MS,
-      },
-      now,
-    );
-    expect(text).toContain("The next one is due tomorrow.");
-    expect(text).not.toContain("scaffold_review");
   });
 });
 

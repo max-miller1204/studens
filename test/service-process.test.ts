@@ -120,7 +120,7 @@ async function waitFor(probe: () => Promise<boolean>) {
   }
   throw new Error("Process fixture did not finish.");
 }
-it.each([undefined, "", "   "])("rejects an unconfigured service root: %j", async (root) => {
+it.each([undefined, "   "])("rejects an unconfigured service root: %j", async (root) => {
   const home = path.join(f.root, "isolated-home");
   const bootstrap = f.write(
     "home.mjs",

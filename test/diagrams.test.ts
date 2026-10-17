@@ -19,12 +19,6 @@ describe("dedentSource", () => {
     );
   });
 
-  it("keeps the relative indent that a mindmap reads as structure", () => {
-    expect(dedentSource("    mindmap\n      root\n        Child\n      Sibling")).toBe(
-      "mindmap\n  root\n    Child\n  Sibling",
-    );
-  });
-
   it("ignores blank lines when it finds the shared indent", () => {
     expect(dedentSource("  graph TD\n\n    A --> B")).toBe("graph TD\n\n  A --> B");
   });

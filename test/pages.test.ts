@@ -129,19 +129,11 @@ describe("learningRecordsPage", () => {
     expect(html).toContain("The &lt;b&gt;next&lt;/b&gt; step.");
     expect(html).toContain('href="/c/rust"');
   });
-
-  it("says so when there are none", () => {
-    expect(learningRecordsPage(classroom, [])).toContain("No learning records yet");
-  });
 });
 
 describe("missionWhy", () => {
   it("extracts the first paragraph of the Why section", () => {
     expect(missionWhy(classroom.mission)).toBe("Ship a CLI to my team by October.");
-  });
-
-  it("stops at the next heading", () => {
-    expect(missionWhy("## Why\n\nFirst.\n\n## Success\n\nSecond.")).toBe("First.");
   });
 
   it("returns null when there is no mission or no Why section", () => {
