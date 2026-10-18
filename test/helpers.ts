@@ -7,6 +7,8 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { randomUUID } from "node:crypto";
+import { lessonPools } from "../src/review-pool.ts";
+import type { RefillRequest } from "../src/review-refill.ts";
 import type { ReviewSession } from "../src/review-session.ts";
 
 import { _overrideClassroomsDir, classroomsRoot, submissionsDir } from "../src/paths.ts";
@@ -334,4 +336,34 @@ export function legacyReview(classroom: string, id: string, owner: "pi" | "servi
   };
   fs.writeFileSync(target, JSON.stringify({ version: 1, requests: [session] }));
   return { session, added: true };
+}
+
+/** Fixture model response at the production teacher-plan boundary. */
+export function refillPlan(request: RefillRequest) {
+  const [lesson, quiz, question] = request.key.split("/");
+  const source = lessonPools(request.classroom, lesson).get(`${quiz}/${question}`)![0];
+  const variants = Array.from({ length: request.reason === "miss" ? 1 : 2 }, (_, i) => {
+    const id = `fresh-${request.id.slice(-12)}-${i + 1}`;
+    return {
+      id,
+      html: `<li class="cl-q" data-question-id="${id}" data-type="short"><p class="cl-q-prompt">A value moves through scope ${i + 1} into a new scope. Who releases the value?</p><textarea></textarea></li>`,
+      rubric: source.rubric,
+      plan: { objective: "original", task: "retrieval", support: "independent" },
+    };
+  });
+  return {
+    calls: [
+      {
+        name: "save_review_variants",
+        arguments_json: JSON.stringify({
+          classroom: request.classroom,
+          request_id: request.id,
+          variants,
+        }),
+      },
+    ],
+    message: "",
+    learning_record: "",
+    notes_markdown: "",
+  };
 }
