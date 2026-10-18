@@ -47,6 +47,15 @@ the project skill. Each drives a prepared review after the teacher conversation.
 Inspect `stored-review.json`, `stored-refills.json`, and the host review screenshot. Select the Pi drive
 for bridge changes and inspect `stored-review.json` and `pi-review.png`.
 
+For the refill protocol, run `npm run verify -- refill claude`, then
+`npm run verify -- refill codex`, with separate artifact directories. Each target
+seeds a missed answer and a saved invalid refill plan in an isolated classroom,
+opens the actual MCP host, observes the persisted failure, and clicks `Retry request`
+in the browser. The real teacher must add exactly one private targeted variant,
+leave the original key and grade unchanged, and keep the quiz locked. Inspect
+`classroom/.review-refills.json`, `failed-refill.png`, and `retried-refill.png`.
+The initial failed plan is a fixture at the production recovery boundary.
+
 ## Gotchas
 
 Repeated clicks reuse the saved document and variant selection. A publication
