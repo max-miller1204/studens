@@ -510,14 +510,28 @@ export function reviewPrompt(session: ReviewSession, delivery: "push" | "service
     ...(session.error
       ? [`Previous review authoring error: ${session.error}. Correct it in this attempt.`]
       : []),
-    "Write one fresh question for each selected item. Keep their data-review-of keys and order. Keep answers, solutions, teaching, and hints out of the learner page. Preserve the original objective and retention policy in the private teaching plan. Use independent retrieval or a fresh application when it fits the objective. Do not claim retained knowledge from creating this page.",
+    "Write one fresh question for each selected item. Keep their data-review-of keys and order. Keep answers, solutions, teaching, and hints out of the learner page. Preserve the original objective and retention policy in the private teaching plan. Use independent retrieval or a fresh application when it fits the objective. For every transfer-needed item, use task transfer and support independent in the private plan. Write an unfamiliar application of the same principle, with a new situation that requires method choice, diagnosis, or justification. Do not reuse any of its saved prompts or merely change names or numbers. Use the saved prompts as prior probes to avoid. Do not name the required method or supply hints. Do not claim retained knowledge from creating this page.",
     delivery === "service"
       ? "Return exactly one publish_review call. Its arguments_json contains lesson_html, rubric_json, and teaching_plan_json as strings. The service validates and saves these files. Return learning_record=null. Keep notes_markdown an empty string. Do not use tools or write files. Give a short message that the review is ready."
       : `Write ${path.join(dir, "lesson.html")}, ${path.join(dir, "quiz/key.json")}, and ${path.join(dir, "quiz/plan.json")}. Do not call scaffold_review. Do not change any other lesson or learner history. The server publishes this page only after your turn ends and validation passes.`,
-    "Review shell:\n" + fs.readFileSync(path.join(templatesDir(), "review.html"), "utf8"),
-    "Quiz contract:\n" + fs.readFileSync(path.join(templatesDir(), "quiz.html"), "utf8"),
+    `Package paths are absolute. Templates are in ${templatesDir()} and documentation is in ${docsDir()}. Never resolve package assets or docs under the classroom directory. The complete shells and contracts follow.`,
+    `Review shell (${path.join(templatesDir(), "review.html")}):\n` +
+      fs.readFileSync(path.join(templatesDir(), "review.html"), "utf8"),
+    `Quiz contract (${path.join(templatesDir(), "quiz.html")}):\n` +
+      fs.readFileSync(path.join(templatesDir(), "quiz.html"), "utf8"),
     'Private rubric contract: an object keyed by quiz id, then question id. Each question needs expected, positive points, full, and partial. Example: {"review":{"r1":{"expected":"answer","points":1,"full":"Complete correct answer.","partial":"Zero points for an incorrect answer."}}}.',
-    "Teaching plan contract:\n" + readDoc("TEACHING-PLAN.md"),
+    `Teaching plan contract (${path.join(docsDir(), "TEACHING-PLAN.md")}):\n` +
+      readDoc("TEACHING-PLAN.md"),
+    "Required review links in question order (copy reviewOf exactly; questionKeys, quizId, and questionId in the evidence below are provenance, not replacement links):\n" +
+      JSON.stringify(
+        session.items.map((item, i) => ({
+          question: i + 1,
+          reviewOf: item.key,
+          ...(item.progress === "transfer-needed"
+            ? { task: "transfer", support: "independent" }
+            : {}),
+        })),
+      ),
     "Private selected items:\n" + JSON.stringify(session.items),
     "Original lesson context:\n" +
       JSON.stringify(

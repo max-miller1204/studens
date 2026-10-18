@@ -162,7 +162,9 @@ export function validateReview(session: ReviewSession, document: ReviewDocument)
     throw new Error("A review needs exactly one review quiz.");
   const keys = quizzes[0].questions.map((q) => q.reviewOf);
   if (keys.length !== session.items.length || keys.some((key, i) => key !== session.items[i].key))
-    throw new Error("Review questions must use the selected item keys in order.");
+    throw new Error(
+      `Review questions must use the selected item keys in order. Expected ${JSON.stringify(session.items.map((item) => item.key))}; received ${JSON.stringify(keys)}.`,
+    );
   const shapes = authoredQuestionShapes(document.lesson_html);
   if (shapes.length !== keys.length)
     throw new Error("Review controls must be visible in the quiz.");
@@ -174,8 +176,17 @@ export function validateReview(session: ReviewSession, document: ReviewDocument)
   const plan = parseTeachingPlan(document.teaching_plan_json, document.lesson_html);
   const mapping = plan.quizzes[quizzes[0].id!];
   for (const [i, question] of quizzes[0].questions.entries()) {
-    const original = session.items[i].objective;
-    const objective = plan.objectives[mapping.questions[question.id!].objective];
+    const item = session.items[i];
+    const original = item.objective;
+    const probe = mapping.questions[question.id!];
+    const objective = plan.objectives[probe.objective];
+    if (
+      item.progress === "transfer-needed" &&
+      (probe.task !== "transfer" || probe.support !== "independent")
+    )
+      throw new Error(
+        `Review question ${question.id} requires an independent transfer task for ${item.key}.`,
+      );
     if (!original) {
       if (
         objective.retentionDays !== undefined ||

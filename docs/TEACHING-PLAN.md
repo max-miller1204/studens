@@ -83,3 +83,10 @@ advance it. The server replays the objective snapshot saved with each attempt, n
 the current plan. Historical attempts without that snapshot retain their original
 `<lesson>/<quiz id>/<question id>` keys and unknown context. Previously saved review
 questions and chat checks may continue to use those question links.
+
+A `transfer-needed` item must receive an unfamiliar application variant next time.
+Set its question to `task: "transfer"` and `support: "independent"`; publication
+rejects another task or assisted support. Use its saved prompts to avoid repeating
+an earlier probe. Changing only names or numbers does not establish transfer.
+Validation checks the declared task and support; scenario novelty still needs
+semantic review.

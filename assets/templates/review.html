@@ -10,7 +10,11 @@
     3. Write one new question for that idea, with a new example, so the learner
        recalls the idea and not a remembered answer. Choose the response type that
        fits the idea. It does not have to match the original type.
-    4. Put the given key on the question as data-review-of, exactly. Keep the items
+    4. Copy each selected item's key into data-review-of exactly. Objective keys use
+       <lesson>/@objective/<objective id>; historical question keys remain valid.
+       quizId, questionId, and questionKeys describe prior probes, not new keys.
+       For transfer-needed items use an unfamiliar application with task transfer
+       and support independent in the private plan. Keep the items
        in the order given: related strategies can be mixed for method selection.
     Keep the page assessment-only. Do not add teaching, hints, or answer reveals.
     5. Write the private rubric in quiz/key.json before the learner submits.
@@ -69,7 +73,7 @@
             class="cl-q"
             data-question-id="r1"
             data-type="CHOOSE-A-TYPE"
-            data-review-of="REPLACE-lesson/quiz-id/question-id"
+            data-review-of="REPLACE-selected-item-key"
           >
             <p class="cl-q-prompt">Ask about the same idea, with a new example.</p>
           </li>
