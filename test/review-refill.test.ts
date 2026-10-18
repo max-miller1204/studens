@@ -48,6 +48,9 @@ it("deduplicates targeted misses and low pools, and keeps plans and keys private
   saveRefillPlan(request, variants(request));
   expect(lessonPools("rust", "001-ownership").get("check-1/q1")).toHaveLength(2);
   applyRefill(request);
+  // Crash after the batch rename but before the durable request is marked done.
+  updateRefill(request, "planned");
+  saveRefillPlan(request, variants(request));
   applyRefill(request);
   expect(lessonPools("rust", "001-ownership").get("check-1/q1")).toHaveLength(3);
   expect(fs.readFileSync(path.join(fixture.root, "rust/001-ownership/quiz/key.json"), "utf8")).toBe(
