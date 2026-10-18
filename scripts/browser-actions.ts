@@ -1,6 +1,11 @@
 /** Select lesson text with mouse actions. DOM reads provide the text coordinates. */
 export async function highlightText(page: any, selector: string, phrase: string): Promise<void> {
-  await page.locator(selector).scrollIntoViewIfNeeded();
+  // Keep the drag away from viewport edges, where Chromium autoscrolls the text.
+  await page
+    .locator(selector)
+    .evaluate((element: Element) =>
+      element.scrollIntoView({ block: "center", inline: "nearest", behavior: "instant" }),
+    );
   const box = await page.locator(selector).evaluate((element: Element, text: string) => {
     const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
     let node: Node | null;

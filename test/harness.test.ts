@@ -157,6 +157,9 @@ describe("packaged authoring check receipts", () => {
 describe("browser launch detection", () => {
   it.each([
     "playwright-cli --help open",
+    "playwright-cli open --help",
+    "/bin/bash -lc 'playwright-cli open --help'",
+    "playwright-cli -s=lesson open -h && playwright-cli snapshot",
     "playwright-cli -h open",
     "playwright-cli -s=lesson --help open",
     "playwright-cli --help",

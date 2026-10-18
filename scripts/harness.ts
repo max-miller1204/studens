@@ -179,7 +179,11 @@ export function browserCommands(harness: Harness, events: string): string[] {
 
 /** Global help describes a subcommand without opening a browser. */
 export function isPlaywrightLaunch(command: string): boolean {
-  return /\bplaywright-cli(?:\s+-(?!-help\b|h\b)[^\s]+)*\s+open(?:\s|$)/.test(command);
+  return [...command.matchAll(/\bplaywright-cli([^;&|\n]*)/g)].some((match) => {
+    const invocation = match[1];
+    if (/(?:^|\s)(?:--help|-h)(?=\s|["']|$)/.test(invocation)) return false;
+    return /^(?:\s+-[^\s]+)*\s+open(?:\s|["']|$)/.test(invocation);
+  });
 }
 
 /** Recognize successful packaged checks from their execution receipts. */
