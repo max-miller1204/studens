@@ -19,6 +19,7 @@ export declare function isQuizKind(value: unknown): value is QuizKind;
 export declare function parseNumber(text: unknown): number | null;
 export declare function isContractId(value: unknown): value is string;
 export declare function reviewKey(lesson: string, quizId: string, questionId: string): string;
+export declare function objectiveReviewKey(lesson: string, objectiveId: string): string;
 export declare function parseReviewKey(
   value: unknown,
 ): { lesson: string; quizId: string; questionId: string } | null;

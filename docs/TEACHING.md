@@ -457,7 +457,7 @@ question. Use blocked, supported practice when a novice still needs it.
 
 `begin_teaching` and `/teach` tell you how many questions are due. When questions are
 due, offer the learner a review before new material. If they agree, call
-`scaffold_review`. It creates a review lesson and returns the due questions, mixed
+`scaffold_review`. It creates a review lesson and returns the due items, mixed
 across related strategies when authored, with the original question, the learner's last answer, and your last
 feedback. Read the current quiz contract first. For each item, write a new question
 that tests the same idea with a new example. Choose the type that fits the idea. It

@@ -297,7 +297,7 @@ it("binds private objective evidence to an attempt and excludes it from learner 
       { questionId: "q1", correct: true, pointsEarned: 1, pointsPossible: 1, feedback: "Correct" },
     ],
   });
-  expect(store.reviewItems("rust").find((i) => i.key === `${lesson}/check/q1`)).toMatchObject({
+  expect(store.reviewItems("rust").find((i) => i.key === `${lesson}/@objective/o`)).toMatchObject({
     context: "assisted",
     objective: { application: true },
     delayedSuccesses: 0,

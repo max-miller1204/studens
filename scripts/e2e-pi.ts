@@ -252,6 +252,7 @@ try {
       session,
       fixture.root,
       `async page => {
+      await page.waitForFunction(() => [...document.querySelectorAll('.cl-card-answer')].some(answer => answer.textContent.trim() && !answer.querySelector('.cl-card-status')));
       await (${highlightText.toString()})(page, '.cl-q-prompt', 'What happens');
       await page.locator('.cl-ask-pill').click();
       await page.locator('[data-cl-question]').fill('What does this question mean by what happens?');

@@ -52,7 +52,7 @@ function initReview(control) {
       openWhenReady = true;
       button.disabled = true;
       button.textContent = "Creating review…";
-      status.textContent = `Your teacher is creating a review of ${next.count} due questions. You can leave this page and return.`;
+      status.textContent = `Your teacher is creating a review of ${next.count} due items. You can leave this page and return.`;
       timer = setTimeout(check, 1000);
     } else if (next?.status === "failed") {
       action = "retry";
@@ -74,7 +74,7 @@ function initReview(control) {
       button.disabled = Number(control.dataset.due) === 0;
       status.textContent = button.disabled
         ? "No questions are due for review."
-        : `Review up to ${control.dataset.reviewSize} due questions with new examples.`;
+        : `Review up to ${control.dataset.reviewSize} due items with new examples.`;
     }
   }
   function failed(error) {

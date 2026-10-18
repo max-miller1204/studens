@@ -13,7 +13,13 @@ import {
 } from "../src/teacher-resume.ts";
 import * as server from "../src/server.ts";
 import * as store from "../src/store.ts";
-import { makeFixture, seedClassroom, termAnswer, type Fixture } from "./helpers.ts";
+import {
+  makeFixture,
+  seedClassroom,
+  termAnswer,
+  writeGradedAttempt,
+  type Fixture,
+} from "./helpers.ts";
 import type { TeacherPlan } from "../src/teacher.ts";
 
 let fixture: Fixture;
@@ -507,4 +513,30 @@ describe("explicit teacher handoff", () => {
     expect(readTeacherState("rust")?.requests[0].status).toBe("done");
     expect(runs).toBe(2);
   });
+});
+
+it("resumes one corrective objective and resolves it through an old question alias", () => {
+  const learning = {
+    objectiveId: "ownership",
+    objective: { statement: "Explain ownership.", application: true },
+    task: "retrieval" as const,
+    support: "independent" as const,
+    assistance: "none" as const,
+  };
+  const submission = writeGradedAttempt({
+    at: Date.now() - 1000,
+    answers: ["q1", "q2"].map((id) => termAnswer(id, "old owner", { learning })),
+    correct: { q1: false, q2: false },
+  });
+  const input = { ...location, submission_id: submission.id };
+  expect(prepareResume(input).unresolvedKeys).toEqual(["001-ownership/@objective/ownership"]);
+  fixture.write("rust/learning-records/0001-owner.md", "# Corrective retrieval");
+  store.recordRetrievalCheck("rust", {
+    key: "001-ownership/check-1/q2",
+    learningRecord: "0001-owner.md",
+    answer: "New owner",
+    evidence: "Correct independent reply",
+    assistance: "none",
+  });
+  expect(prepareResume(input).unresolvedKeys).toEqual([]);
 });

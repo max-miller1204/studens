@@ -10,7 +10,9 @@ it writes the review files.
 - Keep creation status after reload.
 - Reject unfinished controls and show an explicit retry.
 - Return to saved answers in an unfinished review.
-- Grade a review and update its original item schedule.
+- Grade a review and update its original objective schedule.
+- Combine three same-attempt probes into one review item.
+- Keep historical question schedules separate with unknown context.
 - Preserve the host that owns each request.
 
 ## How to get to it (user POV)
@@ -28,7 +30,9 @@ Run `npm run verify -- browser --artifacts /tmp/studens-review-browser`.
 
 The review fixtures check Pi and the service. They cover creation, reload, failure,
 explicit retry, invalid controls, host ownership, automatic navigation, saved answers, mobile controls, private
-rubric routes, submission, grading, and the original item schedule. Inspect `review/pi/result.json` and `review/service/result.json`.
+rubric routes, submission, grading, and the original item schedule. The service fixture uses three probes of one objective and
+checks that only one question is authored. The Pi fixture keeps a historical item
+unknown even after a new review. Inspect `review/pi/result.json` and `review/service/result.json`.
 Inspect the screenshots before citing them.
 
 Run `npm run verify -- claude`, then `npm run verify -- codex` for a changed service

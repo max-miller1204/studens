@@ -238,7 +238,7 @@ export function publishReview(session: ReviewSession, document: ReviewDocument):
   }
   store.writeLessonMeta(session.classroom, session.lesson, {
     title: `Review: ${new Date(session.at).toISOString().slice(0, 10)}`,
-    summary: `Spaced review of ${session.items.length} earlier question${session.items.length === 1 ? "" : "s"}.`,
+    summary: `Spaced review of ${session.items.length} earlier item${session.items.length === 1 ? "" : "s"}.`,
     createdAt: session.at,
     kind: "review",
     assessmentContract: 1,

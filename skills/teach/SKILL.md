@@ -32,7 +32,7 @@ description: Teach a topic or create challenging quizzes and tests in the classr
    to inspect or explicitly stop the service. When Tailscale is connected, the
    links from `open_classroom` and the scaffold tools are tailnet links. Give them
    as returned. `classroom_service` status reports the tailnet route.
-10. When `begin_teaching` reports questions due for review, offer a review before new
+10. When `begin_teaching` reports items due for review, offer a review before new
     material. Create it with `scaffold_review`.
 11. Before you plan a lesson, call `lesson_health`. Fix a lesson that keeps failing.
 12. Create each lesson with `scaffold_lesson` and each review with `scaffold_review`.

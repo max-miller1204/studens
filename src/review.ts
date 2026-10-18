@@ -5,6 +5,7 @@ import {
   type EvidenceContext,
   type PerformanceEvidence,
 } from "./evidence.ts";
+import { objectiveReviewKey, reviewKey } from "../assets/runtime/quiz.mjs";
 import type { Objective } from "./teaching-plan.ts";
 
 /** Base intervals are a product policy, not a universal optimum. */
@@ -20,8 +21,10 @@ export const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** One quiz answer or linked chat check for an item. */
 export interface ReviewEvent {
-  /** `<lesson>/<quiz id>/<question id>` of the original question. */
+  /** Objective key, or the historical question key when context is unknown. */
   key: string;
+  /** Original question aliases; absent on chat and linked review events. */
+  questionKey?: string;
   /** When the learner answered. */
   at: number;
   correct: boolean;
@@ -43,6 +46,10 @@ export interface ReviewItem {
   lesson: string;
   quizId: string;
   questionId: string;
+  /** Historical links remain valid after an objective replaces its question schedules. */
+  questionKeys?: string[];
+  /** Previously answered probes, for fresh review authoring. */
+  prompts?: string[];
   /** The prompt of the first graded question for this item: the original question. */
   prompt: string;
   box: number;
@@ -79,18 +86,71 @@ export function nextBox(box: number, correct: boolean): number {
   return Math.min(box + 1, REVIEW_INTERVALS_DAYS.length - 1);
 }
 
+/** Stable identity from the saved answer, never the current teaching plan. */
+export function answerReviewKey(
+  lesson: string,
+  quizId: string,
+  answer: { questionId: string; reviewOf?: string; learning?: PerformanceEvidence },
+): string {
+  return (
+    answer.reviewOf ??
+    (answer.learning
+      ? objectiveReviewKey(lesson, answer.learning.objectiveId)
+      : reviewKey(lesson, quizId, answer.questionId))
+  );
+}
+
+export function findReviewItem(items: ReviewItem[], key: string): ReviewItem | undefined {
+  return (
+    items.find((item) => item.key === key) ?? items.find((item) => item.questionKeys?.includes(key))
+  );
+}
+
 /** Build each schedule from quiz answers and linked chat checks. */
 export function scheduleItems(events: ReviewEvent[]): ReviewItem[] {
   const byKey = new Map<string, ReviewEvent[]>();
-  for (const event of [...events].sort((a, b) => a.at - b.at)) {
+  const ordered = [...events].sort(
+    (a, b) =>
+      a.at - b.at ||
+      a.key.localeCompare(b.key) ||
+      (a.questionKey ?? a.prompt).localeCompare(b.questionKey ?? b.prompt),
+  );
+  for (const event of ordered) {
     const list = byKey.get(event.key);
     if (list) list.push(event);
     else byKey.set(event.key, [event]);
   }
 
   const items: ReviewItem[] = [];
-  for (const [key, list] of byKey) {
-    const [lesson, quizId, questionId] = key.split("/");
+  for (const [key, probes] of byKey) {
+    const questionKeys = [...new Set(probes.flatMap((event) => event.questionKey ?? []))];
+    const [lesson, quizId, questionId] = (questionKeys[0] ?? key).split("/");
+    // Several probes in one attempt are one exposure. Every probe must succeed
+    // independently; a later correct answer must not erase an incomplete one.
+    const list: ReviewEvent[] = [];
+    for (const event of probes) {
+      const previous = list.at(-1);
+      if (!previous || previous.at !== event.at || previous.source || event.source) {
+        list.push({ ...event });
+        continue;
+      }
+      const credit = (e: ReviewEvent) => e.credit ?? (e.correct ? 1 : 0);
+      const weaker = credit(event) < credit(previous) || (!event.correct && previous.correct);
+      const evidence = !independent(previous.evidence)
+        ? previous.evidence
+        : !independent(event.evidence)
+          ? event.evidence
+          : event.evidence?.task === "transfer"
+            ? event.evidence
+            : previous.evidence;
+      list[list.length - 1] = {
+        ...(weaker ? event : previous),
+        correct: previous.correct && event.correct,
+        credit: Math.min(credit(previous), credit(event)),
+        feedbackAt: Math.max(previous.feedbackAt ?? previous.at, event.feedbackAt ?? event.at),
+        evidence,
+      };
+    }
     let box = 0;
     let dueAt = list[0].at + DAY_MS;
     let exposureAt = list[0].at;
@@ -178,7 +238,9 @@ export function scheduleItems(events: ReviewEvent[]): ReviewItem[] {
       lesson,
       quizId,
       questionId,
-      prompt: list[0].prompt,
+      questionKeys,
+      prompts: [...new Set(probes.map((event) => event.prompt))],
+      prompt: probes[0].prompt,
       box,
       dueAt,
       objective,
@@ -201,7 +263,7 @@ export function scheduleItems(events: ReviewEvent[]): ReviewItem[] {
       attempts: list.length,
     });
   }
-  return items.sort((a, b) => a.dueAt - b.dueAt);
+  return items.sort((a, b) => a.dueAt - b.dueAt || a.key.localeCompare(b.key));
 }
 
 export function isDue(item: ReviewItem, now: number): boolean {

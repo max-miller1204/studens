@@ -302,7 +302,7 @@ describe("scaffold_review", () => {
 
     writeGradedAttempt({ at: Date.now(), answers: [termAnswer("q1", "x")], correct: { q1: true } });
     const notYet = await tool("scaffold_review").execute({ classroom: "rust" });
-    expect(notYet.content[0].text).toContain("The next question is due tomorrow.");
+    expect(notYet.content[0].text).toContain("due tomorrow");
   });
 
   it("creates a review lesson and lists the due questions with their keys", async () => {

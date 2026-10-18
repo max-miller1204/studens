@@ -258,7 +258,7 @@ function progressSection(data: ClassroomPageData): string {
   const percent = review.total > 0 ? Math.round((review.retained / review.total) * 100) : 0;
   const note =
     review.due > 0
-      ? "Start a review of due questions before the next lesson."
+      ? "Start a review of due items before the next lesson."
       : review.nextDueAt !== null
         ? `Nothing is due. The next review is due ${relativeDay(review.nextDueAt, now)}.`
         : "";

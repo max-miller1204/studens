@@ -614,3 +614,112 @@ describe("classroom folders", () => {
     }
   });
 });
+
+it("replays objective schedules and old review links from saved attempts after plan edits", () => {
+  seedClassroom(fixture);
+  seedClassroom(fixture, { lesson: "002-review" });
+  const at = Date.UTC(2026, 0, 1);
+  const learning = {
+    objectiveId: "ownership",
+    objective: { statement: "Explain ownership.", application: true },
+    task: "retrieval" as const,
+    support: "independent" as const,
+    assistance: "none" as const,
+  };
+  writeGradedAttempt({
+    at,
+    answers: ["q1", "q2", "q3"].map((id) => termAnswer(id, "owner", { learning })),
+    correct: { q1: true, q2: true, q3: true },
+  });
+  writeGradedAttempt({
+    at: at + 2 * DAY_MS,
+    lesson: "002-review",
+    quizId: "review",
+    kind: "review",
+    answers: [termAnswer("r1", "owner", { reviewOf: "001-ownership/check-1/q2", learning })],
+    correct: { r1: true },
+  });
+  const before = store.listSubmissions("rust", "001-ownership");
+  const [item] = store.reviewItems("rust");
+  expect(store.reviewItems("rust")).toHaveLength(1);
+  expect(item).toMatchObject({
+    key: "001-ownership/@objective/ownership",
+    attempts: 2,
+    box: 1,
+    delayedSuccesses: 1,
+  });
+  expect(item.questionKeys).toHaveLength(3);
+  expect(store.lessonReviewItems("rust", "002-review")).toEqual([item]);
+  fixture.write("rust/001-ownership/quiz/plan.json", "{broken current plan");
+  expect(store.reviewItems("rust")).toEqual([item]);
+  expect(store.listSubmissions("rust", "001-ownership")).toEqual(before);
+  fixture.write(
+    "rust/learning-records/0001-ownership.md",
+    "# Ownership\nThe learner retrieved independently.",
+  );
+  store.recordRetrievalCheck("rust", {
+    key: "001-ownership/check-1/q3",
+    answer: "owner",
+    evidence: "Independent explanation",
+    learningRecord: "0001-ownership.md",
+    assistance: "none",
+  });
+  expect(store.reviewItems("rust")[0]).toMatchObject({
+    attempts: 3,
+    lastSource: "chat",
+    objectiveId: "ownership",
+  });
+  expect(() =>
+    store.recordRetrievalCheck("rust", {
+      key: item.key,
+      answer: "owner",
+      evidence: "Again",
+      learningRecord: "0001-ownership.md",
+    }),
+  ).toThrow("already has a retrieval check");
+});
+
+it("keeps objective ids local to lessons and never upgrades unknown historical context", () => {
+  seedClassroom(fixture);
+  seedClassroom(fixture, { lesson: "002-review" });
+  const at = Date.UTC(2026, 0, 1);
+  const learning = {
+    objectiveId: "ownership",
+    objective: { statement: "Explain ownership.", application: false },
+    task: "retrieval" as const,
+    support: "independent" as const,
+    assistance: "none" as const,
+  };
+  writeGradedAttempt({ at, answers: [termAnswer("q1", "owner")], correct: { q1: true } });
+  writeGradedAttempt({
+    at: at + DAY_MS,
+    lesson: "002-review",
+    quizId: "review",
+    kind: "review",
+    answers: [termAnswer("r1", "owner", { reviewOf: "001-ownership/check-1/q1", learning })],
+    correct: { r1: true },
+  });
+  expect(store.reviewItems("rust")[0]).toMatchObject({
+    key: "001-ownership/check-1/q1",
+    objective: undefined,
+    progress: "context-unknown",
+    box: 0,
+  });
+  for (const lesson of ["001-ownership", "002-review"])
+    writeGradedAttempt({
+      at: at + 2 * DAY_MS,
+      lesson,
+      answers: [termAnswer("q1", "owner", { learning })],
+      correct: { q1: true },
+    });
+  expect(
+    store
+      .reviewItems("rust")
+      .map((i) => i.key)
+      .sort(),
+  ).toEqual([
+    "001-ownership/@objective/ownership",
+    "001-ownership/check-1/q1",
+    "002-review/@objective/ownership",
+  ]);
+});

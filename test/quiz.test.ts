@@ -193,6 +193,14 @@ describe("parseNumber", () => {
 });
 
 describe("parseReviewKey", () => {
+  it("accepts reserved objective keys without confusing authored quiz ids", () => {
+    expect(parseReviewKey("001-ownership/@objective/ownership")).toEqual({
+      lesson: "001-ownership",
+      quizId: "@objective",
+      questionId: "ownership",
+    });
+    expect(parseReviewKey("001-ownership/@other/ownership")).toBeNull();
+  });
   it("splits a key into its lesson, quiz, and question", () => {
     expect(parseReviewKey("001-ownership/check-1/q2")).toEqual({
       lesson: "001-ownership",

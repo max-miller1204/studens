@@ -68,11 +68,16 @@ export function isContractId(value) {
 }
 
 /**
- * The key of a review item: `<lesson>/<quiz id>/<question id>`. A review question
+ * A historical question key: `<lesson>/<quiz id>/<question id>`. A review question
  * names the item it reviews with `data-review-of` set to this key.
  */
 export function reviewKey(lesson, quizId, questionId) {
   return `${lesson}/${quizId}/${questionId}`;
+}
+
+/** Objective ids are local to a lesson. The reserved marker cannot be a quiz id. */
+export function objectiveReviewKey(lesson, objectiveId) {
+  return `${lesson}/@objective/${objectiveId}`;
 }
 
 /** Split a review key into its parts, or return null when it is malformed. */
@@ -82,7 +87,7 @@ export function parseReviewKey(value) {
   if (parts.length !== 3) return null;
   const [lesson, quizId, questionId] = parts;
   if (!SLUG_RE.test(lesson) || lesson.length > 128) return null;
-  if (!isContractId(quizId) || !isContractId(questionId)) return null;
+  if ((quizId !== "@objective" && !isContractId(quizId)) || !isContractId(questionId)) return null;
   return { lesson, quizId, questionId };
 }
 
@@ -186,7 +191,7 @@ export function questionErrors(shape) {
     if (!shape.reviewOf) errors.push("is in a review quiz but has no data-review-of.");
     else if (!parseReviewKey(shape.reviewOf)) {
       errors.push(
-        `has an invalid data-review-of "${shape.reviewOf}". Use <lesson>/<quiz id>/<question id>.`,
+        `has an invalid data-review-of "${shape.reviewOf}". Use <lesson>/@objective/<objective id> or <lesson>/<quiz id>/<question id>.`,
       );
     }
   } else if (shape.reviewOf) {
