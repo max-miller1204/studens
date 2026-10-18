@@ -136,3 +136,9 @@ Use fresh cases and solve each variant against its private rubric. Changing numb
 alone does not establish transfer. All pool files stay off static HTTP routes.
 Legacy lessons without pools remain readable and keep their grades and schedules;
 prepare their pools explicitly to make them eligible for instant review.
+
+Validated refill plans append variants to private `quiz/review-pool.json` batches.
+The original key and plan stay unchanged for pending submissions. Replaying a
+saved batch is idempotent; duplicate variant ids and conflicting batches fail
+explicitly. Supplemental variants use the same original objective and question
+contract as the authored pool.

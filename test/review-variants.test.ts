@@ -64,6 +64,8 @@ describe("private variant contracts", () => {
       variant("v1").html.replace("<textarea></textarea>", ""),
       variant("v1").html.replace("<textarea>", '<textarea onfocus="alert(1)">'),
       variant("v1").html + "<script>alert(1)</script>",
+      variant("v1").html.replace("<textarea>", "<textarea onfocus=alert(1)>"),
+      variant("v1").html.replace("<textarea>", "<a href=javascript:alert(1)>Link</a><textarea>"),
       variant("v1").html.replace("<textarea>", '<img src="../secret"><textarea>'),
     ])
       expect(() =>
