@@ -235,13 +235,18 @@ export function validateRefill(request: RefillRequest, value: unknown): Prepared
 
 /** Save validated output before the single atomic pool update. Replay is idempotent. */
 export function saveRefillPlan(request: RefillRequest, value: unknown): void {
-  const variants = validateRefill(request, value);
   const requests = refillRequests(request.classroom);
   const saved = requests.find((r) => r.id === request.id && r.owner === request.owner);
   if (!saved || !["running", "planned"].includes(saved.status))
     throw new Error("This refill is not active for this host.");
-  if (saved.plan && JSON.stringify(saved.plan) !== JSON.stringify(variants))
-    throw new Error("The saved refill plan conflicts with this output.");
+  if (!Array.isArray(value)) throw new Error("Refill output must be a variant array.");
+  if (saved.plan) {
+    const replay = value.map((v) => validateVariant(v, v?.plan, saved.plan![0].objective));
+    if (JSON.stringify(saved.plan) !== JSON.stringify(replay))
+      throw new Error("The saved refill plan conflicts with this output.");
+    return;
+  }
+  const variants = validateRefill(request, value);
   saved.plan = variants;
   saved.status = "planned";
   atomicJson(file(request.classroom), { version: 1, requests });
