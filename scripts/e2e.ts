@@ -7,7 +7,12 @@ import * as path from "node:path";
 import * as net from "node:net";
 import { useTestModel, harnessCommand, parseHarness } from "./harness.ts";
 import { playwright, playwrightCode } from "./playwright.ts";
-import { writeGradedAttempt, termAnswer, seedHistoricalReview } from "../test/helpers.ts";
+import {
+  writeGradedAttempt,
+  termAnswer,
+  seedHistoricalReview,
+  seedPreparedReviewSource,
+} from "../test/helpers.ts";
 import { DAY_MS } from "../src/review.ts";
 import { currentReview } from "../src/review-session.ts";
 import { _overrideClassroomsDir } from "../src/paths.ts";
@@ -261,7 +266,9 @@ async function main(): Promise<void> {
           2,
         ),
       );
+    seedPreparedReviewSource(root, CLASSROOM, "009-prepared", "historical");
     writeGradedAttempt({
+      lesson: "009-prepared",
       at: Date.now() - 2 * DAY_MS,
       quizId: "historical",
       answers: [
@@ -287,7 +294,7 @@ async function main(): Promise<void> {
       await new Promise((resolve) => setTimeout(resolve, 500));
     }
     const review = currentReview(CLASSROOM);
-    if (review?.status !== "done") throw new Error("Review authoring timed out.");
+    if (review?.status !== "done") throw new Error("Review assembly timed out.");
     await playwrightCode(
       browser,
       root,
@@ -301,7 +308,7 @@ async function main(): Promise<void> {
     );
     if (artifacts)
       fs.writeFileSync(path.join(artifacts, "stored-review.json"), JSON.stringify(review, null, 2));
-    log("PASS: review creation from the classroom page in the existing teacher session");
+    log("PASS: prepared review opens from the classroom page without authoring");
     const resumeInput = seedHistoricalReview(root);
     const identity = checked.teacher.identity.sessionId;
     const [resumeCommand, resumeArgs] = harnessCommand(

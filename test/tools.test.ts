@@ -11,6 +11,7 @@ import { classroomTools, PI_HOST } from "../src/tools.ts";
 import {
   makeFixture,
   seedClassroom,
+  seedPreparedReviewSource,
   termAnswer,
   writeGradedAttempt,
   type Fixture,
@@ -342,16 +343,18 @@ describe("scaffold_lesson", () => {
 
 describe("scaffold_review", () => {
   it("fails loudly when nothing is due", async () => {
+    seedPreparedReviewSource(fixture.root);
     const empty = await tool("scaffold_review").execute({ classroom: "rust" });
     expect(empty.details["error"]).toBe(true);
-    expect(empty.content[0].text).toContain("no question has been graded yet");
+    expect(empty.content[0].text).toContain("No graded questions");
 
     writeGradedAttempt({ at: Date.now(), answers: [termAnswer("q1", "x")], correct: { q1: true } });
     const notYet = await tool("scaffold_review").execute({ classroom: "rust" });
-    expect(notYet.content[0].text).toContain("The next question is due tomorrow.");
+    expect(notYet.content[0].text).toContain("The next review is due tomorrow.");
   });
 
-  it("creates a review lesson and lists the due questions with their keys", async () => {
+  it("publishes a ready review from the due question pool", async () => {
+    seedPreparedReviewSource(fixture.root);
     writeGradedAttempt({
       at: Date.now() - 5 * DAY_MS,
       answers: [termAnswer("q1", "the stack", { confidence: "sure" })],
@@ -360,16 +363,15 @@ describe("scaffold_review", () => {
     const result = await tool("scaffold_review").execute({ classroom: "rust" });
     expect(result.details["error"]).toBeUndefined();
     const text = result.content[0].text;
-    expect(text).toContain('data-review-of="001-ownership/check-1/q1"');
-    expect(text).toContain("Their last answer (wrong): the stack");
-    expect(text).toContain("quiz/key.json");
+    expect(text).toContain("The review is ready");
 
     const lesson = result.details["lesson"] as string;
-    expect(lesson).toMatch(/^002-review-\d{4}-\d{2}-\d{2}$/);
+    expect(lesson).toMatch(/^002-review-[a-f0-9]{8}$/);
     expect(store.readLesson("rust", lesson)).toMatchObject({ kind: "review" });
     const html = fs.readFileSync(result.details["path"] as string, "utf8");
     expect(html).toContain('data-kind="review"');
-    expect(html).toContain('data-type="CHOOSE-A-TYPE"');
+    expect(html).toContain('data-review-of="001-ownership/check-1/q1"');
+    expect(html).not.toContain("CHOOSE-A-TYPE");
   });
 
   it("refuses a limit out of range", async () => {

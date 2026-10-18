@@ -2,7 +2,12 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { applyGrade, ClassroomBridge } from "../src/bridge.ts";
-import { currentReview, reviewSessions, type ReviewSession } from "../src/review-session.ts";
+import {
+  currentReview,
+  reviewSessions,
+  updateReview,
+  type ReviewSession,
+} from "../src/review-session.ts";
 import { DAY_MS } from "../src/review.ts";
 import * as server from "../src/server.ts";
 import * as store from "../src/store.ts";
@@ -10,7 +15,7 @@ import { readTeacherState } from "../src/service-state.ts";
 import { TeacherService } from "../src/teacher-service.ts";
 import {
   makeFixture,
-  reviewDocument,
+  seedPreparedReviewSource,
   seedClassroom,
   termAnswer,
   writeGradedAttempt,
@@ -32,7 +37,7 @@ export async function verifyReviewBrowser(artifacts: string | null): Promise<voi
     let browserOpen = false,
       runs = 0,
       chatRuns = 0;
-    let release: (() => void) | undefined;
+    let conflict = true;
     const bridge = new ClassroomBridge({
       sendUserMessage: () => {
         runs++;
@@ -74,40 +79,38 @@ export async function verifyReviewBrowser(artifacts: string | null): Promise<voi
           notes_markdown: "",
         };
       }
-      if (runs === 1) {
-        await new Promise<void>((resolve) => {
-          release = resolve;
-        });
-        throw new Error("Fixture review provider failure.");
-      }
-      const document = reviewDocument(currentReview("rust")!.items);
-      if (runs === 2)
-        document.lesson_html = document.lesson_html.replace("<textarea></textarea>", "");
-      return {
-        calls: [
-          {
-            name: "publish_review",
-            arguments_json: JSON.stringify(document),
-          },
-        ],
-        message: "Your review is ready.",
-        learning_record: "",
-        notes_markdown: "",
-      };
+      throw new Error("Starting a prepared review must not call a model.");
     });
-    const connectHost = () => {
-      if (host === "service") teacher.connect();
-      else
-        server.setHooks({
-          onAsk: (a) => bridge.ask(a),
-          onFollowUp: (a, f) => bridge.followUp(a, f),
-          onQuizSubmit: (s) => bridge.grade(s),
-          onReflect: (r) => bridge.reflect(r),
-          reviewOwner: "pi",
-          onReview: (s) => bridge.review(s),
-          onReviewRetry: (s) => bridge.retryReview(s),
-        });
-    };
+    const connectHost = () =>
+      server.setHooks({
+        delivery: host === "service" ? "service" : "push",
+        onAsk: (a) => (host === "service" ? teacher.question(a) : bridge.ask(a)),
+        onFollowUp: (a, f) => (host === "service" ? teacher.followUp(a, f) : bridge.followUp(a, f)),
+        onQuizSubmit: (s) => (host === "service" ? teacher.submission(s) : bridge.grade(s)),
+        onReflect: (r) => (host === "service" ? teacher.reflection(r) : bridge.reflect(r)),
+        reviewOwner: host,
+        onReview: (s) => {
+          if (conflict) {
+            fixture.write(`rust/${s.lesson}/lesson.html`, "<p>Conflicting file</p>");
+            conflict = false;
+          }
+          if (host === "service") teacher.review(s);
+          else bridge.review(s);
+        },
+        onReviewRetry: (s) => {
+          if (host === "pi") bridge.retryReview(s);
+          else {
+            updateReview(s, "queued");
+            teacher.review({ ...s, status: "queued" });
+          }
+        },
+        teacherState: (c, l) =>
+          host === "service" ? teacher.publicState(c, l) : bridge.panelState(c, l),
+        onTeacherChat: (c, l, text, id) =>
+          host === "service" ? teacher.chat(c, l, text, id) : bridge.chat(c, l, text, id),
+        onTeacherRetry: (c, id) =>
+          host === "service" ? teacher.retry(c, id) : bridge.retry(c, id),
+      });
     connectHost();
     if (host === "service") teacher.attach("rust", "codex");
     const code = (body: string) =>
@@ -135,73 +138,36 @@ export async function verifyReviewBrowser(artifacts: string | null): Promise<voi
         await page.getByRole('button', {name:'Start review',exact:true}).waitFor();
         await page.waitForFunction(() => !document.querySelector('[data-cl-review-start]').disabled);
         ${shot("start-review")}
-        const response = page.waitForResponse(r => r.url().endsWith('/api/review') && r.request().method() === 'POST');
         await page.getByRole('button', {name:'Start review',exact:true}).click();
-        if ((await response).status() !== 202) throw new Error('Start review was refused.');
-        await page.getByRole('button', {name:'Creating review…',exact:true}).waitFor();
-        await page.reload();
-        await page.getByRole('button', {name:'Creating review…',exact:true}).waitFor();
-        if (!await page.getByRole('button', {name:'Creating review…',exact:true}).isDisabled()) throw new Error('Creation allowed duplicate clicks.');
-        ${shot("creating-after-reload")}
+        await page.getByText('No prepared variants for the due questions.', {exact:false}).waitFor();
+        ${shot("legacy-without-pool")}
       `);
-      request = currentReview("rust");
-      if (
-        !request ||
-        request.status !== "running" ||
-        runs !== 1 ||
-        reviewSessions("rust").length !== 1
-      )
-        throw new Error("Reload duplicated review work.");
-      if ((await fetch(`${base}/c/rust/${request.lesson}`)).status !== 404)
-        throw new Error("An unfinished review was served.");
-      if (host === "service") {
-        bridge.restoreReviews();
-        if (currentReview("rust")!.status !== "running")
-          throw new Error("Pi startup changed service work.");
-        release!();
-        await teacher.idle();
-      } else
-        bridge.onAgentEnd([
-          { role: "assistant", content: [{ type: "text", text: "Review is ready." }] },
-        ]);
+      if (currentReview("rust") || runs)
+        throw new Error("A legacy lesson silently started authoring.");
+      seedPreparedReviewSource(fixture.root);
       await code(`
+        await page.reload();
+        await page.getByRole('button', {name:'Start review',exact:true}).click();
         await page.getByRole('button', {name:'Retry review',exact:true}).waitFor();
-        if (!(await page.locator('[data-cl-review-status]').innerText()).includes(${JSON.stringify(host === "service" ? "Fixture review provider failure" : "Pi review creation failed")})) throw new Error('The creation error is missing.');
+        if (!(await page.locator('[data-cl-review-status]').innerText()).includes('conflicts with lesson.html')) throw new Error('The publication conflict is missing.');
         ${shot("failed-review")}
         await page.reload();
         await page.getByRole('button', {name:'Retry review',exact:true}).waitFor();
       `);
-      if (runs !== 1) throw new Error("Reload silently retried a failed review.");
+      request = currentReview("rust");
+      if (!request?.document || runs || reviewSessions("rust").length !== 1)
+        throw new Error("Review assembly was not durable or called a teacher.");
+      if ((await fetch(`${base}/c/rust/${request.lesson}`)).status !== 404)
+        throw new Error("An unfinished review was served.");
+      fs.unlinkSync(path.join(fixture.root, "rust", request.lesson, "lesson.html"));
       await code(`
-        const response = page.waitForResponse(r => r.url().endsWith('/api/review/retry'));
         await page.getByRole('button', {name:'Retry review',exact:true}).click();
-        if ((await response).status() !== 202) throw new Error('Retry review was refused.');
+        await page.waitForURL(${JSON.stringify(`${base}/c/rust/${request.lesson}`)});
+        await page.waitForFunction(() => document.querySelector('form.cl-quiz')?.dataset.state === 'fresh');
+        ${shot("instant-review")}
       `);
-      if (host === "service") await teacher.idle();
-      else {
-        const doc = reviewDocument(request.items);
-        fixture.write(
-          `rust/${request.lesson}/lesson.html`,
-          doc.lesson_html.replace("<textarea></textarea>", ""),
-        );
-        fixture.write(`rust/${request.lesson}/quiz/key.json`, doc.rubric_json);
-        fixture.write(`rust/${request.lesson}/quiz/plan.json`, doc.teaching_plan_json);
-        bridge.onAgentEnd([]);
-      }
-      await code(`
-        await page.getByRole('button', {name:'Retry review',exact:true}).waitFor();
-        if (!(await page.locator('[data-cl-review-status]').innerText()).includes('needs exactly 1 textarea')) throw new Error('The invalid control error is missing.');
-        ${shot("invalid-review-controls")}
-        const response = page.waitForResponse(r => r.url().endsWith('/api/review/retry'));
-        await page.getByRole('button', {name:'Retry review',exact:true}).click();
-        if ((await response).status() !== 202) throw new Error('Invalid review retry was refused.');
-      `);
-      if (host === "service") await teacher.idle();
-      else {
-        const doc = reviewDocument(request.items);
-        fixture.write(`rust/${request.lesson}/lesson.html`, doc.lesson_html);
-        bridge.onAgentEnd([]);
-      }
+      if (runs || currentReview("rust")?.status !== "done")
+        throw new Error("Publication retry called a teacher.");
       const unexpectedWork = () => {
         throw new Error("Opening a published review must not start teacher work.");
       };
@@ -234,7 +200,7 @@ export async function verifyReviewBrowser(artifacts: string | null): Promise<voi
       `);
       connectHost();
       if (
-        Number(runs) !== 3 ||
+        Number(runs) !== 0 ||
         reviewSessions("rust").length !== 1 ||
         currentReview("rust")!.id !== request.id
       )
@@ -321,7 +287,9 @@ export async function verifyReviewBrowser(artifacts: string | null): Promise<voi
                 "reload",
                 "failure",
                 "explicit retry",
-                "invalid control rejection",
+                "legacy pool absence without model work",
+                "zero model turns for review creation",
+                "durable document publication",
                 "host ownership",
                 "continue published review from another host",
                 "automatic open",
@@ -337,7 +305,9 @@ export async function verifyReviewBrowser(artifacts: string | null): Promise<voi
             2,
           ),
         );
-      console.log(`PASS: ${host} browser review start, reload, retry, and continuation`);
+      console.log(
+        `PASS: ${host} instant browser review, legacy skip, explicit publication retry, and continuation`,
+      );
     } catch (err) {
       if (evidence)
         fs.writeFileSync(
@@ -354,7 +324,6 @@ export async function verifyReviewBrowser(artifacts: string | null): Promise<voi
         );
       throw err;
     } finally {
-      release?.();
       await teacher.stop();
       bridge.reset();
       if (browserOpen) await playwright(session, fixture.root, "close");

@@ -7,6 +7,7 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { randomUUID } from "node:crypto";
+import type { ReviewSession } from "../src/review-session.ts";
 
 import { _overrideClassroomsDir, classroomsRoot, submissionsDir } from "../src/paths.ts";
 import * as store from "../src/store.ts";
@@ -234,4 +235,103 @@ export function seedHistoricalReview(root: string): {
     gradedAt: Date.now(),
   });
   return { ...input, submission_id: submission.id };
+}
+
+/** A preauthored private pool, shared by browser and host verification. */
+export function seedPreparedReviewSource(
+  root: string,
+  classroom = "rust",
+  lesson = "001-ownership",
+  quizId = "check-1",
+  ids = ["q1"],
+): void {
+  const write = (name: string, value: unknown) => {
+    const file = path.join(root, classroom, lesson, name);
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, typeof value === "string" ? value : JSON.stringify(value));
+  };
+  const rubric = {
+    expected: "The new owner releases the value.",
+    points: 1,
+    full: "Name the owner and release.",
+    partial: "Zero without the owner.",
+  };
+  const question = (id: string, fresh = false) =>
+    `<li class="cl-q" data-question-id="${id}" data-type="short"><p class="cl-q-prompt">${fresh ? "A value moves into a new scope. Who releases it?" : "Explain ownership."}</p><textarea></textarea></li>`;
+  write(
+    "lesson.html",
+    lessonHtml(
+      "Ownership",
+      `<form class="cl-quiz" data-quiz-id="${quizId}" data-kind="check"><ol>${ids.map((id) => question(id)).join("")}</ol></form>`,
+    ),
+  );
+  write("lesson.json", {
+    title: "Ownership",
+    summary: "One owner at a time.",
+    createdAt: 2,
+    assessmentContract: 1,
+    instructionalContract: 1,
+    reviewVariantContract: 1,
+  });
+  write("quiz/key.json", {
+    [quizId]: Object.fromEntries(
+      ids.map((id) => [
+        id,
+        {
+          ...rubric,
+          variants: ["v1", "v2"].map((v) => ({ id: v, html: question(v, true), rubric })),
+        },
+      ]),
+    ),
+  });
+  write("quiz/plan.json", {
+    version: 1,
+    objectives: { owner: { statement: "Explain ownership.", application: false } },
+    quizzes: {
+      [quizId]: {
+        purpose: "assessment",
+        questions: Object.fromEntries(
+          ids.map((id) => [
+            id,
+            {
+              objective: "owner",
+              task: "retrieval",
+              support: "independent",
+              variants: Object.fromEntries(
+                ["v1", "v2"].map((v) => [
+                  v,
+                  { objective: "original", task: "retrieval", support: "independent" },
+                ]),
+              ),
+            },
+          ]),
+        ),
+      },
+    },
+  });
+}
+
+/** Saved pre-pool requests still need the old authoring recovery contract. */
+export function legacyReview(classroom: string, id: string, owner: "pi" | "service") {
+  const target = path.join(classroomsRoot(), classroom, ".reviews.json");
+  const requests = fs.existsSync(target)
+    ? JSON.parse(fs.readFileSync(target, "utf8")).requests
+    : [];
+  const existing = requests.find((r: { id: string }) => r.id === id) ?? requests.at(-1);
+  if (existing) return { session: existing as ReviewSession, added: false };
+  const session: ReviewSession = {
+    owner,
+    ownerPid: process.pid,
+    id,
+    classroom,
+    lesson: `002-review-${id.slice(0, 8)}`,
+    at: Date.now(),
+    items: store
+      .reviewItems(classroom)
+      .filter((item) => item.dueAt <= Date.now())
+      .slice(0, 5),
+    status: "queued",
+  };
+  fs.writeFileSync(target, JSON.stringify({ version: 1, requests: [session] }));
+  return { session, added: true };
 }

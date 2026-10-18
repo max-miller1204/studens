@@ -15,6 +15,7 @@ import {
   writeGradedAttempt,
   termAnswer,
   seedHistoricalReview,
+  seedPreparedReviewSource,
 } from "../test/helpers.ts";
 import { playwright, playwrightCode } from "./playwright.ts";
 import { TEST_MODELS } from "./harness.ts";
@@ -427,7 +428,9 @@ try {
   console.log(
     "[e2e:pi] PASS: chat-origin historical review resumes in the panel with its 67% grade preserved",
   );
+  seedPreparedReviewSource(fixture.root, "rust", "009-prepared", "historical");
   writeGradedAttempt({
+    lesson: "009-prepared",
     at: Date.now() - 2 * DAY_MS,
     quizId: "historical",
     answers: [
@@ -445,7 +448,7 @@ try {
     return true;
   }`,
   );
-  const reviewSession = await until("browser review authoring", () => {
+  const reviewSession = await until("browser review assembly", () => {
     const session = currentReview("rust");
     if (session?.status === "failed") throw new Error(session.error);
     return session?.status === "done" ? session : null;
@@ -466,7 +469,7 @@ try {
       path.join(artifacts, "stored-review.json"),
       JSON.stringify(reviewSession, null, 2),
     );
-  console.log("[e2e:pi] PASS: review authoring starts from the classroom page");
+  console.log("[e2e:pi] PASS: prepared review opens from the classroom page without authoring");
   send({ id: "stop", type: "prompt", message: "/classroom stop" });
   await until("server stop", () =>
     events.some((e) => e.id === "stop" && e.type === "response") ? true : null,

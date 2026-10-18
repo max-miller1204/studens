@@ -15,6 +15,7 @@ import {
   makeFixture,
   reviewDocument,
   seedClassroom,
+  seedPreparedReviewSource,
   termAnswer,
   writeGradedAttempt,
   type Fixture,
@@ -23,6 +24,7 @@ let f: Fixture;
 beforeEach(() => {
   f = makeFixture();
   seedClassroom(f);
+  seedPreparedReviewSource(f.root);
   writeGradedAttempt({
     at: Date.now() - 2 * DAY_MS,
     answers: [termAnswer("q1", "owner")],
@@ -45,6 +47,13 @@ describe("review request contracts", () => {
     expect(JSON.stringify(publicReview(first.session))).not.toContain("lastAnswer");
   });
   it("uses the same batch size as reviews started by the host", () => {
+    seedPreparedReviewSource(
+      f.root,
+      "rust",
+      "001-ownership",
+      "many",
+      Array.from({ length: 12 }, (_, i) => `q${i + 1}`),
+    );
     writeGradedAttempt({
       at: Date.now() - 2 * DAY_MS,
       quizId: "many",
@@ -99,6 +108,7 @@ describe("review request contracts", () => {
   });
   it("keeps the original objective policy and rejects invented historical policy", () => {
     const session = startReview("rust", randomUUID(), "pi").session;
+    delete session.items[0].objective;
     const document = reviewDocument(session.items);
     const invented = JSON.parse(document.teaching_plan_json);
     invented.objectives.r1.retentionDays = 30;

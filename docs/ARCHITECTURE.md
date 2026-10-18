@@ -108,7 +108,10 @@ source notation to grading. Answers and feedback render Markdown server-side.
   scores, quiz state, health, and review. Refuse another attempt while one is ungraded.
 - **Reviews are derived.** Build the schedule from graded answers and linked retrieval
   evidence, excluding pretests. Save review requests and selected items before
-  authoring. Validate keys, rubric, controls, and plan before publication. Hide unfinished
+  publication. New reviews deterministically select private preauthored variants and
+  save the complete document before writes; no model authoring is needed. Legacy
+  questions without pools are skipped with an explicit error when none are eligible.
+  Validate keys, rubric, controls, and plan before publication. Hide unfinished
   reviews from lists, routes, and submissions. Repeated clicks reuse work; published
   reviews open across hosts. Saved service plans resume without another model turn.
 - **Drafts never wake a teacher.** Restore them once on load, only into fresh quizzes.
