@@ -32,6 +32,7 @@ import {
 import { authoredQuestions } from "./quiz-authoring.ts";
 import { parseTeachingPlan } from "./teaching-plan.ts";
 import { parseRubric } from "./rubric.ts";
+import { authoredVariants } from "./review-variants.ts";
 import { answersByQuestion, kindOf } from "./quiz.ts";
 import {
   DEFAULT_REVIEW_SIZE,
@@ -575,6 +576,7 @@ export function classroomTools(host: ToolHost): ClassroomTool[] {
           createdAt: Date.now(),
           assessmentContract: 1,
           instructionalContract: 1,
+          ...(mode !== "pretest" ? { reviewVariantContract: 1 as const } : {}),
         });
 
         const url = server.urlFor(params.classroom, slug);
@@ -730,6 +732,16 @@ export function classroomTools(host: ToolHost): ClassroomTool[] {
             if (fs.existsSync(rubric)) {
               try {
                 parseRubric(fs.readFileSync(rubric, "utf8"), html);
+                if (lesson.reviewVariantContract === 1)
+                  authoredVariants(
+                    fs.readFileSync(rubric, "utf8"),
+                    fs.readFileSync(
+                      path.join(lessonDir(params.classroom, lesson.name), "quiz/plan.json"),
+                      "utf8",
+                    ),
+                    html,
+                    true,
+                  );
               } catch (err) {
                 rubricError = (err as Error).message;
               }
