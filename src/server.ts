@@ -80,6 +80,8 @@ export interface ServerHooks {
   canAccept?(classroom: string): void;
   teacherState?(classroom: string, lesson: string): unknown;
   reviewOwner?: ReviewOwner;
+  onGradeSaved?(submission: store.QuizSubmission): void;
+  onReviewSaved?(classroom: string): void;
   onReview?(session: ReviewSession): void;
   onReviewRetry?(session: ReviewSession): void;
   onTeacherChat?(classroom: string, lesson: string, text: string, id: string): void;
@@ -95,6 +97,14 @@ export interface ServerHooks {
 }
 
 let hooks: ServerHooks | null = null;
+
+export function reviewSaved(classroom: string): void {
+  hooks?.onReviewSaved?.(classroom);
+}
+
+export function gradeSaved(submission: store.QuizSubmission): void {
+  hooks?.onGradeSaved?.(submission);
+}
 
 export function setHooks(next: ServerHooks): void {
   hooks = next;

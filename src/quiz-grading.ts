@@ -57,5 +57,6 @@ export function applyGrade(
     submission: store.publicSubmission(submission),
     grade,
   });
+  server.gradeSaved(submission);
   return grade;
 }

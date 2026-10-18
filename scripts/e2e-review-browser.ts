@@ -8,6 +8,7 @@ import {
   updateReview,
   type ReviewSession,
 } from "../src/review-session.ts";
+import { refillRequests, piRefillTool } from "../src/review-refill.ts";
 import { DAY_MS } from "../src/review.ts";
 import * as server from "../src/server.ts";
 import * as store from "../src/store.ts";
@@ -16,6 +17,7 @@ import { TeacherService } from "../src/teacher-service.ts";
 import {
   makeFixture,
   seedPreparedReviewSource,
+  refillPlan,
   seedClassroom,
   termAnswer,
   writeGradedAttempt,
@@ -36,14 +38,32 @@ export async function verifyReviewBrowser(artifacts: string | null): Promise<voi
     const session = `studens-review-${host}-${process.pid}`;
     let browserOpen = false,
       runs = 0,
-      chatRuns = 0;
+      chatRuns = 0,
+      refillRuns = 0;
     let conflict = true;
     const bridge = new ClassroomBridge({
-      sendUserMessage: () => {
+      sendUserMessage: (prompt) => {
+        if (prompt.includes("Background private review refill")) {
+          refillRuns++;
+          if (refillRuns === 1) {
+            queueMicrotask(() => bridge.onAgentEnd([]));
+            return;
+          }
+          const request = refillRequests("rust").find((r) => r.status === "running")!;
+          void piRefillTool()
+            .execute(JSON.parse(refillPlan(request).calls[0].arguments_json))
+            .then(() => bridge.onAgentEnd([]));
+          return;
+        }
         runs++;
       },
     });
     const teacher = new TeacherService(async (_identity, prompt) => {
+      if (prompt.includes("Background private review refill")) {
+        refillRuns++;
+        if (refillRuns === 1) throw new Error("Fixture background provider failure.");
+        return refillPlan(refillRequests("rust").find((r) => r.status === "running")!);
+      }
       runs++;
       if (prompt.includes("The learner replied in the teacher panel")) {
         chatRuns++;
@@ -84,6 +104,8 @@ export async function verifyReviewBrowser(artifacts: string | null): Promise<voi
     const connectHost = () =>
       server.setHooks({
         delivery: host === "service" ? "service" : "push",
+        onGradeSaved: (s) =>
+          host === "service" ? teacher.maintenance(s.classroom) : bridge.maintenance(s.classroom),
         onAsk: (a) => (host === "service" ? teacher.question(a) : bridge.ask(a)),
         onFollowUp: (a, f) => (host === "service" ? teacher.followUp(a, f) : bridge.followUp(a, f)),
         onQuizSubmit: (s) => (host === "service" ? teacher.submission(s) : bridge.grade(s)),
@@ -168,6 +190,37 @@ export async function verifyReviewBrowser(artifacts: string | null): Promise<voi
       `);
       if (runs || currentReview("rust")?.status !== "done")
         throw new Error("Publication retry called a teacher.");
+      await code(`
+        await page.getByRole('button', {name:'Retry request',exact:true}).waitFor();
+        if (await page.locator('form.cl-quiz').getAttribute('data-state') !== 'fresh') throw new Error('Background failure blocked the ready review.');
+        ${shot("background-refill-failed")}
+        await page.reload();
+        await page.getByRole('button', {name:'Retry request',exact:true}).waitFor();
+      `);
+      if (refillRuns !== 1) throw new Error("Reload silently retried background work.");
+      await code(`
+        await page.getByRole('button', {name:'Retry request',exact:true}).click();
+        await page.waitForFunction(() => !document.querySelector('.cl-teacher-requests button'));
+        ${shot("background-refill-retried")}
+      `);
+      if (refillRequests("rust").some((r) => r.status !== "done") || Number(refillRuns) !== 2)
+        throw new Error("Background retry did not save its pool.");
+      for (const route of [
+        "/c/rust/001-ownership/quiz/review-pool.json",
+        "/c/rust/.review-refills.json",
+        "/c/rust/.reviews.json",
+      ]) {
+        if ((await fetch(base + route)).status !== 404)
+          throw new Error(`Private variant state is public: ${route}`);
+      }
+      const publicState = await (
+        await fetch(`${base}/api/state?classroom=rust&lesson=${request.lesson}`)
+      ).text();
+      if (
+        publicState.includes("save_review_variants") ||
+        publicState.includes("The new owner releases the value.")
+      )
+        throw new Error("Private refill plans leaked through public state.");
       const unexpectedWork = () => {
         throw new Error("Opening a published review must not start teacher work.");
       };
@@ -207,7 +260,7 @@ export async function verifyReviewBrowser(artifacts: string | null): Promise<voi
         throw new Error("Retry or continuation duplicated review work.");
       if (store.listSubmissions("rust", request.lesson).length)
         throw new Error("Opening a review submitted it.");
-      for (const privateFile of ["key.json", "plan.json"])
+      for (const privateFile of ["key.json", "plan.json", "review-pool.json"])
         if ((await fetch(`${base}/c/rust/${request.lesson}/quiz/${privateFile}`)).status !== 404)
           throw new Error("Private review file is public.");
       await code(`
@@ -279,6 +332,8 @@ export async function verifyReviewBrowser(artifacts: string | null): Promise<voi
             {
               host,
               runs,
+              refillRuns,
+              refills: refillRequests("rust"),
               review: currentReview("rust"),
               teacher: host === "service" ? readTeacherState("rust") : null,
               drafts: store.readDrafts("rust", request.lesson),
@@ -290,6 +345,8 @@ export async function verifyReviewBrowser(artifacts: string | null): Promise<voi
                 "legacy pool absence without model work",
                 "zero model turns for review creation",
                 "durable document publication",
+                "background refill failure leaves the quiz ready",
+                "background explicit retry survives reload",
                 "host ownership",
                 "continue published review from another host",
                 "automatic open",

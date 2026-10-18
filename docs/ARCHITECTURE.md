@@ -115,9 +115,11 @@ source notation to grading. Answers and feedback render Markdown server-side.
   Validate keys, rubric, controls, and plan before publication. Hide unfinished
   reviews from lists, routes, and submissions. Repeated clicks reuse work; published
   reviews open across hosts. Saved service plans resume without another model turn.
-- **Private variant supplements preserve rubrics.** Save validated refill output
-  before atomically appending a batch to `quiz/review-pool.json`. Replaying the
-  same request must not duplicate variants or rewrite a submitted answer key.
+- **Variant refills are background work.** Save private refill requests with their host
+  and learner mistake. Run them after queued learner requests in the same sequential
+  teacher session. Save validated output before atomically adding a supplemental
+  private pool; never rewrite a submitted rubric. Recover saved output once. Failed
+  model work requires explicit retry and cannot block an already prepared review.
 - **Drafts never wake a teacher.** Restore them once on load, only into fresh quizzes.
   Reconnect must not overwrite typing. Successful submissions clear their draft.
 - **Folder edits keep classroom paths stable.** Lock `.folders.json` edits and replace

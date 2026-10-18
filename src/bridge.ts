@@ -19,6 +19,16 @@
  */
 
 import { randomUUID } from "node:crypto";
+import {
+  discoverRefills,
+  refillOwnerAlive,
+  refreshRefill,
+  refillRequests,
+  updateRefill,
+  applyRefill,
+  REFILL_TOOL,
+} from "./review-refill.ts";
+import type { RefillRequest } from "./review-refill.ts";
 import { readTeacherState } from "./service-state.ts";
 import {
   prepareResume,
@@ -75,6 +85,7 @@ type Origin =
   | { kind: "ask"; annotationId: string; turn: store.TurnId }
   | { kind: "panel"; request: PanelRequest }
   | { kind: "review"; session: ReviewSession }
+  | { kind: "refill"; request: RefillRequest }
   | { kind: "other" };
 
 export class ClassroomBridge {
@@ -84,6 +95,8 @@ export class ClassroomBridge {
   /** Panel runs not yet finished, or finished with nothing to say. */
   private readonly panel = new Map<string, PanelRequest>();
   private idle: () => boolean = () => true;
+  private readonly refillClassrooms = new Set<string>();
+  private refillTimer?: ReturnType<typeof setTimeout>;
 
   private readonly pi: MessageSender;
 
@@ -170,8 +183,10 @@ export class ClassroomBridge {
   }
 
   /** A resume turn can ask a question. It cannot write new assessment or evidence. */
-  assertCanWrite(): void {
+  assertCanWrite(toolName?: string): void {
     const origin = this.pending[0];
+    if (origin?.kind === "refill" && toolName !== REFILL_TOOL.name)
+      throw new Error("Background refill turns may only save private review variants.");
     if (origin?.kind === "panel" && origin.request.kind === "resume")
       throw new Error(
         "Teacher resumption permits only a panel message. Wait for the learner's panel reply before writing evidence.",
@@ -293,7 +308,10 @@ export class ClassroomBridge {
   review(session: ReviewSession): void {
     requireReviewOwner(session, "pi");
     if (session.status !== "queued") return;
-    if (completePreparedReview(session)) return;
+    if (completePreparedReview(session)) {
+      this.maintenance(session.classroom);
+      return;
+    }
     const prompt = reviewPrompt(session, "push");
     updateReview(session, "running");
     const origin: Origin = { kind: "review", session };
@@ -336,9 +354,94 @@ export class ClassroomBridge {
         }
   }
 
+  maintenance(classroom: string): void {
+    if (readTeacherState(classroom)) return;
+    discoverRefills(classroom, "pi");
+    this.refillClassrooms.add(classroom);
+    this.scheduleRefill();
+  }
+  restoreRefills(): void {
+    for (const classroom of store.listClassrooms()) {
+      if (readTeacherState(classroom.name)) continue;
+      for (const request of refillRequests(classroom.name)) {
+        if (request.owner !== "pi") continue;
+        this.refillClassrooms.add(classroom.name);
+        if (request.status === "running") {
+          try {
+            process.kill(request.ownerPid, 0);
+          } catch (error) {
+            if ((error as NodeJS.ErrnoException).code !== "ESRCH") throw error;
+            updateRefill(
+              request,
+              "failed",
+              "Pi stopped during background review work. Retry this request.",
+            );
+          }
+        }
+      }
+      if (!readTeacherState(classroom.name)) this.maintenance(classroom.name);
+    }
+    this.scheduleRefill();
+  }
+  private scheduleRefill(): void {
+    if (this.refillTimer) return;
+    this.refillTimer = setTimeout(() => {
+      this.refillTimer = undefined;
+      if (this.pending.length || !this.idle()) return;
+      const request = [...this.refillClassrooms]
+        .flatMap((c) => refillRequests(c))
+        .filter(
+          (r) =>
+            r.owner === "pi" &&
+            !readTeacherState(r.classroom) &&
+            (r.status === "queued" || r.status === "planned") &&
+            (r.ownerPid === process.pid || !refillOwnerAlive(r)),
+        )
+        .sort((a, b) => a.at - b.at)[0];
+      if (!request) return;
+      if (request.plan) {
+        try {
+          applyRefill(request);
+        } catch (error) {
+          updateRefill(request, "failed", (error as Error).message);
+        }
+        this.publish(request.classroom, request.lesson);
+        this.scheduleRefill();
+        return;
+      }
+      updateRefill(request, "running");
+      this.pending.push({ kind: "refill", request });
+      this.publish(request.classroom, request.lesson);
+      try {
+        this.send(
+          `${request.prompt}\n\nIn this live Pi session, CALL the registered save_review_variants tool with classroom=${request.classroom}, request_id=${request.id}, and variants as an array. Return no plan as prose. Tool schema: ${JSON.stringify(REFILL_TOOL.parameters)}`,
+        );
+      } catch (error) {
+        this.pending.pop();
+        updateRefill(request, "failed", (error as Error).message);
+        this.publish(request.classroom, request.lesson);
+      }
+    }, 0);
+  }
+
   /** Send a panel run again after it ended with nothing to say. */
   retry(classroom: string, id: string): void {
     this.restoreResumes();
+    const refill = refillRequests(classroom).find((r) => r.id === id);
+    if (refill) {
+      if (
+        refill.owner !== "pi" ||
+        refill.status !== "failed" ||
+        (refill.ownerPid !== process.pid && refillOwnerAlive(refill))
+      )
+        throw new Error("This Pi host cannot retry the refill.");
+      this.requireResumeOwner(classroom);
+      refreshRefill(refill);
+      updateRefill(refill, refill.plan ? "planned" : "queued");
+      this.refillClassrooms.add(classroom);
+      this.scheduleRefill();
+      return;
+    }
     const request = this.panel.get(id);
     if (!request || request.classroom !== classroom || request.status !== "failed")
       throw new Error("This request cannot be retried.");
@@ -353,7 +456,12 @@ export class ClassroomBridge {
     this.restoreResumes();
     return {
       identity: { backend: "pi" },
-      requests: [...this.panel.values()]
+      requests: [
+        ...this.panel.values(),
+        ...refillRequests(classroom)
+          .filter((r) => r.owner === "pi")
+          .map((r) => ({ ...r, kind: "refill" })),
+      ]
         .filter((r) => r.classroom === classroom && r.lesson === lesson)
         .map((r) => ({ id: r.id, kind: r.kind, status: r.status, error: r.error })),
       messages: store.listPanelMessages(classroom, lesson).map(withHtml),
@@ -396,13 +504,29 @@ export class ClassroomBridge {
         if (request) {
           this.deferredResumes.delete(request.id);
           this.startPanel({ ...request, durable: true });
-        }
+        } else this.scheduleRefill();
       }
     }
   }
 
   private finishOrigin(messages: readonly unknown[]): void {
     const origin = this.pending.shift();
+    if (origin?.kind === "refill") {
+      const request = refillRequests(origin.request.classroom).find(
+        (r) => r.id === origin.request.id,
+      )!;
+      try {
+        if (request.plan) applyRefill(request);
+        else if (request.status !== "done")
+          throw new Error(
+            "Pi finished without saving the requested private review variants. Retry this request.",
+          );
+      } catch (error) {
+        updateRefill(request, "failed", (error as Error).message);
+      }
+      this.publish(request.classroom, request.lesson);
+      return;
+    }
     if (origin?.kind === "review") {
       try {
         publishReview(origin.session, readReviewDocument(origin.session));
@@ -454,6 +578,9 @@ export class ClassroomBridge {
 
   /** Drop queued origins — used when the session shuts down. */
   reset(): void {
+    if (this.refillTimer) clearTimeout(this.refillTimer);
+    this.refillTimer = undefined;
+    this.refillClassrooms.clear();
     for (const origin of this.pending)
       if (origin.kind === "review")
         updateReview(
@@ -461,6 +588,18 @@ export class ClassroomBridge {
           "failed",
           "Pi stopped during review creation. Retry this review.",
         );
+    for (const origin of this.pending)
+      if (origin.kind === "refill") {
+        const saved = refillRequests(origin.request.classroom).find(
+          (r) => r.id === origin.request.id,
+        );
+        if (saved && saved.status !== "done")
+          updateRefill(
+            saved,
+            "failed",
+            "Pi stopped during background review work. Retry this request.",
+          );
+      }
     for (const request of this.panel.values())
       if (request.durable && request.status === "running") {
         request.status = "failed";

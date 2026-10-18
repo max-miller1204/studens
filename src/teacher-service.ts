@@ -1,4 +1,15 @@
 /** Run one request at a time for each classroom. Persist plans before writes. */
+import {
+  discoverRefills,
+  refillOwnerAlive,
+  refreshRefill,
+  refillRequests,
+  updateRefill,
+  saveRefillPlan,
+  applyRefill,
+  REFILL_TOOL,
+} from "./review-refill.ts";
+import type { RefillRequest } from "./review-refill.ts";
 import { prepareResume, piResumes, piOwnerAlive, type ResumeInput } from "./teacher-resume.ts";
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -60,6 +71,15 @@ export class TeacherService {
     if (!store.readClassroom(classroom)) throw new Error(`No such classroom: ${classroom}`);
     if (piResumes(classroom).some((r) => r.status === "running" && piOwnerAlive(r)))
       throw new Error("A live Pi session owns this classroom's resume request.");
+    if (
+      refillRequests(classroom).some(
+        (r) =>
+          r.owner === "pi" &&
+          ["queued", "running", "planned"].includes(r.status) &&
+          refillOwnerAlive(r),
+      )
+    )
+      throw new Error("A live Pi session owns this classroom's background review work.");
     let state = this.states.get(classroom) ?? readTeacherState(classroom);
     if (!state) {
       if (!backend)
@@ -76,6 +96,7 @@ export class TeacherService {
           r.status = "failed";
           r.error = "Service stopped during teacher work. Retry this request.";
           if (r.kind === "review") updateReview(this.reviewSession(r), "failed", r.error);
+          if (r.kind === "refill") updateRefill(this.refillRequest(r), "failed", r.error);
         }
       this.states.set(classroom, state);
     }
@@ -97,6 +118,8 @@ export class TeacherService {
       teacherState: (classroom, lesson) => this.publicState(classroom, lesson),
       onTeacherChat: (classroom, lesson, text, id) => this.chat(classroom, lesson, text, id),
       onTeacherRetry: (classroom, id) => this.retry(classroom, id),
+      onGradeSaved: (s) => this.maintenance(s.classroom),
+      onReviewSaved: (classroom) => this.maintenance(classroom),
       onReview: (session) => this.review(session),
       onReviewRetry: (session) => {
         if (
@@ -175,7 +198,10 @@ export class TeacherService {
   review(session: ReviewSession): void {
     requireReviewOwner(session, "service");
     if (session.document) {
-      if (session.status !== "failed") completePreparedReview(session);
+      if (session.status !== "failed") {
+        completePreparedReview(session);
+        this.maintenance(session.classroom);
+      }
       return;
     }
     if (this.states.get(session.classroom)?.requests.some((r) => r.id === `review:${session.id}`))
@@ -196,6 +222,35 @@ export class TeacherService {
       saveTeacherState(session.classroom, state);
     }
   }
+  private refillRequest(request: TeacherRequest): RefillRequest {
+    const saved = refillRequests(request.classroom).find(
+      (r) => r.id === request.target && r.owner === "service",
+    );
+    if (!saved) throw new Error("This service does not own the refill request.");
+    return saved;
+  }
+  maintenance(classroom: string): void {
+    if (this.stopping || !this.states.has(classroom)) return;
+    for (const request of discoverRefills(classroom, "service")) {
+      const state = this.states.get(classroom);
+      if (!state || request.status === "done" || state.requests.some((r) => r.id === request.id))
+        continue;
+      this.enqueue({
+        id: request.id,
+        classroom,
+        lesson: request.lesson,
+        kind: "refill",
+        target: request.id,
+        prompt: request.prompt,
+      });
+      if (request.status === "failed") {
+        const mirror = state.requests.find((r) => r.id === request.id)!;
+        mirror.status = "failed";
+        mirror.error = request.error;
+        saveTeacherState(classroom, state);
+      }
+    }
+  }
   private recover(classroom: string): void {
     for (const session of reviewSessions(classroom)) {
       if (session.owner !== "service" || session.status === "done") continue;
@@ -211,6 +266,7 @@ export class TeacherService {
           this.submission(s);
       for (const r of store.listReflections(classroom, l.name)) this.reflection(r);
     }
+    this.maintenance(classroom);
   }
   chat(classroom: string, lesson: string, text: string, id: string): void {
     const state = this.states.get(classroom);
@@ -347,8 +403,11 @@ export class TeacherService {
       delete r.plan;
     if (!r.plan && r.error)
       r.prompt += `\n\nPrevious teacher plan error: ${r.error}\nCorrect it in the new plan.`;
+    const refill = r.kind === "refill" ? refreshRefill(this.refillRequest(r)) : null;
+    if (refill && !r.plan) r.prompt = refill.prompt;
     r.status = r.plan ? "planned" : "queued";
     if (r.kind === "review") updateReview(this.reviewSession(r), "queued");
+    if (refill) updateRefill(refill, r.plan ? "planned" : "queued");
     delete r.error;
     saveTeacherState(classroom, state);
     this.publish(classroom, r.lesson);
@@ -411,6 +470,8 @@ export class TeacherService {
       case "ask":
       case "follow-up":
         return { operations: ["answer_lesson_question"], required: true };
+      case "refill":
+        return { operations: [REFILL_TOOL.name], required: true };
       case "review":
         return { operations: ["publish_review"], required: true, messageRequired: true };
       case "chat":
@@ -427,6 +488,8 @@ export class TeacherService {
   }
   private prompt(r: TeacherRequest, state: TeacherState): string {
     if (r.kind === "review") return r.prompt;
+    if (r.kind === "refill")
+      return `${r.prompt}\n\nTool definition: ${JSON.stringify(REFILL_TOOL)}`;
     const lesson = store.readLesson(r.classroom, r.lesson);
     if (!lesson) throw new Error("The request lesson no longer exists.");
     const rubric = path.join(lessonDir(r.classroom, r.lesson), "quiz", "key.json");
@@ -507,7 +570,10 @@ export class TeacherService {
   private async drain(classroom: string): Promise<void> {
     const state = this.states.get(classroom)!;
     while (!this.stopping) {
-      const r = state.requests.find((r) => r.status === "queued" || r.status === "planned");
+      const pending = (r: TeacherRequest) => r.status === "queued" || r.status === "planned";
+      const r =
+        state.requests.find((r) => r.kind !== "refill" && pending(r)) ??
+        state.requests.find(pending);
       if (!r) return;
       r.startedAt = Date.now();
       delete r.finishedAt;
@@ -515,6 +581,7 @@ export class TeacherService {
         if (!r.plan) {
           r.status = "running";
           if (r.kind === "review") updateReview(this.reviewSession(r), "running");
+          if (r.kind === "refill") updateRefill(this.refillRequest(r), "running");
           saveTeacherState(classroom, state);
           this.publish(classroom, r.lesson);
           const controller = new AbortController();
@@ -559,6 +626,7 @@ export class TeacherService {
         r.finishedAt = Date.now();
         r.error = `${state.identity.backend} ${r.kind} request ${r.id} in ${classroom}/${r.lesson}: ${err instanceof Error ? err.message : String(err)}`;
         if (r.kind === "review") updateReview(this.reviewSession(r), "failed", r.error);
+        if (r.kind === "refill") updateRefill(this.refillRequest(r), "failed", r.error);
         console.error(`[teacher] ${r.error}`);
         saveTeacherState(classroom, state);
         this.publish(classroom, r.lesson);
@@ -589,6 +657,33 @@ export class TeacherService {
   }
   private async apply(r: TeacherRequest, state: TeacherState): Promise<void> {
     const plan = r.plan!;
+    if (r.kind === "refill") {
+      const request = this.refillRequest(r);
+      if (
+        plan.calls.length !== 1 ||
+        plan.calls[0].name !== REFILL_TOOL.name ||
+        plan.learning_record.trim() ||
+        plan.notes_markdown.trim() ||
+        plan.message.trim()
+      )
+        throw new Error(
+          "A private refill permits only save_review_variants and no learner or evidence writes.",
+        );
+      const args = JSON.parse(plan.calls[0].arguments_json);
+      if (
+        args.classroom !== r.classroom ||
+        args.request_id !== request.id ||
+        !Array.isArray(args.variants)
+      )
+        throw new Error("Refill output does not belong to this request.");
+      if (request.status !== "done") {
+        saveRefillPlan(request, args.variants);
+        r.planValidated = true;
+        saveTeacherState(r.classroom, state);
+        applyRefill(request);
+      }
+      return;
+    }
     if (r.kind === "review") {
       const session = this.reviewSession(r),
         document = this.reviewDocument(plan);

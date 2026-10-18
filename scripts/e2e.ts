@@ -5,7 +5,8 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import * as net from "node:net";
-import { useTestModel, harnessCommand, parseHarness } from "./harness.ts";
+import { refillRequests } from "../src/review-refill.ts";
+import { useTestModel, until, harnessCommand, parseHarness } from "./harness.ts";
 import { playwright, playwrightCode } from "./playwright.ts";
 import {
   writeGradedAttempt,
@@ -309,6 +310,18 @@ async function main(): Promise<void> {
     if (artifacts)
       fs.writeFileSync(path.join(artifacts, "stored-review.json"), JSON.stringify(review, null, 2));
     log("PASS: prepared review opens from the classroom page without authoring");
+    const refills = await until("background private refill", 305_000, () => {
+      const requests = refillRequests(CLASSROOM).filter((r) => r.lesson === review.lesson);
+      if (requests.some((r) => r.status === "failed"))
+        throw new Error(requests.find((r) => r.status === "failed")!.error);
+      return requests.length && requests.every((r) => r.status === "done") ? requests : null;
+    });
+    if (artifacts)
+      fs.writeFileSync(
+        path.join(artifacts, "stored-refills.json"),
+        JSON.stringify(refills, null, 2),
+      );
+    log("PASS: durable background refill saves private variants without learner or grade writes");
     const resumeInput = seedHistoricalReview(root);
     const identity = checked.teacher.identity.sessionId;
     const [resumeCommand, resumeArgs] = harnessCommand(
