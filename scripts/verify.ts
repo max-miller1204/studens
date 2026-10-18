@@ -6,7 +6,7 @@ import { packageRoot } from "../src/paths.ts";
 
 const root = packageRoot();
 const usage =
-  "Usage: npm run verify -- [local|checks|browser|pi|claude|codex|authoring <claude|codex>|feedback <claude|codex>|quality <claude|codex>|phone|doctor [browser|pi|claude|codex]] [--artifacts <directory>]";
+  "Usage: npm run verify -- [local|checks|browser|pi|claude|codex|authoring <claude|codex>|feedback <claude|codex>|quality <claude|codex>|refill <claude|codex>|phone|doctor [browser|pi|claude|codex]] [--artifacts <directory>]";
 const args = process.argv.slice(2);
 const artifactFlag = args.indexOf("--artifacts");
 let requestedArtifacts: string | undefined;
@@ -17,7 +17,7 @@ if (artifactFlag >= 0) {
 }
 const target = args[0] ?? "local";
 const host = args[1];
-const evaluations = ["authoring", "feedback", "quality"];
+const evaluations = ["authoring", "feedback", "quality", "refill"];
 const targets = [
   "local",
   "checks",
