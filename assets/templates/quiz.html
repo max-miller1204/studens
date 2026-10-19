@@ -49,8 +49,10 @@
       a table, an image, a diagram. Any HTML is allowed. Its text is sent to the
       teacher with the answer. Give every image alt text: the teacher reads the alt
       text, not the image.
-    * data-review-of="<lesson>/<quiz id>/<question id>": only in a review quiz. It
-      names the earlier question this one reviews. scaffold_review gives the keys.
+    * data-review-of="<lesson>/@objective/<objective id>": only in a review quiz.
+      It names the original objective. Historical items without objective context use
+      <lesson>/<quiz id>/<question id>. Copy the selected item's key exactly;
+      never reconstruct it from quizId, questionId, or questionKeys.
 
   ── Which type to use ─────────────────────────────────────────────────────────────
 

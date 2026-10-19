@@ -15,6 +15,7 @@ import {
   makeFixture,
   reviewDocument,
   seedClassroom,
+  seedTransferObjective,
   termAnswer,
   writeGradedAttempt,
   type Fixture,
@@ -135,4 +136,23 @@ describe("review request contracts", () => {
     fs.symlinkSync(path.join(f.root, "rust/001-ownership/lesson.html"), file);
     expect(() => publishReview(s, doc)).toThrow("symlink");
   });
+});
+
+it("requires independent transfer for a transfer-needed objective before publication", () => {
+  seedTransferObjective();
+  const session = startReview("rust", randomUUID(), "service").session;
+  const item = session.items.find((i) => i.progress === "transfer-needed")!;
+  expect(item).toBeDefined();
+  const document = reviewDocument(session.items);
+  const correct = JSON.parse(document.teaching_plan_json);
+  const id = `r${session.items.indexOf(item) + 1}`;
+  for (const change of [{ task: "retrieval" }, { support: "assisted" }]) {
+    const plan = structuredClone(correct);
+    Object.assign(plan.quizzes.review.questions[id], change);
+    expect(() =>
+      publishReview(session, { ...document, teaching_plan_json: JSON.stringify(plan) }),
+    ).toThrow("requires an independent transfer task");
+    expect(fs.existsSync(path.join(f.root, "rust", session.lesson))).toBe(false);
+  }
+  expect(() => publishReview(session, document)).not.toThrow();
 });

@@ -13,6 +13,7 @@ it writes the review files.
 - Grade a review and update its original objective schedule.
 - Combine three same-attempt probes into one review item.
 - Keep historical question schedules separate with unknown context.
+- Require independent transfer for an objective that still needs application evidence.
 - Preserve the host that owns each request.
 
 ## How to get to it (user POV)
@@ -29,19 +30,25 @@ it writes the review files.
 Run `npm run verify -- browser --artifacts /tmp/studens-review-browser`.
 
 The review fixtures check Pi and the service. They cover creation, reload, failure,
-explicit retry, invalid controls, host ownership, automatic navigation, saved answers, mobile controls, private
-rubric routes, submission, grading, and the original item schedule. The service fixture uses three probes of one objective and
-checks that only one question is authored. The Pi fixture keeps a historical item
-unknown even after a new review. Inspect `review/pi/result.json` and `review/service/result.json`.
+explicit retry, invalid controls, host ownership, automatic navigation, saved answers,
+mobile controls, private rubric routes, submission, grading, and the original item
+schedule. The service fixture combines three probes into one objective, rejects a
+recall task when transfer is needed, then checks that a delayed transfer completes
+retention evidence. The Pi fixture keeps a historical item unknown even after a
+new review. Inspect `review/pi/result.json` and `review/service/result.json`.
 Inspect the screenshots before citing them.
 
 Run `npm run verify -- claude`, then `npm run verify -- codex` for a changed service
 or shared prompt. Both drives create a review with the real persistent teacher
-in its existing session. Inspect `stored-review.json` and the host review screenshot.
+in its existing session, including a transfer-needed objective. Inspect
+`stored-review.json`, the generated private plan under `classroom/`, and the host
+review screenshot. The plan must preserve the selected key and use task transfer
+with independent support. Scenario novelty still needs semantic review.
 Each backend needs its own drive. A result from one backend does not verify the other.
 
 Run `npm run verify -- pi` for review authoring in the live Pi session. Inspect
-`stored-review.json` and `pi-review.png`.
+`stored-review.json` and `pi-review.png`. Its due batch also includes a transfer-needed
+objective; publication validates its task and support.
 
 ## Gotchas
 
