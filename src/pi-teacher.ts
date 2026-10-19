@@ -167,6 +167,8 @@ export async function runPi(
       );
     if (count !== 1 || output === undefined)
       throw new Error("Pi teacher returned no structured plan. Retry explicitly.");
+    // SDK selection only: this Pi provider does not independently report the
+    // provider-resolved response model. Do not present it as that attestation.
     active?.(selected);
     return output;
   } finally {

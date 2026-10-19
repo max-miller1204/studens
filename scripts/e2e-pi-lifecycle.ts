@@ -288,7 +288,7 @@ export async function verifyPiLifecycle(artifacts: string): Promise<void> {
     const extensionErrors = events.filter((event) => event.type === "extension_error");
     if (extensionErrors.length) throw new Error(JSON.stringify(extensionErrors));
     console.log(
-      "PASS: actual Pi exit during work, FIFO across browser actions, reconnect, specific model failure, explicit retry, saved-plan restart with one grade and no inference, stable dedicated Pi session/model/low thinking.",
+      "PASS: actual Pi exit during work, FIFO across browser actions, reconnect, specific model failure, explicit retry, saved-plan restart with one grade and no inference, stable dedicated Pi session/SDK model selection/low thinking.",
     );
   } finally {
     fs.writeFileSync(

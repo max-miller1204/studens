@@ -34,7 +34,7 @@ function renderTeacher() {
       : "Open this classroom from Pi, Claude Code, or Codex to attach its teacher.";
   modelForm.hidden = !teacher;
   root.querySelector("[data-teacher-active]").textContent = teacher
-    ? `Last answering model: ${teacher.identity.activeModel || "No answer yet"}`
+    ? `${teacher.identity.backend === "pi" ? "Last Pi SDK model selection" : "Last answering model"}: ${teacher.identity.activeModel || "No answer yet"}`
     : "";
   root.querySelector("[data-teacher-request]").textContent = teacher
     ? `Requested setting: ${teacher.identity.requestedModel ?? "tool’s configured default"}${teacher.identity.activeModel ? ` · Last answer used setting: ${teacher.identity.activeRequestedModel ?? "tool’s configured default"}` : ""}`
