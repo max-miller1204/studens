@@ -1,4 +1,5 @@
 /** Provider lesson data is typed; code alone serializes both private files and the durable call. */
+import { validateCriteria } from "./criteria.ts";
 import type { TeacherPlan } from "./teacher.ts";
 import { MENTAL_TASKS } from "./teaching-plan.ts";
 import { isContractId } from "../assets/runtime/quiz.mjs";
@@ -33,7 +34,13 @@ const expectedSchema = {
     }),
   ],
 };
+const criterionSchema = object({
+  id: text,
+  description: text,
+  points: { type: "number", exclusiveMinimum: 0 },
+});
 const rubricSchema = object({
+  criteria: array(criterionSchema, 1),
   expected: expectedSchema,
   points: { type: "number", exclusiveMinimum: 0 },
   full: text,
@@ -180,12 +187,27 @@ function expected(value: unknown): unknown {
   throw new Error("Expected answer has an unknown representation.");
 }
 function rubric(value: unknown) {
-  const row = shape(value, ["expected", "points", "full", "partial", "grading"], "Rubric"),
+  const row = shape(
+      value,
+      ["expected", "points", "full", "partial", "grading", "criteria"],
+      "Rubric",
+    ),
     grading =
       row.grading === null ? undefined : choice(row.grading, ["teacher", "exact"], "Grading mode");
+  const points = number(row.points, "Rubric points");
+  const criteria = rows(row.criteria, "Criteria").map((raw) => {
+    const c = shape(raw, ["id", "description", "points"], "Criterion");
+    return {
+      id: string(c.id, "Criterion id"),
+      description: string(c.description, "Criterion description"),
+      points: number(c.points, "Criterion points"),
+    };
+  });
+  validateCriteria(criteria, points, "Lesson rubric");
   return {
+    criteria,
     expected: expected(row.expected),
-    points: number(row.points, "Rubric points"),
+    points,
     full: string(row.full, "Full credit"),
     partial: string(row.partial, "Partial credit"),
     ...(grading === undefined ? {} : { grading }),

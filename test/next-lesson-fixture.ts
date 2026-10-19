@@ -17,6 +17,14 @@ export function nextLessonDocument(root: string): LessonDocument {
       partial: "Zero if incorrect.",
     },
   };
+  for (const quiz of Object.values(rubric) as any[])
+    for (const entry of Object.values(quiz) as any[]) {
+      entry.criteria = [{ id: "reason", description: entry.full, points: entry.points }];
+      for (const variant of entry.variants ?? [])
+        variant.rubric.criteria = [
+          { id: "reason", description: variant.rubric.full, points: variant.rubric.points },
+        ];
+    }
   const plan = JSON.parse(fs.readFileSync(path.join(dir, "quiz/plan.json"), "utf8"));
   plan.quizzes["pretest-1"] = {
     purpose: "prequestion",

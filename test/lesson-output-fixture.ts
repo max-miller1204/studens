@@ -20,6 +20,7 @@ export function lessonOutput(document: LessonDocument) {
                   unit: e.unit ?? null,
                 }
               : { kind: "map", entries: Object.entries(e).map(([key, value]) => ({ key, value })) },
+      criteria: raw.criteria,
       points: raw.points,
       full: raw.full,
       partial: raw.partial,
@@ -90,6 +91,7 @@ export const simpleLessonOutput = {
           id: "q1",
           rubric: {
             expected: { kind: "text", value: "The owner." },
+            criteria: [{ id: "owner", description: "Identify the current owner.", points: 1 }],
             points: 1,
             full: "Identify the owner.",
             partial: "Zero for incorrect owner.",

@@ -5,6 +5,8 @@ import { validateLessonDocument } from "../src/next-lesson.ts";
 import { makeFixture, seedClassroom, seedPreparedReviewSource } from "./helpers.ts";
 import { nextLessonDocument } from "./next-lesson-fixture.ts";
 import { lessonOutput, simpleLessonOutput } from "./lesson-output-fixture.ts";
+import { authoredVariants } from "../src/review-variants.ts";
+import { assembleReview } from "../src/review-pool.ts";
 
 it("code serializes raw HTML, including private variant HTML, into a canonical valid document", () => {
   const f = makeFixture();
@@ -19,6 +21,20 @@ it("code serializes raw HTML, including private variant HTML, into a canonical v
     expect(JSON.parse(decoded.rubric_json)).toEqual(JSON.parse(document.rubric_json));
     expect(JSON.parse(decoded.teaching_plan_json)).toEqual(JSON.parse(document.teaching_plan_json));
     expect(() => validateLessonDocument(decoded)).not.toThrow();
+    const prepared = [
+      ...authoredVariants(
+        decoded.rubric_json,
+        decoded.teaching_plan_json,
+        decoded.lesson_html,
+        true,
+      ).values(),
+    ][0][0];
+    const review = assembleReview(
+      [{ key: "002-next/check-1/q1", objective: prepared.objective } as any],
+      [prepared],
+      true,
+    );
+    expect(JSON.parse(review.rubric_json).review.r1.criteria).toEqual(prepared.rubric.criteria);
     expect(plan).toMatchObject({ message: "Ready", learning_record: "", notes_markdown: "" });
     const variant = input.variants[0];
     variant.html += '\n<!-- "quoted" \\slash\t -->';
@@ -109,4 +125,11 @@ it("rejects duplicate mapping keys instead of silently overwriting them", () => 
     ],
   } as any;
   expect(() => lessonModelPlan(input)).toThrow(/duplicate/);
+});
+it("preserves fixed criteria and refuses missing or inconsistent weights", () => {
+  const input = structuredClone(simpleLessonOutput);
+  input.quizzes[0].questions[0].rubric.criteria[0].points = 2;
+  expect(() => lessonModelPlan(input)).toThrow(/sum/);
+  input.quizzes[0].questions[0].rubric.criteria = [];
+  expect(() => lessonModelPlan(input)).toThrow(/non-empty/);
 });

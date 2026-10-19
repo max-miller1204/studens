@@ -73,7 +73,8 @@ Service lesson responses use a dedicated strict schema: direct HTML strings and 
 private objective, quiz, rubric and variant rows. The host alone serializes the
 canonical private files and saved publication call. Run
 `npx vitest run test/lesson-output.test.ts test/teacher-models.test.ts` to check
-complete-document round trips, private HTML preservation, malformed and duplicate
+complete-document round trips, fixed criteria and private review assembly,
+private HTML preservation, malformed and duplicate
 input refusal, and the installed CLI structured-schema boundary. These transport
 contracts do not replace the required real service drives.
 

@@ -162,9 +162,22 @@ export function validateLessonDocument(document: LessonDocument): void {
     const errors = questionErrors(shape);
     if (errors.length) throw new Error(`Lesson question ${shape.id}: ${errors.join(" ")}`);
   }
-  parseRubric(document.rubric_json, document.lesson_html);
+  parseRubric(document.rubric_json, document.lesson_html, "machine", true);
   parseTeachingPlan(document.teaching_plan_json, document.lesson_html);
-  authoredVariants(document.rubric_json, document.teaching_plan_json, document.lesson_html, true);
+  const pools = authoredVariants(
+    document.rubric_json,
+    document.teaching_plan_json,
+    document.lesson_html,
+    true,
+  );
+  for (const pool of pools.values())
+    for (const variant of pool)
+      parseRubric(
+        JSON.stringify({ review: { [variant.id]: variant.rubric } }),
+        `<form class="cl-quiz" data-quiz-id="review" data-kind="check"><ol>${variant.html}</ol></form>`,
+        "machine",
+        true,
+      );
 }
 export function saveLessonDocument(
   request: LessonRequest,
@@ -237,6 +250,7 @@ export async function completeLessonRequest(request: LessonRequest): Promise<voi
         createdAt: saved.at,
         kind: "lesson",
         assessmentContract: 1,
+        criterionContract: 1,
         instructionalContract: 1,
         reviewVariantContract: 1,
       },

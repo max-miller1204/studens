@@ -13,6 +13,7 @@ import {
   updateLessonRequest,
   publicLessonRequest,
   piLessonArguments,
+  validateLessonDocument,
 } from "../src/next-lesson.ts";
 import { TeacherService } from "../src/teacher-service.ts";
 import { readTeacherState, saveTeacherState } from "../src/service-state.ts";
@@ -63,6 +64,21 @@ it("validates the entire plan before writes and keeps partial output off discove
   expect(publicLessonRequest(lessonRequests("rust")[0])).not.toHaveProperty("document");
   expect(() => saveLessonDocument(r, { ...document, title: "Changed" })).toThrow("already saved");
 });
+it.each(["visible", "private variant"])(
+  "requires declared criteria on every new %s question before saving",
+  (where) => {
+    const request = startLessonRequest("rust", randomUUID(), "", "pi");
+    const document = nextLessonDocument(fixture.root);
+    const key = JSON.parse(document.rubric_json);
+    const entry = where === "visible" ? key["pretest-1"].p1 : key["check-1"].q1.variants[0].rubric;
+    delete entry.criteria;
+    document.rubric_json = JSON.stringify(key);
+    expect(() => validateLessonDocument(document)).toThrow(/criteria/);
+    expect(() => saveLessonDocument(request, document)).toThrow(/criteria/);
+    expect(lessonRequests("rust")[0].document).toBeUndefined();
+    expect(fs.existsSync(path.join(fixture.root, "rust", request.lesson))).toBe(false);
+  },
+);
 it("preserves rejected raw output and requires explicit retry before another model turn", async () => {
   let turns = 0;
   const service = new TeacherService(async () => {
@@ -222,6 +238,10 @@ it("recovers a saved validated service plan without another model turn or duplic
   expect(store.listLessons("rust").filter((l) => l.name === r.lesson)).toHaveLength(1);
   expect(store.listSubmissions("rust", r.lesson)).toEqual([]);
   expect(store.listGrades("rust", r.lesson)).toEqual([]);
+  expect(store.readLesson("rust", r.lesson)?.criterionContract).toBe(1);
+  expect(
+    JSON.parse(fs.readFileSync(path.join(fixture.root, "rust", r.lesson, "quiz/key.json"), "utf8")),
+  ).toEqual(JSON.parse(document.rubric_json));
   await service.stop();
   const again = new TeacherService(run);
   again.attach("rust", "claude");
