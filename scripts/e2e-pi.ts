@@ -307,6 +307,7 @@ try {
     return true;
   }`,
   );
+  const readingStart = events.length;
   await playwrightCode(
     session,
     fixture.root,
@@ -328,9 +329,10 @@ try {
       : null,
   );
   await until("answer turn", () =>
-    events.some(
-      (e) => e.type === "tool_execution_end" && e.toolName === "answer_lesson_question",
-    ) && events.some((e) => e.type === "agent_settled")
+    events
+      .slice(readingStart)
+      .some((e) => e.type === "tool_execution_end" && e.toolName === "answer_lesson_question") &&
+    events.slice(readingStart).some((e) => e.type === "agent_settled")
       ? true
       : null,
   );
