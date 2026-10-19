@@ -848,6 +848,8 @@ mark.cl-hl.cl-hl-pending {
  */
 .cl-card-inline {
   position: static;
+  /* Quiz cards are flex items, so reset the floating panel's stacking order too. */
+  z-index: auto;
   width: auto;
   max-width: 100%;
   margin: 1.1rem 0 1.6rem;
