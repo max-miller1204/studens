@@ -295,7 +295,7 @@ export class TeacherService {
       kind: "chat",
       target: id,
       prompt: id.startsWith("reteach:")
-        ? reteachPrompt(text)
+        ? `${reteachPrompt(text)}\n\nPut the complete explanation, worked example, and question in this plan's message field. The service posts only that field to this lesson's teacher panel. Other assistant prose and earlier turns in this model session are invisible to the learner. Repeat the full re-teach in message even if you already wrote it elsewhere; do not refer to an explanation above or elsewhere.`
         : `The learner replied in the teacher panel:\n${text}`,
     });
   }

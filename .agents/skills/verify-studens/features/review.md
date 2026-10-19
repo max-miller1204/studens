@@ -94,7 +94,10 @@ retry, the explanation, a learner reply, and reload.
 Inspect `reteach/pi/result.json`, `reteach/service/result.json`, and their screenshots.
 They require unchanged assessments and no delayed-retention credit. Real host drives
 also include this entry after their existing teacher checks; an earlier host failure
-leaves the re-teach entry unverified for that run.
+leaves the re-teach entry unverified for that run. Inspect the first saved teacher
+message for the complete explanation, worked example, and question. A reminder that
+refers to unseen teaching is a failure even if the mechanical target passes. Service
+learners see only the structured plan's message, not other model-session prose.
 
 ## Gotchas
 
