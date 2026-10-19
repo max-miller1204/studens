@@ -7,7 +7,18 @@ import { pathToFileURL } from "node:url";
 import { execFile, spawn } from "node:child_process";
 import { promisify } from "node:util";
 import { afterEach, beforeEach, expect, it } from "vitest";
-import { makeFixture, seedClassroom, seedHistoricalReview, type Fixture } from "./helpers.ts";
+import {
+  makeFixture,
+  seedClassroom,
+  seedHistoricalReview,
+  seedPreparedReviewSource,
+  writeGradedAttempt,
+  termAnswer,
+  type Fixture,
+} from "./helpers.ts";
+import { currentReview } from "../src/review-session.ts";
+import { readTeacherState } from "../src/service-state.ts";
+import * as store from "../src/store.ts";
 import { _overrideClassroomsDir, packageRoot } from "../src/paths.ts";
 import { control, ensureService, serviceStatus } from "../src/service-client.ts";
 
@@ -513,3 +524,32 @@ else {
     Web: {},
   });
 }, 30_000);
+
+it("opens a prepared review through MCP without a review authoring request", async () => {
+  seedPreparedReviewSource(f.root);
+  writeGradedAttempt({ at: 1, answers: [termAnswer("q1", "owner")], correct: { q1: true } });
+  f.write("behavior.json", JSON.stringify({ invalid: true }));
+  const mcp = client();
+  try {
+    await mcp.call("initialize", { clientInfo: { name: "codex-test" } });
+    await mcp.call("tools/call", { name: "open_classroom", arguments: { classroom: "rust" } });
+    const response = await mcp.call("tools/call", {
+      name: "scaffold_review",
+      arguments: { classroom: "rust" },
+    });
+    expect(response.result.isError).toBe(false);
+    const review = currentReview("rust")!;
+    expect(review.status).toBe("done");
+    expect(readTeacherState("rust")!.requests.filter((r) => r.kind === "review")).toEqual([]);
+    const base = (await serviceStatus()).url!;
+    expect((await fetch(`${base}/c/rust/${review.lesson}`)).status).toBe(200);
+    expect((await fetch(`${base}/c/rust/001-ownership/quiz/key.json`)).status).toBe(404);
+    await mcp.call("tools/call", { name: "scaffold_review", arguments: { classroom: "rust" } });
+    expect(currentReview("rust")!.id).toBe(review.id);
+    expect(store.listGrades("rust", "001-ownership")).toHaveLength(1);
+    expect(store.listSubmissions("rust", review.lesson)).toHaveLength(0);
+  } finally {
+    mcp.child.stdin.end();
+    await mcp.exited;
+  }
+});

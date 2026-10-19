@@ -533,6 +533,8 @@ async function handleApi(
         (session.status === "queued" || route === "review/retry")
       )
         updateReview(session, "failed", (err as Error).message);
+      if (session && session.owner === hooks.reviewOwner)
+        return sendJson(res, { review: publicReview(currentReview(body.classroom)) }, 202);
       return sendJson(res, { error: (err as Error).message }, 409);
     }
   }

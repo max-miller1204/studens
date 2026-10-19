@@ -2,7 +2,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { classroomDir, isValidSlug, lessonDir } from "./paths.ts";
-import { parseReviewKey, questionErrors } from "../assets/runtime/quiz.mjs";
+import { isContractId, parseReviewKey, questionErrors } from "../assets/runtime/quiz.mjs";
 import {
   DEFAULT_REVIEW_SIZE,
   pickReviewItems,
@@ -14,6 +14,8 @@ import { authoredQuizzes, authoredQuestionShapes } from "./quiz-authoring.ts";
 import { parseRubric } from "./rubric.ts";
 import { parseTeachingPlan } from "./teaching-plan.ts";
 import * as store from "./store.ts";
+import { assembleReview, lessonPools, selectVariant } from "./review-pool.ts";
+import type { PreparedVariant } from "./review-variants.ts";
 
 export type ReviewOwner = "pi" | "service";
 
@@ -26,6 +28,9 @@ export interface ReviewSession {
   at: number;
   items: ReviewItem[];
   status: "queued" | "running" | "done" | "failed";
+  /** Saved before any publication writes, so recovery never needs a model. */
+  document?: ReviewDocument;
+  variants?: Record<string, string>;
   error?: string;
 }
 export interface ReviewDocument {
@@ -58,7 +63,20 @@ export function reviewSessions(classroom: string): ReviewSession[] {
           !["queued", "running", "done", "failed"].includes(request.status) ||
           !Array.isArray(request.items) ||
           request.items.length === 0 ||
-          request.items.some((item) => !item || !parseReviewKey(item.key)),
+          request.items.some((item) => !item || !parseReviewKey(item.key)) ||
+          ((request.document !== undefined || request.variants !== undefined) &&
+            (!request.document ||
+              typeof request.document !== "object" ||
+              [
+                request.document.lesson_html,
+                request.document.rubric_json,
+                request.document.teaching_plan_json,
+              ].some((value) => typeof value !== "string" || !value.trim()) ||
+              !request.variants ||
+              typeof request.variants !== "object" ||
+              Array.isArray(request.variants) ||
+              Object.keys(request.variants).length !== request.items.length ||
+              request.items.some((item) => !isContractId(request.variants![item.key])))),
       )
     )
       throw new Error(`Invalid review requests for ${classroom}.`);
@@ -102,6 +120,7 @@ export function startReview(
   classroom: string,
   id: string,
   owner: ReviewOwner,
+  limit = DEFAULT_REVIEW_SIZE,
 ): { session: ReviewSession; added: boolean } {
   if (!store.readClassroom(classroom)) throw new Error(`No such classroom: ${classroom}.`);
   const requests = reviewSessions(classroom);
@@ -113,9 +132,37 @@ export function startReview(
   }
   const at = Date.now();
   const items = store.reviewItems(classroom);
-  const picked = pickReviewItems(items, at, DEFAULT_REVIEW_SIZE);
+  const pools = new Map<string, PreparedVariant[]>();
+  for (const lesson of new Set(items.map((item) => item.lesson))) {
+    const source = store.readLesson(classroom, lesson);
+    for (const [key, pool] of lessonPools(classroom, lesson, source?.reviewVariantContract === 1))
+      pools.set(`${lesson}/${key}`, pool);
+  }
+  const itemPools = new Map<string, PreparedVariant[]>();
+  for (const item of items) {
+    // Objective schedules retain their original question links. Select a prepared
+    // probe through those links while keeping the objective as the review identity.
+    const keys = item.questionKeys?.length ? item.questionKeys : [item.key];
+    for (const key of keys) {
+      const pool = pools
+        .get(key)
+        ?.filter(
+          (variant) => item.progress !== "transfer-needed" || variant.plan.task === "transfer",
+        );
+      if (pool?.length) {
+        itemPools.set(item.key, pool);
+        break;
+      }
+    }
+  }
+  const eligible = items.filter((item) => itemPools.has(item.key));
+  const picked = pickReviewItems(eligible, at, limit);
   if (!picked.length) {
-    const next = summarize(items, at).nextDueAt;
+    if (items.some((item) => item.dueAt <= at) && !eligible.some((item) => item.dueAt <= at))
+      throw new Error(
+        "No prepared variants for the due questions. Prepare private review pools in their original lessons, then retry.",
+      );
+    const next = summarize(eligible, at).nextDueAt;
     throw new Error(
       next === null
         ? "No graded questions are due for review."
@@ -138,6 +185,15 @@ export function startReview(
   };
   if (fs.existsSync(lessonDir(classroom, session.lesson)))
     throw new Error("Review directory already exists.");
+  const variants = picked.map((item) =>
+    selectVariant(
+      itemPools.get(item.key)!,
+      requests.flatMap((r) => (r.variants?.[item.key] ? [r.variants[item.key]] : [])),
+    ),
+  );
+  session.variants = Object.fromEntries(picked.map((item, i) => [item.key, variants[i].id]));
+  session.document = assembleReview(picked, variants);
+  validateReview(session, session.document);
   requests.push(session);
   save(classroom, requests);
   return { session, added: true };
@@ -275,4 +331,18 @@ export function requireReviewOwner(session: ReviewSession, owner: ReviewOwner): 
     throw new Error(
       `This review belongs to ${session.owner}. Open that classroom host to continue.`,
     );
+}
+
+/** Complete a saved assembly; callers retain legacy in-flight authoring separately. */
+export function completePreparedReview(session: ReviewSession): boolean {
+  if (!session.document) return false;
+  if (session.status === "done") return true;
+  try {
+    publishReview(session, session.document);
+    updateReview(session, "done");
+  } catch (error) {
+    updateReview(session, "failed", (error as Error).message);
+    throw error;
+  }
+  return true;
 }

@@ -111,8 +111,11 @@ source notation to grading. Answers and feedback render Markdown server-side.
   probe resets the objective. Historical answers without objective context keep their
   question key and unknown context. Never read the current plan to replay history.
   Keep old question links usable by saved reviews, panel checks, and recovery.
-  Build the schedule from graded answers and linked retrieval evidence, excluding pretests. Save review requests and selected items before
-  authoring. Validate keys, rubric, controls, and plan before publication. Hide unfinished
+  Exclude pretests. Save review requests and selected items before
+  publication. New reviews deterministically select private preauthored variants and
+  save the complete document before writes; no model authoring is needed. Legacy
+  questions without pools are skipped with an explicit error when none are eligible.
+  Validate keys, rubric, controls, and plan before publication. Hide unfinished
   reviews from lists, routes, and submissions. Repeated clicks reuse work; published
   reviews open across hosts. Saved service plans resume without another model turn.
 - **Drafts never wake a teacher.** Restore them once on load, only into fresh quizzes.

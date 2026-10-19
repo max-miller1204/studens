@@ -12,7 +12,7 @@
 
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 
 import { ASSISTANCE, type Assistance } from "./evidence.ts";
 import { applyAnswer, applyGrade } from "./bridge.ts";
@@ -32,16 +32,15 @@ import { authoredQuestions } from "./quiz-authoring.ts";
 import { parseTeachingPlan } from "./teaching-plan.ts";
 import { parseRubric } from "./rubric.ts";
 import { authoredVariants } from "./review-variants.ts";
+import { startReview, completePreparedReview } from "./review-session.ts";
+import type { ReviewOwner } from "./review-session.ts";
 import { answersByQuestion, kindOf } from "./quiz.ts";
 import {
   answerReviewKey,
   findReviewItem,
   DEFAULT_REVIEW_SIZE,
   MAX_REVIEW_SIZE,
-  pickReviewItems,
   relativeDay,
-  REVIEW_INTERVALS_DAYS,
-  summarize,
 } from "./review.ts";
 import * as server from "./server.ts";
 import * as store from "./store.ts";
@@ -64,6 +63,7 @@ export interface ClassroomTool {
 
 /** What differs between the hosts that run these tools. */
 export interface ToolHost {
+  reviewOwner?: ReviewOwner;
   /** Tells the model how to show a classroom when the server is not running. */
   browseHint: string;
   /** Tells the model how to check a lesson and present its URL. */
@@ -602,16 +602,15 @@ export function classroomTools(host: ToolHost): ClassroomTool[] {
       name: "scaffold_review",
       label: "Scaffold Review",
       description:
-        "Create a spaced review session from the questions that are due for review, and return them. " +
-        "Each objective has one review schedule; historical questions without objective context keep separate schedules: a correct answer moves it to a longer interval, a wrong answer moves it back to one day. " +
-        "Write one new question with a new example for each returned item, and mark it with the given data-review-of key. The result lists the authoring steps. " +
-        "Fails when nothing is due.",
+        "Open a ready spaced review assembled from private variants of due questions, without a model authoring turn. " +
+        "Reuse an unfinished review. Keep its questions and keys unchanged. Lessons without prepared pools are skipped. " +
+        "Fails specifically when no prepared questions are due.",
       parameters: object(
         {
           classroom: str("Classroom directory name."),
           limit: {
             type: "number",
-            description: `How many due items to include. Default ${DEFAULT_REVIEW_SIZE}, maximum ${MAX_REVIEW_SIZE}.`,
+            description: `How many due questions to include. Default ${DEFAULT_REVIEW_SIZE}, maximum ${MAX_REVIEW_SIZE}.`,
           },
         },
         ["limit"],
@@ -625,79 +624,39 @@ export function classroomTools(host: ToolHost): ClassroomTool[] {
           return fail(`limit must be a whole number from 1 to ${MAX_REVIEW_SIZE}.`);
         }
 
-        const now = Date.now();
-        const items = store.reviewItems(params.classroom);
-        const picked = pickReviewItems(items, now, limit);
-        if (picked.length === 0) {
-          const summary = summarize(items, now);
-          return fail(
-            summary.nextDueAt === null
-              ? "Nothing is due for review: no question has been graded yet."
-              : `Nothing is due for review. The next item is due ${relativeDay(summary.nextDueAt, now)}.`,
+        try {
+          const { session } = startReview(
+            params.classroom,
+            randomUUID(),
+            host.reviewOwner ?? "pi",
+            limit,
           );
+          if (session.status === "failed")
+            return fail(`Review failed: ${session.error}. Use Retry review on the classroom page.`);
+          if (!session.document && session.status !== "done")
+            return fail(
+              "An existing review is still being authored. Continue it from the classroom page.",
+            );
+          completePreparedReview(session);
+          const htmlPath = path.join(lessonDir(params.classroom, session.lesson), "lesson.html");
+          const url = server.urlFor(params.classroom, session.lesson);
+          return ok(
+            [
+              `Prepared review ${session.lesson} in ${params.classroom}.`,
+              url ? `URL: ${url}` : host.browseHint,
+              "The review is ready. Keep its questions and private keys unchanged. Give the learner its link.",
+            ].join("\n"),
+            {
+              classroom: params.classroom,
+              lesson: session.lesson,
+              path: htmlPath,
+              url,
+              items: session.items.map((item) => item.key),
+            },
+          );
+        } catch (error) {
+          return fail((error as Error).message);
         }
-
-        const date = new Date(now).toISOString().slice(0, 10);
-        const slug = `${String(nextLessonNumber(params.classroom)).padStart(3, "0")}-review-${date}`;
-        const dir = lessonDir(params.classroom, slug);
-        if (fs.existsSync(dir)) return fail(`Lesson directory already exists: ${dir}`);
-        fs.mkdirSync(dir, { recursive: true });
-
-        const title = `Review: ${date}`;
-        const summaryLine = `Spaced review of ${picked.length} earlier item${picked.length === 1 ? "" : "s"}.`;
-        const template = fs.readFileSync(path.join(templatesDir(), "review.html"), "utf8");
-        const htmlPath = path.join(dir, "lesson.html");
-        fs.writeFileSync(
-          htmlPath,
-          template
-            .replace(/\{\{LESSON_TITLE\}\}/g, title)
-            .replace(/\{\{ONE_LINE_SUMMARY\}\}/g, summaryLine),
-          "utf8",
-        );
-        store.writeLessonMeta(params.classroom, slug, {
-          title,
-          summary: summaryLine,
-          createdAt: now,
-          kind: "review",
-          assessmentContract: 1,
-          instructionalContract: 1,
-        });
-
-        const listing = picked.map((item, i) =>
-          [
-            `${i + 1}. data-review-of="${item.key}"`,
-            `   Interval: box ${item.box + 1} of ${REVIEW_INTERVALS_DAYS.length}, due ${relativeDay(item.dueAt, now)}, ${item.attempts} recorded attempt${item.attempts === 1 ? "" : "s"}.`,
-            `   Evidence: ${item.progress}; latest context ${item.context}; ${item.delayedSuccesses} delayed successes; ${item.delayedTransfers} delayed transfers.`,
-            `   Schedule policy: ${item.schedulePolicy}. ${item.scheduleReason}`,
-            `   Objective policy: ${JSON.stringify(item.objective ?? { statement: "Recover the original objective from the question. Historical context is unknown." })}`,
-            `   Required review task: ${item.progress === "transfer-needed" ? "transfer, support independent. Use an unfamiliar application; do not reuse a prior probe or merely change names or numbers." : "independent retrieval or a fresh application that fits the objective."}`,
-            `   Previously answered probes: ${JSON.stringify(item.prompts ?? [item.prompt])}`,
-            `   Original question: ${item.prompt || "(question text unavailable)"}`,
-            `   Their last answer (${item.lastCorrect ? "correct" : item.lastCredit > 0 ? "partial credit" : "wrong"}): ${item.lastAnswer || "(blank)"}`,
-            `   Your last feedback: ${item.lastFeedback}`,
-          ].join("\n"),
-        );
-
-        const url = server.urlFor(params.classroom, slug);
-        return ok(
-          [
-            `Created review session ${slug} in ${params.classroom}.`,
-            `Edit: ${htmlPath}`,
-            url ? `URL: ${url}` : host.browseHint,
-            "",
-            authoringSteps("review", htmlPath, host.checkPage),
-            "",
-            "Due items:",
-            ...listing,
-          ].join("\n"),
-          {
-            classroom: params.classroom,
-            lesson: slug,
-            path: htmlPath,
-            url,
-            items: picked.map((item) => item.key),
-          },
-        );
       },
     },
 
