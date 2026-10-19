@@ -1,0 +1,107 @@
+{
+  "mode": "Change: Pi host/lifecycle migration and downstream learner paths",
+  "base": "ff52f741291a0ba9ed982f20962c5638fd942b60",
+  "models": {
+    "pi": "openai-codex/gpt-6-luna low (SDK selection; upstream resolution independently unverified)",
+    "claude": "claude-haiku-5-5 low",
+    "codex": "gpt-6-luna low"
+  },
+  "actualRuns": [
+    {
+      "target": "pi",
+      "host": "pi",
+      "source": "0946cc1349d86d0d45e38991e0a4a5eabf8cfc72",
+      "verdict": "PASS",
+      "commands": [
+        {
+          "command": [
+            "/home/maxmiller/.local/share/mise/installs/node/24.22.0/bin/node",
+            "scripts/e2e-pi.ts",
+            "/tmp/studens-issue39/final-combined-pi/pi"
+          ],
+          "exitCode": 0
+        }
+      ],
+      "rawReceipt": "/tmp/studens-issue39/final-combined-pi/run.json"
+    },
+    {
+      "target": "claude",
+      "host": "claude",
+      "source": "c7d490fb16627e2910c0c9c8e0c1af6ca9b19b48",
+      "verdict": "PASS",
+      "commands": [
+        {
+          "command": [
+            "/home/maxmiller/.local/share/mise/installs/node/24.22.0/bin/node",
+            "scripts/e2e.ts",
+            "claude",
+            "/tmp/studens-issue39/final-combined-claude/claude"
+          ],
+          "exitCode": 0
+        }
+      ],
+      "rawReceipt": "/tmp/studens-issue39/final-combined-claude/run.json"
+    },
+    {
+      "target": "codex",
+      "host": "codex",
+      "source": "6dc5405587962694de8e47e3657fc49338728b20",
+      "verdict": "PASS",
+      "commands": [
+        {
+          "command": [
+            "/home/maxmiller/.local/share/mise/installs/node/24.22.0/bin/node",
+            "scripts/e2e.ts",
+            "codex",
+            "/tmp/studens-issue39/final-combined-codex/codex"
+          ],
+          "exitCode": 0
+        }
+      ],
+      "rawReceipt": "/tmp/studens-issue39/final-combined-codex/run.json"
+    },
+    {
+      "target": "phone",
+      "host": "pi",
+      "source": "c7d490fb16627e2910c0c9c8e0c1af6ca9b19b48",
+      "verdict": "PASS",
+      "commands": [
+        {
+          "command": [
+            "/home/maxmiller/.local/share/mise/installs/node/24.22.0/bin/node",
+            "scripts/e2e-phone.ts",
+            "/tmp/studens-issue39/final-combined-phone/phone",
+            "pi"
+          ],
+          "exitCode": 0
+        }
+      ],
+      "rawReceipt": "/tmp/studens-issue39/final-combined-phone/run.json"
+    }
+  ],
+  "sourceEquivalence": "Pi ran0946cc1; later c7d490f changed Pi identity labels/docs/recipes, one SDK provenance comment and lifecycle log wording only. The actual Pi phone and supplemental browser drive executed that label source. Claude ran c7d490f and Codex6dc5405; latter delta was evidence and reading recipe only. No model/plan/grading contract changed in these deltas.",
+  "runtimeObservations": [
+    "Actual Pi extension opens persistent service; queued dedicated Pi work and HTTP survive initiating exit; fresh Pi reconnect preserves owner PID/session.",
+    "Two accepted learner POSTs run FIFO; service owns review/refill work. Invalid exact model stays failed until explicit browser retry after model setting change.",
+    "A genuine filesystem permission error occurs after the valid real Pi grade plan is saved. Explicit restart/retry applies the same plan once, unchanged session transcript hash; a second restart preserves one grade and grade bytes without inference.",
+    "Actual Pi classroom and exact lesson HTTPS links survive initiating exit. Unused8445 settings disable/enable, config disable, service-stop cleanup succeed. Unrelated443 route is byte-equivalent before/after; no Funnel.",
+    "Supplemental actual Pi begin/scaffold/health/open transport and reflection/question/follow-up persisted after reload in one dedicated Pi session; zero quiz grades. Scaffold content was intentionally left unauthored."
+  ],
+  "supplement": {
+    "exitCode": 0,
+    "rawReport": "/tmp/studens-issue39/pi-authoring-smoke-corrected/result.json",
+    "learnerState": "/tmp/studens-issue39/pi-authoring-smoke-corrected/learner-paths.json"
+  },
+  "qualityLimits": [
+    "All final quiz and historical-resume follow-ups were manually checked as answerable fresh retrieval tasks without supplied answers.",
+    "Pi prose labels a22.848-second review correction delayed; Codex prose says11days for18.116seconds. Canonical replay marks both immediate-independent with0 delayed successes, transfer or span credit.",
+    "Claude does not credit the underspecified corrective reply. Its later assisted re-teach follow-up has a false timing premise: the inner block already dropped the String before main ends. No retrieval record was added for that response.",
+    "New criterion background refills were still running at teardown for all3 hosts; no completion claim.",
+    "These checks do not establish authored-lesson quality, human learning, independent upstream Pi model routing, or whole-product correctness."
+  ],
+  "failures": "Earlier install/launch/harness drift, canonical-link defect, saved-plan storage defect, stop/shutdown defect, running legacy-route ownership defect, and incomplete supplemental fixture are retained in /tmp/studens-issue39/diagnoses.md with original artifacts.",
+  "images": "Matching base/after desktop/mobile light/dark UI captures are fixtures; the additional two captures are actual Pi runtime. See provenance.json.",
+  "recipeChanges": [
+    "Shared Pi target uses persistent service; lifecycle recovery/ownership/model-selection checks; Pi phone route drive; actual Pi reflection/card-follow-up steps."
+  ]
+}
