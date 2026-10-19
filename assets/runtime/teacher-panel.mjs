@@ -166,11 +166,18 @@ export function createTeacherPanel({ config, contentRoot, drafts }) {
     } else if (!teacherPanel.isConnected) {
       contentRoot.appendChild(teacherPanel);
     }
+    updateTeacherNotice();
   }
 
   function onScreen(element) {
     const rect = element.getBoundingClientRect();
     return rect.bottom > 0 && rect.top < window.innerHeight;
+  }
+
+  function updateTeacherNotice() {
+    if (!teacherNotice || teacherNotice.hidden) return;
+    const above = teacherPanel.getBoundingClientRect().bottom <= 0;
+    teacherNotice.textContent = `Your teacher replied ${above ? "↑" : "↓"}`;
   }
 
   /** A teacher reply arrived out of view. Say so, without moving the page. */
@@ -179,7 +186,6 @@ export function createTeacherPanel({ config, contentRoot, drafts }) {
       teacherNotice = document.createElement("button");
       teacherNotice.type = "button";
       teacherNotice.className = "cl-teacher-notice";
-      teacherNotice.textContent = "Your teacher replied ↓";
       teacherNotice.addEventListener("click", () => {
         teacherNotice.hidden = true;
         teacherPanel.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -188,8 +194,11 @@ export function createTeacherPanel({ config, contentRoot, drafts }) {
       new IntersectionObserver((entries) => {
         if (entries.some((entry) => entry.isIntersecting)) teacherNotice.hidden = true;
       }).observe(teacherPanel);
+      window.addEventListener("scroll", updateTeacherNotice, { passive: true });
+      window.addEventListener("resize", updateTeacherNotice);
     }
     teacherNotice.hidden = false;
+    updateTeacherNotice();
   }
 
   async function teacherPost(action, body) {

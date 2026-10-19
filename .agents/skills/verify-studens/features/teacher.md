@@ -5,7 +5,7 @@ The learner receives follow-up questions and answers them in the lesson's teache
 ## Sub-features
 
 - Place the panel after the submitted quiz.
-- Show new-message notices and render teacher Markdown.
+- Point new-message notices toward the teacher, update them while scrolling, and render teacher Markdown.
 - Resume a graded historical review from initiating chat with `resume_lesson_teacher`.
 - Reuse pending panel work and reject cross-lesson or cross-host handoffs.
 - Recover a saved panel reply whose teacher request was lost.
@@ -31,6 +31,8 @@ The learner receives follow-up questions and answers them in the lesson's teache
 Run `npm run verify -- browser --artifacts /tmp/studens-teacher`.
 
 The Pi fixture checks `.cl-teacher` follows the quiz, a prose-only grading run fails, and an explicit retry permits grading. It checks the panel reply reaches the correct prompt and all three conversation messages survive reload.
+
+It also receives replies while reading before and after the quiz. The notice must point down or up toward the teacher, update when scrolling past the panel, and dismiss when clicked as the teacher comes into view. Inspect `pi-panel/teacher-notice-below.png`, `pi-panel/teacher-notice-above.png`, and `pi-panel/pi-panel.json`.
 
 The service fixture checks failure, retry, MCP disconnect and reconnect, request isolation between lessons, and teacher drafts. Inspect `pi-panel/pi-panel.json` and service state evidence.
 
