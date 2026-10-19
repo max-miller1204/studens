@@ -1,12 +1,12 @@
 /** MCP dispatcher shared by local discovery and the persistent classroom service.
- * Legacy inbox behavior remains available to isolated tests. Pi uses its direct bridge.
+ * Legacy inbox behavior remains available to isolated tests. All production hosts use the service.
  */
 
 import * as fs from "node:fs";
 import * as path from "node:path";
 
 import { classroomListText, classroomReviewText, resolveClassroom } from "./commands.ts";
-import { packageRoot } from "./paths.ts";
+import { packageRoot, lessonUrl } from "./paths.ts";
 import {
   askPrompt,
   followUpPrompt,
@@ -49,7 +49,7 @@ After you give the learner a lesson, call \`wait_for_learner\`. Answer page ques
 
 export const SERVICE_BRIEF = `## Persistent classroom service
 
-Call open_classroom before giving a URL. The service survives this MCP connection. Browser requests start work in a dedicated teacher session. The teacher backend and session identity appear on the lesson page. Answer and grade writes belong to that teacher. Use the teacher panel for retrieval questions and learner replies. When the learner asks in initiating chat to continue an unfinished graded check or review, call resume_lesson_teacher with the exact classroom, lesson, and latest graded submission ID. Give its lesson link and end this turn. Existing panel work is reused. An empty historical panel starts one corrective question. Use the explicit panel retry after failure. Do not ask the corrective question in this chat. Keep quizzes locked after grading. Preserve historical grades and learning records. Do not start another lesson without learner agreement.
+Call open_classroom before giving a URL. The service survives this initiating connection. Browser requests start work in a dedicated teacher session. The teacher backend and session identity appear on the lesson page. Answer and grade writes belong to that teacher. Use the teacher panel for retrieval questions and learner replies. When the learner asks in initiating chat to continue an unfinished graded check or review, call resume_lesson_teacher with the exact classroom, lesson, and latest graded submission ID. Give its lesson link and end this turn. Existing panel work is reused. An empty historical panel starts one corrective question. Use the explicit panel retry after failure. Do not ask the corrective question in this chat. Keep quizzes locked after grading. Preserve historical grades and learning records. Do not start another lesson without learner agreement.
 
 Use classroom_service with action status, start, or stop. Stop is explicit and affects all classrooms owned by this service. When Tailscale is connected, open_classroom and lesson URLs use a checked tailnet-only route. Give the learner that URL. classroom_service status reports that route. Service stop removes it. The learner controls tailnet links and their port in config.`;
 
@@ -245,16 +245,21 @@ function sessionTools(
       label: "Open Classroom",
       description:
         "Start the classroom server if it is not running and return its URL. It never opens a browser. " +
-        "Give a classroom name to open that classroom; omit it for the list of every classroom.",
+        "Give a classroom name to open that classroom; omit it for the list of every classroom. Give an exact lesson directory with the classroom to return its canonical lesson link.",
       parameters: {
         type: "object",
         properties: {
           classroom: { type: "string", description: "Classroom directory name, or its title." },
+          lesson: {
+            type: "string",
+            description:
+              "Exact existing lesson directory. Requires classroom. Returns the canonical lesson URL; do not invent another path.",
+          },
           ...(persistent
             ? {
                 teacher_backend: {
                   type: "string",
-                  enum: ["claude", "codex"],
+                  enum: ["claude", "codex", "pi"],
                   description:
                     "Dedicated teacher backend. Required when the initiating host is unknown.",
                 },
@@ -263,17 +268,24 @@ function sessionTools(
         },
         required: [],
       },
-      async execute(params: { classroom?: string; teacher_backend?: string }) {
+      async execute(params: { classroom?: string; teacher_backend?: string; lesson?: string }) {
         const requested = params.classroom?.trim() || null;
         const target = requested ? resolveClassroom(requested) : null;
         if (requested && !target) {
           return fail(`No such classroom: ${requested}. Call list_classrooms.`);
         }
+        if (params.lesson !== undefined && (!target || !store.readLesson(target, params.lesson)))
+          return fail(
+            "Select an existing classroom and exact lesson directory before opening its link.",
+          );
         const baseUrl = persistent
           ? await persistent.open(target, params.teacher_backend)
           : await server.start();
         if (!persistent) opened(target);
-        const url = persistent ? baseUrl : target ? server.urlFor(target)! : baseUrl;
+        const classroomUrl = persistent ? baseUrl : target ? server.urlFor(target)! : baseUrl;
+        const url = params.lesson
+          ? new URL(lessonUrl(target!, params.lesson), classroomUrl).href
+          : classroomUrl;
         return ok(persistent ? `[Open classroom](${url})` : `📚 ${url}`, { url });
       },
     },

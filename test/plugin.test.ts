@@ -77,6 +77,7 @@ describe("Codex plugin", () => {
         "PI_CLASSROOM_SERVICE_PORT",
         "PI_CLASSROOM_TAILSCALE",
         "PI_CLASSROOM_TEACHER",
+        "PI_CODING_AGENT_DIR",
       ],
     });
   });

@@ -40,7 +40,7 @@ Upgrading from pi-teach? Remove the old plugin before installing Studens; see th
 
 ## Start learning
 
-- **Pi:** `/teach <topic>`, then `/classroom` for the lesson link. Keep Pi open.
+- **Pi:** `/teach <topic>`, then `/classroom` for the lesson link. The teacher service stays running after Pi exits.
 - **Claude Code:** `/studens:teach <topic>` and `/studens:classroom`.
 - **Codex:** Ask it to teach you a topic, then open your classroom.
 

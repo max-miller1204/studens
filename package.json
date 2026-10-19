@@ -50,24 +50,16 @@
     "test:mutate": "stryker run"
   },
   "dependencies": {
+    "@earendil-works/pi-coding-agent": "^0.83.0",
     "marked": "^15.0.12"
   },
-  "peerDependencies": {
-    "@earendil-works/pi-coding-agent": "*"
-  },
-  "peerDependenciesMeta": {
-    "@earendil-works/pi-coding-agent": {
-      "optional": true
-    }
-  },
   "devDependencies": {
-    "@earendil-works/pi-coding-agent": "^0.83.0",
+    "@stryker-mutator/core": "10.0.0",
+    "@stryker-mutator/vitest-runner": "10.0.0",
     "@types/node": "^24.5.2",
     "prettier": "^3.8.4",
     "typescript": "^5.9.3",
-    "vitest": "^3.2.4",
-    "@stryker-mutator/core": "10.0.0",
-    "@stryker-mutator/vitest-runner": "10.0.0"
+    "vitest": "^3.2.4"
   },
   "engines": {
     "node": ">=22.18.0"

@@ -479,6 +479,9 @@ async function main(): Promise<void> {
       fs.writeFileSync(path.join(artifacts, "host-stdout.log"), stdout);
       fs.writeFileSync(path.join(artifacts, "host-stderr.log"), stderr);
       fs.cpSync(path.join(root, CLASSROOM), path.join(artifacts, "classroom"), { recursive: true });
+      const piSessions = path.join(root, ".pi-teach-service/pi-sessions");
+      if (fs.existsSync(piSessions))
+        fs.cpSync(piSessions, path.join(artifacts, "pi-sessions"), { recursive: true });
       const serviceLog = path.join(root, ".pi-teach-service/service.log");
       if (fs.existsSync(serviceLog))
         fs.copyFileSync(serviceLog, path.join(artifacts, "service.log"));

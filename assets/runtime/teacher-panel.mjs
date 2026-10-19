@@ -36,7 +36,7 @@ export function createTeacherPanel({ config, contentRoot, drafts }) {
     if (firstRender) buildTeacherPanel();
     placeTeacherPanel();
     teacherPanel.querySelector(".cl-teacher-identity").textContent =
-      state.identity.backend === "pi"
+      state.identity.backend === "pi" && !state.identity.persistent
         ? "Your teacher is the Pi session that opened this classroom."
         : `${state.identity.backend} teacher. Requested: ${state.identity.requestedModel ?? "tool’s configured default"}. Last answering model: ${state.identity.activeModel || "No answer yet"}. Session: ${state.identity.sessionId || "Starts with your first request"}.`;
 

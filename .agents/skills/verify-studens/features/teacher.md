@@ -14,7 +14,7 @@ The learner receives follow-up questions and answers them in the lesson's teache
 - Show specific failures and require an explicit retry.
 - Regenerate a plan rejected before writes. Keep valid plans for recovery.
 - Request a new grade plan after an explicit retry of a rejected score.
-- Keep the persistent service available after MCP exit.
+- Keep the persistent service available after Pi or MCP exit.
 
 ## How to get to it (user POV)
 
@@ -30,7 +30,7 @@ The learner receives follow-up questions and answers them in the lesson's teache
 
 Run `npm run verify -- browser --artifacts /tmp/studens-teacher`.
 
-The Pi fixture checks `.cl-teacher` follows the quiz, a prose-only grading run fails, and an explicit retry permits grading. It checks the panel reply reaches the correct prompt and all three conversation messages survive reload.
+The legacy Pi bridge fixture checks `.cl-teacher` follows the quiz, a prose-only grading run fails, and an explicit retry permits grading. It checks the panel reply reaches the correct prompt and all three conversation messages survive reload.
 
 It also receives replies while reading before and after the quiz. The notice must point down or up toward the teacher, update when scrolling past the panel, and dismiss when clicked as the teacher comes into view. Inspect `pi-panel/teacher-notice-below.png`, `pi-panel/teacher-notice-above.png`, and `pi-panel/pi-panel.json`.
 
@@ -40,10 +40,12 @@ The service fixture also submits a quiz whose teacher supplies a forbidden total
 
 The resume fixtures use a saved review with an empty panel or an unanswered saved reply. They check the explicit handoff, panel link, reply recovery, message order, reload, and unchanged assessment and evidence files for Pi, Claude, and Codex. Repeated handoffs must reuse the request. Inspect `resume/`. The real Pi and service host drives also resume a historical 67% review from initiating chat. They check the saved grade and teacher identity.
 
+The actual Pi target uses the same learner drive and dedicated service queue as Claude and Codex. Its additional lifecycle drive closes the initiating Pi while teacher work runs, submits from two browser tabs, reconnects from a fresh Pi, rejects an unavailable model, and uses explicit retry after changing settings. It saves a real valid Pi grade plan while an owned scratch grade directory denies writes, restarts the service, retries the saved plan, then restarts again. Require one saved grade, unchanged plan and conversation bytes, no new inference, the exact Pi model, and low thinking. Inspect `pi/lifecycle/`, including `lifecycle.json`, the original saved plan, private session transcript, and screenshots.
+
 For a changed real Pi path, run `npm run verify -- pi`. For shared service or prompt changes, run `npm run verify -- claude`, then `npm run verify -- codex`. Add `--artifacts <directory>` to retain host evidence. These drives ask a question, submit a wrong answer, and reply in the panel. They check that the quiz score remains unchanged.
 
 The service reply fixture reports no help. The drives require the actual reply and reported assistance in a saved retrieval check. They require a linked learning record and keep immediate correction outside retained evidence. Inspect `stored-teacher-state.json` and the retained `classroom/` files.
 
 ## Gotchas
 
-Fixture teachers do not prove model responses. Claude and Codex use a persistent teacher session. Pi uses the live agent bridge. Starting a new lesson still requires the initiating host. Private quiz keys must remain unavailable over HTTP.
+Fixture teachers do not prove model responses. All three hosts use a dedicated persistent teacher session. The initiating Pi session context is intentionally separate. Legacy Pi bridge fixtures cover historical state, not a second production delivery path. Starting a new lesson still requires the initiating host. Private quiz keys must remain unavailable over HTTP.

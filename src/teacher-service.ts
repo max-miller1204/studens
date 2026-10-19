@@ -74,7 +74,9 @@ export class TeacherService {
   attach(classroom: string, backend?: Backend): void {
     if (!store.readClassroom(classroom)) throw new Error(`No such classroom: ${classroom}`);
     if (piResumes(classroom).some((r) => r.status === "running" && piOwnerAlive(r)))
-      throw new Error("A live Pi session owns this classroom's resume request.");
+      throw new Error(
+        "A live Pi session owns this classroom's resume request. Finish it and explicitly stop the previous Pi server, then retry open_classroom.",
+      );
     if (
       refillRequests(classroom).some(
         (r) =>
@@ -83,11 +85,26 @@ export class TeacherService {
           refillOwnerAlive(r),
       )
     )
-      throw new Error("A live Pi session owns this classroom's background review work.");
+      throw new Error(
+        "A live Pi session owns this classroom's background review work. Finish it and explicitly stop the previous Pi server, then retry open_classroom.",
+      );
+    const legacyReview = reviewSessions(classroom).find(
+      (r) => r.owner === "pi" && r.status !== "done",
+    );
+    const legacyRefill = refillRequests(classroom).find(
+      (r) => r.owner === "pi" && r.status !== "done",
+    );
+    const legacyResume = piResumes(classroom).find((r) => r.status !== "done");
+    if (legacyReview || legacyRefill || legacyResume)
+      throw new Error(
+        `Classroom ${classroom} has unfinished legacy Pi work ${legacyReview?.id ?? legacyRefill?.id ?? legacyResume?.id}. Reopen the previous Pi package, explicitly retry and finish that request, then stop its server before retrying open_classroom. Saved plans and history have not been changed.`,
+      );
     let state = this.states.get(classroom) ?? readTeacherState(classroom);
     if (!state) {
       if (!backend)
-        throw new Error("Select teacher_backend codex or claude. The initiating host is unknown.");
+        throw new Error(
+          "Select teacher_backend pi, codex, or claude. The initiating host is unknown.",
+        );
       state = { version: 1, identity: { backend }, requests: [], messages: [] };
     } else if (backend && backend !== state.identity.backend) {
       throw new Error(
@@ -316,7 +333,9 @@ export class TeacherService {
     const state = this.states.get(request.classroom);
     if (!state) throw new Error("No classroom teacher. Call open_classroom first.");
     if (piResumes(request.classroom).some((r) => r.status === "running" && piOwnerAlive(r)))
-      throw new Error("A live Pi session owns this classroom's resume request.");
+      throw new Error(
+        "A live Pi session owns this classroom's resume request. Finish it and explicitly stop the previous Pi server, then retry open_classroom.",
+      );
     if (reviewCard) {
       if (!state.requests.some((r) => r.id === request.id))
         this.enqueue({ ...request, kind: "resume", target: input.submission_id });
@@ -489,7 +508,7 @@ export class TeacherService {
     if (!state) return null;
     return {
       reteach: reteachOffers(classroom, lesson),
-      identity: state.identity,
+      identity: { ...state.identity, persistent: true },
       requests: state.requests
         .filter((r) => r.lesson === lesson)
         .map((r) => ({ id: r.id, kind: r.kind, status: r.status, error: r.error })),
@@ -921,7 +940,7 @@ export class TeacherService {
         if (!store.listGrades(r.classroom, r.lesson).some((g) => g.submissionId === r.target)) {
           const result = await tool.execute(args);
           if (isFailure(result)) {
-            r.planValidated = false;
+            if (result.details.storageError !== true) r.planValidated = false;
             throw new Error(result.content[0].text);
           }
         }

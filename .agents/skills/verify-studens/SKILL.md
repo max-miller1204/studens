@@ -12,7 +12,7 @@ Use this skill from the repository root. Read [features/README.md](features/READ
 1. Install repository dependencies with `npm ci` when missing.
 2. Run `npm run verify -- --artifacts /tmp/studens-verify-local`.
 
-The default target runs formatting, types, automated tests, and the browser suite. The browser suite starts isolated classrooms and loopback servers. It drives reading, quizzes, the Pi bridge, and the persistent service. It closes owned sessions and removes scratch classrooms.
+The default target runs formatting, types, automated tests, and the browser suite. The browser suite starts isolated classrooms and loopback servers. It drives reading, quizzes, legacy Pi recovery fixtures, and the shared persistent service. It closes owned sessions and removes scratch classrooms.
 
 ## Doctor
 
@@ -20,7 +20,7 @@ Run `npm run verify -- doctor`. For a real host, use `npm run verify -- doctor p
 
 Doctor checks Node, dependencies, headless configuration, and required commands. Codex also needs an existing `auth.json`. Real hosts need a signed-in model account. Doctor does not prove that model access works. A missing command or account is a blocker. Use `dots` to manage global packages.
 
-Real model checks use fixed settings. Pi uses `openai-codex/gpt-6-luna` with `low` thinking. Claude uses `claude-haiku-5-5` with `low` effort. Codex uses `gpt-6-luna` with `low` reasoning effort. These settings apply to initiating sessions, dedicated teachers, authoring, feedback, and semantic evaluation. Test settings override user defaults. Codex uses a temporary home with a disposable local marketplace and copy of this checkout, so public release pins cannot select older code. The test plugin passes that home to its MCP service. Pi checks its active model and thinking level before it starts the browser drive. Do not substitute a model when access fails.
+Real model checks use fixed settings. Pi uses `openai-codex/gpt-6-luna` with `low` thinking. Claude uses `claude-haiku-5-5` with `low` effort. Codex uses `gpt-6-luna` with `low` reasoning effort. These settings apply to initiating sessions, dedicated teachers, authoring, feedback, and semantic evaluation. Test settings override user defaults. Codex uses a temporary home with a disposable local marketplace and copy of this checkout, so public release pins cannot select older code. The test plugin passes that home to its MCP service. Pi uses a temporary private copy of auth, provider/model catalog, and fixed settings without editing global configuration. Its actual extension initiates the service; its dedicated SDK session records the answering model and thinking level. The lifecycle probe asserts the exact provider/model and low thinking. Do not substitute a model when access fails.
 
 During a browser drive, the harness checks readiness through the lesson's `data-state` and the service's status API. It checks stored state before teardown. Inspect the saved service log after a failure. Do not switch backends to bypass a failure.
 
@@ -28,16 +28,16 @@ During a browser drive, the harness checks readiness through the lesson's `data-
 
 Use the installed `playwright-cli` through the repository harness. Each run has its own browser session. These documented checks require headless mode.
 
-| Change                                                              | Check after the default target                                                 |
-| ------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| Pi bridge, extension hooks, or Pi prompts                           | `npm run verify -- pi`                                                         |
-| MCP, persistent teacher service, shared prompts, or teaching skills | `npm run verify -- claude`, then `npm run verify -- codex`                     |
-| Templates or authoring guidance                                     | `npm run verify -- authoring claude`, then `npm run verify -- authoring codex` |
-| Private variant refill protocol                                     | `npm run verify -- refill claude`, then `npm run verify -- refill codex`       |
-| Grading policy                                                      | Select `feedback claude` and `feedback codex`                                  |
-| Semantic evaluator                                                  | Select `quality claude` and `quality codex`                                    |
-| Plugin manifests                                                    | `claude plugin validate .`                                                     |
-| Tailnet links or phone access                                       | Read the tailnet note in the feature index before selecting `phone`            |
+| Change                                                              | Check after the default target                                                          |
+| ------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| Pi extension, dedicated Pi teacher, or Pi prompts                   | `npm run verify -- pi`                                                                  |
+| MCP, persistent teacher service, shared prompts, or teaching skills | `npm run verify -- pi`, then `npm run verify -- claude`, then `npm run verify -- codex` |
+| Templates or authoring guidance                                     | `npm run verify -- authoring claude`, then `npm run verify -- authoring codex`          |
+| Private variant refill protocol                                     | `npm run verify -- refill claude`, then `npm run verify -- refill codex`                |
+| Grading policy                                                      | Select `feedback claude` and `feedback codex`                                           |
+| Semantic evaluator                                                  | Select `quality claude` and `quality codex`                                             |
+| Plugin manifests                                                    | `claude plugin validate .`                                                              |
+| Tailnet links or phone access                                       | Read the tailnet note in the feature index before selecting `phone`                     |
 
 Pass `--artifacts <directory>` to any target. Use a new directory for each run. `checks` runs only formatting, types, and automated tests. `browser` runs only browser checks. Do not repeat completed checks unless code changes or a finding requires it.
 

@@ -16,15 +16,24 @@ Loading a checkout directly remains an explicit development path.
 
 ## Hosts and lifecycles
 
-Pi loads `index.ts` through `pi.extensions` in `package.json`. Its HTTP server stays
-inside the live Pi session. Browser requests reach `pi.sendUserMessage` through the
-bridge. Session shutdown stops the server. Never detach it.
+Pi loads `index.ts` through `pi.extensions` in `package.json`. Its commands and
+extension tools use the same private service socket and tool dispatcher as MCP.
+The extension disconnects on session shutdown; HTTP and queued teacher work continue.
+It never installs browser hooks or starts a competing HTTP server.
 
 Claude Code and Codex load the root plugin through `.claude-plugin/` and
 `.codex-plugin/`. Their marketplaces list this root. `mcp/launch.mjs` checks Node,
 installs production dependencies on first use, and starts `src/mcp-stdio.ts`.
-MCP clients attach to a persistent service over a private Unix socket. Closing
-stdin detaches that client; it does not stop HTTP or teacher work.
+MCP clients attach to that persistent service. Closing stdin detaches the client.
+
+Pi's dedicated teacher uses the packaged Pi SDK with the existing Pi account,
+provider catalog, and effective model settings. Configuration is read into memory;
+retry and compaction are disabled for these service turns, without editing global
+settings. A single structured-output tool returns a plan to the service and cannot
+write learner data. Its persisted Pi session lives in the private service directory.
+Initiating Pi chat context, extensions, skills, and project context files are not
+inherited. The dedicated teacher receives saved classroom context and each durable
+request instead. Initiating chat remains the entry point for lesson authoring.
 
 One service owns one classrooms root and stable loopback port. Each classroom has
 one selected backend and dedicated teacher session. Browser requests start teacher
@@ -50,21 +59,21 @@ never the working directory or files outside the package.
 
 ## Module map
 
-| Boundary                                        | Entry points                                                     |
-| ----------------------------------------------- | ---------------------------------------------------------------- |
-| Pi commands, origins, status                    | `index.ts`, `commands.ts`, `bridge.ts`, `status-widget.ts`       |
-| HTTP lifecycle, feature routes, static guards   | `server.ts`, `server/`, `paths.ts`                               |
-| Disk state API and feature storage              | `store.ts`, `store/`                                             |
-| Shared tools and host prompts                   | `tools.ts`, `prompts.ts`                                         |
-| MCP dispatch and control transport              | `mcp.ts`, `mcp-stdio.ts`, `service-client.ts`, `service-main.ts` |
-| Durable requests and plans                      | `service-state.ts`, `teacher-service.ts`                         |
-| Model adapters, deadlines, grade decoding       | `teacher.ts`, `teacher-deadline.ts`, `teacher-grading.ts`        |
-| Resume and review publication                   | `teacher-resume.ts`, `review-session.ts`                         |
-| Private variant pools and refills               | `review-variants.ts`, `review-pool.ts`, `review-refill.ts`       |
-| Quiz, rubric, pretest, plan validation          | `quiz.ts`, `rubric.ts`, `pretest.ts`, `teaching-plan.ts`         |
-| Review schedule, learning evidence, diagnostics | `review.ts`, `evidence.ts`, `health.ts`                          |
-| HTML and Markdown                               | `pages.ts`, `lesson-html.ts`, `markdown.ts`                      |
-| Tailnet route ownership and links               | `phone-access.ts`, `tailnet-links.ts`                            |
+| Boundary                                        | Entry points                                                               |
+| ----------------------------------------------- | -------------------------------------------------------------------------- |
+| Pi service client, commands, status             | `index.ts`, `pi-service-client.ts`, `commands.ts`, `status-widget.ts`      |
+| HTTP lifecycle, feature routes, static guards   | `server.ts`, `server/`, `paths.ts`                                         |
+| Disk state API and feature storage              | `store.ts`, `store/`                                                       |
+| Shared tools and host prompts                   | `tools.ts`, `prompts.ts`                                                   |
+| MCP dispatch and control transport              | `mcp.ts`, `mcp-stdio.ts`, `service-client.ts`, `service-main.ts`           |
+| Durable requests and plans                      | `service-state.ts`, `teacher-service.ts`                                   |
+| Model adapters, deadlines, grade decoding       | `teacher.ts`, `pi-teacher.ts`, `teacher-deadline.ts`, `teacher-grading.ts` |
+| Resume and review publication                   | `teacher-resume.ts`, `review-session.ts`                                   |
+| Private variant pools and refills               | `review-variants.ts`, `review-pool.ts`, `review-refill.ts`                 |
+| Quiz, rubric, pretest, plan validation          | `quiz.ts`, `rubric.ts`, `pretest.ts`, `teaching-plan.ts`                   |
+| Review schedule, learning evidence, diagnostics | `review.ts`, `evidence.ts`, `health.ts`                                    |
+| HTML and Markdown                               | `pages.ts`, `lesson-html.ts`, `markdown.ts`                                |
+| Tailnet route ownership and links               | `phone-access.ts`, `tailnet-links.ts`                                      |
 
 `server.ts` keeps the loopback singleton and public exports. `server/` owns
 classroom pages, records, folders, annotations, quizzes, review, teacher endpoints,
@@ -102,18 +111,20 @@ source notation to grading. Answers and feedback render Markdown server-side.
 - **Requests are sequential and durable per classroom.** Save each plan before writes.
   Save raw model output before decoding. Recovery completes saved calls and skips
   already saved grades. Interrupted calls show specific errors and require retry.
+  Storage failures retain validated plans; rejected allocations require a new plan.
 - **Plans are restricted by request type.** Service teachers return per-question
   allocations through `grade_quiz_answers`; the service computes the score and
   validates identities, rubric weights, correctness, and arithmetic. Version 2 plans
   use this format. Older saved plans retain their original score validation.
   Resume requests permit a teacher message only. Only chat/reflection allow gap notes.
-- **Pi attribution follows the origin FIFO.** Mark typed and initiating turns foreign.
-  Question, grade, reflection, and panel origins must receive only their own run's
-  final output. Prose cannot substitute for a grading tool call.
+- **Pi uses the service FIFO.** Initiating chat turns cannot answer queued browser
+  work. The dedicated Pi session returns exactly one structured plan; prose cannot
+  substitute for a grading operation. The old bridge remains only in historical
+  regression fixtures and shared answer/grade persistence helpers.
 - **Conversations stay on the lesson page.** Cards hold the original answer and ordered
   follow-ups. Answer the oldest pending turn. Post quiz retrieval questions and learner
   replies in the teacher panel. Resume the exact latest graded submission without
-  inventing a reply or grading again. Interrupted Pi resumes require retry.
+  inventing a reply or grading again. Interrupted inference requires explicit retry on every host.
 - **Closed grades are code-owned.** Validated assessments use machine-checkable
   private keys for choice, multi, numeric, order, match, and normally cloze. Term
   and locate can explicitly opt into exact grading. Save the computed allocations
@@ -158,8 +169,8 @@ source notation to grading. Answers and feedback render Markdown server-side.
 ## HTTP and browser boundaries
 
 Bind HTTP to loopback. Connected Tailscale links use owned, tailnet-only Serve routes;
-respect config, preserve unrelated routes, and never enable Funnel. Keep Pi and service
-route ownership separate. Route errors do not select another port or backend.
+respect config, preserve unrelated routes, and never enable Funnel. All hosts use the service-owned route. Legacy Pi route ownership remains
+discoverable for explicit cleanup; never take over a live legacy route. Route errors do not select another port or backend.
 
 Every static route uses the guards in `paths.ts`, including symlink checks.
 Never serve `quiz/`, private plans, teacher state, or recovery files. Media routes

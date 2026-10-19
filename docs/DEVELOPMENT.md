@@ -61,7 +61,11 @@ npm run verify -- codex --artifacts /tmp/studens-codex
 Browser harnesses use the installed `playwright-cli` in headless mode. Real hosts
 need signed-in model accounts and use the fixed models in the verification skill.
 Checks use scratch classrooms; Codex also uses a temporary home with a copy of
-`auth.json`. Cleanup removes owned sessions and scratch data and preserves reports.
+`auth.json`. Pi uses a private temporary account/configuration copy with the same
+provider catalog and fixed verification model; its dedicated SDK teacher has a
+separate persisted session. The Pi target also checks initiating exit during work,
+reconnect, FIFO, explicit retry, and saved-plan restart without a second grade.
+Cleanup removes owned sessions and scratch data and preserves reports.
 Never stop the learner's shared service by port or process name.
 
 Keep tests for contracts, boundary failures, recovery, request order, and private

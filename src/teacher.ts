@@ -5,7 +5,7 @@ import { claudeModels } from "./teacher-models.ts";
 import type { ModelCatalog, ModelChoice } from "./teacher-models.ts";
 import { TeacherDeadline } from "./teacher-deadline.ts";
 
-export type Backend = "codex" | "claude";
+export type Backend = "codex" | "claude" | "pi";
 export interface TeacherIdentity {
   backend: Backend;
   sessionId?: string;
@@ -182,6 +182,10 @@ export async function runStructured(
   signal?: AbortSignal,
   saveActiveModel?: (model: string) => void,
 ): Promise<unknown> {
+  if (identity.backend === "pi") {
+    const { runPi } = await import("./pi-teacher.ts");
+    return runPi(identity, prompt, cwd, saveIdentity, schema, signal, saveActiveModel);
+  }
   return identity.backend === "codex"
     ? runCodex(identity, prompt, cwd, saveIdentity, schema, signal, saveActiveModel)
     : runClaude(identity, prompt, cwd, saveIdentity, schema, signal, saveActiveModel);
@@ -472,6 +476,10 @@ async function runCodex(
 
 /** Discover choices through the same installed/authenticated transport as inference. */
 export async function teacherModels(backend: Backend, cwd: string): Promise<ModelCatalog> {
+  if (backend === "pi") {
+    const { piModels } = await import("./pi-teacher.ts");
+    return piModels(cwd);
+  }
   return backend === "claude"
     ? claudeModels(cwd)
     : ((await runCodex(
