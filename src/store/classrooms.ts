@@ -2,6 +2,7 @@
  * Discovery is filesystem-first: a directory holding lesson HTML is a lesson,
  * including material authored with plain file writes without lesson.json.
  */
+import { lessonRequests } from "./lesson-requests.ts";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { classroomDir, classroomsRoot, isDir, isFile, isValidSlug } from "../paths.ts";
@@ -156,6 +157,7 @@ export function listLessonDirs(classroom: string): string[] {
     .filter(
       (name) =>
         isValidSlug(name) &&
+        !lessonRequests(classroom).some((r) => r.lesson === name && r.status !== "done") &&
         !reserved.has(name) &&
         isDir(path.join(dir, name)) &&
         resolveLessonHtml(path.join(dir, name)) !== null,

@@ -1,3 +1,5 @@
+import { lessonRequests } from "../src/next-lesson.ts";
+import { driveRealNextLesson } from "./next-lesson-actions.ts";
 /** Test browser questions, quiz grading, and the teacher panel check in a real Pi session. */
 import { highlightText } from "./browser-actions.ts";
 import { spawn } from "node:child_process";
@@ -182,6 +184,31 @@ try {
   });
   await playwright(session, fixture.root, "open", classroomUrl);
   browserOpen = true;
+  await driveRealNextLesson(session, fixture.root, base, "pi", artifacts);
+  if ((failure as Error | null)?.message === "Tool failed: publish_lesson") {
+    const saved = lessonRequests("rust").at(-1)!;
+    if (
+      saved.status !== "done" ||
+      !saved.failedAttempts?.length ||
+      !events.some(
+        (e) => e.type === "tool_execution_end" && e.toolName === "publish_lesson" && !e.isError,
+      )
+    )
+      throw failure;
+    // Only the authoring rejection explicitly retried and proven recovered above is expected.
+    if (
+      events.some(
+        (e) => e.type === "tool_execution_end" && e.isError && e.toolName !== "publish_lesson",
+      )
+    )
+      throw failure;
+    failure = null;
+  }
+  await playwrightCode(
+    session,
+    fixture.root,
+    `async page=>{await page.goto(${JSON.stringify(base)}+"/c/rust");return true;}`,
+  );
   if (artifacts)
     fs.writeFileSync(
       path.join(artifacts, "pi-reading.json"),
@@ -392,7 +419,7 @@ try {
   );
   if (artifacts)
     fs.writeFileSync(path.join(artifacts, "pi-events.json"), JSON.stringify(events, null, 2));
-  if (store.listLessons("rust").length !== 1)
+  if (store.listLessons("rust").length !== 2)
     throw new Error("Pi created another lesson without agreement");
   const resumeInput = seedHistoricalReview(fixture.root);
   const savedResumeGrade = JSON.stringify(store.listGrades("rust", resumeInput.lesson));
@@ -486,6 +513,9 @@ try {
   if (artifacts) {
     fs.writeFileSync(path.join(artifacts, "pi-events.json"), JSON.stringify(events, null, 2));
     fs.writeFileSync(path.join(artifacts, "pi-stderr.log"), stderr);
+    fs.cpSync(path.join(fixture.root, "rust"), path.join(artifacts, "classroom"), {
+      recursive: true,
+    });
   }
   if (browserOpen) await playwright(session, fixture.root, "close");
   child.kill();

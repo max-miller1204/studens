@@ -47,6 +47,9 @@ export default function classroomExtension(pi: ExtensionAPI): void {
     onGradeSaved: (submission) => bridge.maintenance(submission.classroom),
     onReviewSaved: (classroom) => bridge.maintenance(classroom),
     onReflect: (reflection) => bridge.reflect(reflection),
+    lessonOwner: () => "pi",
+    onNextLesson: (r) => bridge.nextLesson(r),
+    onNextLessonRetry: (r) => bridge.retryNextLesson(r),
     reviewOwner: "pi",
     onReview: (session) => bridge.review(session),
     onReviewRetry: (session) => bridge.retryReview(session),
@@ -58,7 +61,12 @@ export default function classroomExtension(pi: ExtensionAPI): void {
 
   registerClassroomTools(
     pi,
-    [resumeTeacherTool((input) => bridge.resume(input)), piRefillTool()],
+    [
+      resumeTeacherTool((input) => bridge.resume(input)),
+      piRefillTool(),
+      bridge.lessonTool(),
+      bridge.researchTool(),
+    ],
     (name) => bridge.assertCanWrite(name),
   );
   registerClassroomCommands(pi, bridge);
@@ -66,6 +74,7 @@ export default function classroomExtension(pi: ExtensionAPI): void {
   // The idle probe lives on the session context, which is only handed to handlers —
   // capture it once so the bridge can decide between waking the agent and queueing.
   pi.on("session_start", async (_event, ctx) => {
+    await bridge.restoreLessons();
     bridge.restoreReviews();
     bridge.restoreResumes();
     bridge.restoreRefills();
@@ -79,6 +88,14 @@ export default function classroomExtension(pi: ExtensionAPI): void {
   // agent_end, so an answer is never attributed to somebody else's run.
   pi.on("input", async (event: any) => {
     if (event?.source === "interactive" || event?.source === "rpc") bridge.noteForeignTurn();
+  });
+
+  pi.on("tool_call", async (event, ctx) => {
+    try {
+      bridge.assertLessonTool(event.toolName, event.input, ctx.cwd);
+    } catch (error) {
+      return { block: true, reason: (error as Error).message };
+    }
   });
 
   pi.on("agent_end", async (event: any) => {

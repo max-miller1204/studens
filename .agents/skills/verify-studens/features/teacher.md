@@ -46,4 +46,4 @@ The service reply fixture reports no help. The drives require the actual reply a
 
 ## Gotchas
 
-Fixture teachers do not prove model responses. Claude and Codex use a persistent teacher session. Pi uses the live agent bridge. Starting a new lesson still requires the initiating host. Private quiz keys must remain unavailable over HTTP.
+Fixture teachers do not prove model responses. Claude and Codex use a persistent teacher session. Pi uses the live agent bridge. New lessons start from the classroom page; see [Next lesson](next-lesson.md). Private quiz keys must remain unavailable over HTTP.

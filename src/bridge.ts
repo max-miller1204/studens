@@ -1,3 +1,19 @@
+import * as path from "node:path";
+import { classroomDir, docsDir, templatesDir, safeStaticFile } from "./paths.ts";
+import { readLessonSource } from "./lesson-research.ts";
+import {
+  lessonRequests,
+  requireLessonOwner,
+  updateLessonRequest,
+  saveLessonDocument,
+  completeLessonRequest,
+  nextLessonPrompt,
+  LESSON_TOOL,
+  PI_LESSON_TOOL,
+  piLessonDocument,
+  prepareLessonRetry,
+} from "./next-lesson.ts";
+import type { LessonRequest } from "./next-lesson.ts";
 /**
  * bridge.ts — the wire between the browser and the agent running in this session.
  *
@@ -84,6 +100,7 @@ type Origin =
   /** `turn` is null for the card's original question, or a follow-up id. */
   | { kind: "ask"; annotationId: string; turn: store.TurnId }
   | { kind: "panel"; request: PanelRequest }
+  | { kind: "lesson"; request: LessonRequest }
   | { kind: "review"; session: ReviewSession }
   | { kind: "refill"; request: RefillRequest }
   | { kind: "other" };
@@ -91,6 +108,8 @@ type Origin =
 export class ClassroomBridge {
   private readonly pending: Origin[] = [];
   private readonly sessionId = randomUUID();
+  private lessonTimer?: ReturnType<typeof setTimeout>;
+  private readonly deferredLessons = new Map<string, LessonRequest>();
   private readonly deferredResumes = new Map<string, PiResume>();
   /** Panel runs not yet finished, or finished with nothing to say. */
   private readonly panel = new Map<string, PanelRequest>();
@@ -185,6 +204,11 @@ export class ClassroomBridge {
   /** A resume turn can ask a question. It cannot write new assessment or evidence. */
   assertCanWrite(toolName?: string): void {
     const origin = this.pending[0];
+    if (
+      origin?.kind === "lesson" &&
+      ![LESSON_TOOL.name, "read_lesson_source"].includes(toolName ?? "")
+    )
+      throw new Error("Next lesson authoring may only publish its requested lesson.");
     if (origin?.kind === "refill" && toolName !== REFILL_TOOL.name)
       throw new Error("Background refill turns may only save private review variants.");
     if (origin?.kind === "panel" && origin.request.kind === "resume")
@@ -304,6 +328,170 @@ export class ClassroomBridge {
     savePiResume({ ...saved, status: done ? "done" : request.status, error: request.error });
   }
 
+  nextLesson(request: LessonRequest): void {
+    requireLessonOwner(request, "pi");
+    if (
+      request.status !== "queued" ||
+      this.pending.some((o) => o.kind === "lesson" && o.request.id === request.id) ||
+      this.deferredLessons.has(request.id)
+    )
+      return;
+    this.deferredLessons.set(request.id, request);
+    this.startNextLesson();
+  }
+  private startNextLesson(): void {
+    if (this.pending.length) return;
+    if (!this.idle()) {
+      if (!this.lessonTimer)
+        this.lessonTimer = setTimeout(() => {
+          this.lessonTimer = undefined;
+          this.startNextLesson();
+        }, 25);
+      return;
+    }
+    const request = this.deferredLessons.values().next().value;
+    if (!request) return;
+    this.deferredLessons.delete(request.id);
+    const running = updateLessonRequest(request, {
+      status: "running",
+      ownerPid: process.pid,
+      ownerSession: this.sessionId,
+      error: undefined,
+    });
+    const origin: Origin = { kind: "lesson", request: running };
+    this.pending.push(origin);
+    try {
+      this.send(nextLessonPrompt({ ...running, error: request.error }, "pi"));
+    } catch (error) {
+      this.pending.splice(this.pending.indexOf(origin), 1);
+      updateLessonRequest(running, { status: "failed", error: (error as Error).message });
+    }
+  }
+  retryNextLesson(request: LessonRequest): void {
+    requireLessonOwner(request, "pi");
+    if (request.status !== "failed") throw new Error("This lesson request cannot be retried.");
+    request = prepareLessonRetry(request);
+    if (request.document) {
+      updateLessonRequest(request, { status: "running", error: undefined });
+      void completeLessonRequest(request).catch((error) =>
+        updateLessonRequest(request, { status: "failed", error: (error as Error).message }),
+      );
+    } else {
+      const queued = updateLessonRequest(request, { status: "queued" });
+      if (this.pending.some((o) => o.kind === "lesson" && o.request.id === request.id))
+        this.deferredLessons.set(request.id, queued);
+      else this.nextLesson(queued);
+    }
+  }
+  async restoreLessons(): Promise<void> {
+    for (const classroom of store.listClassrooms())
+      for (const request of lessonRequests(classroom.name)) {
+        if (request.owner !== "pi" || request.status === "done" || request.status === "failed")
+          continue;
+        if (request.document) {
+          try {
+            await completeLessonRequest(request);
+          } catch (error) {
+            updateLessonRequest(request, { status: "failed", error: (error as Error).message });
+          }
+        } else {
+          try {
+            process.kill(request.ownerPid, 0);
+          } catch (error) {
+            if ((error as NodeJS.ErrnoException).code !== "ESRCH") throw error;
+            updateLessonRequest(request, {
+              status: "failed",
+              error: "Pi stopped during lesson creation. Retry this request.",
+            });
+          }
+        }
+      }
+  }
+  researchTool() {
+    return {
+      name: "read_lesson_source",
+      label: "Read lesson source",
+      description:
+        "Read a public HTTP source for the current explicit Next lesson request. Does not write files. Research failures require a corrected explicit request.",
+      parameters: {
+        type: "object",
+        properties: { url: { type: "string" } },
+        required: ["url"],
+        additionalProperties: false,
+      },
+      execute: async (input: unknown) => {
+        if (this.pending[0]?.kind !== "lesson")
+          throw new Error("Web research is available only during an explicit Next lesson request.");
+        return {
+          details: {},
+          content: [{ type: "text" as const, text: await readLessonSource(input) }],
+        };
+      },
+    };
+  }
+  lessonTool() {
+    return {
+      ...PI_LESSON_TOOL,
+      label: "Publish requested lesson",
+      execute: async (input: unknown) => {
+        const origin = this.pending[0];
+        if (origin?.kind !== "lesson" || origin.request.ownerSession !== this.sessionId)
+          throw new Error("No explicit lesson request belongs to this Pi turn.");
+        const saved = lessonRequests(origin.request.classroom).find(
+          (r) => r.id === origin.request.id,
+        )!;
+        if (saved.status !== "running")
+          throw new Error(
+            "This lesson request requires an explicit retry from the classroom page.",
+          );
+        updateLessonRequest(saved, { modelOutput: input });
+        try {
+          const request = saveLessonDocument(origin.request, piLessonDocument(input));
+          await completeLessonRequest(request);
+          return {
+            details: {},
+            content: [
+              {
+                type: "text" as const,
+                text: `Lesson ready: /c/${request.classroom}/${request.lesson}`,
+              },
+            ],
+          };
+        } catch (error) {
+          updateLessonRequest(origin.request, {
+            status: "failed",
+            error: (error as Error).message,
+          });
+          throw error;
+        }
+      },
+    };
+  }
+  /** Limit live authoring turns to their saved-plan operation and read/research tools. */
+  assertLessonTool(name: string, input?: unknown, cwd = process.cwd()): void {
+    const origin = this.pending[0];
+    if (origin?.kind === "lesson" && name === "read") {
+      const file = (input as { path?: unknown })?.path;
+      if (typeof file !== "string")
+        throw new Error("Lesson resource reading requires a file path.");
+      const target = path.resolve(cwd, file);
+      if (
+        ![classroomDir(origin.request.classroom), docsDir(), templatesDir()].some(
+          (root) => safeStaticFile(root, path.relative(root, target)) === target,
+        )
+      )
+        throw new Error(
+          "Next lesson resource reading is limited to this classroom and packaged authoring guidance.",
+        );
+    }
+    if (
+      this.pending[0]?.kind === "lesson" &&
+      ![LESSON_TOOL.name, "read_lesson_source", "read", "web_search", "web_fetch"].includes(name)
+    )
+      throw new Error(
+        `Next lesson authoring cannot use ${name}. Return the lesson through publish_lesson; only read and web research are permitted.`,
+      );
+  }
   /** Author a browser review in the live Pi session. */
   review(session: ReviewSession): void {
     requireReviewOwner(session, "pi");
@@ -499,6 +687,7 @@ export class ClassroomBridge {
     try {
       this.finishOrigin(messages);
     } finally {
+      if (!this.pending.length && this.deferredLessons.size) this.startNextLesson();
       if (!this.pending.length) {
         const request = this.deferredResumes.values().next().value;
         if (request) {
@@ -511,6 +700,17 @@ export class ClassroomBridge {
 
   private finishOrigin(messages: readonly unknown[]): void {
     const origin = this.pending.shift();
+    if (origin?.kind === "lesson") {
+      const saved = lessonRequests(origin.request.classroom).find(
+        (r) => r.id === origin.request.id,
+      )!;
+      if (saved.status === "running")
+        updateLessonRequest(saved, {
+          status: "failed",
+          error: "Pi finished without publishing the requested lesson. Retry this request.",
+        });
+      return;
+    }
     if (origin?.kind === "refill") {
       const request = refillRequests(origin.request.classroom).find(
         (r) => r.id === origin.request.id,
@@ -578,6 +778,8 @@ export class ClassroomBridge {
 
   /** Drop queued origins — used when the session shuts down. */
   reset(): void {
+    if (this.lessonTimer) clearTimeout(this.lessonTimer);
+    this.lessonTimer = undefined;
     if (this.refillTimer) clearTimeout(this.refillTimer);
     this.refillTimer = undefined;
     this.refillClassrooms.clear();
@@ -606,6 +808,18 @@ export class ClassroomBridge {
         request.error = "Pi stopped during teacher resumption. Retry this request.";
         this.persistResume(request);
       }
+    for (const request of [
+      ...this.deferredLessons.values(),
+      ...this.pending.flatMap((o) => (o.kind === "lesson" ? [o.request] : [])),
+    ]) {
+      const saved = lessonRequests(request.classroom).find((r) => r.id === request.id)!;
+      if (saved.status !== "done")
+        updateLessonRequest(saved, {
+          status: "failed",
+          error: "Pi stopped during lesson creation. Retry this request.",
+        });
+    }
+    this.deferredLessons.clear();
     this.deferredResumes.clear();
     this.pending.length = 0;
     this.panel.clear();

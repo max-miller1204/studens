@@ -80,7 +80,17 @@ try {
     if(errors.length) throw new Error(errors.join(' '));
     return { quizzes:await page.locator('form.cl-quiz').count(), controls, contractErrors:0, pageErrors:0 };
   }`;
-  const initial = await playwrightCode(browser, root, check);
+  async function inspect() {
+    try {
+      return await playwrightCode(browser, root, check);
+    } catch (error) {
+      const failed = error as Error & { stdout?: string };
+      if (failed.stdout?.includes("### Error"))
+        throw new Error(failed.stdout.trim().replace(/^### Error\s*(?:Error:\s*)?/, ""));
+      throw error;
+    }
+  }
+  const initial = await inspect();
   for (const id of staged.pendingPretests) {
     const submission = store.createSubmission({
       classroom,
@@ -96,7 +106,7 @@ try {
       questions: [{ questionId: "preview", correct: false, feedback: "Preview only." }],
     });
   }
-  const released = await playwrightCode(browser, root, check);
+  const released = await inspect();
   console.log(
     JSON.stringify(
       {
