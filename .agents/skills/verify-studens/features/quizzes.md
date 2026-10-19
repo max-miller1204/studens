@@ -7,7 +7,7 @@ The learner submits typed answers and reads grades on the lesson page.
 - Submit and restore all nine question types.
 - Grade closed answers immediately without a teacher turn. Keep saved machine allocations through recovery.
 - Preserve drafts and optional assistance reports.
-- Lock a graded quiz. Display partial credit.
+- Lock a graded quiz. Display partial credit and saved criterion allocations.
 - Keep the newest attempt and grade revision across reload and two tabs.
 - Release gated teaching after a pretest grade.
 
@@ -23,6 +23,16 @@ The learner submits typed answers and reads grades on the lesson page.
 Run `npm run verify -- browser --artifacts /tmp/studens-quizzes`.
 
 The suite drives `form.cl-quiz` and checks `data-state`. It submits all contract examples, reloads, and compares stored answers with the page. It checks `Graded` is disabled, partial verdicts remain visible, and a stale grade cannot replace the active attempt.
+
+The criterion fixture submits a partially correct calculation against definitions
+saved before submission. It checks met and missed rows (2/2 and 0/2), the 2/4 total,
+private snapshots, locked controls, reload, and an explicit explanation revision
+that retains the original grade file. Inspect `criteria/partial.json`,
+`criteria/history.json`, and matching desktop/375px screenshots. Invalid rubric
+points refuse submission without saving an attempt. An incomplete teacher allocation
+keeps a specific error after reload and requires `Retry request`; the corrected plan
+saves one grade. Inspect `criteria/rejected-plan.json` and `criteria/retried-plan.json`.
+These are fixture teachers, not real model adherence checks.
 
 The math quiz stores its prompt, stimulus, and choice label as TeX. Its grade feedback draws as MathML after reload. Inspect `stored-math.json` for the saved submission, grade, and review prompt.
 

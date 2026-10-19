@@ -1,3 +1,4 @@
+import { verifyCriteriaBrowser } from "./e2e-criteria-browser.ts";
 import { verifyReviewCards } from "./e2e-review-cards.ts";
 import { verifyReteachBrowser } from "./e2e-reteach-browser.ts";
 import { verifyClosedBrowser } from "./e2e-closed-browser.ts";
@@ -381,3 +382,5 @@ await verifyClosedBrowser(artifacts ? path.join(artifacts, "closed") : null);
 
 await verifyReviewCards(artifacts ? path.join(artifacts, "review-cards") : null);
 await verifyReteachBrowser(artifacts ? path.join(artifacts, "reteach") : null);
+
+await verifyCriteriaBrowser(artifacts ? path.join(artifacts, "criteria") : null);

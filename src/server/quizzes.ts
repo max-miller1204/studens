@@ -87,6 +87,8 @@ export async function handleQuizSubmit(
       parseRubric(
         fs.readFileSync(path.join(lessonDir(classroom, lesson), "quiz", "key.json"), "utf8"),
         html,
+        "machine",
+        page.criterionContract === 1,
       );
     } catch (err) {
       return sendJson(

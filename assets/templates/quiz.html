@@ -95,7 +95,14 @@
     Newly scaffolded pages use assessment contract version 1. Keep that metadata.
     The server checks every authored quiz and question before saving an attempt.
     A rubric entry must have expected, positive points, full, and partial.
-    Allocate points to named reasoning components. Supply points for every grade.
+    Newly scaffolded pages also use criterionContract: 1. Every rubric entry needs
+    criteria: [{"id":"reason","description":"Explain the governing reason","points":1}].
+    Use unique stable ids and positive weights summing to the question points.
+    Declare actual reasoning components before submission. Descriptions are approved
+    for display after grading; keep them and all expected answers private beforehand.
+    For exact grading, declare one all-or-zero criterion. For component partial credit,
+    use a judgment question. Include criteria in private review variants too.
+    Supply points for every grade.
     The maximum must match points in the rubric. Do not change the rubric after
     submission. Do not place generic criteria on every question just to fill fields.
 
@@ -109,7 +116,8 @@
             "expected": "a",
             "points": 1,
             "full": "Chooses a.",
-            "partial": "None."
+            "partial": "None.",
+            "criteria": [{"id":"selection","description":"Select the correct option","points":1}]
           }
         }
       }
@@ -150,7 +158,11 @@
     or a rubric after a learner submits. grade_lesson_quiz accepts points_earned and
     points_possible per question. Supply both for every question when you use
     points. correct means full credit. The overall score must match the total
-    earned and possible points.
+    earned and possible points. For each question with saved criteria, also supply
+    criteria: [{"criterion_id":"reason","points_earned":1,"feedback":"Explain the actual step that met or missed it."}].
+    Supply each declared id once. Do not supply descriptions or weights. Criterion
+    allocations must sum to the question totals. Omit criteria for older attempts
+    without saved definitions; do not invent a historical breakdown.
 -->
 
 <form class="cl-quiz" data-quiz-id="check-1" data-title="Check on learning">

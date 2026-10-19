@@ -1,3 +1,4 @@
+import { validateAnswerCriteria } from "./criteria.ts";
 import { reteachOffers, reteachPrompt } from "./reteach.ts";
 /** Run one request at a time for each classroom. Persist plans before writes. */
 import {
@@ -794,6 +795,12 @@ export class TeacherService {
     });
     const pretest = r.kind === "quiz" && store.findSubmission(r.target)?.kind === "pretest";
     const quiz = r.kind === "quiz" ? store.findSubmission(r.target) : null;
+    if (quiz) {
+      const gradeCall = parsed.find(
+        (call) => call.name === "grade_lesson_quiz" || call.name === GRADE_ANSWERS,
+      );
+      if (gradeCall) validateAnswerCriteria(quiz, gradeCall.args.questions);
+    }
     if (quiz?.rubricDigest && r.planRubricDigest !== quiz.rubricDigest)
       throw new Error(
         "The saved grading plan has no matching rubric. Retry to request a new plan.",

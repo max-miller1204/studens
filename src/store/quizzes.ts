@@ -44,7 +44,12 @@ export function createSubmission(
     );
   const privateKey =
     page?.assessmentContract === 1
-      ? parseRubric(fs.readFileSync(rubric, "utf8"), fs.readFileSync(page.htmlPath, "utf8"))
+      ? parseRubric(
+          fs.readFileSync(rubric, "utf8"),
+          fs.readFileSync(page.htmlPath, "utf8"),
+          "machine",
+          page.criterionContract === 1,
+        )
       : undefined;
   const deterministicGrades = privateKey
     ? input.answers.flatMap((answer) => {
@@ -88,6 +93,21 @@ export function createSubmission(
     answers,
     teachingPlan,
     deterministicGrades,
+    rubricCriteria: privateKey
+      ? Object.fromEntries(
+          input.answers.flatMap((a) => {
+            const criteria = privateKey[input.quizId]?.[a.questionId]?.criteria;
+            return criteria
+              ? [
+                  [
+                    a.questionId,
+                    criteria.map(({ id, description, points }) => ({ id, description, points })),
+                  ],
+                ]
+              : [];
+          }),
+        )
+      : undefined,
     id: randomUUID(),
     attempt,
     submittedAt,
@@ -107,6 +127,7 @@ export function createSubmission(
 /** Remove private method labels from learner responses and SSE events. */
 export function publicSubmission(submission: QuizSubmission): QuizSubmission {
   const {
+    rubricCriteria: privateCriteria,
     teachingPlan: privatePlan,
     deterministicGrades: privateGrades,
     ...publicFields
