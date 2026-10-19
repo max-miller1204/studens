@@ -3,7 +3,7 @@
   "version": "0.11.0",
   "description": "A teacher you can interrupt: interactive HTML lessons in a local web UI, with highlight-to-ask questions and graded quizzes.",
   "author": {
-    "name": "Josh Noll"
+    "name": "Max Miller"
   },
   "homepage": "https://github.com/max-miller1204/studens#readme",
   "repository": "https://github.com/max-miller1204/studens",
@@ -15,7 +15,7 @@
     "displayName": "Studens",
     "shortDescription": "Interactive lessons you can ask questions inside",
     "longDescription": "Learn a topic one short lesson at a time. Lessons open in a local web UI. Highlight any passage to ask about it, and hand in quizzes to be graded, without leaving the page.",
-    "developerName": "Josh Noll",
+    "developerName": "Max Miller",
     "category": "Education",
     "capabilities": ["Interactive", "Read", "Write"],
     "websiteURL": "https://github.com/max-miller1204/studens",
