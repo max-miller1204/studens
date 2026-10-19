@@ -249,6 +249,13 @@ export async function verifyDailyReview(artifacts: string | null): Promise<void>
         await page.getByRole('button',{name:'Retry Rust review',exact:true}).waitFor();${shot("partial-failure")}
         await page.reload();await page.getByRole('button',{name:'Retry Rust review',exact:true}).waitFor();
       `);
+      const staleStart = await fetch(`${base}/api/daily-review`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: crypto.randomUUID() }),
+      });
+      if (staleStart.status !== 202 || publications !== 2 || !dailyReviews()[0].groups[1].error)
+        throw new Error("A stale landing start retried the later classroom.");
       const beforeRetry = publications;
       save("partial-failure.json", {
         daily: dailyReviews()[0],

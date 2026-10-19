@@ -118,6 +118,8 @@ describe("daily review durability", () => {
     await post("daily-review/continue", { id, classroom: "rust" });
     expect(reviewSessions("rust")).toHaveLength(0);
     await finish("biology");
+    await post("daily-review", { id: randomUUID() });
+    expect(reviewSessions("rust")).toHaveLength(0);
     await post("daily-review/continue", { id, classroom: "biology" });
     expect(reviewSessions("rust")).toHaveLength(0);
     await post("daily-review/continue", { id, classroom: "rust" });

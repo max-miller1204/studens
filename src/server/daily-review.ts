@@ -125,7 +125,9 @@ export async function handleDailyReview(
       const started = startDailyReview(body.id, hooks.reviewOwner, requireGroupOwner);
       request = editDailyReview(started.id, (current) => {
         const index = activeGroup(current);
-        if (index !== -1) openGroup(current, current.groups[index].classroom, false);
+        // Initial starts may recover the first saved group, never publish a later one.
+        // A delayed landing click must still require explicit next-classroom navigation.
+        if (index === 0) openGroup(current, current.groups[index].classroom, false);
       });
     } else {
       request = editDailyReview(body.id, (current) =>
