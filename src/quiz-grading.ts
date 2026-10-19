@@ -1,4 +1,5 @@
 /** Persist grades through one shared path for every host. */
+import { validateCriterionGrade } from "./criteria.ts";
 import { gradeScore, validateGrade } from "../assets/runtime/grade.mjs";
 import { reteachOffers } from "./reteach.ts";
 import { renderMarkdown } from "./markdown.ts";
@@ -32,9 +33,13 @@ export function applyGrade(
     questions: store.QuizQuestionGrade[];
   },
 ): store.QuizGrade {
+  for (const question of input.questions) validateCriterionGrade(submission, question);
   const score = validateGrade(input.score, input.questions, [
     ...new Set(submission.answers.map((a) => a.questionId)),
   ]);
+  // A revision must keep its own file even when two grades finish in one millisecond.
+  const previous = store.listGrades(submission.classroom, submission.lesson);
+  const gradedAt = Math.max(Date.now(), (previous.at(-1)?.gradedAt ?? 0) + 1);
   const grade: store.QuizGrade = {
     submissionId: submission.id,
     classroom: submission.classroom,
@@ -44,6 +49,7 @@ export function applyGrade(
     feedbackMarkdown: input.feedbackMarkdown,
     feedbackHtml: renderMarkdown(input.feedbackMarkdown),
     questions: input.questions.map((q) => ({
+      criteria: q.criteria?.map((c) => ({ ...c, feedbackHtml: renderMarkdown(c.feedback) })),
       questionId: q.questionId,
       correct: q.correct,
       pointsEarned: q.pointsEarned,
@@ -51,7 +57,7 @@ export function applyGrade(
       feedback: q.feedback,
       feedbackHtml: renderMarkdown(q.feedback),
     })),
-    gradedAt: Date.now(),
+    gradedAt,
   };
 
   store.writeGrade(grade);

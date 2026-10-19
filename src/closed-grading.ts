@@ -155,6 +155,19 @@ export function gradeClosed(answer: QuizAnswer, entry: RubricQuestion): QuizQues
     }
   }
   return {
+    ...(entry.criteria
+      ? {
+          criteria: entry.criteria.map((c) => ({
+            criterionId: c.id,
+            description: c.description,
+            pointsPossible: c.points,
+            pointsEarned: correct ? c.points : 0,
+            feedback: correct
+              ? entry.full
+              : "The answer does not match the private key. Review this question.",
+          })),
+        }
+      : {}),
     questionId: answer.questionId,
     correct,
     pointsEarned: correct ? entry.points : 0,

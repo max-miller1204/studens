@@ -1,3 +1,4 @@
+import { driveCriterionProbe } from "./criterion-probe.ts";
 import { seedReteach, driveReteach } from "./e2e-reteach-browser.ts";
 import { lessonRequests } from "../src/next-lesson.ts";
 import { driveRealNextLesson } from "./next-lesson-actions.ts";
@@ -677,6 +678,13 @@ try {
     base,
     reteachLesson,
     artifacts ? path.join(artifacts, "reteach") : null,
+  );
+
+  await driveCriterionProbe(
+    session,
+    fixture.root,
+    base,
+    artifacts ? path.join(artifacts, "criteria") : null,
   );
 
   send({ id: "stop", type: "prompt", message: "/classroom stop" });

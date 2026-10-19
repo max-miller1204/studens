@@ -1,9 +1,11 @@
 /** Validate the canonical private rubric for newly scaffolded assessments. */
+import { validateCriteria, type RubricCriterion } from "./criteria.ts";
 import { authoredQuizzes } from "./quiz-authoring.ts";
 import { isQuestionType, isQuizKind } from "../assets/runtime/quiz.mjs";
 import { machineGraded } from "./closed-grading.ts";
 
 export interface RubricQuestion {
+  criteria?: RubricCriterion[];
   grading?: "exact" | "teacher";
   expected: unknown;
   points: number;
@@ -16,6 +18,7 @@ export function parseRubric(
   text: string,
   html: string,
   format: "machine" | "legacy" = "machine",
+  requireCriteria = false,
 ): Rubric {
   const rubric: unknown = JSON.parse(text);
   if (!rubric || typeof rubric !== "object" || Array.isArray(rubric))
@@ -56,7 +59,14 @@ export function parseRubric(
       )
         throw new Error(`Private rubric needs full and partial credit criteria for ${where}.`);
       try {
-        if (format === "machine") machineGraded(question.type, entry);
+        const closed = format === "machine" && machineGraded(question.type, entry);
+        if (requireCriteria || entry.criteria !== undefined) {
+          validateCriteria(entry.criteria, entry.points, where);
+          if (closed && entry.criteria!.length !== 1)
+            throw new Error(
+              "Exact questions need one all-or-zero criterion. Use a judgment question for component credit.",
+            );
+        }
       } catch (error) {
         throw new Error(`Private rubric ${where}: ${(error as Error).message}`);
       }

@@ -43,6 +43,7 @@ export interface LessonMeta {
   /** Absent on lessons written before review sessions existed. */
   kind?: LessonKind;
   assessmentContract?: 1;
+  criterionContract?: 1;
   instructionalContract?: 1;
   reviewVariantContract?: 1;
 }
@@ -61,6 +62,7 @@ export interface Lesson {
   order: number | null;
   kind: LessonKind;
   assessmentContract?: 1;
+  criterionContract?: 1;
   instructionalContract?: 1;
   reviewVariantContract?: 1;
   annotationCount: number;

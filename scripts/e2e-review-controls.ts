@@ -29,6 +29,16 @@ export async function verifyReviewControls(artifacts: string | null): Promise<vo
       const ids = Array.from({ length: count }, (_, i) => `q${i + 1}`);
       seedPreparedReviewSource(fixture.root, classroom, lesson, "check-1", ids);
       closeReviewVariants(fixture.root, classroom, lesson);
+      const keyFile = path.join(fixture.root, classroom, lesson, "quiz/key.json");
+      const key = JSON.parse(fs.readFileSync(keyFile, "utf8"));
+      for (const question of Object.values(key["check-1"]) as Array<{
+        variants: Array<{ rubric: { criteria?: unknown[] } }>;
+      }>)
+        for (const variant of question.variants)
+          variant.rubric.criteria = [
+            { id: "owner", description: "Identify the current owner", points: 1 },
+          ];
+      fs.writeFileSync(keyFile, JSON.stringify(key));
       writeGradedAttempt({
         classroom,
         lesson,
@@ -357,6 +367,23 @@ export async function verifyReviewControls(artifacts: string | null): Promise<vo
         throw new Error("Scoped early review changed an unrelated item.");
       const earlyReview = currentReview("rust")!;
       const earlyAfter = store.reviewItems("rust").find((item) => item.key === earlyItem.key)!;
+      const earlySubmission = store.listSubmissions("rust", earlyReview.lesson)[0];
+      const earlyGrade = store.listGrades("rust", earlyReview.lesson)[0];
+      if (
+        !earlySubmission.earlyReviewKeys?.includes(earlyItem.key) ||
+        earlySubmission.rubricCriteria?.r1?.[0].id !== "owner" ||
+        earlyGrade.questions[0].criteria?.[0].pointsEarned !== 0
+      )
+        throw new Error("Early review lost its private criterion or timing snapshot.");
+      const publicState = await (
+        await fetch(`${base}/api/state?classroom=rust&lesson=${earlyReview.lesson}`)
+      ).text();
+      if (
+        /rubricCriteria|earlyReviewKeys|teachingPlan|deterministicGrades|"learning":/.test(
+          publicState,
+        )
+      )
+        throw new Error("Combined private review snapshots leaked through learner state.");
       if (
         earlyReview.items.length !== 2 ||
         earlyReview.items[0].key !== earlyItem.key ||
@@ -436,6 +463,8 @@ export async function verifyReviewControls(artifacts: string | null): Promise<vo
               earlyReview,
               earlyBefore: earlyItem,
               earlyAfter,
+              earlySubmission,
+              earlyGrade,
               durable,
               prompts,
               reports,

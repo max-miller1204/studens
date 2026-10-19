@@ -1860,6 +1860,21 @@ figure:has(> .cl-diagram) figcaption {
   }
 }
 
+/* Saved rubric criteria remain in reading order beneath the answer verdict. */
+.cl-q-criteria {
+  margin: 1rem 0 0;
+  padding-left: 1.25rem;
+}
+.cl-q-criteria li + li {
+  margin-top: 0.75rem;
+}
+.cl-q-criteria li {
+  overflow-wrap: anywhere;
+}
+.cl-q-criteria p {
+  margin: 0.25rem 0;
+}
+
 /* Settings use the same document shell on desktop and phones. */
 .cl-settings {
   max-width: 680px;

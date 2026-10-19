@@ -87,6 +87,8 @@ export async function handleQuizSubmit(
       parseRubric(
         fs.readFileSync(path.join(lessonDir(classroom, lesson), "quiz", "key.json"), "utf8"),
         html,
+        "machine",
+        page.criterionContract === 1,
       );
     } catch (err) {
       return sendJson(
@@ -139,17 +141,24 @@ export async function handleQuizSubmit(
   hooks?.canAccept?.(classroom);
   if (reviewSessions(classroom).some((s) => s.lesson === lesson && s.status !== "done"))
     return sendJson(res, { error: "This review is not ready." }, 409);
-  store.clearDraft(classroom, lesson, `quiz:${quizId}`);
   const review = reviewSessions(classroom).find((session) => session.lesson === lesson);
-  const submission = store.createSubmission({
-    classroom,
-    lesson,
-    quizId,
-    quizTitle: String(body["quizTitle"] ?? "Check on learning").slice(0, 200),
-    kind,
-    answers,
-    earlyReviewKeys: review?.items.filter((item) => item.dueAt > review.at).map((item) => item.key),
-  });
+  let submission: store.QuizSubmission;
+  try {
+    submission = store.createSubmission({
+      classroom,
+      lesson,
+      quizId,
+      quizTitle: String(body["quizTitle"] ?? "Check on learning").slice(0, 200),
+      kind,
+      answers,
+      earlyReviewKeys: review?.items
+        .filter((item) => item.dueAt > review.at)
+        .map((item) => item.key),
+    });
+  } catch (err) {
+    return sendJson(res, { error: `Invalid assessment contract: ${(err as Error).message}` }, 400);
+  }
+  store.clearDraft(classroom, lesson, `quiz:${quizId}`);
 
   if (!completeClosedSubmission(submission)) hooks?.onQuizSubmit(submission);
   sendJson(res, store.publicSubmission(submission), 201);
