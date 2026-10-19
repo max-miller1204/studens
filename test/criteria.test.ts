@@ -372,3 +372,22 @@ it("returns a specific HTTP error and preserves drafts when later weights change
   expect(store.listSubmissions(location.classroom, location.lesson)).toHaveLength(1);
   expect(store.listGrades(location.classroom, location.lesson)).toHaveLength(1);
 });
+
+it("rejects tampered saved quiz totals or question identities when criterion evidence exists", async () => {
+  const s = submit();
+  await tool().execute(args(s.id));
+  const grade = store.listGrades(location.classroom, location.lesson)[0];
+  const file = `rust/001-ownership/quiz/grades/${grade.gradedAt}-${s.id}.json`;
+  for (const changed of [
+    { ...grade, score: 99 },
+    { ...grade, questions: [] },
+    { ...grade, questions: [...grade.questions, ...grade.questions] },
+  ]) {
+    f.write(file, JSON.stringify(changed));
+    expect(() => store.latestQuizStates(location.classroom, location.lesson)).toThrow(
+      /Score must match|every submitted question|exactly once/,
+    );
+  }
+  f.write(file, JSON.stringify(grade));
+  expect(store.latestQuizStates(location.classroom, location.lesson)[0].grade).toEqual(grade);
+});

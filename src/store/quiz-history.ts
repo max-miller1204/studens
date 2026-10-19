@@ -1,3 +1,4 @@
+import { validateGrade } from "../../assets/runtime/grade.mjs";
 import { validateCriterionGrade } from "../criteria.ts";
 import type { RubricCriterion, CriterionGrade } from "../criteria.ts";
 import * as path from "node:path";
@@ -70,9 +71,13 @@ export function listGrades(classroom: string, lesson: string): QuizGrade[] {
   const submissions = listSubmissions(classroom, lesson);
   for (const grade of grades) {
     const submission = submissions.find((s) => s.id === grade.submissionId);
-    if (submission)
+    if (submission) {
       for (const question of grade.questions) validateCriterionGrade(submission, question);
-    else if (grade.questions.some((q) => q.criteria !== undefined))
+      if (Object.keys(submission.rubricCriteria ?? {}).length)
+        validateGrade(grade.score, grade.questions, [
+          ...new Set(submission.answers.map((a) => a.questionId)),
+        ]);
+    } else if (grade.questions.some((q) => q.criteria !== undefined))
       throw new Error(`Criterion grade ${grade.submissionId} has no saved submission.`);
   }
   return grades;
