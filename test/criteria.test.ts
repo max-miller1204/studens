@@ -412,3 +412,51 @@ it("rejects tampered saved quiz totals or question identities when criterion evi
   f.write(file, JSON.stringify(grade));
   expect(store.latestQuizStates(location.classroom, location.lesson)[0].grade).toEqual(grade);
 });
+
+it("redacts private criterion snapshots from submit, pending state, grade SSE and static routes", async () => {
+  const base = await server.start(0);
+  const response = await fetch(base + "/api/quiz/submit", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      ...location,
+      quizId: "check",
+      kind: "check",
+      answers: [{ questionId: "q", type: "short", value: "The squared sum is 5." }],
+    }),
+  });
+  expect(response.status).toBe(201);
+  const publicAttempt = await response.json();
+  const saved = store.findSubmission(publicAttempt.id)!;
+  expect(saved.rubricCriteria).toEqual({ q: definitions });
+  expect(publicAttempt).not.toHaveProperty("rubricCriteria");
+  const state = await (await fetch(base + "/api/state?classroom=rust&lesson=001-ownership")).json();
+  expect(state.quizzes[0].grade).toBeNull();
+  expect(JSON.stringify(state)).not.toContain("Square and sum");
+  expect(state.quizzes[0].submission).not.toHaveProperty("rubricCriteria");
+  for (const file of [
+    "quiz/key.json",
+    `quiz/submissions/${saved.submittedAt}-${saved.id}.json`,
+    "quiz/plan.json",
+  ])
+    expect((await fetch(base + "/c/rust/001-ownership/" + file)).status).toBe(404);
+  const controller = new AbortController();
+  const stream = await fetch(base + "/api/events?classroom=rust&lesson=001-ownership", {
+    signal: controller.signal,
+  });
+  const reader = stream.body!.getReader();
+  try {
+    await reader.read(); // Connected before grading.
+    expect(isFailure(await tool().execute(args(saved.id)))).toBe(false);
+    const frame = new TextDecoder().decode((await reader.read()).value);
+    expect(frame).toContain("event: grade");
+    expect(frame).not.toMatch(/rubricCriteria|deterministicGrades|teachingPlan/);
+    const event = JSON.parse(frame.split("data: ")[1].trim());
+    expect(event.grade.questions[0].criteria).toHaveLength(2);
+    expect(event.grade.score).toBe(50);
+    expect(event.submission).not.toHaveProperty("rubricCriteria");
+  } finally {
+    controller.abort();
+    await reader.cancel().catch(() => {});
+  }
+});

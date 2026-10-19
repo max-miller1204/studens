@@ -176,6 +176,53 @@ export async function verifyCriteriaBrowser(artifacts: string | null): Promise<v
     evidence("history", history);
 
     f.write(
+      "rust/003-component/lesson.json",
+      JSON.stringify({ title: "Partial reasoning", assessmentContract: 1, criterionContract: 1 }),
+    );
+    f.write("rust/003-component/lesson.html", pageHtml);
+    f.write("rust/003-component/quiz/key.json", JSON.stringify(key));
+    server.setHooks({
+      onAsk() {},
+      onReflect() {},
+      onFollowUp() {},
+      onQuizSubmit(s) {
+        const allocation = input(s.id);
+        allocation.score = 25;
+        allocation.questions[0].points_earned = 1;
+        allocation.questions[0].criteria[0].points_earned = 1;
+        allocation.questions[0].criteria[0].feedback =
+          "The first square is correct. Square -1 too, then add the two squares.";
+        allocation.questions[0].feedback =
+          "One square is correct; finish the sum before averaging.";
+        allocation.feedback_markdown = "Some reasoning earns credit; finish both steps.";
+        writes.push(
+          tool.execute(allocation).then((r) => {
+            if (isFailure(r)) throw new Error(JSON.stringify(r));
+          }),
+        );
+      },
+    });
+    const component = await playwrightCode(
+      session,
+      f.root,
+      `async page=>{
+      await page.goto(${JSON.stringify(base)}+'/c/rust/003-component');
+      await page.locator('form.cl-quiz textarea').fill('2 squared is 4. I did not finish the other residual or the average.');
+      await page.getByRole('button',{name:'Submit for grading',exact:true}).click();
+      await page.locator('form[data-state="graded"]').waitFor();
+      await page.locator('.cl-q-criteria li').first().getByText('Partly met',{exact:false}).waitFor();
+      if(!await page.locator('.cl-q-criteria li').first().innerText().then(t=>t.includes('1/2 points')))throw new Error('Partial component allocation missing');
+      await page.setViewportSize({width:375,height:812});${shot("partly-met-mobile")}
+      await page.reload();await page.locator('form[data-state="graded"]').waitFor();
+      return (await page.request.get(${JSON.stringify(base)}+'/api/state?classroom=rust&lesson=003-component')).json();
+    }`,
+    );
+    await Promise.all(writes);
+    if ((component as { quizzes: store.QuizState[] }).quizzes[0].grade?.score !== 25)
+      throw new Error("Partial component total changed after reload");
+    evidence("partly-met", component);
+
+    f.write(
       "rust/002-retry/lesson.json",
       JSON.stringify({ title: "Criterion retry", assessmentContract: 1, criterionContract: 1 }),
     );

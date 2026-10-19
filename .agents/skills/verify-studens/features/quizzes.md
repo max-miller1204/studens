@@ -32,7 +32,9 @@ that retains the original grade file. Inspect `criteria/partial.json`,
 points refuse submission without saving an attempt. An incomplete teacher allocation
 keeps a specific error after reload and requires `Retry request`; the corrected plan
 saves one grade. Inspect `criteria/rejected-plan.json` and `criteria/retried-plan.json`.
-These are fixture teachers, not real model adherence checks.
+The component fixture also saves 1/2 on a partly met criterion and 0/2 on a missed
+criterion, then reloads the unchanged 1/4 total. Inspect `criteria/partly-met.json`
+and `criteria/partly-met-mobile.png`. These are fixture teachers, not real model adherence checks.
 
 The real Pi, Claude, and Codex drives also append a criterion calculation after
 their existing lifecycle checks. Inspect `criteria/stored-criteria.json`,
