@@ -151,13 +151,14 @@ export async function handleQuizSubmit(
       quizTitle: String(body["quizTitle"] ?? "Check on learning").slice(0, 200),
       kind,
       answers,
-      earlyReviewKeys: review?.items.filter((item) => item.dueAt > review.at).map((item) => item.key),
+      earlyReviewKeys: review?.items
+        .filter((item) => item.dueAt > review.at)
+        .map((item) => item.key),
     });
   } catch (err) {
     return sendJson(res, { error: `Invalid assessment contract: ${(err as Error).message}` }, 400);
   }
   store.clearDraft(classroom, lesson, `quiz:${quizId}`);
-
 
   if (!completeClosedSubmission(submission)) hooks?.onQuizSubmit(submission);
   sendJson(res, store.publicSubmission(submission), 201);

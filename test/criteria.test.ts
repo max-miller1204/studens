@@ -45,12 +45,13 @@ afterEach(async () => {
   await server.close();
   f.cleanup();
 });
-const submit = () =>
+const submit = (earlyReviewKeys?: string[]) =>
   store.createSubmission({
     ...location,
     quizId: "check",
     quizTitle: "MSE",
     kind: "check",
+    earlyReviewKeys,
     answers: [
       {
         questionId: "q",
@@ -234,7 +235,7 @@ it("keeps exact criteria code-owned, binary, private and idempotent through star
 });
 
 it("applies an interrupted saved criterion plan once without another model turn", async () => {
-  const s = submit();
+  const s = submit(["001-ownership/check/q"]);
   const input = args(s.id);
   delete (input as { score?: number }).score;
   saveTeacherState("rust", {
@@ -295,6 +296,10 @@ it("applies an interrupted saved criterion plan once without another model turn"
       plan: savedPlan,
     });
     expect(store.listGrades(location.classroom, location.lesson)).toHaveLength(1);
+    expect(store.findSubmission(s.id)?.earlyReviewKeys).toEqual(["001-ownership/check/q"]);
+    expect(store.publicSubmission(store.findSubmission(s.id)!)).not.toHaveProperty(
+      "earlyReviewKeys",
+    );
   }
   expect(
     store.latestGrades(location.classroom, location.lesson)[0].questions[0].criteria?.[0]
