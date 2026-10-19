@@ -1,11 +1,14 @@
 /** Handle shell navigation, theme controls, and classroom review requests. */
 
 import { wireRetirement } from "./review-controls.mjs";
+import { initDailyReview } from "./daily-review.mjs";
 import { initLinks } from "./links.mjs";
 import { initTheme } from "./theme.mjs";
 
 initTheme();
 initLinks();
+const dailyControl = document.querySelector("[data-cl-daily]");
+if (dailyControl) initDailyReview(dailyControl);
 
 const folderControl = document.querySelector("[data-cl-folders]");
 if (folderControl) initFolders(folderControl);

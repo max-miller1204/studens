@@ -6,6 +6,7 @@ import { sendJson } from "./http.ts";
 import { handleDraft, handleGlossary, handleReflect, handleState } from "./learner-state.ts";
 import { handleQuizSubmit } from "./quizzes.ts";
 import { handleNextLesson } from "./next-lesson.ts";
+import { handleDailyReview } from "./daily-review.ts";
 import { handleReview } from "./review.ts";
 import { handleSettings } from "./settings.ts";
 import { handleTeacher } from "./teacher.ts";
@@ -24,6 +25,8 @@ export async function handleApi(
     ((route === "lesson" || route === "lesson/retry") && req.method === "POST")
   )
     return handleNextLesson(req, res, route, url);
+  if (["daily-review", "daily-review/continue", "daily-review/retry"].includes(route))
+    return handleDailyReview(req, res, route, url);
   if (route === "folders") return handleFolders(req, res);
   if (
     ((route === "review" || route === "review/items") && req.method === "GET") ||

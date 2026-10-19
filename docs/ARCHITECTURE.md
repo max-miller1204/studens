@@ -59,6 +59,7 @@ never the working directory or files outside the package.
 | MCP dispatch and control transport              | `mcp.ts`, `mcp-stdio.ts`, `service-client.ts`, `service-main.ts` |
 | Durable requests and plans                      | `service-state.ts`, `teacher-service.ts`                         |
 | Model adapters, deadlines, grade decoding       | `teacher.ts`, `teacher-deadline.ts`, `teacher-grading.ts`        |
+| Daily classroom groups                          | `server/daily-review.ts`, `store/daily-review.ts`                |
 | Resume and review publication                   | `teacher-resume.ts`, `review-session.ts`                         |
 | Private variant pools and refills               | `review-variants.ts`, `review-pool.ts`, `review-refill.ts`       |
 | Quiz, rubric, pretest, plan validation          | `quiz.ts`, `rubric.ts`, `pretest.ts`, `teaching-plan.ts`         |
@@ -159,6 +160,16 @@ source notation to grading. Answers and feedback render Markdown server-side.
   publication, run `scripts/check-lesson.ts` in disposable state, then expose the
   lesson. Recover checked output without a model turn; retain rejected output and
   require explicit retry. Never create learner submissions during checking.
+- **Daily review keeps classroom boundaries.** The private root `.daily-reviews.json`
+  saves every classroom selection and document before the first publication. Each
+  group reuses a normal classroom review and its original objective keys. Group
+  completion derives from saved card grades; navigation never grades or extends a
+  schedule. Later groups need explicit progression. Reads, reloads and repeated
+  starts reuse saved requests; publication and ownership failures require retry.
+  Daily history links to each classroom’s separate review history and teacher panel.
+  Save declared criterion requirements with new prepared plans and retain their
+  definitions in the private document through publication. Legacy plans remain
+  compatible. Public attempts redact criterion and early-timing snapshots.
 - **Variant refills are background work.** Save private refill requests with their host
   and learner mistake. Run them after queued learner requests in the same sequential
   teacher session. Save validated output before atomically adding a supplemental
@@ -167,6 +178,10 @@ source notation to grading. Answers and feedback render Markdown server-side.
   Replaying the same saved batch never duplicates variants.
 - **Drafts never wake a teacher.** Restore them once on load, only into fresh quizzes.
   Reconnect must not overwrite typing. Successful submissions clear their draft.
+- **Daily edits serialize across hosts.** Lock root batch creation and group edits,
+  reloading state under the lock. Save every classroom plan before publication.
+  A busy or interrupted save names the lock and requires explicit retry. Reads
+  never publish or retry classroom work.
 - **Folder edits keep classroom paths stable.** Lock `.folders.json` edits and replace
   state atomically. Conflicts and stale locks name the cause and require explicit retry.
 

@@ -1,6 +1,6 @@
 # Start a review
 
-Start a spaced review from classroom Progress. Pi, Claude Code, and Codex assemble
+Start a daily review from Classrooms or a spaced review from classroom Progress. Pi, Claude Code, and Codex assemble
 prepared private variants without a model turn. The selected questions, keys, and
 plan are saved before publication. Existing in-flight authoring requests retain
 their original host and recovery behavior.
@@ -8,6 +8,9 @@ their original host and recovery behavior.
 ## Sub-features
 
 - Choose Quick 3 through 12 items, a classroom, and a topic from saved objective groups (historical questions use their original lesson).
+- Show the total due across all classrooms, including classrooms in folders.
+- Start or continue saved daily groups, with one classroom at a time.
+- Keep daily group history and each classroom’s review history separate from Lessons.
 - Open due prepared questions immediately without teacher authoring.
 - Opt into early review without extending its saved interval, including after a miss.
 - Retire or restore an item while retaining its evidence, grades, and published reviews.
@@ -29,6 +32,17 @@ their original host and recovery behavior.
 - Preserve grades and miss history through re-teaching; assisted replies cannot establish delayed retention.
 
 ## How to get to it (user POV)
+
+From Classrooms, read `N due across classrooms` and select `Start daily review`.
+The daily overview shows each classroom separately. Select `Continue <classroom>
+review`, answer all its cards, then use `Continue daily review` to return to the
+classroom groups. The next classroom starts only when all earlier cards are graded.
+Reload or another tab must reuse the daily batch. Correct an error’s cause before
+selecting `Retry <classroom> review`. Read earlier groups from `Daily review history`
+or each classroom’s `Review history`. A zero-due landing disables start while an
+unfinished daily batch can still be continued.
+
+For a single classroom:
 
 1. Open a classroom with due check questions and prepared private pools.
 2. Choose `Review size` and `Topic` in Progress, then select `Start review`. Enable
@@ -102,6 +116,30 @@ corrections. The service fixture fails a correction and checks explicit retry af
 reload. Invalid saved state shows its specific error and `Retry review state`.
 Inspect `review-cards/pi/` and `review-cards/service/`, including `result.json`.
 
+The daily fixtures additionally exercise the landing buttons, a second view, two
+unrelated subjects in separate classroom groups, mobile layouts, saved drafts,
+a partial publication conflict, explicit retry after reload, unchanged original
+grade revisions, one grade per card, corrective replies on the relevant review
+page, empty due work, malformed daily state, and private routes. Inspect
+`daily-review/pi/` and `daily-review/service/`, including `result.json`,
+`selected-before-progress.json`, and `partial-failure.json`. The service fixture
+keeps Biology on Claude and Rust on Codex; these fixture teachers prove routing,
+not real model access. Contract tests additionally reject foreign ownership and
+competing unfinished reviews. Daily selections use the same default per-classroom
+size and prepared-variant selection as classroom Progress. The daily fixtures
+also use predeclared private criteria, require the saved publication contract,
+render the code-owned closed allocation, and verify criterion/timing snapshots
+remain private. Daily contracts additionally reuse an existing early judgment
+review through restart and grade its fixed components without extending the due cap.
+
+Daily edits also share a root transaction lock across live Pi and service processes.
+If another server is saving, read its specific lock error, then explicitly retry;
+loading status cannot publish or retry a classroom. Foreign start/continue/retry
+actions must leave the owning host's saved errors and progress unchanged. A
+published classroom review still opens across hosts. A delayed landing start after
+the first classroom is graded must leave the next group planned until its explicit
+`Start <classroom> review` control is used.
+
 For service or shared prompt changes, select the real Claude and Codex drives from
 the project skill. Each opens a prepared closed review, submits a miss, checks its
 immediate grade, receives a real corrective question, and replies in the same panel.
@@ -111,6 +149,22 @@ for bridge changes and inspect `stored-review.json`, `pi-review.png`, and
 `Flag bad question` and `Send reply`, receives a teacher response, reloads the saved
 report, and preserves quiz grading. Inspect `stored-question-report.json` and
 `<host>-question-report.png`.
+The real host drives now enter through `Start daily review`, retain separate Rust
+and Biology plans, perform the real Rust correction and report, and explicitly
+complete Biology before reloading the finished batch. Inspect `stored-daily.json`
+and `<host>-daily-complete.png`. The lesson material is a fixture; the host and
+corrective teacher are real at the prescribed settings.
+
+Service quiz and historical-resume drives retain `quiz-retrieval-task.json` and
+`resume-retrieval-task.json`. Mechanical checks link the visible panel message to
+its completed validated request and saved grade; callless plans have zero applied
+calls even when the field is absent. Inspect each complete saved task manually:
+it must request fresh, answerable retrieval in the relevant lesson, without giving
+that task's answer. An imperative can satisfy this requirement without a question
+mark. Generic feedback fails this semantic review even if mechanical checks pass.
+The subsequent real learner reply must still create its original linked evidence
+and learning record while preserving the grade.
+
 A failed corrective reply is captured before reload and one explicit `Retry request`.
 The retry uses the product's saved error feedback; the same teacher must then reply.
 Inspect `corrective-reply-retries.json` and `<host>-review-correction.png.reply-failed.png`
@@ -169,3 +223,19 @@ Miss counts remain cumulative. A successful latest result can resolve the curren
 under existing evidence rules; opening a re-teach never resets the count. The two-miss
 health warning remains earlier than the three-miss review pause. Private request
 instructions and variant keys must not appear in the learner's help message.
+Daily plans live privately at the classrooms root. GET status never publishes a
+classroom or retries a failure. A stale progression click cannot start a later
+group. An ownership error names the classroom’s selected host; daily navigation
+never attaches it to a different backend.
+
+If an unstarted group’s canonical due selection changes, opening it shows a stale
+selection error. Explicit retry refreshes the plan before publication. If no due
+items remain, that group finishes with no new review or grade. Published reviews
+retain their saved questions and assessment history.
+
+A failed child publication also rechecks current eligibility before explicit retry.
+If its item was retired or paused after the failure, the specific error persists
+without publishing it or replaying completed groups. Repair the cause (for example,
+restore the selected item), then explicitly retry the same saved plan. Already
+published cards remain available. A queued early review retains its saved early
+option while applying all other canonical exclusions.

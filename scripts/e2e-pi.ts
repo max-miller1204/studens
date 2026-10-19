@@ -1,3 +1,9 @@
+import {
+  seedDailyCompanion,
+  startDailyActions,
+  finishDailyActions,
+} from "./daily-review-actions.ts";
+import { dailyReviews } from "../src/store/daily-review.ts";
 import { driveCriterionProbe } from "./criterion-probe.ts";
 import { seedReteach, driveReteach } from "./e2e-reteach-browser.ts";
 import { lessonRequests } from "../src/next-lesson.ts";
@@ -567,13 +573,12 @@ try {
   );
   seedTransferObjective(true);
   closeReviewVariants(fixture.root);
+  seedDailyCompanion(fixture.root);
   await playwrightCode(
     session,
     fixture.root,
     `async page => {
-    await page.goto(${JSON.stringify(base)} + '/c/rust');
-    await page.waitForFunction(() => !document.querySelector('[data-cl-review-start]').disabled);
-    await page.getByRole('button', {name:'Start review',exact:true}).click();
+    ${startDailyActions(base)}
     return true;
   }`,
   );
@@ -598,7 +603,7 @@ try {
       path.join(artifacts, "stored-review.json"),
       JSON.stringify(reviewSession, null, 2),
     );
-  console.log("[e2e:pi] PASS: prepared review opens from the classroom page without authoring");
+  console.log("[e2e:pi] PASS: prepared review opens through the daily landing without authoring");
   const correctionResult = await playwrightCode(
     session,
     fixture.root,
@@ -670,6 +675,21 @@ try {
     );
   console.log(
     "[e2e:pi] PASS: real Pi teacher receives a durable bad-question report and preserves grades",
+  );
+  await playwrightCode(
+    session,
+    fixture.root,
+    `async page => { ${finishDailyActions(artifacts ? path.join(artifacts, "pi-daily-complete.png") : null)} return true; }`,
+  );
+  if (dailyReviews().length !== 1 || dailyReviews()[0].groups.length !== 2)
+    throw new Error("Actual daily plans lost.");
+  if (artifacts)
+    fs.writeFileSync(
+      path.join(artifacts, "stored-daily.json"),
+      JSON.stringify(dailyReviews(), null, 2),
+    );
+  console.log(
+    "[e2e:pi] PASS: actual daily batch, separate Rust/Biology groups, real Rust correction/report, reload and completion",
   );
   const reteachLesson = seedReteach(fixture.root);
   await driveReteach(
