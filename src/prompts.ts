@@ -144,7 +144,7 @@ export function reviewStatusText(summary: ReviewSummary, now: number): string {
   const lines = [
     "## Spaced review",
     "",
-    `${summary.total} graded questions are on the review schedule. ${summary.retained} have retained evidence.`,
+    `${summary.total} review items are on the schedule. ${summary.retained} have retained evidence.`,
   ];
   if (summary.due > 0) {
     lines.push(
@@ -337,7 +337,7 @@ export function gradePrompt(
     pretest:
       "This is a **pretest**. The learner answered before the lesson taught the material. Grade it honestly, so they see where they stand.",
     review:
-      "This is a **spaced review**. Each question reviews an earlier question, named by `Reviews:`. The server derives review from credit, independence, and actual elapsed time. An immediate success cannot extend its interval.",
+      "This is a **spaced review**. Each question probes an earlier objective or historical item, named by `Reviews:`. The server derives review from credit, independence, and actual elapsed time. An immediate success cannot extend its interval.",
   }[kind];
 
   return [

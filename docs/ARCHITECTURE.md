@@ -106,8 +106,12 @@ source notation to grading. Answers and feedback render Markdown server-side.
 - **Submission order is total.** Timestamps increase strictly per lesson. Attempts
   count submissions; regrades are revisions. Use `latestGrades()` consistently for
   scores, quiz state, health, and review. Refuse another attempt while one is ungraded.
-- **Reviews are derived.** Build the schedule from graded answers and linked retrieval
-  evidence, excluding pretests. Save review requests and selected items before
+- **Reviews are derived.** Schedule lesson-local objectives from saved answer evidence;
+  questions are probes. Same-attempt probes count as one exposure, and any incomplete
+  probe resets the objective. Historical answers without objective context keep their
+  question key and unknown context. Never read the current plan to replay history.
+  Keep old question links usable by saved reviews, panel checks, and recovery.
+  Build the schedule from graded answers and linked retrieval evidence, excluding pretests. Save review requests and selected items before
   authoring. Validate keys, rubric, controls, and plan before publication. Hide unfinished
   reviews from lists, routes, and submissions. Repeated clicks reuse work; published
   reviews open across hosts. Saved service plans resume without another model turn.

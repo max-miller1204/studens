@@ -7,6 +7,7 @@
  * instead of only answering around it.
  */
 
+import { answerReviewKey } from "./review.ts";
 import { questionOutcome } from "../assets/runtime/grade.mjs";
 import { isQuestionType, parseReviewKey, reviewKey } from "../assets/runtime/quiz.mjs";
 import {
@@ -72,17 +73,25 @@ function questionStats(inputs: LessonHealthInput[]): QuestionStats[] {
   const submissions = inputs
     .flatMap((input) => input.submissions)
     .sort((a, b) => a.submittedAt - b.submittedAt);
+  const aliases = new Map<string, string>();
+  for (const submission of submissions) {
+    if (kindOf(submission) === "pretest") continue;
+    for (const answer of submission.answers) {
+      if (answer.reviewOf) continue;
+      const key = reviewKey(submission.lesson, submission.quizId, answer.questionId);
+      if (!aliases.has(key))
+        aliases.set(key, answerReviewKey(submission.lesson, submission.quizId, answer));
+    }
+  }
   for (const submission of submissions) {
     const grade = grades.get(submission.id);
     if (!grade || kindOf(submission) === "pretest") continue;
     for (const [questionId, group] of answersByQuestion(submission.answers)) {
       const verdict = grade.questions.find((q) => q.questionId === questionId);
       if (!verdict) continue;
-      const key = group[0].reviewOf ?? reviewKey(submission.lesson, submission.quizId, questionId);
-      const origin =
-        group[0].reviewOf === undefined
-          ? { lesson: submission.lesson, quizId: submission.quizId, questionId }
-          : parseReviewKey(group[0].reviewOf);
+      const savedKey = answerReviewKey(submission.lesson, submission.quizId, group[0]);
+      const key = group[0].reviewOf ? (aliases.get(savedKey) ?? savedKey) : savedKey;
+      const origin = parseReviewKey(key);
       if (!origin) throw new Error(`Invalid review key in health history: ${key}`);
       const entry = stats.get(key) ?? {
         ...origin,
@@ -93,10 +102,14 @@ function questionStats(inputs: LessonHealthInput[]): QuestionStats[] {
         lastOutcome: "correct",
         lastAt: 0,
       };
-      entry.attempts += 1;
-      if (!verdict.correct) entry.misses += 1;
-      entry.lastCorrect = verdict.correct;
-      entry.lastOutcome = questionOutcome(verdict);
+      const sameAttempt = entry.attempts > 0 && entry.lastAt === submission.submittedAt;
+      if (!sameAttempt) entry.attempts += 1;
+      if (!verdict.correct && (!sameAttempt || entry.lastCorrect)) entry.misses += 1;
+      entry.lastCorrect = sameAttempt ? entry.lastCorrect && verdict.correct : verdict.correct;
+      const outcome = questionOutcome(verdict);
+      const rank = { incorrect: 0, partial: 1, correct: 2 };
+      entry.lastOutcome =
+        sameAttempt && rank[entry.lastOutcome] < rank[outcome] ? entry.lastOutcome : outcome;
       entry.lastAt = submission.submittedAt;
       stats.set(key, entry);
     }
@@ -104,7 +117,7 @@ function questionStats(inputs: LessonHealthInput[]): QuestionStats[] {
   for (const check of inputs
     .flatMap((input) => input.retrievalChecks ?? [])
     .sort((a, b) => a.at - b.at)) {
-    const entry = stats.get(check.key);
+    const entry = stats.get(aliases.get(check.key) ?? check.key);
     if (!entry || check.at <= entry.lastAt) continue;
     entry.lastCorrect = true;
     entry.lastOutcome = "correct";

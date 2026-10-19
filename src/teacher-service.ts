@@ -18,6 +18,7 @@ import {
   reviewPrompt,
 } from "./prompts.ts";
 import * as store from "./store.ts";
+import { findReviewItem } from "./review.ts";
 import * as server from "./server.ts";
 import { classroomTools, isFailure, PI_HOST } from "./tools.ts";
 import {
@@ -634,26 +635,11 @@ export class TeacherService {
         throw new Error("Retrieval evidence requires a learner reply and a learning record.");
       if (c.name === "record_retrieval_check") {
         const learner = state.messages.find((m) => m.id === r.id && m.role === "learner");
-        const grades = new Set(
-          store.latestGrades(r.classroom, r.lesson).map((g) => g.submissionId),
-        );
-        const reviewedHere = store
-          .listSubmissions(r.classroom, r.lesson)
-          .some(
-            (s) =>
-              s.kind === "review" &&
-              grades.has(s.id) &&
-              s.answers.some((a) => a.reviewOf === args.review_key),
-          );
         if (
           typeof args.evidence !== "string" ||
           !args.evidence.trim() ||
           args.answer !== learner?.text ||
-          !store
-            .reviewItems(r.classroom)
-            .some(
-              (item) => item.key === args.review_key && (item.lesson === r.lesson || reviewedHere),
-            )
+          !findReviewItem(store.lessonReviewItems(r.classroom, r.lesson), args.review_key)
         )
           throw new Error(
             "Retrieval check must use the actual learner reply and this lesson's review item.",

@@ -199,3 +199,33 @@ it("describes days in words", () => {
   expect(relativeDay(T0 + 5 * DAY_MS, T0)).toBe("in 5 days");
   expect(relativeDay(T0 - 3 * DAY_MS, T0)).toBe("3 days ago");
 });
+
+it("counts simultaneous objective probes as one conservative exposure", () => {
+  const key = "001-cost/@objective/cost";
+  const probes = (day: number) =>
+    ["q1", "q2", "q3"].map((q) => event(day, { key, questionKey: `001-cost/check/${q}` }));
+  const initial = probes(0);
+  const [item] = scheduleItems([...initial, ...probes(1), ...probes(8)]);
+  expect(item).toMatchObject({
+    attempts: 3,
+    delayedSuccesses: 2,
+    box: 2,
+    progress: "retained-evidence",
+  });
+  const mixed = probes(20);
+  mixed[1] = { ...mixed[1], correct: false, credit: 0.5 };
+  const events = [...initial, ...probes(1), ...probes(8), ...mixed];
+  expect(scheduleItems(events)[0]).toMatchObject({
+    attempts: 4,
+    box: 0,
+    progress: "needs-practice",
+    lastCredit: 0.5,
+  });
+  expect(scheduleItems(events)).toEqual(scheduleItems([...events].reverse()));
+  mixed[1] = { ...mixed[1], correct: true, credit: 1, evidence: evidence({ assistance: "hint" }) };
+  expect(scheduleItems([...initial, ...mixed])[0]).toMatchObject({
+    box: 0,
+    delayedSuccesses: 0,
+    context: "assisted",
+  });
+});

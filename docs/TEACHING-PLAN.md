@@ -74,3 +74,12 @@ suitable for novices. Review prompts must ask the learner to choose the method.
 For a review, carry forward the original objective policy shown by `scaffold_review`.
 Map each new question to it. Keep `data-review-of` unchanged. Do not label the required
 method in the learner's prompt. Use fresh scenarios and accept equivalent solutions.
+
+Review schedules use `<lesson>/@objective/<objective id>`. Objective ids are local to
+the original lesson; sharing an id across lessons does not combine their schedules.
+All questions mapped to one objective probe the same schedule. Several probes in
+one attempt count as one exposure, and every probe must succeed independently to
+advance it. The server replays the objective snapshot saved with each attempt, not
+the current plan. Historical attempts without that snapshot retain their original
+`<lesson>/<quiz id>/<question id>` keys and unknown context. Previously saved review
+questions and chat checks may continue to use those question links.

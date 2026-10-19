@@ -2,7 +2,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { classroomDir, isValidSlug, lessonDir } from "./paths.ts";
-import { reviewKey } from "../assets/runtime/quiz.mjs";
+import { answerReviewKey, findReviewItem } from "./review.ts";
 import { QUIZ_FOLLOW_UP } from "./prompts.ts";
 import * as server from "./server.ts";
 import * as store from "./store.ts";
@@ -40,23 +40,28 @@ export function prepareResume(input: ResumeInput): ResumeRequest {
   if (!latest.grade.questions.some((q) => !q.correct))
     throw new Error("This submission has no missed questions to resume.");
   const items = store.lessonReviewItems(classroom, lesson);
-  const unresolvedKeys = latest.grade.questions
-    .filter((q) => !q.correct)
-    .map((q) => {
-      const answer = submission.answers.find((a) => a.questionId === q.questionId);
-      if (!answer) throw new Error("A missed question has no saved answer.");
-      return answer.reviewOf ?? reviewKey(lesson, submission.quizId, q.questionId);
-    })
-    .filter(
-      (key) =>
-        !items.some(
-          (item) =>
-            item.key === key &&
-            item.lastSource === "chat" &&
-            item.lastCorrect &&
-            item.lastAt > latest.grade!.gradedAt,
+  const unresolvedKeys = [
+    ...new Set(
+      latest.grade.questions
+        .filter((q) => !q.correct)
+        .map((q) => {
+          const answer = submission.answers.find((a) => a.questionId === q.questionId);
+          if (!answer) throw new Error("A missed question has no saved answer.");
+          const key = answerReviewKey(lesson, submission.quizId, answer);
+          return findReviewItem(items, key)?.key ?? key;
+        })
+        .filter(
+          (key) =>
+            !items.some(
+              (item) =>
+                item.key === key &&
+                item.lastSource === "chat" &&
+                item.lastCorrect &&
+                item.lastAt > latest.grade!.gradedAt,
+            ),
         ),
-    );
+    ),
+  ];
   return {
     id: `resume:${submission.id}`,
     classroom,

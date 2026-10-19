@@ -207,3 +207,30 @@ describe("healthReport", () => {
     expect(healthReport("rust", [input({})], [])).toContain("Nothing needs attention.");
   });
 });
+
+it("keeps an objective gap when another probe in the same attempt succeeds", () => {
+  const a = attempt("10", { q1: false, q2: false, q3: true });
+  for (const answer of a.submission.answers)
+    answer.learning = {
+      objectiveId: "ownership",
+      objective: { statement: "Explain ownership.", application: true },
+      task: "retrieval",
+      support: "independent",
+      assistance: "none",
+    };
+  const data = input({ submissions: [a.submission], grades: [a.grade] });
+  expect(lessonHealthLines(data).join("\n")).toContain("Missed on the last attempt:");
+  expect(lessonHealthLines(data).join("\n")).toContain("@objective/ownership");
+  expect(lessonHealthLines(data).join("\n")).not.toContain("missed more than once");
+  data.retrievalChecks = [
+    {
+      id: "check",
+      key: "001-ownership/check-1/q2",
+      at: 20,
+      answer: "Owner",
+      evidence: "Correct",
+      learningRecord: "0001-owner.md",
+    },
+  ];
+  expect(lessonHealthLines(data).join("\n")).toContain("Resolved quiz gaps");
+});

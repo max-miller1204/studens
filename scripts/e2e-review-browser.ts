@@ -23,8 +23,24 @@ export async function verifyReviewBrowser(artifacts: string | null): Promise<voi
     seedClassroom(fixture);
     writeGradedAttempt({
       at: Date.now() - 2 * DAY_MS,
-      answers: [termAnswer("q1", "owner")],
-      correct: { q1: true },
+      answers: (host === "service" ? ["q1", "q2", "q3"] : ["q1"]).map((id) =>
+        termAnswer(
+          id,
+          "owner",
+          host === "service"
+            ? {
+                learning: {
+                  objectiveId: "ownership",
+                  objective: { statement: "Explain ownership.", application: true },
+                  task: "retrieval",
+                  support: "independent",
+                  assistance: "none",
+                },
+              }
+            : {},
+        ),
+      ),
+      correct: { q1: true, ...(host === "service" ? { q2: true, q3: true } : {}) },
     });
     const evidence = artifacts ? path.join(artifacts, host) : null;
     if (evidence) fs.mkdirSync(evidence, { recursive: true });
@@ -145,6 +161,12 @@ export async function verifyReviewBrowser(artifacts: string | null): Promise<voi
         ${shot("creating-after-reload")}
       `);
       request = currentReview("rust");
+      if (
+        host === "service" &&
+        (request?.items.length !== 1 ||
+          request.items[0].key !== "001-ownership/@objective/ownership")
+      )
+        throw new Error("Several objective probes created duplicate review items.");
       if (
         !request ||
         request.status !== "running" ||
@@ -278,9 +300,15 @@ export async function verifyReviewBrowser(artifacts: string | null): Promise<voi
         ${shot("graded-review")}
         await page.goto(${JSON.stringify(`${base}/c/rust`)});
         await page.getByRole('button', {name:'Start review',exact:true}).waitFor();
-        if (!await page.getByRole('button', {name:'Start review',exact:true}).isDisabled()) throw new Error('A fresh review is offered when none is due.');
+        if (await page.getByRole('button', {name:'Start review',exact:true}).isDisabled() !== ${host === "service"}) throw new Error('Review availability contradicts the saved evidence.');
       `);
       const grade = store.latestGrades("rust", request.lesson)[0];
+      if (
+        host === "pi" &&
+        (store.reviewItems("rust")[0].objective !== undefined ||
+          store.reviewItems("rust")[0].context !== "unknown")
+      )
+        throw new Error("A review invented objective context for historical history.");
       if (!grade || grade.score !== 100 || store.reviewItems("rust")[0].attempts !== 2)
         throw new Error("The review grade did not update its original item.");
       if (host === "service") {
@@ -330,6 +358,7 @@ export async function verifyReviewBrowser(artifacts: string | null): Promise<voi
                 "private files",
                 "submit and grade",
                 "schedule original item",
+                ...(host === "service" ? ["three probes share one objective schedule"] : []),
                 ...(host === "service" ? ["regenerate rejected panel plan"] : []),
               ],
             },

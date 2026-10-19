@@ -839,7 +839,9 @@ async function handleQuizSubmit(
   // A review question must name an item the learner was graded on before. Otherwise
   // its grade would start a schedule for an item that does not exist.
   if (kind === "review") {
-    const known = new Set(store.reviewItems(classroom).map((item) => item.key));
+    const known = new Set(
+      store.reviewItems(classroom).flatMap((item) => [item.key, ...(item.questionKeys ?? [])]),
+    );
     const unknown = answers.filter((a) => !known.has(a.reviewOf!)).map((a) => a.reviewOf);
     if (unknown.length > 0) {
       return sendJson(

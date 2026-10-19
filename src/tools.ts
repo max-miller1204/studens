@@ -15,7 +15,6 @@ import * as path from "node:path";
 import { createHash } from "node:crypto";
 
 import { ASSISTANCE, type Assistance } from "./evidence.ts";
-import { reviewKey } from "../assets/runtime/quiz.mjs";
 import { applyAnswer, applyGrade } from "./bridge.ts";
 import { mergeGrades } from "./closed-grading.ts";
 import { gradeScore, validateGrade } from "../assets/runtime/grade.mjs";
@@ -34,6 +33,8 @@ import { parseTeachingPlan } from "./teaching-plan.ts";
 import { parseRubric } from "./rubric.ts";
 import { answersByQuestion, kindOf } from "./quiz.ts";
 import {
+  answerReviewKey,
+  findReviewItem,
   DEFAULT_REVIEW_SIZE,
   MAX_REVIEW_SIZE,
   pickReviewItems,
@@ -421,13 +422,15 @@ export function classroomTools(host: ToolHost): ClassroomTool[] {
           return fail((err as Error).message);
         }
         const kind = kindOf(submission);
-        const reviewKeys =
-          kind === "pretest"
-            ? []
-            : answersByQuestion(submission.answers).map(
-                ([questionId, group]) =>
-                  group[0].reviewOf ?? reviewKey(submission.lesson, submission.quizId, questionId),
-              );
+        const reviewKeys = [
+          ...new Set(
+            kind === "pretest"
+              ? []
+              : answersByQuestion(submission.answers).map(([, group]) =>
+                  answerReviewKey(submission.lesson, submission.quizId, group[0]),
+                ),
+          ),
+        ];
         const incorrectQuestionIds = grade.questions
           .filter((question) => !question.correct)
           .map((question) => question.questionId);
@@ -598,7 +601,7 @@ export function classroomTools(host: ToolHost): ClassroomTool[] {
       label: "Scaffold Review",
       description:
         "Create a spaced review session from the questions that are due for review, and return them. " +
-        "Each graded question has a review schedule: a correct answer moves it to a longer interval, a wrong answer moves it back to one day. " +
+        "Each objective has one review schedule; historical questions without objective context keep separate schedules: a correct answer moves it to a longer interval, a wrong answer moves it back to one day. " +
         "Write one new question with a new example for each returned item, and mark it with the given data-review-of key. The result lists the authoring steps. " +
         "Fails when nothing is due.",
       parameters: object(
@@ -606,7 +609,7 @@ export function classroomTools(host: ToolHost): ClassroomTool[] {
           classroom: str("Classroom directory name."),
           limit: {
             type: "number",
-            description: `How many due questions to include. Default ${DEFAULT_REVIEW_SIZE}, maximum ${MAX_REVIEW_SIZE}.`,
+            description: `How many due items to include. Default ${DEFAULT_REVIEW_SIZE}, maximum ${MAX_REVIEW_SIZE}.`,
           },
         },
         ["limit"],
@@ -628,7 +631,7 @@ export function classroomTools(host: ToolHost): ClassroomTool[] {
           return fail(
             summary.nextDueAt === null
               ? "Nothing is due for review: no question has been graded yet."
-              : `Nothing is due for review. The next question is due ${relativeDay(summary.nextDueAt, now)}.`,
+              : `Nothing is due for review. The next item is due ${relativeDay(summary.nextDueAt, now)}.`,
           );
         }
 
@@ -639,7 +642,7 @@ export function classroomTools(host: ToolHost): ClassroomTool[] {
         fs.mkdirSync(dir, { recursive: true });
 
         const title = `Review: ${date}`;
-        const summaryLine = `Spaced review of ${picked.length} earlier question${picked.length === 1 ? "" : "s"}.`;
+        const summaryLine = `Spaced review of ${picked.length} earlier item${picked.length === 1 ? "" : "s"}.`;
         const template = fs.readFileSync(path.join(templatesDir(), "review.html"), "utf8");
         const htmlPath = path.join(dir, "lesson.html");
         fs.writeFileSync(
@@ -782,10 +785,10 @@ export { DEFAULT_REVIEW_SIZE, MAX_REVIEW_SIZE } from "./review.ts";
 /** When each question in a graded submission comes up for review next. */
 function reviewScheduleLine(submission: store.QuizSubmission): string {
   const now = Date.now();
-  const items = new Map(store.reviewItems(submission.classroom).map((item) => [item.key, item]));
+  const items = store.reviewItems(submission.classroom);
   const parts = answersByQuestion(submission.answers).map(([questionId, group]) => {
-    const key = group[0].reviewOf ?? reviewKey(submission.lesson, submission.quizId, questionId);
-    const item = items.get(key);
+    const key = answerReviewKey(submission.lesson, submission.quizId, group[0]);
+    const item = findReviewItem(items, key);
     if (!item) throw new Error(`No review item for ${key} after grading it.`);
     return `${questionId} ${relativeDay(item.dueAt, now)}`;
   });

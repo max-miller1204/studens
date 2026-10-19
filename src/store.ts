@@ -40,7 +40,13 @@ import {
   type QuizAnswer,
   type QuizKind,
 } from "./quiz.ts";
-import { scheduleItems, type ReviewEvent, type ReviewItem } from "./review.ts";
+import {
+  answerReviewKey,
+  findReviewItem,
+  scheduleItems,
+  type ReviewEvent,
+  type ReviewItem,
+} from "./review.ts";
 
 export type { QuizAnswer, QuizKind };
 
@@ -751,7 +757,7 @@ export function createSubmission(
     const q = teachingPlan.quizzes[input.quizId]?.questions[answer.questionId];
     if (!q) throw new Error(`No teaching mapping for ${input.quizId}/${answer.questionId}.`);
     const original = answer.reviewOf
-      ? reviewItems(input.classroom).find((i) => i.key === answer.reviewOf)
+      ? findReviewItem(reviewItems(input.classroom), answer.reviewOf)
       : undefined;
     return {
       ...saved,
@@ -893,7 +899,10 @@ export function reviewEvents(classroom: string): ReviewEvent[] {
         if (!verdict) continue;
         const credit = questionCredit(verdict);
         events.push({
-          key: group[0].reviewOf ?? reviewKey(lesson, submission.quizId, questionId),
+          key: answerReviewKey(lesson, submission.quizId, group[0]),
+          ...(!group[0].reviewOf
+            ? { questionKey: reviewKey(lesson, submission.quizId, questionId) }
+            : {}),
           at: submission.submittedAt,
           feedbackAt,
           evidence: group[0].learning,
@@ -906,13 +915,24 @@ export function reviewEvents(classroom: string): ReviewEvent[] {
       }
     }
   }
+  const aliases = new Map<string, string>();
+  for (const event of [...events].sort((a, b) => a.at - b.at))
+    if (event.questionKey && !aliases.has(event.questionKey))
+      aliases.set(event.questionKey, event.key);
+  const canonical = (key: string) => aliases.get(key) ?? key;
+  for (const event of events) {
+    if (!event.questionKey) event.key = canonical(event.key);
+    else if (canonical(event.questionKey) !== event.key) delete event.questionKey;
+    // A review's new plan must not invent context for historical attempts.
+    if (event.key.split("/")[1] !== "@objective") event.evidence = undefined;
+  }
   const checks = listRetrievalChecks(classroom);
   for (const check of checks) {
-    const original = events.find((event) => event.key === check.key);
+    const original = events.find((event) => event.key === canonical(check.key));
     if (!original)
       throw new Error(`Retrieval check ${check.id} refers to an unknown review item: ${check.key}`);
     events.push({
-      key: check.key,
+      key: canonical(check.key),
       at: check.at,
       correct: true,
       credit: 1,
@@ -921,7 +941,7 @@ export function reviewEvents(classroom: string): ReviewEvent[] {
       feedback: check.evidence,
       source: "chat",
       learningRecord: check.learningRecord,
-      evidence: check.learning,
+      evidence: canonical(check.key).split("/")[1] === "@objective" ? check.learning : undefined,
     });
   }
   return events;
@@ -956,7 +976,7 @@ export function recordRetrievalCheck(
   classroom: string,
   input: Omit<RetrievalCheck, "id" | "at" | "learning">,
 ): RetrievalCheck {
-  const item = reviewItems(classroom).find((item) => item.key === input.key);
+  const item = findReviewItem(reviewItems(classroom), input.key);
   if (!item) throw new Error(`No graded review item: ${input.key}`);
   const record = readLearningRecords(classroom).find(
     (record) => record.file === input.learningRecord,
@@ -969,7 +989,7 @@ export function recordRetrievalCheck(
   const previous = listRetrievalChecks(classroom);
   if (
     previous.some(
-      (check) => check.key === input.key && check.learningRecord === input.learningRecord,
+      (check) => findReviewItem([item], check.key) && check.learningRecord === input.learningRecord,
     )
   ) {
     throw new Error("This learning record already has a retrieval check for this item.");
@@ -1164,6 +1184,9 @@ export function lessonReviewItems(classroom: string, lesson: string): ReviewItem
       .flatMap((state) => state.submission.answers.map((answer) => answer.reviewOf)),
   );
   return reviewItems(classroom).filter(
-    (item) => item.lesson === lesson || reviewedHere.has(item.key),
+    (item) =>
+      item.lesson === lesson ||
+      reviewedHere.has(item.key) ||
+      item.questionKeys?.some((key) => reviewedHere.has(key)),
   );
 }
