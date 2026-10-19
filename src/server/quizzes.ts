@@ -140,6 +140,7 @@ export async function handleQuizSubmit(
   if (reviewSessions(classroom).some((s) => s.lesson === lesson && s.status !== "done"))
     return sendJson(res, { error: "This review is not ready." }, 409);
   store.clearDraft(classroom, lesson, `quiz:${quizId}`);
+  const review = reviewSessions(classroom).find((session) => session.lesson === lesson);
   const submission = store.createSubmission({
     classroom,
     lesson,
@@ -147,6 +148,7 @@ export async function handleQuizSubmit(
     quizTitle: String(body["quizTitle"] ?? "Check on learning").slice(0, 200),
     kind,
     answers,
+    earlyReviewKeys: review?.items.filter((item) => item.dueAt > review.at).map((item) => item.key),
   });
 
   if (!completeClosedSubmission(submission)) hooks?.onQuizSubmit(submission);

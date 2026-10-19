@@ -7,7 +7,11 @@ their original host and recovery behavior.
 
 ## Sub-features
 
+- Choose Quick 3 through 12 items, a classroom, and a topic from saved objective groups (historical questions use their original lesson).
 - Open due prepared questions immediately without teacher authoring.
+- Opt into early review without extending its saved interval, including after a miss.
+- Retire or restore an item while retaining its evidence, grades, and published reviews.
+- Flag a bad question in the owning teacher panel with durable status and explicit retry.
 - Skip legacy questions without pools with a specific message.
 - Preserve selections after reload and publication retry.
 - Return to draft answers in an unfinished review, including from another host.
@@ -27,7 +31,9 @@ their original host and recovery behavior.
 ## How to get to it (user POV)
 
 1. Open a classroom with due check questions and prepared private pools.
-2. Select `Start review` in Progress. The ready review opens.
+2. Choose `Review size` and `Topic` in Progress, then select `Start review`. Enable
+   `Review early anyway` to include items before their due date. Options survive reload;
+   the ready review preserves its selection and original item identities.
 3. If publication fails, read the specific error and select `Retry review` after
    correcting its cause. Reload must not retry it automatically.
 4. Answer the current card and submit. Closed answers grade immediately. Read the
@@ -36,9 +42,17 @@ their original host and recovery behavior.
 5. Reload during an unfinished review. The current card, saved draft, earlier grades,
    and original schedule must be preserved. `Continue review` resumes the unfinished
    session from classroom Progress.
-6. Open `Review history` from the classroom or review screen. Reviews appear here,
+6. On a card, select `Flag bad question`. Describe the problem in the prefilled
+   teacher reply, then select `Send reply`. The report includes the original key and
+   displayed question. Reload preserves the report and any failed request; use
+   `Retry request` explicitly. Send or clear an existing reply draft before flagging.
+7. Select `Retire item` on a card or in classroom `Manage review items`. Reload:
+   active counts exclude it, its history remains, and `Restore item` restores selection.
+   A published review remains answerable. Conflicting edits show a specific error;
+   use `Retry item action` after resolving a lock, or reload after a stale-tab error.
+8. Open `Review history` from the classroom or review screen. Reviews appear here,
    with answered counts, and stay out of Lessons. Open an older numbered review link.
-7. For an item with three unresolved misses, select `Open short re-teach` in Progress,
+9. For an item with three unresolved misses, select `Open short re-teach` in Progress,
    then `Start short re-teach` on the lesson page. Read the explanation and reply there.
    A failure keeps its specific error after reload and requires `Retry request`.
    A message interrupted before queuing offers `Retry short re-teach`.
@@ -60,6 +74,19 @@ grades its prepared independent transfer. Publication contracts reject retrieval
 or assisted tasks for that objective before writes. Its background refill retry
 must append to the original question pool while retaining the objective key.
 
+The control fixtures exercise both Pi and service queues. They choose Quick 3 and
+12 through the browser with paused and retired items excluded even for early review,
+navigate classrooms, pick a saved objective group, reload
+options, answer early with assistance and compare the original due date, retire and
+restore while preserving evidence, and flag a question. Each report deliberately
+fails once, stays failed on reload, and reaches the fixture teacher only after
+`Retry request`. They probe invalid size, a real edit lock, stale revisions,
+corrupt control state with `Retry loading review state`, malformed saved options
+with `Reset review options`, failed item loading with `Retry item state`, an
+existing teacher draft that must not be overwritten, unrelated classrooms,
+private files, and startup without duplicate grades or reports. Inspect
+`review-controls/pi/` and `review-controls/service/`, especially `result.json`.
+
 The card fixtures additionally check two-card order, immediate correct feedback
 without a model turn, a miss followed by a same-screen corrective exchange, 375px
 layout, second-card drafts, completion counts, duplicate submission rejection,
@@ -73,7 +100,15 @@ the project skill. Each opens a prepared closed review, submits a miss, checks i
 immediate grade, receives a real corrective question, and replies in the same panel.
 Inspect `stored-review.json`, `stored-refills.json`, and the host review screenshot. Select the Pi drive
 for bridge changes and inspect `stored-review.json`, `pi-review.png`, and
-`pi-review-correction.png`. Service hosts also capture `<host>-review-correction.png`.
+`pi-review-correction.png`. Service hosts also capture `<host>-review-correction.png`. Each real host uses
+`Flag bad question` and `Send reply`, receives a teacher response, reloads the saved
+report, and preserves quiz grading. Inspect `stored-question-report.json` and
+`<host>-question-report.png`.
+A failed corrective reply is captured before reload and one explicit `Retry request`.
+The retry uses the product's saved error feedback; the same teacher must then reply.
+Inspect `corrective-reply-retries.json` and `<host>-review-correction.png.reply-failed.png`
+when present. A second failure stops the drive; no grade or evidence validator is relaxed.
+
 If generated background output fails validation, the host drive retains
 `failed-review-refills.json` and `review-refills-failed.png`, then presses each
 failed request's `Retry request` once. A second failure stops the check.

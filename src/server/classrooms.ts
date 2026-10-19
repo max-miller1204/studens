@@ -2,7 +2,13 @@ import * as fs from "node:fs";
 import type * as http from "node:http";
 import * as path from "node:path";
 import { injectLessonRuntime } from "../lesson-html.ts";
-import { classroomPage, reviewHistoryPage, folderLoadErrorPage, landingPage } from "../pages.ts";
+import {
+  classroomPage,
+  reviewHistoryPage,
+  reviewLoadErrorPage,
+  folderLoadErrorPage,
+  landingPage,
+} from "../pages.ts";
 import {
   classroomDir,
   isFile,
@@ -23,9 +29,18 @@ import { sendFile, sendHtml, sendNotFound } from "./http.ts";
 export function handleLanding(res: http.ServerResponse, url: URL): void {
   const classrooms = store.listClassrooms();
   const now = Date.now();
-  const due = Object.fromEntries(
-    classrooms.map((c) => [c.name, summarize(store.reviewItems(c.name), now).due]),
-  );
+  let due: Record<string, number>;
+  try {
+    due = Object.fromEntries(
+      classrooms.map((c) => [c.name, summarize(store.reviewItems(c.name), now).due]),
+    );
+  } catch (error) {
+    return sendHtml(
+      res,
+      reviewLoadErrorPage((error as Error).message, url.pathname + url.search),
+      500,
+    );
+  }
   let folders: store.ClassroomFolder[];
   try {
     folders = store.readClassroomFolders();
@@ -75,7 +90,16 @@ export function handleClassroomRoute(
   // /c/<classroom>
   if (second === undefined) {
     const now = Date.now();
-    const items = store.reviewItems(name);
+    let items;
+    try {
+      items = store.reviewItems(name);
+    } catch (error) {
+      return sendHtml(
+        res,
+        reviewLoadErrorPage((error as Error).message, `/c/${encodeURIComponent(name)}`),
+        500,
+      );
+    }
     const dueByLesson: Record<string, number> = {};
     for (const item of items) {
       if (isDue(item, now)) dueByLesson[item.lesson] = (dueByLesson[item.lesson] ?? 0) + 1;
@@ -97,8 +121,9 @@ export function handleClassroomRoute(
           review: summarize(items, now),
           dueByLesson,
           reteach: items
-            .filter((item) => item.needsReteach)
+            .filter((item) => item.needsReteach && item.retiredAt === undefined)
             .map((item) => ({ lesson: item.lesson, prompt: item.prompt })),
+          items,
           glossaryTerms: store.readGlossary(name).terms.length,
           now,
         },
