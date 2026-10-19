@@ -125,6 +125,14 @@ not real model access. Contract tests additionally reject foreign ownership and
 competing unfinished reviews. Daily selections use the same default per-classroom
 size and prepared-variant selection as classroom Progress.
 
+Daily edits also share a root transaction lock across live Pi and service processes.
+If another server is saving, read its specific lock error, then explicitly retry;
+loading status cannot publish or retry a classroom. Foreign start/continue/retry
+actions must leave the owning host's saved errors and progress unchanged. A
+published classroom review still opens across hosts. A delayed landing start after
+the first classroom is graded must leave the next group planned until its explicit
+`Start <classroom> review` control is used.
+
 For service or shared prompt changes, select the real Claude and Codex drives from
 the project skill. Each opens a prepared closed review, submits a miss, checks its
 immediate grade, receives a real corrective question, and replies in the same panel.
@@ -134,6 +142,22 @@ for bridge changes and inspect `stored-review.json`, `pi-review.png`, and
 `Flag bad question` and `Send reply`, receives a teacher response, reloads the saved
 report, and preserves quiz grading. Inspect `stored-question-report.json` and
 `<host>-question-report.png`.
+The real host drives now enter through `Start daily review`, retain separate Rust
+and Biology plans, perform the real Rust correction and report, and explicitly
+complete Biology before reloading the finished batch. Inspect `stored-daily.json`
+and `<host>-daily-complete.png`. The lesson material is a fixture; the host and
+corrective teacher are real at the prescribed settings.
+
+Service quiz and historical-resume drives retain `quiz-retrieval-task.json` and
+`resume-retrieval-task.json`. Mechanical checks link the visible panel message to
+its completed validated request and saved grade; callless plans have zero applied
+calls even when the field is absent. Inspect each complete saved task manually:
+it must request fresh, answerable retrieval in the relevant lesson, without giving
+that task's answer. An imperative can satisfy this requirement without a question
+mark. Generic feedback fails this semantic review even if mechanical checks pass.
+The subsequent real learner reply must still create its original linked evidence
+and learning record while preserving the grade.
+
 A failed corrective reply is captured before reload and one explicit `Retry request`.
 The retry uses the product's saved error feedback; the same teacher must then reply.
 Inspect `corrective-reply-retries.json` and `<host>-review-correction.png.reply-failed.png`
