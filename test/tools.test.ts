@@ -104,6 +104,16 @@ describe("grade_lesson_quiz", () => {
           points: 2,
           full: "Names the owner.",
           partial: "No partial credit.",
+          variants: ["v1", "v2"].map((id) => ({
+            id,
+            html: `<li class="cl-q" data-question-id="${id}" data-type="term"><p class="cl-q-prompt">Name the owner in a fresh case.</p><input type="text"></li>`,
+            rubric: {
+              expected: "owner",
+              points: 2,
+              full: "Names the owner.",
+              partial: "No partial credit.",
+            },
+          })),
         },
       },
     });
@@ -117,12 +127,48 @@ describe("grade_lesson_quiz", () => {
           "assessment-1": {
             purpose: "assessment",
             questions: {
-              q1: { objective: "ownership", task: "retrieval", support: "independent" },
+              q1: {
+                objective: "ownership",
+                task: "retrieval",
+                support: "independent",
+                variants: Object.fromEntries(
+                  ["v1", "v2"].map((id) => [
+                    id,
+                    { objective: "original", task: "retrieval", support: "independent" },
+                  ]),
+                ),
+              },
             },
           },
         },
       }),
     );
+    const keyPath = `rust/${lesson}/quiz/key.json`;
+    fixture.write(
+      keyPath,
+      JSON.stringify({
+        "assessment-1": {
+          q1: {
+            expected: "owner",
+            points: 2,
+            full: "Names the owner.",
+            partial: "No partial credit.",
+          },
+        },
+      }),
+    );
+    expect(() =>
+      store.createSubmission({
+        classroom: "rust",
+        lesson,
+        quizId: "assessment-1",
+        quizTitle: "Strict",
+        kind: "check",
+        answers: [termAnswer("q1", "owner")],
+      }),
+    ).toThrow("two or three");
+    expect(store.listSubmissions("rust", lesson)).toHaveLength(0);
+    fixture.write(keyPath, rubric);
     const s = store.createSubmission({
       classroom: "rust",
       lesson,
