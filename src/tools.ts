@@ -95,7 +95,7 @@ export function isFailure(result: ToolResult): boolean {
 export function registerClassroomTools(
   pi: any,
   extra: ClassroomTool[] = [],
-  beforeWrite?: () => void,
+  beforeWrite?: (name: string) => void,
 ): void {
   for (const tool of [...classroomTools(PI_HOST), ...extra]) {
     pi.registerTool({
@@ -104,7 +104,8 @@ export function registerClassroomTools(
       description: tool.description,
       parameters: tool.parameters,
       execute: (_toolCallId: string, params: unknown) => {
-        if (tool.name !== "lesson_health" && tool.name !== "resume_lesson_teacher") beforeWrite?.();
+        if (tool.name !== "lesson_health" && tool.name !== "resume_lesson_teacher")
+          beforeWrite?.(tool.name);
         return tool.execute(params);
       },
     });
@@ -638,6 +639,7 @@ export function classroomTools(host: ToolHost): ClassroomTool[] {
               "An existing review is still being authored. Continue it from the classroom page.",
             );
           completePreparedReview(session);
+          server.reviewSaved(params.classroom);
           const htmlPath = path.join(lessonDir(params.classroom, session.lesson), "lesson.html");
           const url = server.urlFor(params.classroom, session.lesson);
           return ok(

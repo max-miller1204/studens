@@ -137,8 +137,15 @@ alone does not establish transfer. All pool files stay off static HTTP routes.
 Legacy lessons without pools remain readable and keep their grades and schedules;
 prepare their pools explicitly to make them eligible for instant review.
 
-Validated refill plans append variants to private `quiz/review-pool.json` batches.
-The original key and plan stay unchanged for pending submissions. Replaying a
-saved batch is idempotent; duplicate variant ids and conflicting batches fail
-explicitly. Supplemental variants use the same original objective and question
-contract as the authored pool.
+Reviews select an unseen variant first, then the least-used variant in authored
+order. They can reuse prepared questions while a refill is pending. Repeated clicks
+and publication retries retain the original selection. A pool with at most one
+unseen question queues two fresh variants. A missed answer queues one variant aimed
+at that specific mistake. The teacher runs these durable requests after queued
+learner work. Validated output is saved before `quiz/review-pool.json` is updated.
+This private supplement preserves the original rubric and pending submissions.
+Background failure leaves the ready review usable and appears in its teacher panel
+with an explicit retry. No pool or refill error starts an on-demand review author.
+
+Supplemental variants use the original objective and question contract. Duplicate
+variant ids and conflicting saved batches fail explicitly; replay is idempotent.

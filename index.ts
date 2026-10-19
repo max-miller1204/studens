@@ -25,6 +25,7 @@
 
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
+import { piRefillTool } from "./src/review-refill.ts";
 import { resumeTeacherTool } from "./src/teacher-resume.ts";
 import { ClassroomBridge } from "./src/bridge.ts";
 import { piLinks, registerClassroomCommands } from "./src/commands.ts";
@@ -43,6 +44,8 @@ export default function classroomExtension(pi: ExtensionAPI): void {
     onAsk: (annotation) => bridge.ask(annotation),
     onFollowUp: (annotation, followUp) => bridge.followUp(annotation, followUp),
     onQuizSubmit: (submission) => bridge.grade(submission),
+    onGradeSaved: (submission) => bridge.maintenance(submission.classroom),
+    onReviewSaved: (classroom) => bridge.maintenance(classroom),
     onReflect: (reflection) => bridge.reflect(reflection),
     reviewOwner: "pi",
     onReview: (session) => bridge.review(session),
@@ -53,8 +56,10 @@ export default function classroomExtension(pi: ExtensionAPI): void {
     onTeacherRetry: (classroom, id) => bridge.retry(classroom, id),
   });
 
-  registerClassroomTools(pi, [resumeTeacherTool((input) => bridge.resume(input))], () =>
-    bridge.assertCanWrite(),
+  registerClassroomTools(
+    pi,
+    [resumeTeacherTool((input) => bridge.resume(input)), piRefillTool()],
+    (name) => bridge.assertCanWrite(name),
   );
   registerClassroomCommands(pi, bridge);
 
@@ -63,6 +68,7 @@ export default function classroomExtension(pi: ExtensionAPI): void {
   pi.on("session_start", async (_event, ctx) => {
     bridge.restoreReviews();
     bridge.restoreResumes();
+    bridge.restoreRefills();
     bridge.setIdleProbe(() => ctx.isIdle());
     // Also adopts the UI for the "server running on port N" widget, so a resumed session
     // that is already serving says so without waiting for a /classroom command.

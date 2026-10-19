@@ -6,6 +6,7 @@ import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import * as store from "../src/store.ts";
+import { refillRequests } from "../src/review-refill.ts";
 import { currentReview } from "../src/review-session.ts";
 import {
   makeFixture,
@@ -459,6 +460,15 @@ try {
       JSON.stringify(reviewSession, null, 2),
     );
   console.log("[e2e:pi] PASS: prepared review opens from the classroom page without authoring");
+  const refills = await until("background private refill", () => {
+    const requests = refillRequests("rust").filter((r) => r.lesson === reviewSession.lesson);
+    if (requests.some((r) => r.status === "failed"))
+      throw new Error(requests.find((r) => r.status === "failed")!.error);
+    return requests.length && requests.every((r) => r.status === "done") ? requests : null;
+  });
+  if (artifacts)
+    fs.writeFileSync(path.join(artifacts, "stored-refills.json"), JSON.stringify(refills, null, 2));
+  console.log("[e2e:pi] PASS: durable background refill saves private variants");
   send({ id: "stop", type: "prompt", message: "/classroom stop" });
   await until("server stop", () =>
     events.some((e) => e.id === "stop" && e.type === "response") ? true : null,
