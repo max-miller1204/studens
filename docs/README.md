@@ -6,6 +6,7 @@ Start with [installation and your first lesson](../README.md).
 
 - [Usage](USAGE.md): host commands, upgrades, teacher recovery, and phone access.
 - [Configuration](CONFIGURATION.md): settings, saved files, and document links.
+- [Rollback](ROLLBACK.md): compatible code and complete private state backups.
 - [Screenshots](FEATURES.md): classroom, questions, quizzes, and themes.
 
 ## Developing

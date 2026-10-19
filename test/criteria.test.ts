@@ -239,7 +239,7 @@ it("applies an interrupted saved criterion plan once without another model turn"
   delete (input as { score?: number }).score;
   saveTeacherState("rust", {
     version: 1,
-    identity: { backend: "codex" },
+    identity: { backend: "codex", requestedModel: "new-selection", sessionId: "same-session" },
     messages: [],
     requests: [
       {
@@ -252,6 +252,9 @@ it("applies an interrupted saved criterion plan once without another model turn"
         at: 1,
         applied: 0,
         planVersion: 2,
+        planValidated: true,
+        requestedModel: "original-selection",
+        resolvedModel: "original-resolved",
         planRubricDigest: createHash("sha256").update(key).digest("hex"),
         plan: {
           calls: [{ name: "grade_quiz_answers", arguments_json: JSON.stringify(input) }],
@@ -262,7 +265,15 @@ it("applies an interrupted saved criterion plan once without another model turn"
       },
     ],
   });
+  const savedPlan = readTeacherState("rust")!.requests[0].plan;
   for (let i = 0; i < 2; i++) {
+    if (i === 1) {
+      // Simulate interruption after the grade write but before request progress was saved.
+      const interrupted = readTeacherState("rust")!;
+      interrupted.requests[0].status = "planned";
+      interrupted.requests[0].applied = 0;
+      saveTeacherState("rust", interrupted);
+    }
     const teacher = new TeacherService(async () => {
       throw new Error("Unexpected model turn");
     });
@@ -272,7 +283,17 @@ it("applies an interrupted saved criterion plan once without another model turn"
     } finally {
       await teacher.stop();
     }
-    expect(readTeacherState("rust")?.requests[0].status).toBe("done");
+    expect(readTeacherState("rust")?.identity).toMatchObject({
+      requestedModel: "new-selection",
+      sessionId: "same-session",
+    });
+    expect(readTeacherState("rust")?.requests[0]).toMatchObject({
+      status: "done",
+      requestedModel: "original-selection",
+      resolvedModel: "original-resolved",
+      planValidated: true,
+      plan: savedPlan,
+    });
     expect(store.listGrades(location.classroom, location.lesson)).toHaveLength(1);
   }
   expect(
