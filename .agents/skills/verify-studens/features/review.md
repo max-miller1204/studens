@@ -45,7 +45,8 @@ assembly, legacy pool absence, a publication conflict and explicit retry, reload
 automatic navigation, saved answers, another host opening the finished document,
 mobile controls, private routes, grading, and the original schedule. They also check
 a failed background refill, its persisted error, and explicit retry while the quiz
-stays available. Inspect
+stays available. Queued refills use the latest pool at execution, so an earlier
+queued write cannot leave the next request with stale variant IDs. Inspect
 `review/pi/result.json` and `review/service/result.json` and their screenshots.
 The service fixture combines three probes into one transfer-needed objective and
 grades its prepared independent transfer. Publication contracts reject retrieval
@@ -57,7 +58,8 @@ without a model turn, a miss followed by a same-screen corrective exchange, 375p
 layout, second-card drafts, completion counts, duplicate submission rejection,
 private history routes, legacy links, and startup without duplicate grades or
 corrections. The service fixture fails a correction and checks explicit retry after
-reload. Inspect `review-cards/pi/` and `review-cards/service/`, including `result.json`.
+reload. Invalid saved state shows its specific error and `Retry review state`.
+Inspect `review-cards/pi/` and `review-cards/service/`, including `result.json`.
 
 For service or shared prompt changes, select the real Claude and Codex drives from
 the project skill. Each opens a prepared closed review, submits a miss, checks its
@@ -65,6 +67,9 @@ immediate grade, receives a real corrective question, and replies in the same pa
 Inspect `stored-review.json`, `stored-refills.json`, and the host review screenshot. Select the Pi drive
 for bridge changes and inspect `stored-review.json`, `pi-review.png`, and
 `pi-review-correction.png`. Service hosts also capture `<host>-review-correction.png`.
+If generated background output fails validation, the host drive retains
+`failed-review-refills.json` and `review-refills-failed.png`, then presses each
+failed request's `Retry request` once. A second failure stops the check.
 
 For the refill protocol, run `npm run verify -- refill claude`, then
 `npm run verify -- refill codex`, with separate artifact directories. Each target

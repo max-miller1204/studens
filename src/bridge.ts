@@ -458,7 +458,7 @@ export class ClassroomBridge {
       this.publish(request.classroom, request.lesson);
       try {
         this.send(
-          `${request.prompt}\n\nIn this live Pi session, CALL the registered save_review_variants tool with classroom=${request.classroom}, request_id=${request.id}, and variants as an array. Return no plan as prose. Tool schema: ${JSON.stringify(REFILL_TOOL.parameters)}`,
+          `${refreshRefill(request).prompt}\n\nIn this live Pi session, CALL the registered save_review_variants tool with classroom=${request.classroom}, request_id=${request.id}, and variants as an array. Return no plan as prose. Tool schema: ${JSON.stringify(REFILL_TOOL.parameters)}`,
         );
       } catch (error) {
         this.pending.pop();

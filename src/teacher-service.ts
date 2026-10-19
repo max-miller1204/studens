@@ -598,7 +598,10 @@ export class TeacherService {
         if (!r.plan) {
           r.status = "running";
           if (r.kind === "review") updateReview(this.reviewSession(r), "running");
-          if (r.kind === "refill") updateRefill(this.refillRequest(r), "running");
+          if (r.kind === "refill") {
+            r.prompt = refreshRefill(this.refillRequest(r)).prompt;
+            updateRefill(this.refillRequest(r), "running");
+          }
           saveTeacherState(classroom, state);
           this.publish(classroom, r.lesson);
           const controller = new AbortController();
