@@ -44,6 +44,7 @@ import * as server from "./server.ts";
 import * as store from "./store.ts";
 
 import {
+  completePreparedReview,
   readReviewDocument,
   reviewSessions,
   requireReviewOwner,
@@ -292,6 +293,7 @@ export class ClassroomBridge {
   review(session: ReviewSession): void {
     requireReviewOwner(session, "pi");
     if (session.status !== "queued") return;
+    if (completePreparedReview(session)) return;
     const prompt = reviewPrompt(session, "push");
     updateReview(session, "running");
     const origin: Origin = { kind: "review", session };
@@ -317,6 +319,10 @@ export class ClassroomBridge {
           session.owner === "pi" &&
           (session.status === "queued" || session.status === "running")
         ) {
+          if (session.document) {
+            completePreparedReview(session);
+            continue;
+          }
           try {
             process.kill(session.ownerPid, 0);
           } catch (err) {

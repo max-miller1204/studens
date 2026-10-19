@@ -37,6 +37,7 @@ import {
 } from "./teacher.ts";
 
 import {
+  completePreparedReview,
   reviewSessions,
   requireReviewOwner,
   updateReview,
@@ -174,6 +175,10 @@ export class TeacherService {
   }
   review(session: ReviewSession): void {
     requireReviewOwner(session, "service");
+    if (session.document) {
+      if (session.status !== "failed") completePreparedReview(session);
+      return;
+    }
     if (this.states.get(session.classroom)?.requests.some((r) => r.id === `review:${session.id}`))
       return;
     this.enqueue({

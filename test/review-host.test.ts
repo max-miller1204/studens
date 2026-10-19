@@ -5,7 +5,6 @@ import {
   currentReview,
   publishReview,
   reviewSessions,
-  startReview,
   updateReview,
 } from "../src/review-session.ts";
 import { DAY_MS } from "../src/review.ts";
@@ -14,6 +13,7 @@ import * as store from "../src/store.ts";
 import { readTeacherState, saveTeacherState } from "../src/service-state.ts";
 import { TeacherService } from "../src/teacher-service.ts";
 import {
+  legacyReview as startReview,
   makeFixture,
   reviewDocument,
   seedClassroom,
@@ -47,14 +47,21 @@ const reviewPlan = () => ({
   learning_record: "",
   notes_markdown: "",
 });
-const post = (base: string, route: string, body: unknown) =>
-  fetch(`${base}/api/${route}`, {
+const post = (base: string, route: string, body: unknown) => {
+  if (
+    route === "review" &&
+    (body as { classroom: string }).classroom === "rust" &&
+    !currentReview("rust")
+  )
+    startReview("rust", (body as { id: string }).id, "service");
+  return fetch(`${base}/api/${route}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
+};
 
-describe("browser review hosts", () => {
+describe("saved legacy review hosts", () => {
   it.each(["pi", "service"] as const)(
     "opens a published %s review from the other host without taking over authoring",
     async (owner) => {

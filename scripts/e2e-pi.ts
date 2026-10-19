@@ -426,7 +426,7 @@ try {
   console.log(
     "[e2e:pi] PASS: chat-origin historical review resumes in the panel with its 67% grade preserved",
   );
-  seedTransferObjective();
+  seedTransferObjective(true);
   await playwrightCode(
     session,
     fixture.root,
@@ -437,7 +437,7 @@ try {
     return true;
   }`,
   );
-  const reviewSession = await until("browser review authoring", () => {
+  const reviewSession = await until("browser review assembly", () => {
     const session = currentReview("rust");
     if (session?.status === "failed") throw new Error(session.error);
     return session?.status === "done" ? session : null;
@@ -458,7 +458,7 @@ try {
       path.join(artifacts, "stored-review.json"),
       JSON.stringify(reviewSession, null, 2),
     );
-  console.log("[e2e:pi] PASS: review authoring starts from the classroom page");
+  console.log("[e2e:pi] PASS: prepared review opens from the classroom page without authoring");
   send({ id: "stop", type: "prompt", message: "/classroom stop" });
   await until("server stop", () =>
     events.some((e) => e.id === "stop" && e.type === "response") ? true : null,
