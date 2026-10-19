@@ -37,14 +37,11 @@ export function readConfig(file = configPath()): ClassroomConfig {
       throw new Error("Config must be an object.");
     }
     const config = parsed as ClassroomConfig;
-    resolveConfiguredPort(config.port);
-    if (config.tailscale !== undefined && typeof config.tailscale !== "boolean")
-      throw new Error("tailscale must be a boolean.");
-    if (config.tailscalePort !== undefined) resolveConfiguredPort(config.tailscalePort);
-    if (config.piTailscalePort !== undefined) resolveConfiguredPort(config.piTailscalePort);
+    validateConfig(config);
     return config;
   } catch (err) {
-    throw new Error(`Invalid classroom config ${file}: ${(err as Error).message}`, { cause: err });
+    const message = err instanceof SyntaxError ? "Invalid JSON syntax." : (err as Error).message;
+    throw new Error(`Invalid classroom config ${file}: ${message}`, { cause: err });
   }
 }
 
@@ -66,4 +63,20 @@ export function tailscaleLinks(
     enabled: process.env["PI_CLASSROOM_TAILSCALE"] !== "0" && config.tailscale !== false,
     port: host === "pi" ? (config.piTailscalePort ?? 8444) : config.tailscalePort,
   };
+}
+
+/** Shared read/write validation; unknown config keys remain intact. */
+export function validateConfig(config: ClassroomConfig): void {
+  resolveConfiguredPort(config.port);
+  if (config.tailscale !== undefined && typeof config.tailscale !== "boolean")
+    throw new Error("tailscale must be a boolean.");
+  for (const key of ["tailscalePort", "piTailscalePort"] as const) {
+    if (config[key] !== undefined) {
+      try {
+        resolveConfiguredPort(config[key]);
+      } catch {
+        throw new Error(`${key} must be an integer from 1 to 65535.`);
+      }
+    }
+  }
 }

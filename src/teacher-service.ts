@@ -1,3 +1,4 @@
+import { modelSelection } from "./teacher-models.ts";
 import { reteachOffers, reteachPrompt } from "./reteach.ts";
 /** Run one request at a time for each classroom. Persist plans before writes. */
 import {
@@ -109,14 +110,17 @@ export class TeacherService {
   restore(): void {
     for (const c of store.listClassrooms()) if (readTeacherState(c.name)) this.attach(c.name);
   }
-  connect(): void {
+  connect(applyConnectionSettings?: () => Promise<void>): void {
     server.setHooks({
       delivery: "service",
+      applyConnectionSettings,
       reviewOwner: "service",
       onAsk: (a) => this.question(a),
       onFollowUp: (a, f) => this.followUp(a, f),
       onQuizSubmit: (s) => this.submission(s),
       onReflect: (r) => this.reflection(r),
+      teacherSettings: (classroom) => this.settings(classroom),
+      setTeacherModel: (classroom, model, revision) => this.setModel(classroom, model, revision),
       teacherState: (classroom, lesson) => this.publicState(classroom, lesson),
       onTeacherChat: (classroom, lesson, text, id) => this.chat(classroom, lesson, text, id),
       onTeacherRetry: (classroom, id) => this.retry(classroom, id),
@@ -451,6 +455,34 @@ export class TeacherService {
     const previous = this.messages(classroom, lesson, state).at(-1);
     return previous ? Math.max(Date.now(), previous.at + 1) : Date.now();
   }
+  settings(classroom: string) {
+    const state = this.states.get(classroom);
+    if (!state) return null;
+    const running = state.requests.find((request) => request.status === "running");
+    const last = [...state.requests].reverse().find((request) => request.status === "failed");
+    return {
+      identity: { ...state.identity },
+      running: running ? { id: running.id, requestedModel: running.requestedModel ?? null } : null,
+      error: last?.error,
+    };
+  }
+  setModel(classroom: string, value: unknown, revision: unknown): void {
+    const model = modelSelection(value);
+    const state = this.states.get(classroom);
+    if (!state) throw new Error("No teacher owns this classroom. Open it from your agent first.");
+    if (revision !== (state.identity.selectionRevision ?? 0))
+      throw new Error(
+        "Teacher model setting changed in another page. Reload settings before saving again.",
+      );
+    const identity = {
+      ...state.identity,
+      requestedModel: model,
+      selectionRevision: (state.identity.selectionRevision ?? 0) + 1,
+    };
+    saveTeacherState(classroom, { ...state, identity });
+    state.identity = identity;
+    for (const lesson of store.listLessons(classroom)) this.publish(classroom, lesson.name);
+  }
   publicState(classroom: string, lesson: string): unknown {
     const state = this.states.get(classroom);
     if (!state) return null;
@@ -602,6 +634,8 @@ export class TeacherService {
       try {
         if (!r.plan) {
           r.status = "running";
+          r.requestedModel = state.identity.requestedModel ?? null;
+          delete r.resolvedModel;
           if (r.kind === "review") updateReview(this.reviewSession(r), "running");
           if (r.kind === "refill") {
             r.prompt = refreshRefill(this.refillRequest(r)).prompt;
@@ -614,7 +648,7 @@ export class TeacherService {
           let plan;
           try {
             plan = await this.run(
-              state.identity,
+              { ...state.identity, requestedModel: r.requestedModel },
               this.prompt(r, state),
               classroomDir(classroom),
               (id) => {
@@ -626,6 +660,14 @@ export class TeacherService {
               (value) => {
                 r.modelOutput = value;
                 saveTeacherState(classroom, state);
+              },
+              (model) => {
+                r.resolvedModel = model;
+                state.identity.activeModel = model;
+                state.identity.activeRequestedModel = r.requestedModel;
+                state.identity.activeModelAt = Date.now();
+                saveTeacherState(classroom, state);
+                this.publish(classroom, r.lesson);
               },
             );
           } finally {
@@ -649,7 +691,7 @@ export class TeacherService {
       } catch (err) {
         r.status = "failed";
         r.finishedAt = Date.now();
-        r.error = `${state.identity.backend} ${r.kind} request ${r.id} in ${classroom}/${r.lesson}: ${err instanceof Error ? err.message : String(err)}`;
+        r.error = `${state.identity.backend} model ${r.requestedModel ?? "configured default"} ${r.kind} request ${r.id} in ${classroom}/${r.lesson}: ${err instanceof Error ? err.message : String(err)}`;
         if (r.kind === "review") updateReview(this.reviewSession(r), "failed", r.error);
         if (r.kind === "refill") updateRefill(this.refillRequest(r), "failed", r.error);
         console.error(`[teacher] ${r.error}`);

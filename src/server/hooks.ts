@@ -3,6 +3,9 @@ import type { ReviewOwner, ReviewSession } from "../review-session.ts";
 import type * as store from "../store.ts";
 
 export interface ServerHooks {
+  teacherSettings?(classroom: string): unknown;
+  setTeacherModel?(classroom: string, model: unknown, revision: unknown): void;
+  applyConnectionSettings?(): Promise<void>;
   delivery?: "push" | "wait" | "service";
   canAccept?(classroom: string): void;
   teacherState?(classroom: string, lesson: string): unknown;

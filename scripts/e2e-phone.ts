@@ -1,5 +1,6 @@
 /** Temporary automatic tailnet route evaluation. Preserve the user's Serve config.
  * Set STUDENS_PHONE_PORT when 8443 holds another route. */
+import { playwright, playwrightCode } from "./playwright.ts";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as net from "node:net";
@@ -8,6 +9,10 @@ import { promisify } from "node:util";
 import { makeFixture, seedClassroom } from "../test/helpers.ts";
 import { control, ensureService, serviceStatus } from "../src/service-client.ts";
 const exec = promisify(execFile);
+const artifacts = process.argv[2] ? path.resolve(process.argv[2]) : null;
+if (artifacts) fs.mkdirSync(artifacts, { recursive: true });
+const browser = `studens-phone-settings-${process.pid}`;
+let browserOpen = false;
 const fixture = makeFixture();
 seedClassroom(fixture);
 const listener = net.createServer();
@@ -57,6 +62,36 @@ try {
     if (!(await fetch(url)).ok) throw new Error(`Tailnet URL did not load: ${url}`);
   const state = JSON.parse(await call("classroom_service", { action: "status" }));
   if (!state.tailnet?.enabled) throw new Error("Service status did not report the owned route.");
+  const base = (await serviceStatus()).url;
+  await playwright(browser, fixture.root, "open", `${base}/c/rust/settings`);
+  browserOpen = true;
+  await playwrightCode(
+    browser,
+    fixture.root,
+    `async page=>{
+    const field=page.getByLabel('Enable Tailscale links while connected',{exact:true});
+    await field.uncheck();
+    await page.getByRole('button',{name:'Save connection settings',exact:true}).click();
+    await page.getByRole('status').filter({hasText:'Links updated'}).waitFor();
+    ${artifacts ? `await page.screenshot({path:${JSON.stringify(path.join(artifacts, "settings-tailnet-disabled.png"))},fullPage:true});` : ""}
+    return {};
+  }`,
+  );
+  if (await routed())
+    throw new Error("Saving disabled links on the settings page kept the owned route.");
+  await playwrightCode(
+    browser,
+    fixture.root,
+    `async page=>{
+    await page.getByLabel('Enable Tailscale links while connected',{exact:true}).check();
+    await page.getByRole('button',{name:'Save connection settings',exact:true}).click();
+    await page.getByRole('status').filter({hasText:'Links updated'}).waitFor();return {};
+  }`,
+  );
+  if (!(await routed()))
+    throw new Error("Saving enabled links on the settings page did not restore the owned route.");
+  if (!(await fetch(classroom)).ok)
+    throw new Error("Settings route was not reachable on the tailnet after enabling links.");
   writeConfig({ tailscale: false, tailscalePort: httpsPort });
   const local = await call("open_classroom", { classroom: "rust" });
   if (!local.includes("http://127.0.0.1:")) throw new Error(`Disabled links stayed: ${local}`);
@@ -71,9 +106,10 @@ try {
     throw new Error("Unrelated Serve routes changed.");
   if (await routed()) throw new Error("Owned tailnet route remains.");
   console.log(
-    "PASS: automatic tailnet classroom and lesson links, service status, config disable, service stop cleanup, and unchanged unrelated routes.",
+    "PASS: automatic tailnet classroom and lesson links, service status, settings-page disable/enable, config disable, service stop cleanup, and unchanged unrelated routes.",
   );
 } finally {
+  if (browserOpen) await playwright(browser, fixture.root, "close");
   if ((await serviceStatus()).running) {
     await control("/stop", {});
     await new Promise((r) => setTimeout(r, 300));
