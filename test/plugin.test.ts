@@ -51,7 +51,14 @@ describe("Claude Code plugin", () => {
     const marketplace = readJson(".claude-plugin/marketplace.json");
     expect(marketplace["name"]).toBe(manifest["name"]);
     expect(marketplace["plugins"]).toEqual([
-      expect.objectContaining({ name: manifest["name"], source: "./" }),
+      expect.objectContaining({
+        name: manifest["name"],
+        source: {
+          source: "url",
+          url: "https://github.com/max-miller1204/studens.git",
+          ref: `v${manifest["version"]}`,
+        },
+      }),
     ]);
   });
 });
@@ -83,7 +90,14 @@ describe("Codex plugin", () => {
     const marketplace = readJson(".agents/plugins/marketplace.json");
     expect(marketplace["name"]).toBe(manifest["name"]);
     expect(marketplace["plugins"]).toEqual([
-      expect.objectContaining({ name: manifest["name"], source: { source: "local", path: "./" } }),
+      expect.objectContaining({
+        name: manifest["name"],
+        source: {
+          source: "url",
+          url: "https://github.com/max-miller1204/studens.git",
+          ref: `v${manifest["version"]}`,
+        },
+      }),
     ]);
   });
 });

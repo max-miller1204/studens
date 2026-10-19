@@ -1,0 +1,52 @@
+name: release
+
+on:
+  workflow_run:
+    workflows: [ci]
+    types: [completed]
+    branches: [main]
+
+concurrency:
+  group: studens-release
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.event.workflow_run.event == 'push' && github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - run: npm run version:check
+      - uses: actions/github-script@v8
+        with:
+          script: |
+            const fs = require('node:fs');
+            const { version } = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+            const tag = `v${version}`;
+            const { owner, repo } = context.repo;
+            try {
+              await github.rest.repos.getReleaseByTag({ owner, repo, tag });
+              core.info(`${tag} is already released; keep its existing code.`);
+              return;
+            } catch (error) {
+              if (error.status !== 404) throw error;
+            }
+            try {
+              await github.rest.git.getRef({ owner, repo, ref: `tags/${tag}` });
+              throw new Error(`${tag} already exists without a release. Inspect it and publish explicitly; this workflow will not replace it.`);
+            } catch (error) {
+              if (error.status !== 404) throw error;
+            }
+            await github.rest.repos.createRelease({
+              owner, repo, tag_name: tag,
+              target_commitish: context.payload.workflow_run.head_sha,
+              name: tag, generate_release_notes: true,
+              prerelease: version.includes('-'),
+            });

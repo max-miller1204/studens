@@ -51,6 +51,32 @@ Requests and plans are saved before writes. Recovery completes saved plans witho
 another model call or duplicate grade. Interrupted calls and authentication errors
 appear on the page; resolve the cause and select **Retry request**.
 
+## Updating Studens
+
+Release installs use a `v<version>` tag, not the latest checkout. Existing local-path
+installs must be removed from the host's configuration before switching to the
+release install commands in the README. For Pi, remove the local package with
+`pi remove /absolute/path/to/studens`. In Claude Code, stop passing `--plugin-dir`
+for the development checkout. In Codex, remove a checkout-backed marketplace and
+add the GitHub marketplace shown in the README.
+
+For Pi, install the tag of the release you want, for example
+`pi install git:github.com/max-miller1204/studens@v0.11.1`, then use `/reload`.
+Repeating `pi install` with a different tag changes the pinned version. General
+package updates keep that tag instead of following the default branch.
+
+For Claude Code, run `claude plugin marketplace update studens`, then
+`claude plugin update studens@studens`. For Codex, run
+`codex plugin marketplace upgrade studens`, then `codex plugin add studens@studens`.
+The refreshed catalog selects a named release; it does not install untagged code
+from `main`. Start a new host session after changing the installed plugin.
+
+Before changing releases, finish active teacher work. Stop the persistent service
+explicitly with `classroom_service` action `stop` (or `npm run service -- stop`
+from its installed package), then start the new release. Pi's server belongs to
+its session; `/reload` reloads the extension in that session. Classrooms and saved
+learner state keep their existing locations.
+
 ## Phone and remote links
 
 While Tailscale is connected, classroom commands create tailnet-only HTTPS links.

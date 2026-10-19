@@ -22,13 +22,31 @@ npm run version:check
 
 Pass an exact SemVer version, including a prerelease such as `0.12.0-beta.1` when
 needed. The bump command synchronizes `package.json`, both root version fields in
-`package-lock.json`, and `.codex-plugin/plugin.json`. It leaves dependency records
-unchanged and never invokes npm to regenerate the lockfile. It creates no commit
-or tag. Review the diff before committing.
+`package-lock.json`, both host plugin manifests, both marketplace release tags,
+and the Pi install command in the README. It leaves dependency records unchanged
+and never invokes npm to regenerate the lockfile. It creates no commit or tag.
+Review the diff before committing.
 
 The check reports mismatched or missing versions and runs in CI and both the
 default and `checks` verification targets. A bump can repair mismatched versions;
 missing or malformed fields must be fixed before retrying.
+
+Merge ordinary feature PRs without bumping the version. Their code stays on
+`main`; installations keep fetching the existing release tag. To ship those
+changes, bump the version in a release PR and merge it. After the `ci` workflow
+passes for that exact `main` commit, the `release` workflow creates its matching
+Git tag and GitHub Release. The first release using this workflow is `v0.11.1`.
+The new tag becomes installable only when that workflow succeeds.
+
+Existing releases are left intact. A network or permission error fails the
+workflow. An existing tag without a GitHub Release also fails with a specific
+error: inspect that tag before publishing it explicitly. Never move or reuse a
+release tag. Repository rules should prevent updates and deletion of `v*` tags.
+
+Checkout loading (`pi -e .`, `claude --plugin-dir .`) is a development path. It
+deliberately reads working files. To test release installations, use the commands
+in the README and an isolated host configuration, rather than registering the
+working checkout as a marketplace source.
 
 ## Select checks
 
