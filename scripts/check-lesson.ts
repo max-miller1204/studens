@@ -15,6 +15,7 @@ import { applyGrade } from "../src/bridge.ts";
 import * as server from "../src/server.ts";
 import * as store from "../src/store.ts";
 import { playwright, playwrightCode } from "./playwright.ts";
+import { checkPractice } from "./browser-actions.ts";
 
 const [classroom, lesson] = process.argv.slice(2);
 if (!isValidSlug(classroom) || !isValidSlug(lesson))
@@ -59,6 +60,7 @@ try {
     await page.waitForFunction(() => !document.querySelector('.cl-diagram[aria-busy], .cl-math[aria-busy]'), null, { timeout: 30000 });
     const contract = await page.locator('.cl-contract-error').allTextContents();
     if(contract.length) throw new Error(contract.join(' '));
+    const practice = await (${checkPractice.toString()})(page);
     const controls = [];
     const buttons = page.locator('main[data-cl-content] button').filter({hasNot:page.locator('[type=submit]')});
     for (let pass = 0; pass < 2; pass++) {
@@ -78,7 +80,7 @@ try {
     }
     await page.waitForTimeout(250);
     if(errors.length) throw new Error(errors.join(' '));
-    return { quizzes:await page.locator('form.cl-quiz').count(), controls, contractErrors:0, pageErrors:0 };
+    return { quizzes:await page.locator('form.cl-quiz').count(), controls, practice, contractErrors:0, pageErrors:0 };
   }`;
   const initial = await playwrightCode(browser, root, check);
   for (const id of staged.pendingPretests) {

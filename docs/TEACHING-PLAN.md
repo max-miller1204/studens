@@ -40,8 +40,9 @@ Old pages need no new metadata. Their evidence context remains unknown.
 ```
 
 Give the teaching block `id="teaching-cost"`. Put it inside the matching pretest gate.
-Map every authored question. Use the actual quiz and question ids. Do not add mappings
-for unused ids. Each upcoming objective needs a prequestion and a later assessment.
+Map every authored quiz question. Use the actual quiz and question ids. Do not add mappings
+for unused ids. Local `form.cl-practice` uses its own public feedback key and stays
+out of this private plan. Each upcoming objective needs a prequestion and a later assessment.
 The server checks that each prequestion's teaching target exists inside its own gate.
 These checks cannot establish semantic alignment. Read each question and teaching block.
 Check that both address the objective and that teaching answers the prequestion.

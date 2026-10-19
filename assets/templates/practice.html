@@ -1,0 +1,45 @@
+<!--
+  Inline practice contract: copy one short form between teaching sections, inside
+  the pretest gate. Never combine cl-practice with cl-quiz or nest forms.
+  Read quiz.html for .cl-q controls. Practice reuses all exact-capable types:
+  choice, multi, term, numeric, cloze, order, match, locate. short needs judgment;
+  use a local reveal or reflection instead. Label text fields accessibly.
+
+  Use a unique data-practice-id (distinct from every quiz id on the page).
+  Each question needs a public key entry: expected, correct, incorrect.
+  expected uses the exact-answer formats in quiz.html: option id for choice;
+  id array for multi/locate; text or text alternatives for term; numeric object
+  {value,tolerance?,unit?}; blank-id/text map for cloze; ordered id array for order;
+  left-id/right-id map for match. No partial credit. Feedback is plain text.
+
+  Practice keys and explanations are PUBLIC teaching content, visible in source.
+  Use separate examples from graded questions. Never copy quiz/key.json, rubric
+  criteria, graded answers, or private plan into this script or any public file.
+  Escape < as \u003c in JSON strings so content cannot close the script element.
+  Do not add practice to quiz/key.json or quiz/plan.json, or give it data-kind or
+  data-review-of. No variants are needed. Nothing is saved; reload starts fresh.
+  Check answer shows feedback immediately, without HTTP writes or teacher work.
+  Inputs remain editable; changing an answer clears feedback for an explicit retry.
+-->
+<form class="cl-practice" data-practice-id="practice-move" data-title="Try the idea">
+  <ol class="cl-questions">
+    <li class="cl-q" data-question-id="owner" data-type="choice">
+      <p class="cl-q-prompt">A value moves from parcel to delivery. Which owns it now?</p>
+      <div class="cl-options">
+        <label><input type="radio" name="practice-owner" value="parcel" />The parcel binding</label>
+        <label
+          ><input type="radio" name="practice-owner" value="delivery" />The delivery binding</label
+        >
+      </div>
+    </li>
+  </ol>
+  <script type="application/json" data-cl-practice-key>
+    {
+      "owner": {
+        "expected": "delivery",
+        "correct": "Ownership moved to delivery; parcel can no longer use the value.",
+        "incorrect": "Follow the move: delivery receives the value and becomes its owner."
+      }
+    }
+  </script>
+</form>
