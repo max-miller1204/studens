@@ -37,7 +37,12 @@ export function authoredQuizzes(
 
 export function authoredQuestions(html: string): AuthoredQuestion[] {
   const questions: AuthoredQuestion[] = [];
-  const source = authoringContent(html);
+  // Local practice is not an assessment: no rubric, plan, score, or review mapping.
+  const source = authoringContent(html).replace(
+    new RegExp(`<form\\b(${TAG_ATTRIBUTES})>[\\s\\S]*?<\\/form\\s*>`, "gi"),
+    (form, attributes: string) =>
+      htmlAttributes(attributes).get("class")?.split(/\s+/).includes("cl-practice") ? "" : form,
+  );
   for (const tag of source.matchAll(new RegExp(`<[a-z][\\w-]*\\b(${TAG_ATTRIBUTES})>`, "gi"))) {
     const attributes = htmlAttributes(tag[1]);
     if (!attributes.get("class")?.split(/\s+/).includes("cl-q")) continue;
@@ -136,9 +141,10 @@ export function authoredQuestionShapes(html: string): QuestionShape[] {
     ]);
   return descendants(root)
     .filter((element) => hasClass(element, "cl-q"))
-    .map((question) => {
+    .flatMap((question) => {
       let form = question.parent;
       while (form && form.tag !== "form") form = form.parent;
+      if (form && hasClass(form, "cl-practice") && !hasClass(form, "cl-quiz")) return [];
       if (!form || !hasClass(form, "cl-quiz"))
         throw new Error("An authored question needs a quiz form.");
       const kind = form.attributes.get("data-kind") ?? "check";
