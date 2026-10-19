@@ -1,3 +1,4 @@
+import { readTeacherState } from "../src/service-state.ts";
 import {
   seedDailyCompanion,
   startDailyActions,
@@ -84,6 +85,55 @@ function seedClassroom(root: string): void {
       },
     }),
   );
+}
+
+/** Mechanical receipt plus mandatory human review of the actual retrieval task.
+ * Punctuation cannot establish whether an imperative asks for fresh retrieval. */
+function retrievalTask(state: any, kind: "quiz" | "resume", lesson: string) {
+  const message = state.teacher.messages.filter((m: any) => m.role === "teacher").at(-1);
+  const saved = readTeacherState(CLASSROOM);
+  const request = saved?.requests.find((r) => r.id === message?.id);
+  if (
+    !message?.text.trim() ||
+    !message.html ||
+    !request ||
+    request.lesson !== lesson ||
+    request.kind !== kind ||
+    request.status !== "done" ||
+    !request.planValidated ||
+    !request.plan ||
+    request.plan.message !== message.text ||
+    request.applied !== request.plan.calls.length ||
+    !saved?.messages.some(
+      (m) => m.role === "teacher" && m.id === message.id && m.text === message.text,
+    )
+  )
+    throw new Error(
+      "Retrieval task is missing its completed, validated request or durable panel message.",
+    );
+  if (kind === "quiz" && !state.quizzes.some((q: any) => q.grade?.submissionId === request.target))
+    throw new Error("Retrieval task is not attached to its saved grade.");
+  const receipt = {
+    request,
+    message,
+    grade: state.quizzes[0]?.grade,
+    semanticReview:
+      "REQUIRED: inspect this complete task for a new answerable retrieval example, no supplied answer, and correct lesson ownership. Mechanical success does not accept generic feedback.",
+  };
+  if (artifacts)
+    fs.writeFileSync(
+      path.join(artifacts, `${kind}-retrieval-task.json`),
+      JSON.stringify(receipt, null, 2),
+    );
+  log(`MANUAL REVIEW ${kind} retrieval task: ${message.text}`);
+  return message;
+}
+function visibleTask(html: string): string {
+  return `await page.waitForFunction(html=>{
+    const expected=document.createElement('div');expected.innerHTML=html;
+    const normalize=text=>text.replace(/\\s+/g,' ').trim();
+    return [...document.querySelectorAll('.cl-teacher-message[data-role="teacher"] .cl-teacher-body')].some(el=>normalize(el.textContent)===normalize(expected.textContent));
+  },${JSON.stringify(html)});`;
 }
 
 async function freePort(): Promise<number> {
@@ -213,13 +263,13 @@ async function main(): Promise<void> {
     );
     if (graded.quizzes[0].grade.questions[0].correct !== false)
       throw new Error("Wrong answer was not marked incorrect.");
-    if (!graded.teacher.messages.at(-1).text.includes("?"))
-      throw new Error("Teacher did not ask a retrieval question.");
+    const gradedTask = retrievalTask(graded, "quiz", LESSON);
     await playwrightCode(
       browser,
       root,
       `async page => {
       await page.waitForFunction(() => document.querySelector('form.cl-quiz')?.dataset.state === 'graded');
+      ${visibleTask(gradedTask.html)}
       if (!await page.getByRole('button',{name:'Graded',exact:true}).isDisabled()) throw new Error('Graded quiz is unlocked.');
       await page.locator('.cl-teacher textarea').fill(${JSON.stringify(RETRIEVAL_REPLY)});
       await page.locator('.cl-teacher button[type="submit"]').click();
@@ -461,17 +511,17 @@ async function main(): Promise<void> {
       if (
         resumed.teacher.identity.sessionId !== identity ||
         resumed.quizzes[0].grade.score !== 67 ||
-        resumed.teacher.messages.some((m: any) => m.role === "learner") ||
-        !resumed.teacher.messages.at(-1).text.includes("?")
+        resumed.teacher.messages.some((m: any) => m.role === "learner")
       )
         throw new Error("Resume changed ownership, grade, or learner evidence.");
+      const resumedTask = retrievalTask(resumed, "resume", resumeInput.lesson);
       await playwrightCode(
         browser,
         root,
         `async page => {
         await page.goto(${JSON.stringify(base)} + '/c/rust/' + ${JSON.stringify(resumeInput.lesson)} + '#cl-teacher');
         await page.waitForFunction(() => document.querySelector('form.cl-quiz')?.dataset.state === 'graded');
-        await page.waitForFunction(() => document.querySelector('.cl-teacher-messages')?.textContent.includes('?'));
+        ${visibleTask(resumedTask.html)}
         ${artifacts ? `await page.locator('.cl-teacher').scrollIntoViewIfNeeded(); await page.screenshot({path:${JSON.stringify(path.join(artifacts, `${harness}-historical-resume.png`))}});` : ""}
         return true;
       }`,
