@@ -317,3 +317,17 @@ it("preserves same-millisecond grade revisions and rejects corrupted saved crite
     /criterion allocations must sum/,
   );
 });
+
+it("rejects reallocated criteria on a later attempt while preserving the earlier saved grade", async () => {
+  const first = submit();
+  await tool().execute(args(first.id));
+  const before = store.listGrades(location.classroom, location.lesson);
+  const changed = {
+    ...entry,
+    criteria: definitions.map((c, i) => ({ ...c, points: i === 0 ? 1 : 3 })),
+  };
+  f.write("rust/001-ownership/quiz/key.json", JSON.stringify({ check: { q: changed } }));
+  expect(submit).toThrow(/rubric changed after an earlier attempt/);
+  expect(store.listSubmissions(location.classroom, location.lesson)).toHaveLength(1);
+  expect(store.listGrades(location.classroom, location.lesson)).toEqual(before);
+});

@@ -31,6 +31,14 @@ export function createSubmission(
   const rubricDigest = fs.existsSync(rubric)
     ? createHash("sha256").update(fs.readFileSync(rubric)).digest("hex")
     : undefined;
+  if (
+    previous.some(
+      (s) => s.quizId === input.quizId && s.rubricDigest && s.rubricDigest !== rubricDigest,
+    )
+  )
+    throw new Error(
+      "The private rubric changed after an earlier attempt. Restore the original rubric before submitting again.",
+    );
   const page = readLesson(input.classroom, input.lesson);
   if (page?.reviewVariantContract === 1)
     authoredVariants(
