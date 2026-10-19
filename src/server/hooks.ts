@@ -1,3 +1,4 @@
+import { isStoredReview } from "../paths.ts";
 import type { ReviewOwner, ReviewSession } from "../review-session.ts";
 import type * as store from "../store.ts";
 
@@ -6,6 +7,7 @@ export interface ServerHooks {
   canAccept?(classroom: string): void;
   teacherState?(classroom: string, lesson: string): unknown;
   reviewOwner?: ReviewOwner;
+  onReviewMiss?(submission: store.QuizSubmission): void;
   onGradeSaved?(submission: store.QuizSubmission): void;
   onReviewSaved?(classroom: string): void;
   onReview?(session: ReviewSession): void;
@@ -28,7 +30,12 @@ export function reviewSaved(classroom: string): void {
   hooks?.onReviewSaved?.(classroom);
 }
 
+export function reviewMiss(submission: store.QuizSubmission): void {
+  if (isStoredReview(submission.lesson)) hooks?.onReviewMiss?.(submission);
+}
+
 export function gradeSaved(submission: store.QuizSubmission): void {
+  if (submission.deterministicGrades?.some((question) => !question.correct)) reviewMiss(submission);
   hooks?.onGradeSaved?.(submission);
 }
 

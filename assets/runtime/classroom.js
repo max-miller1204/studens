@@ -4,6 +4,7 @@ import { initDiagrams } from "./diagrams.mjs";
 import { initLinks } from "./links.mjs";
 import { initMath } from "./math.mjs";
 import { initTheme } from "./theme.mjs";
+import { createReviewScreen } from "./review-screen.mjs";
 import { createCards } from "./cards.mjs";
 import { createDrafts } from "./drafts.mjs";
 import { createHighlights } from "./highlights.mjs";
@@ -35,6 +36,7 @@ const reflections = createReflections({ config, drafts });
 const glossary = createGlossary({ config, contentRoot });
 /** A reconnect must not replace what the learner typed since restoration. */
 let draftsRestored = false;
+let review = null;
 
 function init() {
   document.body.classList.add("cl-lesson-page");
@@ -50,6 +52,11 @@ function init() {
 
   highlights.init();
   quizzes.hydrateQuizzes();
+  review = createReviewScreen({
+    config,
+    contentRoot,
+    placeTeacherPanel: teacher.placeTeacherPanel,
+  });
   reflections.hydrateReflections();
   // The glossary waits for the saved highlights: they anchor to the lesson text, and
   // must be restored before terms are wrapped. The question draft waits for the
@@ -116,7 +123,9 @@ function resolveContentRoot() {
 async function loadState() {
   try {
     const url = `/api/state?classroom=${encodeURIComponent(config.classroom)}&lesson=${encodeURIComponent(config.lesson)}`;
-    const state = await (await fetch(url)).json();
+    const response = await fetch(url);
+    const state = await response.json();
+    if (!response.ok) throw new Error(state.error || `Saved state returned ${response.status}.`);
 
     for (const annotation of state.annotations ?? []) {
       const existing = cards.get(annotation.id);
@@ -128,6 +137,7 @@ async function loadState() {
     }
 
     for (const quiz of state.quizzes) quizzes.applyQuizState(quiz);
+    review?.restore();
     for (const reflection of state.reflections) reflections.applyReflection(reflection);
     if (state.teacher) teacher.renderTeacher(state.teacher);
     if (!draftsRestored) {
@@ -135,6 +145,7 @@ async function loadState() {
       restoreDrafts(state.drafts);
     }
   } catch (err) {
+    review?.loadFailed(err);
     console.warn("[classroom] could not load lesson state", err);
   }
 }
@@ -156,11 +167,12 @@ function connectEvents() {
       grade: payload.grade,
       attempts: payload.submission.attempt ?? 1,
     });
+    review?.refresh();
   });
 
   source.addEventListener("teacher", (event) => teacher.renderTeacher(JSON.parse(event.data)));
   source.addEventListener("open", () => {
-    if (config.delivery === "service") loadState();
+    if (config.delivery === "service" && !review?.failed) loadState();
   });
   source.addEventListener("reload", () => location.reload());
 }

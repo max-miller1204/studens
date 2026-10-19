@@ -32,6 +32,7 @@
 
 import * as http from "node:http";
 import * as store from "./store.ts";
+import { lessonUrl } from "./paths.ts";
 import { readConfig, resolveConfiguredPort } from "./config.ts";
 import { completeClosedSubmission } from "./quiz-grading.ts";
 import { hooks } from "./server/hooks.ts";
@@ -45,7 +46,7 @@ import {
   handleClassroomRoute,
 } from "./server/classrooms.ts";
 import { handleDoc, handleReference } from "./server/records.ts";
-export { setHooks, reviewSaved, gradeSaved } from "./server/hooks.ts";
+export { setHooks, reviewSaved, reviewMiss, gradeSaved } from "./server/hooks.ts";
 export type { ServerHooks } from "./server/hooks.ts";
 export { pushEvent } from "./server/events.ts";
 export { contentTypeFor, splitPath } from "./server/http.ts";
@@ -169,5 +170,5 @@ export function urlFor(classroom?: string, lesson?: string): string | null {
   const base = linkBase ?? local;
   if (!classroom) return base;
   if (!lesson) return `${base}/c/${encodeURIComponent(classroom)}`;
-  return `${base}/c/${encodeURIComponent(classroom)}/${encodeURIComponent(lesson)}`;
+  return `${base}${lessonUrl(classroom, lesson)}`;
 }

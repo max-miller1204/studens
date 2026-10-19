@@ -71,8 +71,20 @@ export function classroomDir(classroom: string): string {
   return path.join(baseDir, classroom);
 }
 
+/** New review identities resolve privately; numbered legacy reviews keep their paths. */
+export function isStoredReview(lesson: string): boolean {
+  return /^review-[a-f0-9-]{36}$/.test(lesson);
+}
+
 export function lessonDir(classroom: string, lesson: string): string {
-  return path.join(baseDir, classroom, lesson);
+  return isStoredReview(lesson)
+    ? path.join(baseDir, classroom, ".reviews", lesson)
+    : path.join(baseDir, classroom, lesson);
+}
+
+export function lessonUrl(classroom: string, lesson: string): string {
+  const root = `/c/${encodeURIComponent(classroom)}`;
+  return `${root}/${isStoredReview(lesson) ? "reviews/" : ""}${encodeURIComponent(lesson)}`;
 }
 
 export function quizDir(classroom: string, lesson: string): string {

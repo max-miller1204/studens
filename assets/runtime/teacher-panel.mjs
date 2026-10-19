@@ -158,9 +158,14 @@ export function createTeacherPanel({ config, contentRoot, drafts }) {
   /** Put the panel after the quiz handed in last, or at the end of the lesson. */
   function placeTeacherPanel() {
     if (!teacherPanel) return;
-    const latest = quizForms()
-      .filter((form) => form.dataset.submittedAt)
-      .sort((a, b) => Number(b.dataset.submittedAt) - Number(a.dataset.submittedAt))[0];
+    const currentCard = config.reviewScreen
+      ? document.querySelector('[data-review-active="true"]')
+      : null;
+    const latest =
+      currentCard ??
+      quizForms()
+        .filter((form) => form.dataset.submittedAt)
+        .sort((a, b) => Number(b.dataset.submittedAt) - Number(a.dataset.submittedAt))[0];
     if (latest) {
       if (latest.nextElementSibling !== teacherPanel) latest.after(teacherPanel);
     } else if (!teacherPanel.isConnected) {

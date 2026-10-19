@@ -349,9 +349,15 @@ export function refreshRefill(request: RefillRequest): RefillRequest {
   if (!pool?.length) throw new Error(`Original private pool is missing: ${request.key}.`);
   const requests = refillRequests(request.classroom);
   const saved = requests.find((r) => r.id === request.id && r.owner === request.owner)!;
-  saved.prompt = prompt(saved, saved.input, pool);
-  if (saved.error)
-    saved.prompt += `\nPrevious refill error: ${saved.error}. Correct it in this attempt.`;
+  const previous = saved.prompt.endsWith(". Correct it in this attempt.")
+    ? saved.prompt.lastIndexOf("\nPrevious refill error: ")
+    : -1;
+  const errorNotice = saved.error
+    ? `\nPrevious refill error: ${saved.error}. Correct it in this attempt.`
+    : previous >= 0
+      ? saved.prompt.slice(previous)
+      : "";
+  saved.prompt = prompt(saved, saved.input, pool) + errorNotice;
   atomicJson(file(request.classroom), { version: 1, requests });
   return saved;
 }

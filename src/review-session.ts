@@ -1,7 +1,7 @@
 /** Save browser review requests and publish only complete review documents. */
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { classroomDir, isValidSlug, lessonDir } from "./paths.ts";
+import { classroomDir, isValidSlug, lessonDir, lessonUrl, isStoredReview } from "./paths.ts";
 import { isContractId, parseReviewKey, questionErrors } from "../assets/runtime/quiz.mjs";
 import {
   DEFAULT_REVIEW_SIZE,
@@ -111,10 +111,12 @@ export function currentReview(classroom: string): ReviewSession | null {
   return reviewSessions(classroom).at(-1) ?? null;
 }
 export function resumableReview(session: ReviewSession): boolean {
-  return (
-    session.status !== "done" ||
-    !store.latestQuizStates(session.classroom, session.lesson).some((s) => s.grade)
-  );
+  if (session.status !== "done") return true;
+  if (!isStoredReview(session.lesson))
+    return !store.latestQuizStates(session.classroom, session.lesson).some((state) => state.grade);
+  const quizzes = authoredQuizzes((session.document ?? readReviewDocument(session)).lesson_html);
+  const states = store.latestQuizStates(session.classroom, session.lesson);
+  return quizzes.some((quiz) => !states.some((state) => state.quizId === quiz.id && state.grade));
 }
 export function startReview(
   classroom: string,
@@ -171,16 +173,12 @@ export function startReview(
         : `The next review is due ${relativeDay(next, at)}.`,
     );
   }
-  const order = Math.max(
-    0,
-    ...store.listLessons(classroom).map((l) => Number(/^(\d+)-/.exec(l.name)?.[1] ?? 0)),
-  );
   const session: ReviewSession = {
     id,
     owner,
     ownerPid: process.pid,
     classroom,
-    lesson: `${String(order + 1).padStart(3, "0")}-review-${id.slice(0, 8)}`,
+    lesson: `review-${id}`,
     at,
     items: picked,
     status: "queued",
@@ -194,7 +192,7 @@ export function startReview(
     ),
   );
   session.variants = Object.fromEntries(picked.map((item, i) => [item.key, variants[i].id]));
-  session.document = assembleReview(picked, variants);
+  session.document = assembleReview(picked, variants, true);
   validateReview(session, session.document);
   requests.push(session);
   save(classroom, requests);
@@ -208,7 +206,7 @@ export function publicReview(session: ReviewSession | null): unknown {
     error: session.error,
     count: session.items.length,
     resumable: resumableReview(session),
-    url: `/c/${encodeURIComponent(session.classroom)}/${encodeURIComponent(session.lesson)}`,
+    url: lessonUrl(session.classroom, session.lesson),
   };
 }
 export function validateReview(session: ReviewSession, document: ReviewDocument): void {
@@ -216,9 +214,14 @@ export function validateReview(session: ReviewSession, document: ReviewDocument)
     if (typeof value !== "string" || !value.trim())
       throw new Error("Review documents must be nonempty strings.");
   const quizzes = authoredQuizzes(document.lesson_html);
-  if (quizzes.length !== 1 || quizzes[0].kind !== "review")
-    throw new Error("A review needs exactly one review quiz.");
-  const keys = quizzes[0].questions.map((q) => q.reviewOf);
+  if (
+    !quizzes.length ||
+    quizzes.some((quiz) => quiz.kind !== "review") ||
+    new Set(quizzes.map((quiz) => quiz.id)).size !== quizzes.length ||
+    (quizzes.length > 1 && quizzes.some((quiz) => quiz.questions.length !== 1))
+  )
+    throw new Error("A review needs one review quiz or one review quiz per card.");
+  const keys = quizzes.flatMap((quiz) => quiz.questions.map((q) => q.reviewOf));
   if (keys.length !== session.items.length || keys.some((key, i) => key !== session.items[i].key))
     throw new Error(
       `Review questions must use the selected item keys in order. Expected ${JSON.stringify(session.items.map((item) => item.key))}; received ${JSON.stringify(keys)}.`,
@@ -232,8 +235,10 @@ export function validateReview(session: ReviewSession, document: ReviewDocument)
   }
   parseRubric(document.rubric_json, document.lesson_html);
   const plan = parseTeachingPlan(document.teaching_plan_json, document.lesson_html);
-  const mapping = plan.quizzes[quizzes[0].id!];
-  for (const [i, question] of quizzes[0].questions.entries()) {
+  for (const [i, question] of quizzes
+    .flatMap((quiz) => quiz.questions.map((question) => ({ ...question, quizId: quiz.id! })))
+    .entries()) {
+    const mapping = plan.quizzes[question.quizId];
     const item = session.items[i];
     const original = item.objective;
     const probe = mapping.questions[question.id!];
