@@ -18,6 +18,7 @@ export function completeClosedSubmission(submission: store.QuizSubmission): bool
       feedbackMarkdown: "Graded against the private answer key.",
       questions,
     });
+  if (questions.some((question) => !question.correct)) server.reviewMiss(submission);
   return true;
 }
 

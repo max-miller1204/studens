@@ -45,6 +45,8 @@ Get the current URL from `open_classroom` or `/classroom`.
     learning-records/       NNNN-slug.md: what you have actually learned
     reference/*.html        cheat sheets, built to be revisited and printed
     assets/                 shared components across lessons
+    .reviews.json           durable review requests and saved documents
+    .reviews/review-<id>/   review pages, drafts, panel state, and private quiz history
     NNN-lesson-name/
       lesson.html           the lesson
       lesson.json           title and summary
@@ -64,6 +66,11 @@ first `.html` file. Lesson order comes from the numeric prefix on the directory 
 
 The `quiz/` directory is never served as static files, only through the JSON API. An
 answer key written to `quiz/key.json` is therefore not readable from the page.
+
+New reviews open at `/c/<classroom>/reviews/<review-id>`. Review history is at
+`/c/<classroom>/reviews`; reviews do not appear in the lesson list. Existing
+numbered review directories and their lesson links remain usable. The `.reviews/`
+directory is never a static route, and review keys and plans remain private.
 
 ### Links in teaching documents
 

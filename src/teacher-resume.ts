@@ -68,7 +68,7 @@ export function prepareResume(input: ResumeInput): ResumeRequest {
     lesson,
     unresolvedKeys,
     prompt: [
-      "This is the queued teacher-panel resume request. The initiating chat already called resume_lesson_teacher and returned the lesson link. You are now the teacher for this panel turn. Do not hand off again or return only a link. Ask the corrective question here.",
+      "This is the queued teacher-panel resume request. The learner is continuing a graded check or has just missed a review card. You are now the teacher for this panel turn. Do not hand off again or return only a link. Ask the corrective question here.",
       `Classroom: ${classroom}. Lesson: ${lesson}. Submission: ${submission.id}.`,
       `Lesson file: ${path.join(lessonDir(classroom, lesson), "lesson.html")}`,
       `Classroom directory: ${classroomDir(classroom)}`,
@@ -76,7 +76,7 @@ export function prepareResume(input: ResumeInput): ResumeRequest {
       `Available classroom documents: ${JSON.stringify(store.listClassroomDocs(classroom))}`,
       `Learning records: ${JSON.stringify(store.readLearningRecords(classroom))}`,
       unresolvedKeys.length
-        ? `The panel has no conversation to continue. These review keys remain unresolved after the saved grade: ${JSON.stringify(unresolvedKeys)}. Ask one fresh corrective question about a missed idea. Earlier checks, checks for other keys, and free-form learning records do not resolve these gaps.`
+        ? `These review keys remain unresolved after the saved grade: ${JSON.stringify(unresolvedKeys)}. Ask one fresh corrective question about a missed idea. Earlier checks, checks for other keys, and free-form learning records do not resolve these gaps.`
         : "Saved retrieval checks after this grade resolve each missed item. Explain that and ask whether the learner is ready to continue.",
       "This is a handoff, not a learner answer. Do not grade again, write a learning record, record a retrieval check, change notes, or start a new lesson. Preserve all assessments and evidence.",
       "Write your final message to the learner in the teacher panel. Keep learner replies there.",

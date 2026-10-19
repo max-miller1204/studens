@@ -7,6 +7,7 @@
  */
 
 import { escapeHtml, renderMarkdown } from "./markdown.ts";
+import { lessonUrl } from "./paths.ts";
 import { DEFAULT_REVIEW_SIZE, relativeDay, type ReviewSummary } from "./review.ts";
 import type { Classroom, ClassroomFolder, Lesson } from "./store.ts";
 
@@ -202,7 +203,8 @@ export interface ClassroomPageData {
 }
 
 export function classroomPage(data: ClassroomPageData): string {
-  const { classroom, lessons } = data;
+  const { classroom } = data;
+  const lessons = data.lessons.filter((lesson) => lesson.kind !== "review");
 
   const lessonList =
     lessons.length === 0
@@ -219,6 +221,7 @@ ${lessons.map((lesson, i) => lessonRow(lesson, i, data.progress.dueByLesson[less
   ${classroom.mission ? `<p class="cl-lede">${escapeHtml(missionWhy(classroom.mission) ?? "")}</p>` : ""}
 </div>
 ${progressSection(data)}
+<p><a href="/c/${encodeURIComponent(classroom.name)}/reviews">Review history</a></p>
 <section class="cl-section">
   <h2 class="cl-section-title">Lessons</h2>
   ${lessonList}
@@ -229,6 +232,32 @@ ${sidePanel(data)}`;
     title: `${classroom.title} — Classrooms`,
     breadcrumb: `<a class="cl-crumb" href="/">Classrooms</a><span class="cl-crumb-sep" aria-hidden="true">/</span><span class="cl-crumb cl-crumb-current">${escapeHtml(classroom.title)}</span>`,
     body,
+  });
+}
+
+/** Review sessions have their own navigation, including unchanged legacy links. */
+export function reviewHistoryPage(
+  classroom: Classroom,
+  reviews: Array<Lesson & { answered: number; questionCount: number }>,
+): string {
+  return shell({
+    title: `Review history — ${classroom.title}`,
+    breadcrumb: `<a class="cl-crumb" href="/c/${encodeURIComponent(classroom.name)}">${escapeHtml(classroom.title)}</a><span class="cl-crumb-sep" aria-hidden="true">/</span><span class="cl-crumb cl-crumb-current">Review history</span>`,
+    body: `<h1>Review history</h1>${
+      reviews.length
+        ? `<ol class="cl-lessons">${reviews
+            .slice()
+            .sort((a, b) => b.createdAt - a.createdAt)
+            .map(
+              (review) =>
+                `<li class="cl-lesson"><a class="cl-lesson-link" href="${lessonUrl(classroom.name, review.name)}"><span class="cl-lesson-body"><span class="cl-lesson-title">${escapeHtml(review.title)}</span><span class="cl-lesson-summary">${escapeHtml(new Date(review.createdAt).toLocaleDateString("en-US", { timeZone: "UTC" }))}</span></span><span class="cl-lesson-badges">${review.answered}/${review.questionCount} answered${review.hasUngradedSubmission ? " · grading…" : ""}</span></a></li>`,
+            )
+            .join("")}</ol>`
+        : emptyState(
+            "No reviews yet",
+            "Start a review from classroom Progress when an item is due.",
+          )
+    }`,
   });
 }
 

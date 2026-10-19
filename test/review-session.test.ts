@@ -1,3 +1,4 @@
+import { lessonDir } from "../src/paths.ts";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { randomUUID } from "node:crypto";
 import * as fs from "node:fs";
@@ -39,7 +40,7 @@ describe("review request contracts", () => {
     const first = startReview("rust", randomUUID(), "pi");
     expect(first.added).toBe(true);
     expect(first.session.items.map((i) => i.key)).toEqual(["001-ownership/check-1/q1"]);
-    expect(fs.existsSync(path.join(f.root, "rust", first.session.lesson))).toBe(false);
+    expect(fs.existsSync(lessonDir("rust", first.session.lesson))).toBe(false);
     expect(startReview("rust", randomUUID(), "pi").session.id).toBe(first.session.id);
     publishReview(first.session, reviewDocument(first.session.items));
     updateReview(first.session, "done");
@@ -105,7 +106,7 @@ describe("review request contracts", () => {
     expect(() => validateReview(multiple, reviewDocument([...multiple.items].reverse()))).toThrow(
       "selected item keys",
     );
-    expect(fs.existsSync(path.join(f.root, "rust", s.lesson))).toBe(false);
+    expect(fs.existsSync(lessonDir("rust", s.lesson))).toBe(false);
   });
   it("keeps the original objective policy and rejects invented historical policy", () => {
     const session = startReview("rust", randomUUID(), "pi").session;
@@ -141,7 +142,7 @@ describe("review request contracts", () => {
     expect(() => publishReview(s, { ...doc, rubric_json: doc.rubric_json + " " })).toThrow(
       "conflicts",
     );
-    const file = path.join(f.root, "rust", s.lesson, "quiz/key.json");
+    const file = path.join(lessonDir("rust", s.lesson), "quiz/key.json");
     fs.unlinkSync(file);
     fs.symlinkSync(path.join(f.root, "rust/001-ownership/lesson.html"), file);
     expect(() => publishReview(s, doc)).toThrow("symlink");
@@ -169,7 +170,7 @@ it("requires independent transfer for a transfer-needed objective before publica
     expect(() =>
       publishReview(session, { ...document, teaching_plan_json: JSON.stringify(plan) }),
     ).toThrow("requires an independent transfer task");
-    expect(fs.existsSync(path.join(f.root, "rust", session.lesson))).toBe(false);
+    expect(fs.existsSync(lessonDir("rust", session.lesson))).toBe(false);
   }
   expect(() => publishReview(session, document)).not.toThrow();
 });

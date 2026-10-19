@@ -366,7 +366,7 @@ describe("scaffold_review", () => {
     expect(text).toContain("The review is ready");
 
     const lesson = result.details["lesson"] as string;
-    expect(lesson).toMatch(/^002-review-[a-f0-9]{8}$/);
+    expect(lesson).toMatch(/^review-[a-f0-9-]{36}$/);
     expect(store.readLesson("rust", lesson)).toMatchObject({ kind: "review" });
     const html = fs.readFileSync(result.details["path"] as string, "utf8");
     expect(html).toContain('data-kind="review"');

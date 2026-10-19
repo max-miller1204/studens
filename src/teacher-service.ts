@@ -15,7 +15,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { createHash } from "node:crypto";
 import { applyTurnAnswer, withHtml } from "./bridge.ts";
-import { classroomDir, lessonDir, safeStaticFile } from "./paths.ts";
+import { classroomDir, lessonDir, safeStaticFile, isStoredReview } from "./paths.ts";
 import { stageLesson } from "./pretest.ts";
 import { completeClosedSubmission } from "./quiz-grading.ts";
 import { validateGrade } from "../assets/runtime/grade.mjs";
@@ -119,6 +119,7 @@ export class TeacherService {
       teacherState: (classroom, lesson) => this.publicState(classroom, lesson),
       onTeacherChat: (classroom, lesson, text, id) => this.chat(classroom, lesson, text, id),
       onTeacherRetry: (classroom, id) => this.retry(classroom, id),
+      onReviewMiss: (s) => this.correctReview(s),
       onGradeSaved: (s) => this.maintenance(s.classroom),
       onReviewSaved: (classroom) => this.maintenance(classroom),
       onReview: (session) => this.review(session),
@@ -262,9 +263,12 @@ export class TeacherService {
         if (a.status === "pending") this.question(a);
         for (const f of a.followUps ?? []) if (f.status === "pending") this.followUp(a, f);
       }
-      for (const s of store.listSubmissions(classroom, l.name))
+      for (const s of store.listSubmissions(classroom, l.name)) {
         if (!store.listGrades(classroom, l.name).some((g) => g.submissionId === s.id))
           this.submission(s);
+        else if (isStoredReview(l.name) && s.deterministicGrades?.some((grade) => !grade.correct))
+          this.correctReview(s);
+      }
       for (const r of store.listReflections(classroom, l.name)) this.reflection(r);
     }
     this.maintenance(classroom);
@@ -292,12 +296,24 @@ export class TeacherService {
       prompt: `The learner replied in the teacher panel:\n${text}`,
     });
   }
-  resume(input: ResumeInput): void {
+  private correctReview(submission: store.QuizSubmission): void {
+    if (!this.states.has(submission.classroom)) return;
+    this.resume(
+      { classroom: submission.classroom, lesson: submission.lesson, submission_id: submission.id },
+      true,
+    );
+  }
+  resume(input: ResumeInput, reviewCard = false): void {
     const request = prepareResume(input);
     const state = this.states.get(request.classroom);
     if (!state) throw new Error("No classroom teacher. Call open_classroom first.");
     if (piResumes(request.classroom).some((r) => r.status === "running" && piOwnerAlive(r)))
       throw new Error("A live Pi session owns this classroom's resume request.");
+    if (reviewCard) {
+      if (!state.requests.some((r) => r.id === request.id))
+        this.enqueue({ ...request, kind: "resume", target: input.submission_id });
+      return;
+    }
     if (state.requests.some((r) => r.lesson === request.lesson && r.status !== "done")) return;
     const reply = this.messages(request.classroom, request.lesson, state).at(-1);
     if (reply?.role === "learner") {

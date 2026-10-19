@@ -1,7 +1,7 @@
 /** Read private pools and assemble a review without a teacher turn. */
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { classroomDir, isValidSlug, safeStaticFile } from "./paths.ts";
+import { classroomDir, isValidSlug, safeStaticFile, lessonDir } from "./paths.ts";
 import { authoredVariants, validateVariant } from "./review-variants.ts";
 import type { PreparedVariant } from "./review-variants.ts";
 import type { ReviewDocument } from "./review-session.ts";
@@ -19,7 +19,7 @@ export function privatePoolPath(classroom: string, lesson: string, name: string)
   )
     throw new Error("Invalid private variant path.");
   const root = classroomDir(classroom);
-  const relative = `${lesson}/quiz/${name}`;
+  const relative = path.relative(root, path.join(lessonDir(classroom, lesson), "quiz", name));
   let current = root;
   for (const segment of ["", ...relative.split("/")]) {
     current = path.join(current, segment);
@@ -49,7 +49,10 @@ export function lessonPools(
     Object.entries(value).some(([name, entry]) => name === "variants" || declaresPool(entry));
   if (!required && !declaresPool(JSON.parse(keyText)) && !declaresPool(JSON.parse(planText)))
     return new Map();
-  const html = safeStaticFile(classroomDir(classroom), `${lesson}/lesson.html`);
+  const html = safeStaticFile(
+    classroomDir(classroom),
+    path.relative(classroomDir(classroom), path.join(lessonDir(classroom, lesson), "lesson.html")),
+  );
   if (!html) throw new Error(`Missing or unsafe variant source lesson: ${lesson}.`);
   const pools = authoredVariants(keyText, planText, fs.readFileSync(html, "utf8"), required);
   const supplement = privatePoolPath(classroom, lesson, "review-pool.json");
@@ -125,7 +128,11 @@ function questionHtml(variant: PreparedVariant, id: string, key: string): string
   );
 }
 
-export function assembleReview(items: ReviewItem[], variants: PreparedVariant[]): ReviewDocument {
+export function assembleReview(
+  items: ReviewItem[],
+  variants: PreparedVariant[],
+  cards = false,
+): ReviewDocument {
   const rubric: Record<string, RubricQuestion> = {};
   const objectives: Record<string, Objective> = {};
   const questions: Record<string, QuestionPlan> = {};
@@ -139,13 +146,35 @@ export function assembleReview(items: ReviewItem[], variants: PreparedVariant[])
       return questionHtml(variant, id, item.key);
     })
     .join("\n");
+  const quizId = (index: number) => (index === 0 ? "review" : `review-${index + 1}`);
+  const forms = cards
+    ? items
+        .map(
+          (item, i) =>
+            `<form class="cl-quiz" data-quiz-id="${quizId(i)}" data-kind="review" data-title="Question ${i + 1}" data-evidence="report" data-confidence="optional"><ol class="cl-questions">${questionHtml(variants[i], `r${i + 1}`, item.key)}</ol></form>`,
+        )
+        .join("\n")
+    : `<form class="cl-quiz" data-quiz-id="review" data-kind="review" data-title="Review" data-evidence="report" data-confidence="optional"><ol class="cl-questions">${html}</ol></form>`;
   return {
-    lesson_html: `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Spaced review</title></head><body><main class="cl-lesson-shell" data-cl-content><header><h1>Spaced review</h1><p class="cl-lede">Recall these ideas before looking anything up.</p></header><form class="cl-quiz" data-quiz-id="review" data-kind="review" data-title="Review" data-evidence="report" data-confidence="optional"><ol class="cl-questions">${html}</ol></form><footer><a href="./">Back to the classroom</a></footer></main></body></html>`,
-    rubric_json: JSON.stringify({ review: rubric }),
+    lesson_html: `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Spaced review</title></head><body><main class="cl-lesson-shell" data-cl-content><header><h1>Spaced review</h1><p class="cl-lede">Recall these ideas before looking anything up.</p></header>${forms}</main></body></html>`,
+    rubric_json: JSON.stringify(
+      cards
+        ? Object.fromEntries(
+            items.map((_, i) => [quizId(i), { [`r${i + 1}`]: rubric[`r${i + 1}`] }]),
+          )
+        : { review: rubric },
+    ),
     teaching_plan_json: JSON.stringify({
       version: 1,
       objectives,
-      quizzes: { review: { purpose: "assessment", questions } },
+      quizzes: cards
+        ? Object.fromEntries(
+            items.map((_, i) => [
+              quizId(i),
+              { purpose: "assessment", questions: { [`r${i + 1}`]: questions[`r${i + 1}`] } },
+            ]),
+          )
+        : { review: { purpose: "assessment", questions } },
     }),
   };
 }

@@ -1,3 +1,4 @@
+import { lessonDir, lessonUrl } from "../src/paths.ts";
 /** Drive review creation, reload, failure, retry, and continuation from the classroom page. */
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -116,7 +117,11 @@ export async function verifyReviewBrowser(artifacts: string | null): Promise<voi
         reviewOwner: host,
         onReview: (s) => {
           if (conflict) {
-            fixture.write(`rust/${s.lesson}/lesson.html`, "<p>Conflicting file</p>");
+            fs.mkdirSync(lessonDir("rust", s.lesson), { recursive: true });
+            fs.writeFileSync(
+              path.join(lessonDir("rust", s.lesson), "lesson.html"),
+              "<p>Conflicting file</p>",
+            );
             conflict = false;
           }
           if (host === "service") teacher.review(s);
@@ -189,12 +194,12 @@ export async function verifyReviewBrowser(artifacts: string | null): Promise<voi
         throw new Error("Several objective probes created duplicate review items.");
       if (!request?.document || runs || reviewSessions("rust").length !== 1)
         throw new Error("Review assembly was not durable or called a teacher.");
-      if ((await fetch(`${base}/c/rust/${request.lesson}`)).status !== 404)
+      if ((await fetch(`${base}${lessonUrl("rust", request.lesson)}`)).status !== 404)
         throw new Error("An unfinished review was served.");
-      fs.unlinkSync(path.join(fixture.root, "rust", request.lesson, "lesson.html"));
+      fs.unlinkSync(path.join(lessonDir("rust", request.lesson), "lesson.html"));
       await code(`
         await page.getByRole('button', {name:'Retry review',exact:true}).click();
-        await page.waitForURL(${JSON.stringify(`${base}/c/rust/${request.lesson}`)});
+        await page.waitForURL(${JSON.stringify(`${base}${lessonUrl("rust", request.lesson)}*`)});
         await page.waitForFunction(() => document.querySelector('form.cl-quiz')?.dataset.state === 'fresh');
         ${shot("instant-review")}
       `);
@@ -244,7 +249,7 @@ export async function verifyReviewBrowser(artifacts: string | null): Promise<voi
         onReviewRetry: unexpectedWork,
       });
       await code(`
-        await page.waitForURL(${JSON.stringify(`${base}/c/rust/${request.lesson}`)});
+        await page.waitForURL(${JSON.stringify(`${base}${lessonUrl("rust", request.lesson)}*`)});
         await page.waitForFunction(() => document.querySelector('form.cl-quiz')?.dataset.state === 'fresh');
         if (await page.locator('.cl-quiz-error').count()) throw new Error('Review controls have contract errors.');
         await page.locator('form.cl-quiz textarea').fill('The new owner releases it.');
@@ -252,7 +257,7 @@ export async function verifyReviewBrowser(artifacts: string | null): Promise<voi
         await page.goto(${JSON.stringify(`${base}/c/rust`)});
         await page.getByRole('button', {name:'Continue review',exact:true}).waitFor();
         await page.getByRole('button', {name:'Continue review',exact:true}).click();
-        await page.waitForURL(${JSON.stringify(`${base}/c/rust/${request.lesson}`)});
+        await page.waitForURL(${JSON.stringify(`${base}${lessonUrl("rust", request.lesson)}*`)});
         await page.waitForFunction(() => document.querySelector('form.cl-quiz textarea')?.value === 'The new owner releases it.');
         await page.setViewportSize({width:375,height:812});
         await page.goto(${JSON.stringify(`${base}/c/rust`)});
@@ -335,7 +340,7 @@ export async function verifyReviewBrowser(artifacts: string | null): Promise<voi
         throw new Error("The review grade did not update its original item.");
       if (host === "service") {
         await code(`
-          await page.goto(${JSON.stringify(`${base}/c/rust/${request.lesson}`)});
+          await page.goto(${JSON.stringify(`${base}${lessonUrl("rust", request.lesson)}`)});
           await page.getByRole('textbox', {name:'Reply to your teacher',exact:true}).fill('I will return to this later.');
           await page.getByRole('button', {name:'Send reply',exact:true}).click();
           await page.getByRole('button', {name:'Retry request',exact:true}).waitFor();

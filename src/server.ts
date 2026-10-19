@@ -46,11 +46,14 @@ import {
   isFile,
   isValidSlug,
   lessonDir,
+  lessonUrl,
+  isStoredReview,
   runtimeAssetsDir,
   safeStaticFile,
 } from "./paths.ts";
 import {
   classroomPage,
+  reviewHistoryPage,
   documentPage,
   folderLoadErrorPage,
   landingPage,
@@ -81,6 +84,7 @@ export interface ServerHooks {
   teacherState?(classroom: string, lesson: string): unknown;
   reviewOwner?: ReviewOwner;
   onGradeSaved?(submission: store.QuizSubmission): void;
+  onReviewMiss?(submission: store.QuizSubmission): void;
   onReviewSaved?(classroom: string): void;
   onReview?(session: ReviewSession): void;
   onReviewRetry?(session: ReviewSession): void;
@@ -102,7 +106,12 @@ export function reviewSaved(classroom: string): void {
   hooks?.onReviewSaved?.(classroom);
 }
 
+export function reviewMiss(submission: store.QuizSubmission): void {
+  if (isStoredReview(submission.lesson)) hooks?.onReviewMiss?.(submission);
+}
+
 export function gradeSaved(submission: store.QuizSubmission): void {
+  if (submission.deterministicGrades?.some((question) => !question.correct)) reviewMiss(submission);
   hooks?.onGradeSaved?.(submission);
 }
 
@@ -301,7 +310,8 @@ function handleStatic(res: http.ServerResponse, rest: string[]): void {
 }
 
 function handleClassroomRoute(res: http.ServerResponse, rest: string[]): void {
-  const [name, second, ...tail] = rest;
+  const [name] = rest;
+  let [, second, ...tail] = rest;
   if (!isValidSlug(name)) return sendNotFound(res, "Unknown classroom");
 
   const classroom = store.readClassroom(name);
@@ -338,6 +348,43 @@ function handleClassroomRoute(res: http.ServerResponse, rest: string[]): void {
     );
   }
 
+  // Review history is public; its documents and quiz state use the guarded routes below.
+  if (second === "reviews") {
+    if (!tail.length) {
+      const pending = new Set(
+        reviewSessions(name)
+          .filter((s) => s.status !== "done")
+          .map((s) => s.lesson),
+      );
+      return sendHtml(
+        res,
+        reviewHistoryPage(
+          classroom,
+          store
+            .listLessons(name)
+            .filter((lesson) => lesson.kind === "review" && !pending.has(lesson.name))
+            .map((lesson) => ({
+              ...lesson,
+              answered: store
+                .latestQuizStates(name, lesson.name)
+                .filter((state) => state.grade)
+                .reduce(
+                  (sum, state) =>
+                    sum + new Set(state.submission.answers.map((answer) => answer.questionId)).size,
+                  0,
+                ),
+              questionCount: authoredQuizzes(fs.readFileSync(lesson.htmlPath, "utf8")).flatMap(
+                (quiz) => quiz.questions,
+              ).length,
+            })),
+        ),
+      );
+    }
+    second = tail[0];
+    tail = tail.slice(1);
+    if (!isStoredReview(second)) return sendNotFound(res, "Unknown review");
+  }
+
   // /c/<classroom>/assets/<path>
   if (second === "assets") {
     const file = safeStaticFile(path.join(classroomDir(name), "assets"), tail.join("/"));
@@ -359,12 +406,20 @@ function handleClassroomRoute(res: http.ServerResponse, rest: string[]): void {
       path.join(lessonDir(name, second), "media"),
       tail.slice(1).join("/"),
     );
-    if (!file || !isFile(file)) return sendNotFound(res, "File not found");
+    if (
+      !file ||
+      !safeStaticFile(classroomDir(name), path.relative(classroomDir(name), file)) ||
+      !isFile(file)
+    )
+      return sendNotFound(res, "File not found");
     return sendFile(res, file);
   }
 
   // /c/<classroom>/<lesson>
-  const publicLesson = safeStaticFile(lessonDir(name, second), path.basename(lesson.htmlPath));
+  const publicLesson = safeStaticFile(
+    classroomDir(name),
+    path.relative(classroomDir(name), lesson.htmlPath),
+  );
   if (!publicLesson) return sendNotFound(res, "Lesson document cannot be a symlink");
   let html: string;
   try {
@@ -392,6 +447,7 @@ function handleClassroomRoute(res: http.ServerResponse, rest: string[]): void {
       baseUrl: getBaseUrl() ?? "",
       delivery: hooks?.delivery ?? "push",
       pendingPretests: staged.pendingPretests,
+      reviewScreen: isStoredReview(second),
     }),
   );
 }
@@ -848,6 +904,18 @@ async function handleQuizSubmit(
     }
   }
 
+  if (isStoredReview(lesson)) {
+    const quizzes = authoredQuizzes(fs.readFileSync(page.htmlPath, "utf8"));
+    const index = quizzes.findIndex((quiz) => quiz.id === quizId);
+    const states = store.latestQuizStates(classroom, lesson);
+    if (
+      quizzes
+        .slice(0, index)
+        .some((quiz) => !states.some((state) => state.quizId === quiz.id && state.grade))
+    )
+      return sendJson(res, { error: "Grade the previous review card first." }, 409);
+  }
+
   // A review question must name an item the learner was graded on before. Otherwise
   // its grade would start a schedule for an item that does not exist.
   if (kind === "review") {
@@ -867,6 +935,8 @@ async function handleQuizSubmit(
   // Reason: a retake is a new attempt at a graded quiz. While the last attempt waits on
   // the teacher, a second one would only reach them as a duplicate.
   const latest = store.latestQuizStates(classroom, lesson).find((q) => q.quizId === quizId);
+  if (latest?.grade && isStoredReview(lesson))
+    return sendJson(res, { error: "This review card is already graded." }, 409);
   if (latest && !latest.grade) {
     return sendJson(res, { error: "The last attempt at this quiz is not graded yet" }, 409);
   }
@@ -1072,5 +1142,5 @@ export function urlFor(classroom?: string, lesson?: string): string | null {
   const base = linkBase ?? local;
   if (!classroom) return base;
   if (!lesson) return `${base}/c/${encodeURIComponent(classroom)}`;
-  return `${base}/c/${encodeURIComponent(classroom)}/${encodeURIComponent(lesson)}`;
+  return `${base}${lessonUrl(classroom, lesson)}`;
 }

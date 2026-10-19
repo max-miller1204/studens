@@ -44,6 +44,7 @@ export default function classroomExtension(pi: ExtensionAPI): void {
     onAsk: (annotation) => bridge.ask(annotation),
     onFollowUp: (annotation, followUp) => bridge.followUp(annotation, followUp),
     onQuizSubmit: (submission) => bridge.grade(submission),
+    onReviewMiss: (submission) => bridge.correctReview(submission),
     onGradeSaved: (submission) => bridge.maintenance(submission.classroom),
     onReviewSaved: (classroom) => bridge.maintenance(classroom),
     onReflect: (reflection) => bridge.reflect(reflection),

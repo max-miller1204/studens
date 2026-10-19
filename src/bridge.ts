@@ -18,6 +18,7 @@
  * has to come back to the terminal for a retrieval question.
  */
 
+import { isStoredReview } from "./paths.ts";
 import { randomUUID } from "node:crypto";
 import {
   discoverRefills,
@@ -168,6 +169,25 @@ export class ClassroomBridge {
       text,
     });
     if (!added) return;
+    if (isStoredReview(lesson)) {
+      this.startResume({
+        id: message.id,
+        classroom,
+        lesson,
+        kind: "chat",
+        prompt: panelReplyPrompt(
+          classroom,
+          lesson,
+          message,
+          store.listPanelMessages(classroom, lesson),
+        ),
+        unresolvedKeys: [],
+        status: "running",
+        ownerPid: process.pid,
+        ownerSession: this.sessionId,
+      });
+      return;
+    }
     this.startPanel({
       id: message.id,
       classroom,
@@ -194,7 +214,14 @@ export class ClassroomBridge {
   }
 
   /** Queue a separate panel turn. The initiating chat keeps its foreign origin. */
-  resume(input: ResumeInput): void {
+  correctReview(submission: store.QuizSubmission): void {
+    if (readTeacherState(submission.classroom)) return;
+    this.resume(
+      { classroom: submission.classroom, lesson: submission.lesson, submission_id: submission.id },
+      true,
+    );
+  }
+  resume(input: ResumeInput, reviewCard = false): void {
     const request = prepareResume(input);
     const origin = this.pending[0];
     if (
@@ -207,6 +234,17 @@ export class ClassroomBridge {
       throw new Error("A resume turn cannot start another teacher request.");
     this.requireResumeOwner(request.classroom);
     this.restoreResumes();
+    if (reviewCard) {
+      if (!piResumes(request.classroom).some((r) => r.id === request.id))
+        this.startResume({
+          ...request,
+          kind: "resume",
+          status: "running",
+          ownerPid: process.pid,
+          ownerSession: this.sessionId,
+        });
+      return;
+    }
     if (
       [...this.panel.values()].some(
         (r) => r.classroom === request.classroom && r.lesson === request.lesson,
@@ -379,6 +417,12 @@ export class ClassroomBridge {
           }
         }
       }
+      for (const lesson of store
+        .listLessons(classroom.name)
+        .filter((lesson) => isStoredReview(lesson.name)))
+        for (const state of store.latestQuizStates(classroom.name, lesson.name))
+          if (state.grade && state.submission.deterministicGrades?.some((grade) => !grade.correct))
+            this.correctReview(state.submission);
       if (!readTeacherState(classroom.name)) this.maintenance(classroom.name);
     }
     this.scheduleRefill();
