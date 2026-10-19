@@ -15,6 +15,8 @@ their original host and recovery behavior.
 - Combine same-attempt probes into one objective and select an independent transfer variant when required.
 - Preserve historical question schedules and their unknown context.
 - Keep all variant pools, private keys, and saved documents off HTTP routes.
+- Refill low pools and target missed ideas behind queued learner requests.
+- Keep background errors visible with explicit retry after reload.
 
 ## How to get to it (user POV)
 
@@ -32,7 +34,9 @@ Run `npm run verify -- browser --artifacts /tmp/studens-review-browser`.
 The review fixtures check Pi and the service. They cover zero model turns during
 assembly, legacy pool absence, a publication conflict and explicit retry, reload,
 automatic navigation, saved answers, another host opening the finished document,
-mobile controls, private routes, grading, and the original schedule. Inspect
+mobile controls, private routes, grading, and the original schedule. They also check
+a failed background refill, its persisted error, and explicit retry while the quiz
+stays available. Inspect
 `review/pi/result.json` and `review/service/result.json` and their screenshots.
 The service fixture combines three probes into one transfer-needed objective and
 grades its prepared independent transfer. Publication contracts reject retrieval
@@ -40,7 +44,7 @@ or assisted tasks for that objective before writes.
 
 For service or shared prompt changes, select the real Claude and Codex drives from
 the project skill. Each drives a prepared review after the teacher conversation.
-Inspect `stored-review.json` and the host review screenshot. Select the Pi drive
+Inspect `stored-review.json`, `stored-refills.json`, and the host review screenshot. Select the Pi drive
 for bridge changes and inspect `stored-review.json` and `pi-review.png`.
 
 ## Gotchas
@@ -50,6 +54,11 @@ failure requires explicit retry. Prepared documents recover without authoring.
 Saved legacy service plans still resume without another model turn. Interrupted
 legacy Pi authoring fails visibly when its owner stops. Hosts cannot take over
 another host's unpublished work. Finished reviews open across hosts.
+
+Background plans are saved before a private supplemental pool is updated. Recovery
+must not call the model or grade again for saved output. Interrupted model work
+requires explicit retry. Original keys stay unchanged so pending submissions retain
+their original rubric.
 
 Private source pools and published rubric files must return 404. Unfinished reviews
 must be unavailable. The browser fixtures do not judge question quality or human
