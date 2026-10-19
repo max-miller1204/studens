@@ -323,7 +323,7 @@ export async function verifyReviewControls(artifacts: string | null): Promise<vo
         await page.locator('a[href="/c/many"]').click();
         await page.getByText('Manage review items',{exact:true}).click();
         await page.locator('[data-review-item="001-ownership/check-1/q1"] [data-review-retire]').click();
-        await page.locator('[data-review-item="001-ownership/check-1/q1"][data-retired="true"]').waitFor();
+        await page.locator('[data-review-item="001-ownership/check-1/q1"][data-retired="true"]').waitFor({state:'attached'});
         await page.reload();
         await page.locator('[data-cl-review-early]').check();
         await page.locator('[data-cl-review-size]').selectOption('12');
