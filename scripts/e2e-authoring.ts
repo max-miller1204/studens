@@ -660,7 +660,9 @@ async function main(): Promise<void> {
       await until("every grade", GRADING_TIMEOUT_MS, () => {
         const stateFile = path.join(root, CLASSROOM, ".teacher.json");
         const state = JSON.parse(fs.readFileSync(stateFile, "utf8"));
-        const failed = state.requests.find((r: { status: string }) => r.status === "failed");
+        const failed = state.requests.find(
+          (r: { status: string; kind: string }) => r.status === "failed" && r.kind !== "refill",
+        );
         if (failed) throw new Error(`Dedicated teacher failed: ${failed.error}`);
         return ungraded().length === 0 ? true : null;
       });
@@ -707,8 +709,20 @@ async function main(): Promise<void> {
       criteriaJudged: judged.length,
       lessonsWithoutReview: reports.filter((r) => r.qualityError).map((r) => r.lesson),
     };
+    const teacher = JSON.parse(
+      fs.readFileSync(path.join(root, CLASSROOM, ".teacher.json"), "utf8"),
+    );
+    const backgroundRefills = teacher.requests
+      .filter((r: { kind: string }) => r.kind === "refill")
+      .map((r: { id: string; lesson: string; status: string; error?: string }) => ({
+        id: r.id,
+        lesson: r.lesson,
+        status: r.status,
+        error: r.error,
+      }));
     const summary = {
       harness,
+      backgroundRefills,
       agentSummary: finalText(authoring.stream()),
       humanLearningEvidence: false,
       browserCommands: pageChecks,
@@ -754,6 +768,9 @@ async function main(): Promise<void> {
       }
       failures.push(...r.problems.map((p) => `${r.lesson}: ${p}`));
     }
+    log(
+      `background refills (reported separately from authoring): ${JSON.stringify(backgroundRefills)}`,
+    );
     log(`variety: ${JSON.stringify(summary.variety)}`);
     log(
       `quality (reported, does not set the verdict): ${quality.criteriaPassed}/${quality.criteriaJudged} criteria pass` +
