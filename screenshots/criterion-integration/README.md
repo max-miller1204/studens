@@ -22,3 +22,12 @@ The original sixteen images and their provenance remain in
 [criterion-breakdown](../criterion-breakdown/README.md). The integration evidence
 root is `/tmp/studens-issue24-round24`: source hashes, public image hashes, full
 verification receipts, rollback fixture/proof, authoring review and handoff.
+
+Fresh `pi-mobile.png`, `claude-mobile.png`, and `codex-mobile.png` capture the real
+host drives at committed `51f4a7f9d0929b0d0956721e46fa637fcebd16b9`, using the
+prescribed Pi openai-codex/gpt-6-luna low, Claude claude-haiku-5-5 low and Codex
+gpt-6-luna low. Each stores sum 2/2 plus mean 0/2 = 2/4, then reloads locked.
+`partly-met-mobile.png` is the separate fixture at the same runtime: the first
+square earns 1/2 and the missing average 0/2 = 1/4, unchanged after reload.
+Only approved post-grade feedback appears in these captures. They do not publish
+private rubric files, model plans, keys or teacher recovery state.
