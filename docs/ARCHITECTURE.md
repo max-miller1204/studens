@@ -152,7 +152,11 @@ source notation to grading. Answers and feedback render Markdown server-side.
   only publication, bounded public research, and an already enabled reader, then
   restore the exact prior active tools. Learner turns arriving during that scope
   wait until restoration and the prior run ends. Only explicit authoring enables
-  web research and classroom resource reads. Provider lesson responses carry HTML, rubric entries, objective mappings and private
+  web research and classroom resource reads. Dedicated Codex processes disable
+  installed plugins, connected apps, execution and other unrelated tools, disable
+  configured MCP servers, and require an empty per-thread MCP inventory before
+  inference. An empty configuration map alone does not remove plugin tools.
+  Provider lesson responses carry HTML, rubric entries, objective mappings and private
   variants as typed data. Code serializes both private JSON files and the canonical
   saved publication call; models never encode nested JSON strings. New lesson
   publication declares criterionContract1 and checks the fixed criteria on every

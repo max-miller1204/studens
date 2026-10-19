@@ -69,6 +69,13 @@ correction. A stopped model turn never retries automatically. Private keys, plan
 and request documents must remain unavailable over HTTP. These checks establish
 mechanical behavior, not human learning or lesson quality.
 
+Dedicated Codex teachers disable installed plugins, apps, configured MCP servers
+and execution tools before starting inference. They check the actual per-thread
+MCP inventory and refuse exposed servers. The transport contracts below exercise
+that refusal, malformed inventory, execution guards and explicit-only native web
+research. The real Codex drive must still demonstrate public research and the
+ordinary teacher paths; an empty `mcp_servers` override alone proves no isolation.
+
 Service lesson responses use a dedicated strict schema: direct HTML strings and typed
 private objective, quiz, rubric and variant rows. The host alone serializes the
 canonical private files and saved publication call. Run

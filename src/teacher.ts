@@ -310,11 +310,31 @@ async function runCodex(
   catalogOnly = false,
   research = false,
 ): Promise<unknown> {
-  const child = spawn("codex", ["app-server", "--stdio"], {
-    cwd,
-    stdio: ["pipe", "pipe", "pipe"],
-    signal,
-  });
+  // Dedicated teachers return plans. Installed plugins and connected apps can
+  // bypass the filesystem sandbox, so an empty mcp_servers override is insufficient.
+  const disabledFeatures = [
+    "apps",
+    "plugins",
+    "remote_plugin",
+    "skill_mcp_dependency_install",
+    "shell_tool",
+    "unified_exec",
+    "multi_agent",
+    "browser_use",
+    "in_app_browser",
+    "computer_use",
+    "image_generation",
+    "view_image",
+  ];
+  const child = spawn(
+    "codex",
+    ["app-server", "--stdio", ...disabledFeatures.flatMap((name) => ["--disable", name])],
+    {
+      cwd,
+      stdio: ["pipe", "pipe", "pipe"],
+      signal,
+    },
+  );
   let seq = 0,
     stderr = "",
     finalText = "";
@@ -380,6 +400,19 @@ async function runCodex(
       if (m.method === "turn/started" && m.params.turn.id === turnId) {
         deadline.enter(`running turn ${turnId} in thread ${threadId}`);
       } else if (m.params.turnId === turnId && turnId !== undefined) {
+        if (
+          (m.method === "item/started" || m.method === "item/completed") &&
+          (["mcpToolCall", "commandExecution", "fileChange"].includes(m.params.item?.type) ||
+            (m.params.item?.type === "webSearch" && !research))
+        ) {
+          fail(
+            new Error(
+              `Codex dedicated teacher attempted forbidden ${m.params.item.type}. Retry only after correcting its tool scope.`,
+            ),
+          );
+          child.kill();
+          return;
+        }
         if (
           /^item\/(agentMessage\/delta|reasoning\/(textDelta|summaryTextDelta))$/.test(m.method) &&
           typeof m.params.delta === "string" &&
@@ -456,14 +489,23 @@ async function runCodex(
       if (catalogOnly) return { models, configuredModel };
       model ??= configuredModel;
     }
+    const configuredServers = settings.config?.mcp_servers;
+    if (
+      configuredServers !== undefined &&
+      configuredServers !== null &&
+      (typeof configuredServers !== "object" || Array.isArray(configuredServers))
+    )
+      throw new Error("Codex returned an invalid MCP server configuration.");
     const config = {
       model,
       cwd,
       approvalPolicy: "never",
       sandbox: "read-only",
       config: {
-        mcp_servers: {},
-        features: { shell_tool: false },
+        mcp_servers: Object.fromEntries(
+          Object.keys(configuredServers ?? {}).map((name) => [name, { enabled: false }]),
+        ),
+        features: Object.fromEntries(disabledFeatures.map((name) => [name, false])),
         web_search: research ? "live" : "disabled",
       },
     };
@@ -475,6 +517,31 @@ async function runCodex(
       throw new Error(
         `Codex selected model ${model} resolved to ${result.model ?? "unknown"}. Choose a model and retry explicitly.`,
       );
+    let inventoryCursor: string | null = null;
+    const inventoryCursors = new Set<string>();
+    do {
+      const page = await request("mcpServerStatus/list", {
+        threadId: result.thread.id,
+        detail: "full",
+        cursor: inventoryCursor,
+      });
+      if (
+        !Array.isArray(page.data) ||
+        !(
+          page.nextCursor === null ||
+          (typeof page.nextCursor === "string" && page.nextCursor.length > 0)
+        )
+      )
+        throw new Error("Codex returned an invalid dedicated-teacher MCP inventory.");
+      if (page.data.length)
+        throw new Error(
+          `Codex dedicated teacher still exposes MCP servers: ${page.data.map((server: any) => server.name).join(", ")}. No model turn was started.`,
+        );
+      inventoryCursor = page.nextCursor;
+      if (inventoryCursor && inventoryCursors.has(inventoryCursor))
+        throw new Error("Codex MCP inventory repeated a pagination cursor.");
+      if (inventoryCursor) inventoryCursors.add(inventoryCursor);
+    } while (inventoryCursor);
     await request("turn/start", {
       threadId: result.thread.id,
       model,
