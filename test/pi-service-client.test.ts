@@ -62,3 +62,11 @@ it("keeps the Pi backend after management calls and rejects an old teacher proto
   await expect(client.call("open_classroom", { classroom: "rust" })).rejects.toThrow();
   expect(control).toHaveBeenCalledTimes(2);
 });
+it("does not detach from the removed socket after an explicit successful stop", async () => {
+  serviceStatus.mockResolvedValue({ running: true, backends: ["pi"] });
+  const client = new PiServiceClient();
+  await client.call("classroom_service", { action: "stop" });
+  await client.disconnect();
+  expect(control).toHaveBeenCalledTimes(1);
+  expect(control.mock.calls[0][0]).toBe("/rpc");
+});

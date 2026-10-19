@@ -9,8 +9,7 @@ import {
   SessionManager,
   SettingsManager,
 } from "@earendil-works/pi-coding-agent";
-import { classroomsRoot, safeStaticFile } from "./paths.ts";
-import { servicePaths } from "./service-client.ts";
+import { privateStatePath, safeStaticFile } from "./paths.ts";
 import type { ModelCatalog } from "./teacher-models.ts";
 import type { TeacherIdentity } from "./teacher.ts";
 
@@ -72,10 +71,8 @@ export async function runPi(
     throw new Error(
       `Pi model ${selected} is unavailable in the configured account/provider catalog. Choose a model and retry explicitly.`,
     );
-  const dir = path.join(servicePaths().dir, "pi-sessions");
+  const dir = privateStatePath(".pi-teach-service/pi-sessions");
   fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
-  if (!safeStaticFile(classroomsRoot(), ".pi-teach-service/pi-sessions"))
-    throw new Error("Pi teacher session directory cannot follow a symlink.");
   let manager: SessionManager;
   if (identity.sessionId) {
     if (

@@ -32,6 +32,7 @@ export class PiServiceClient {
       if (!status.running) {
         const phone = new PhoneAccess();
         const tailnet = (args as any).action === "stop" ? await phone.stop() : await phone.status();
+        if ((args as any).action === "stop") this.connected = false;
         return {
           content: [{ type: "text", text: JSON.stringify({ ...status, tailnet }) }],
           details: {},
@@ -58,6 +59,7 @@ export class PiServiceClient {
     if (!response?.result) throw new Error("Pi service returned no tool result. Retry explicitly.");
     if (response.result.isError)
       throw new Error(response.result.content.map((c: any) => c.text ?? "").join("\n"));
+    if (name === "classroom_service" && (args as any)?.action === "stop") this.connected = false;
     return { content: response.result.content, details: {} };
   }
   async disconnect(): Promise<void> {

@@ -61,7 +61,7 @@ panel conversations supply durable context; return to initiating chat to author 
 material. The teacher cannot use initiating-session extensions or interactive tools.
 
 Before upgrading from Pi's live-session delivery, finish or explicitly retry its
-pending review, refill, and resume work with the previous package, then stop that
+pending review (including unpublished daily groups), refill, and resume work with the previous package, then stop that
 server, including idle legacy servers without pending request records. The new
 service rejects recorded unfinished legacy ownership and preserves those
 files. It never deletes a plan or takes over a live owner. Keep the previous package

@@ -1,4 +1,5 @@
 import { validateAnswerCriteria } from "./criteria.ts";
+import { dailyReviews, groupSession } from "./store/daily-review.ts";
 import { modelSelection } from "./teacher-models.ts";
 import { reteachOffers, reteachPrompt } from "./reteach.ts";
 /** Run one request at a time for each classroom. Persist plans before writes. */
@@ -95,9 +96,16 @@ export class TeacherService {
       (r) => r.owner === "pi" && r.status !== "done",
     );
     const legacyResume = piResumes(classroom).find((r) => r.status !== "done");
-    if (legacyReview || legacyRefill || legacyResume)
+    const legacyDaily = dailyReviews()
+      .flatMap((request) => request.groups)
+      .find((group) => {
+        if (group.classroom !== classroom || group.empty) return false;
+        const session = groupSession(group) ?? group.plan;
+        return session.owner === "pi" && session.status !== "done";
+      });
+    if (legacyReview || legacyRefill || legacyResume || legacyDaily)
       throw new Error(
-        `Classroom ${classroom} has unfinished legacy Pi work ${legacyReview?.id ?? legacyRefill?.id ?? legacyResume?.id}. Reopen the previous Pi package, explicitly retry and finish that request, then stop its server before retrying open_classroom. Saved plans and history have not been changed.`,
+        `Classroom ${classroom} has unfinished legacy Pi work ${legacyReview?.id ?? legacyRefill?.id ?? legacyResume?.id ?? legacyDaily?.plan.id}. Reopen the previous Pi package, explicitly retry and finish that request, then stop its server before retrying open_classroom. Saved plans and history have not been changed.`,
       );
     let state = this.states.get(classroom) ?? readTeacherState(classroom);
     if (!state) {

@@ -285,6 +285,8 @@ export async function verifyPiLifecycle(artifacts: string): Promise<void> {
     await command(finalHost, "stop", "/classroom stop");
     await wait("Pi command stop", async () => (!(await serviceStatus()).running ? true : null));
     await close(finalHost);
+    const extensionErrors = events.filter((event) => event.type === "extension_error");
+    if (extensionErrors.length) throw new Error(JSON.stringify(extensionErrors));
     console.log(
       "PASS: actual Pi exit during work, FIFO across browser actions, reconnect, specific model failure, explicit retry, saved-plan restart with one grade and no inference, stable dedicated Pi session/model/low thinking.",
     );
