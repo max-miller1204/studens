@@ -49,7 +49,17 @@ require('node:readline').createInterface({input:process.stdin}).on('line',line=>
       if (seen.length === 1) await gate;
       if (identity.requestedModel === "unavailable-model")
         throw new Error(
-          "Selected model unavailable for this account. Choose another model and explicitly retry this request.",
+          `Codex turn failed: ${JSON.stringify({
+            message: JSON.stringify({
+              type: "error",
+              error: {
+                message:
+                  'Selected model unavailable for this account. <img src=x onerror="alert(1)">',
+              },
+            }),
+            codexErrorInfo: "other",
+            additionalDetails: null,
+          })}`,
         );
       active?.(identity.requestedModel ?? "fixture-default");
       return {
@@ -135,6 +145,15 @@ require('node:readline').createInterface({input:process.stdin}).on('line',line=>
       await page.goto(${JSON.stringify(base + "/c/rust/settings")});
       await page.locator('[data-teacher-error]').filter({hasText:'Selected model unavailable'}).waitFor();
       ${shot("settings-unavailable")}
+      const error=page.locator('[data-teacher-error]');
+      if(await error.locator('img').count())throw new Error('Host error markup was interpreted as HTML.');
+      if((await error.locator('[data-teacher-error-reason]').textContent()).includes('codexErrorInfo'))throw new Error('Host reason obscured by metadata.');
+      await error.getByText('Technical details',{exact:true}).click();
+      const saved=(await (await page.request.get(${JSON.stringify(base + "/api/settings?classroom=rust")})).json()).teacher.error;
+      if(await error.locator('pre').textContent()!==saved)throw new Error('Full original error not inspectable.');
+      await page.waitForTimeout(2200);
+      if(!await error.locator('details').evaluate(node=>node.open))throw new Error('Status refresh collapsed error details.');
+      ${shot("settings-unavailable-details")}
       await page.getByLabel('Teacher model',{exact:true}).selectOption('');
       await page.getByRole('button',{name:'Save teacher model',exact:true}).click();
       await page.getByRole('status').filter({hasText:'Saved for the next'}).waitFor();

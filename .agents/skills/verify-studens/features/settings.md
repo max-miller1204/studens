@@ -10,6 +10,7 @@ Edit learner preferences, connection settings, and the model for a persistent cl
 - Discover teacher models from the installed host, including configured and custom IDs.
 - Separate the requested setting from the model that actually answered; refresh status without replacing unsaved fields or save revisions.
 - Apply model changes between requests, preserve the conversation on restart, and require an explicit retry after a model error.
+- Show the specific Codex host rejection first, with request context and the complete saved error in Technical details. Keep details open across status refresh and render error markup as text.
 - Reject stale saves from another page and retain fields being edited while the model catalog loads.
 - Keep Pi's model in its live session.
 
@@ -25,9 +26,9 @@ Edit learner preferences, connection settings, and the model for a persistent cl
 ## Driving it with playwright-cli
 
 Run `npm run verify -- browser --artifacts /tmp/studens-settings-browser`.
-The settings fixture covers preference/config preservation, reload, default and custom model choices, a change during active work, unavailable-model errors, explicit retry, stale saves, restart, and 375px layout. Inspect `browser/settings/` screenshots, `settings-state.json`, and `NOTES.md`. It uses fixture teachers, so it does not prove account access.
+The settings fixture covers preference/config preservation, reload, default and custom model choices, a change during active work, unavailable-model errors, explicit retry, stale saves, restart, and 375px layout. Its nested-error probe checks literal HTML, exact original details, and refresh preserving the open details. Inspect `browser/settings/` screenshots, `settings-state.json`, and `NOTES.md`. It uses fixture teachers, so it does not prove account access.
 
-Run `npm run verify -- settings claude --artifacts /tmp/studens-settings-claude`, then `npm run verify -- settings codex --artifacts /tmp/studens-settings-codex` for actual selection. These use the shared fixed verification defaults, then deliberately select Claude `sonnet` or Codex `gpt-6.1-sol` from the discovered catalog. They record both requested and resolved models. A missing choice or unavailable model fails; no replacement is selected. The drives change the selection while the first request runs, finish a turn on the new model, restart the persistent service, submit an unavailable custom ID, and explicitly retry with the configured default. Inspect `settings-<host>/settings-report.json`, screenshots, `classroom/`, and `service.log`. The original grade and conversation identity must stay unchanged.
+Run `npm run verify -- settings claude --artifacts /tmp/studens-settings-claude`, then `npm run verify -- settings codex --artifacts /tmp/studens-settings-codex` for actual selection. These use the shared fixed verification defaults, then deliberately select Claude `sonnet` or Codex `gpt-6.1-sol` from the discovered catalog. They record both requested and resolved models. A missing choice or unavailable model fails; no replacement is selected. The drives change the selection while the first request runs, finish a turn on the new model, restart the persistent service, submit an unavailable custom ID, and explicitly retry with the configured default. Inspect `settings-<host>/settings-report.json`, screenshots, `classroom/`, and `service.log`. The unavailable Codex captures include desktop, 375px mobile, and expanded details; compare the details text with the saved failed request. The original grade and conversation identity must stay unchanged.
 
 The shared real Pi drive includes preference reload and connection saves on the settings page, hides the persistent model selector, and checks that settings never start a persistent service. Inspect `pi/pi-settings.png`. The broader Pi drive still checks grading, panel replies, resume, and re-teaching; report its full verdict separately if it fails after the settings steps.
 

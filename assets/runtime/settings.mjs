@@ -1,3 +1,5 @@
+import { settingsError } from "./settings-error.mjs";
+
 const root = document.querySelector("[data-cl-settings]");
 const api = `/api/settings?classroom=${encodeURIComponent(root.dataset.clSettings)}`;
 const errorBox = root.querySelector("[data-settings-error]");
@@ -8,6 +10,7 @@ let state;
 let catalog;
 let teacherStatus;
 let statusTimer;
+let lastTeacherError;
 function showError(node, message) {
   node.textContent = message || "";
   node.hidden = !message;
@@ -41,7 +44,36 @@ function renderTeacher() {
     : teacher
       ? "The saved model will be used for your next request."
       : "";
-  showError(root.querySelector("[data-teacher-error]"), teacher?.error);
+  const error = teacher?.error || "";
+  if (lastTeacherError !== error) {
+    lastTeacherError = error;
+    const node = root.querySelector("[data-teacher-error]");
+    node.replaceChildren();
+    node.hidden = !error;
+    if (error) {
+      const parsed = settingsError(error);
+      const reason = document.createElement("p");
+      reason.dataset.teacherErrorReason = "";
+      reason.textContent = parsed?.reason ?? error;
+      node.append(reason);
+      if (parsed) {
+        const context = document.createElement("p");
+        context.className = "cl-settings-error-context";
+        context.textContent = parsed.context;
+        const details = document.createElement("details");
+        const summary = document.createElement("summary");
+        summary.textContent = "Technical details";
+        const original = document.createElement("pre");
+        original.textContent = error;
+        details.append(summary, original);
+        node.append(context, details);
+      }
+      const action = document.createElement("p");
+      action.textContent =
+        "Choose a model below, then use Retry request on the lesson when you’re ready.";
+      node.append(action);
+    }
+  }
 }
 function renderModels(preserveInput = false) {
   if (!state.teacher) return;

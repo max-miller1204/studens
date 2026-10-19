@@ -595,7 +595,7 @@ export function settingsPage(classroom: Classroom): string {
     </section>
     <section class="cl-settings-section" aria-labelledby="teacher-heading">
       <h2 id="teacher-heading">Your teacher</h2><p data-teacher-owner></p><p role="alert" data-teacher-status-error hidden></p>
-      <p data-teacher-active></p><p data-teacher-request></p><p data-teacher-work></p><p role="alert" data-teacher-error hidden></p>
+      <p data-teacher-active></p><p data-teacher-request></p><p data-teacher-work></p><div role="alert" data-teacher-error hidden></div>
       <form data-settings-form="model" hidden>
         <div><label for="teacher-model">Teacher model</label><select id="teacher-model" name="model"><option value="">Use tool’s configured default</option></select></div>
         <label data-custom-model hidden>Model ID<input name="customModel" maxlength="200" autocomplete="off" placeholder="Enter your configured or custom model ID"></label>

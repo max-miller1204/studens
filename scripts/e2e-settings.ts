@@ -211,7 +211,23 @@ try {
   await playwrightCode(
     session,
     f.root,
-    `async page=>{await page.reload();await page.getByRole('button',{name:'Retry request',exact:true}).waitFor();${shot("unavailable-lesson")}await page.goto(${JSON.stringify(base + "/c/rust/settings")});await page.locator('[data-teacher-error]').filter({hasText:${JSON.stringify(unavailable)}}).waitFor();${shot("unavailable-settings")}return {};}`,
+    `async page=>{await page.reload();await page.getByRole('button',{name:'Retry request',exact:true}).waitFor();${shot("unavailable-lesson")}await page.goto(${JSON.stringify(base + "/c/rust/settings")});await page.locator('[data-teacher-error]').filter({hasText:${JSON.stringify(unavailable)}}).waitFor();await page.setViewportSize({width:1280,height:800});${shot("unavailable-settings")}
+ const error=page.locator('[data-teacher-error]');
+ const details=error.locator('details');
+ if(${JSON.stringify(backend)}==='codex') {
+   const reason=await error.locator('[data-teacher-error-reason]').textContent();
+   if(!reason.includes(${JSON.stringify(unavailable)})||reason.includes('codexErrorInfo'))throw new Error('Specific model reason obscured by transport metadata.');
+   await details.locator('summary').click();
+   if(await details.locator('pre').textContent()!==${JSON.stringify(failed.requests[2].error)})throw new Error('Original durable error was changed.');
+   await page.waitForTimeout(2200);
+   if(!await details.evaluate(node=>node.open))throw new Error('Status refresh collapsed error details.');
+   ${shot("unavailable-settings-details")}
+   await details.locator('summary').click();
+ }
+ await page.setViewportSize({width:375,height:812});${shot("unavailable-settings-mobile")}
+ if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth))throw new Error('Unavailable error overflows at 375px.');
+ await page.setViewportSize({width:1280,height:800});
+ return {};}`,
   );
   await choose(null);
   if (readTeacherState("rust")!.requests[2].status !== "failed")

@@ -1914,3 +1914,16 @@ figure:has(> .cl-diagram) figcaption {
 .cl-settings [hidden] {
   display: none;
 }
+
+.cl-settings-error-context {
+  color: var(--cl-text-muted);
+  font-size: 0.875em;
+}
+.cl-settings [data-teacher-error] summary {
+  cursor: pointer;
+}
+.cl-settings [data-teacher-error] pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 0.8em;
+}
