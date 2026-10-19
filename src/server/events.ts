@@ -1,4 +1,6 @@
 import type * as http from "node:http";
+import { isValidSlug } from "../paths.ts";
+import * as store from "../store.ts";
 import { lessonParams, sendJson } from "./http.ts";
 
 /** Keyed by `<classroom>/<lesson>` so an event only reaches the page it concerns. */
@@ -27,6 +29,7 @@ export function pushEvent(
   event: "answer" | "grade" | "reload" | "teacher",
   data: unknown,
 ): void {
+  invalidateActivity(classroom);
   const clients = sseClients.get(lessonKey(classroom, lesson));
   if (!clients || clients.size === 0) return;
   const frame = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
@@ -40,8 +43,13 @@ export function pushEvent(
 }
 
 export function handleEvents(req: http.IncomingMessage, res: http.ServerResponse, url: URL): void {
+  const classroom = url.searchParams.get("classroom");
+  const activity = url.searchParams.get("scope") === "classroom";
   const params = lessonParams(url);
-  if (!params) return sendJson(res, { error: "classroom and lesson are required" }, 400);
+  if (activity && (!isValidSlug(classroom) || !store.readClassroom(classroom)))
+    return sendJson(res, { error: "Unknown classroom." }, 404);
+  if (!activity && !params)
+    return sendJson(res, { error: "classroom and lesson are required" }, 400);
 
   res.writeHead(200, {
     "Content-Type": "text/event-stream",
@@ -50,7 +58,7 @@ export function handleEvents(req: http.IncomingMessage, res: http.ServerResponse
   });
   res.write(": connected\n\n");
 
-  const key = lessonKey(params.classroom, params.lesson);
+  const key = activity ? `${classroom}/` : lessonKey(params!.classroom, params!.lesson);
   addClient(key, res);
   req.on("close", () => removeClient(key, res));
 }
@@ -67,4 +75,16 @@ export function closeEvents(): void {
     }
   }
   sseClients.clear();
+}
+
+/** Invalidation only: clients reread the sanitized canonical state. */
+export function invalidateActivity(classroom: string): void {
+  const clients = sseClients.get(`${classroom}/`);
+  for (const res of clients ?? []) {
+    try {
+      res.write("event: activity\ndata: {}\n\n");
+    } catch {
+      clients!.delete(res);
+    }
+  }
 }

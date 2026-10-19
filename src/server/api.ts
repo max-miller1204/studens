@@ -1,4 +1,5 @@
 import type * as http from "node:http";
+import { handleActivity } from "./activity.ts";
 import { handleAsk, handleDeleteAnnotation, handleFollowUp } from "./annotations.ts";
 import { handleEvents } from "./events.ts";
 import { handleFolders } from "./folders.ts";
@@ -15,6 +16,7 @@ export async function handleApi(
   url: URL,
 ): Promise<void> {
   const route = rest.join("/");
+  if (route === "activity" && req.method === "GET") return handleActivity(res, url);
   if (route === "folders") return handleFolders(req, res);
   if (
     (route === "review" && req.method === "GET") ||

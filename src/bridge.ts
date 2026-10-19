@@ -123,12 +123,14 @@ export class ClassroomBridge {
   ask(annotation: store.Annotation): void {
     this.pending.push({ kind: "ask", annotationId: annotation.id, turn: null });
     this.send(askPrompt(annotation, "push"));
+    this.publish(annotation.classroom, annotation.lesson);
   }
 
   /** Ask the agent to answer a follow-up asked inside an existing card. */
   followUp(annotation: store.Annotation, followUp: store.FollowUp): void {
     this.pending.push({ kind: "ask", annotationId: annotation.id, turn: followUp.id });
     this.send(followUpPrompt(annotation, followUp, "push"));
+    this.publish(annotation.classroom, annotation.lesson);
   }
 
   /** Ask the agent to grade a quiz submission. */
@@ -497,19 +499,58 @@ export class ClassroomBridge {
   }
 
   /** What the lesson page's teacher panel shows. */
-  panelState(classroom: string, lesson: string): unknown {
+  panelState(classroom: string, lesson?: string): unknown {
     this.restoreResumes();
     return {
       identity: { backend: "pi" },
       requests: [
         ...this.panel.values(),
+        ...(lesson === undefined
+          ? this.pending.flatMap((origin, position) => {
+              if (origin.kind !== "ask") return [];
+              const annotation = store.findAnnotation(origin.annotationId);
+              if (
+                !annotation ||
+                annotation.classroom !== classroom ||
+                !store.isTurnPending(annotation, origin.turn)
+              )
+                return [];
+              return [
+                {
+                  id: origin.turn ? `follow-up:${origin.turn}` : `ask:${annotation.id}`,
+                  classroom,
+                  lesson: annotation.lesson,
+                  target: annotation.id,
+                  kind: origin.turn ? "follow-up" : "ask",
+                  status: position === 0 ? "running" : "queued",
+                },
+              ];
+            })
+          : []),
         ...refillRequests(classroom)
           .filter((r) => r.owner === "pi")
           .map((r) => ({ ...r, kind: "refill" })),
       ]
-        .filter((r) => r.classroom === classroom && r.lesson === lesson)
-        .map((r) => ({ id: r.id, kind: r.kind, status: r.status, error: r.error })),
-      messages: store.listPanelMessages(classroom, lesson).map(withHtml),
+        .filter((r) => r.classroom === classroom && (lesson === undefined || r.lesson === lesson))
+        .map((r) => {
+          const position = this.pending.findIndex(
+            (origin) =>
+              (origin.kind === "panel" || origin.kind === "refill") && origin.request.id === r.id,
+          );
+          return {
+            id: r.id,
+            lesson: r.lesson,
+            kind: r.kind,
+            status:
+              r.status === "running" && (position > 0 || this.deferredResumes.has(r.id))
+                ? "queued"
+                : r.status,
+            error: "error" in r ? r.error : undefined,
+            target: "target" in r ? r.target : undefined,
+          };
+        }),
+      messages:
+        lesson === undefined ? [] : store.listPanelMessages(classroom, lesson).map(withHtml),
     };
   }
 
@@ -544,6 +585,13 @@ export class ClassroomBridge {
     try {
       this.finishOrigin(messages);
     } finally {
+      const next = this.pending[0];
+      if (next?.kind === "panel" || next?.kind === "refill")
+        this.publish(next.request.classroom, next.request.lesson);
+      else if (next?.kind === "ask") {
+        const annotation = store.findAnnotation(next.annotationId);
+        if (annotation) this.publish(annotation.classroom, annotation.lesson);
+      }
       if (!this.pending.length) {
         const request = this.deferredResumes.values().next().value;
         if (request) {

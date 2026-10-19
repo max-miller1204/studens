@@ -5,7 +5,7 @@ import type * as store from "../store.ts";
 export interface ServerHooks {
   delivery?: "push" | "wait" | "service";
   canAccept?(classroom: string): void;
-  teacherState?(classroom: string, lesson: string): unknown;
+  teacherState?(classroom: string, lesson?: string): unknown;
   reviewOwner?: ReviewOwner;
   onReviewMiss?(submission: store.QuizSubmission): void;
   onGradeSaved?(submission: store.QuizSubmission): void;

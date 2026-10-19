@@ -1,3 +1,4 @@
+import { invalidateActivity } from "./server/events.ts";
 /** Durable background work. Learner requests always run before queued refills. */
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -101,6 +102,7 @@ export function updateRefill(
   if (error) saved.error = error;
   else delete saved.error;
   atomicJson(file(request.classroom), { version: 1, requests });
+  invalidateActivity(request.classroom);
 }
 
 function prompt(request: RefillRequest, item: ReviewItem, pool: PreparedVariant[]): string {
@@ -250,6 +252,7 @@ export function saveRefillPlan(request: RefillRequest, value: unknown): void {
   saved.plan = variants;
   saved.status = "planned";
   atomicJson(file(request.classroom), { version: 1, requests });
+  invalidateActivity(request.classroom);
 }
 
 export function applyRefill(request: RefillRequest): void {
@@ -359,6 +362,7 @@ export function refreshRefill(request: RefillRequest): RefillRequest {
       : "";
   saved.prompt = prompt(saved, saved.input, pool) + errorNotice;
   atomicJson(file(request.classroom), { version: 1, requests });
+  invalidateActivity(request.classroom);
   return saved;
 }
 

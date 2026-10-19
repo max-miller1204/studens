@@ -448,15 +448,23 @@ export class TeacherService {
     const previous = this.messages(classroom, lesson, state).at(-1);
     return previous ? Math.max(Date.now(), previous.at + 1) : Date.now();
   }
-  publicState(classroom: string, lesson: string): unknown {
+  publicState(classroom: string, lesson?: string): unknown {
     const state = this.states.get(classroom);
     if (!state) return null;
     return {
       identity: state.identity,
       requests: state.requests
-        .filter((r) => r.lesson === lesson)
-        .map((r) => ({ id: r.id, kind: r.kind, status: r.status, error: r.error })),
-      messages: this.messages(classroom, lesson, state).map(withHtml),
+        .filter((r) => lesson === undefined || r.lesson === lesson)
+        .map((r) => ({
+          id: r.id,
+          lesson: r.lesson,
+          target: r.target,
+          at: r.at,
+          kind: r.kind,
+          status: r.status,
+          error: r.error,
+        })),
+      messages: lesson === undefined ? [] : this.messages(classroom, lesson, state).map(withHtml),
     };
   }
   private publish(classroom: string, lesson: string): void {

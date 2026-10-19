@@ -1,10 +1,12 @@
 /** Handle shell navigation, theme controls, and classroom review requests. */
 
+import { initTeacherActivity, pageClassroom } from "./teacher-activity.mjs";
 import { initLinks } from "./links.mjs";
 import { initTheme } from "./theme.mjs";
 
 initTheme();
 initLinks();
+initTeacherActivity(pageClassroom());
 
 const folderControl = document.querySelector("[data-cl-folders]");
 if (folderControl) initFolders(folderControl);

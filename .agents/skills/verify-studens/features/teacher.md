@@ -11,7 +11,7 @@ The learner receives follow-up questions and answers them in the lesson's teache
 - Recover a saved panel reply whose teacher request was lost.
 - Save replies and restore the conversation after reload.
 - Link a successful panel check to a learning record without changing the quiz grade.
-- Show specific failures and require an explicit retry.
+- Show classroom activity across pages, with item links, queued work, specific failures, and explicit retries.
 - Regenerate a plan rejected before writes. Keep valid plans for recovery.
 - Request a new grade plan after an explicit retry of a rejected score.
 - Keep the persistent service available after MCP exit.
@@ -43,6 +43,29 @@ The resume fixtures use a saved review with an empty panel or an unanswered save
 For a changed real Pi path, run `npm run verify -- pi`. For shared service or prompt changes, run `npm run verify -- claude`, then `npm run verify -- codex`. Add `--artifacts <directory>` to retain host evidence. These drives ask a question, submit a wrong answer, and reply in the panel. They check that the quiz score remains unchanged.
 
 The service reply fixture reports no help. The drives require the actual reply and reported assistance in a saved retrieval check. They require a linked learning record and keep immediate correction outside retained evidence. Inspect `stored-teacher-state.json` and the retained `classroom/` files.
+
+### Classroom activity
+
+Every classroom, lesson, review, history, document, and reference page shows the
+same teacher activity view. Open `View teacher activity` for item links and all
+pending requests. Running work appears before queued work; failed requests retain
+their specific error and `Retry activity`. Completed work leaves the pending list.
+A lost status connection shows an explicit error and `Retry activity status`.
+
+The default browser target includes `activity/`. Its fixture submits explanations
+on two lessons through their Save controls, follows classroom SSE, and verifies
+sequential running/queued transitions. It retains a failed request through reload,
+HTTP/service restart and keyboard navigation to its lesson panel, then presses
+`Retry activity` once and checks exactly one additional teacher turn. It also
+checks notes, reference, review history and learning-record pages, an unrelated
+classroom, malformed request state, private routes, and 375px
+failure/recovery screens. Inspect `activity/result.json`, `failed-desktop.png`,
+`failed-mobile.png`, `disconnected-mobile.png`, and `done-mobile.png`.
+
+This fixture uses a controlled teacher at the production model boundary; real
+host targets remain necessary for changes to the bridge/service projections.
+Pi card failures predating durable panel requests link to their original question
+and continuation controls; this view does not create replacement requests.
 
 ## Gotchas
 

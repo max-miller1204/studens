@@ -1,3 +1,4 @@
+import { invalidateActivity } from "./server/events.ts";
 /** Save browser review requests and publish only complete review documents. */
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -92,6 +93,7 @@ function save(classroom: string, requests: ReviewSession[]): void {
     mode: 0o600,
   });
   fs.renameSync(`${target}.tmp`, target);
+  invalidateActivity(classroom);
 }
 export function updateReview(
   session: ReviewSession,

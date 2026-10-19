@@ -71,7 +71,8 @@ export async function browserRegression(page, highlightText) {
     throw new Error(`${message}: ${JSON.stringify(await serverDrafts())}`);
   };
 
-  const selectPhrase = (phrase, selector = "section") => highlightText(page, selector, phrase);
+  const selectPhrase = (phrase, selector = "[data-cl-content] section") =>
+    highlightText(page, selector, phrase);
   async function verifyReflectionAndFollowUpDrafts() {
     const reflection = page.locator('form[data-reflect-id="ownership"]');
     const text = "The owner releases the value.";

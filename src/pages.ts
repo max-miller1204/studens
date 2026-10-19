@@ -302,7 +302,7 @@ function progressSection(data: ClassroomPageData): string {
   ${note ? `<p class="cl-progress-note">${escapeHtml(note)}</p>` : ""}
   ${
     review.total > 0
-      ? `<div class="cl-review-start" data-cl-review="${escapeHtml(data.classroom.name)}" data-due="${review.due}" data-review-size="${DEFAULT_REVIEW_SIZE}">
+      ? `<div id="cl-review" class="cl-review-start" data-cl-review="${escapeHtml(data.classroom.name)}" data-due="${review.due}" data-review-size="${DEFAULT_REVIEW_SIZE}">
     <button type="button" class="cl-button" data-cl-review-start disabled>Start review</button>
     <p class="cl-progress-note" data-cl-review-status role="status" aria-live="polite">Checking review status…</p>
     <a data-cl-review-open hidden>Open review</a>
