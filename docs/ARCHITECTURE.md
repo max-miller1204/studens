@@ -59,6 +59,7 @@ never the working directory or files outside the package.
 | MCP dispatch and control transport              | `mcp.ts`, `mcp-stdio.ts`, `service-client.ts`, `service-main.ts` |
 | Durable requests and plans                      | `service-state.ts`, `teacher-service.ts`                         |
 | Model adapters, deadlines, grade decoding       | `teacher.ts`, `teacher-deadline.ts`, `teacher-grading.ts`        |
+| Daily classroom groups                          | `server/daily-review.ts`, `store/daily-review.ts`                |
 | Resume and review publication                   | `teacher-resume.ts`, `review-session.ts`                         |
 | Private variant pools and refills               | `review-variants.ts`, `review-pool.ts`, `review-refill.ts`       |
 | Quiz, rubric, pretest, plan validation          | `quiz.ts`, `rubric.ts`, `pretest.ts`, `teaching-plan.ts`         |
@@ -144,6 +145,13 @@ source notation to grading. Answers and feedback render Markdown server-side.
   Validate keys, rubric, controls, and plan before publication. Hide unfinished
   reviews from lists, routes, and submissions. Repeated clicks reuse work; published
   reviews open across hosts. Saved service plans resume without another model turn.
+- **Daily review keeps classroom boundaries.** The private root `.daily-reviews.json`
+  saves every classroom selection and document before the first publication. Each
+  group reuses a normal classroom review and its original objective keys. Group
+  completion derives from saved card grades; navigation never grades or extends a
+  schedule. Later groups need explicit progression. Reads, reloads and repeated
+  starts reuse saved requests; publication and ownership failures require retry.
+  Daily history links to each classroom’s separate review history and teacher panel.
 - **Variant refills are background work.** Save private refill requests with their host
   and learner mistake. Run them after queued learner requests in the same sequential
   teacher session. Save validated output before atomically adding a supplemental

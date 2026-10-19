@@ -1,4 +1,6 @@
 /** One durable quiz per card; grades and teacher replies keep their existing contracts. */
+import { addDailyReviewLink } from "./daily-review.mjs";
+
 export function createReviewScreen({ config, contentRoot, placeTeacherPanel }) {
   if (!config.reviewScreen) return null;
   document.body.classList.add("cl-review-page");
@@ -36,6 +38,7 @@ export function createReviewScreen({ config, contentRoot, placeTeacherPanel }) {
   previous.hidden = true;
   next.disabled = true;
   navigation.append(previous, next, retry, history);
+  addDailyReviewLink(navigation);
   forms[0].before(progress);
   forms.at(-1).after(navigation);
   next.addEventListener("click", () => {

@@ -90,6 +90,7 @@ export function landingPage(
   </div>
   <p class="cl-lede">${folder ? "Keep related classrooms together." : "Pick up where you left off, or start something new with <code>/teach</code>."}</p>
 </div>
+${!folder ? `<section class="cl-daily-summary" aria-label="Daily review" data-cl-daily><h2>${Object.values(dueByClassroom).reduce((sum, count) => sum + count, 0)} due across classrooms</h2><p>Review one classroom at a time, with up to ${DEFAULT_REVIEW_SIZE} due items from each.</p><button type="button" class="cl-button" data-daily-action disabled>Start daily review</button><p class="cl-progress-note" role="status" aria-live="polite" data-daily-status>Checking daily review…</p><a href="/reviews/daily">Daily review history</a></section>` : ""}
 ${!folder && folders.length ? `<section aria-label="Folders"><h2 class="cl-section-title">Folders</h2><ul class="cl-grid cl-folder-grid">${folders.map((f) => `<li class="cl-card"><a class="cl-card-link" href="/?folder=${encodeURIComponent(f.id)}"><span class="cl-card-emoji" aria-hidden="true">📁</span><span class="cl-card-body"><span class="cl-card-title">${escapeHtml(f.name)}</span><span class="cl-card-meta">${plural(classrooms.filter((c) => f.classrooms.includes(c.name)).length, "classroom")}</span></span></a></li>`).join("\n")}</ul></section>` : ""}
 <section aria-label="${folder ? "Classrooms in folder" : "Unfiled classrooms"}">
 ${!folder && folders.length ? '<h2 class="cl-section-title">Unfiled classrooms</h2>' : ""}

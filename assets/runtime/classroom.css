@@ -1855,3 +1855,36 @@ figure:has(> .cl-diagram) figcaption {
     display: block;
   }
 }
+
+/* The daily queue stays grouped by classroom at every viewport. */
+.cl-daily-summary {
+  margin: 0 0 2rem;
+  padding: 1.4rem;
+  border: 1px solid var(--cl-border);
+  border-radius: 12px;
+}
+.cl-daily-summary h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.4rem;
+}
+.cl-daily-groups {
+  padding: 0;
+  list-style-position: inside;
+}
+.cl-daily-group {
+  margin: 0 0 1rem;
+  padding: 1.25rem;
+  border: 1px solid var(--cl-border);
+  border-radius: 12px;
+}
+.cl-daily-group p {
+  margin: 0.5rem 0;
+}
+.cl-daily-group [role="alert"] {
+  color: var(--cl-danger);
+  overflow-wrap: anywhere;
+}
+.cl-daily-summary .cl-button,
+[data-cl-daily] .cl-button {
+  white-space: normal;
+}

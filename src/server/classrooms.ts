@@ -15,6 +15,7 @@ import {
 import { authoredQuizzes } from "../quiz-authoring.ts";
 import { stageLesson } from "../pretest.ts";
 import { reviewSessions } from "../review-session.ts";
+import { dailyDue } from "../store/daily-review.ts";
 import { isDue, summarize } from "../review.ts";
 import * as store from "../store.ts";
 import { hooks } from "./hooks.ts";
@@ -22,10 +23,7 @@ import { sendFile, sendHtml, sendNotFound } from "./http.ts";
 
 export function handleLanding(res: http.ServerResponse, url: URL): void {
   const classrooms = store.listClassrooms();
-  const now = Date.now();
-  const due = Object.fromEntries(
-    classrooms.map((c) => [c.name, summarize(store.reviewItems(c.name), now).due]),
-  );
+  const due = dailyDue();
   let folders: store.ClassroomFolder[];
   try {
     folders = store.readClassroomFolders();

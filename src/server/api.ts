@@ -5,6 +5,7 @@ import { handleFolders } from "./folders.ts";
 import { sendJson } from "./http.ts";
 import { handleDraft, handleGlossary, handleReflect, handleState } from "./learner-state.ts";
 import { handleQuizSubmit } from "./quizzes.ts";
+import { handleDailyReview } from "./daily-review.ts";
 import { handleReview } from "./review.ts";
 import { handleTeacher } from "./teacher.ts";
 
@@ -15,6 +16,8 @@ export async function handleApi(
   url: URL,
 ): Promise<void> {
   const route = rest.join("/");
+  if (["daily-review", "daily-review/continue", "daily-review/retry"].includes(route))
+    return handleDailyReview(req, res, route, url);
   if (route === "folders") return handleFolders(req, res);
   if (
     (route === "review" && req.method === "GET") ||
