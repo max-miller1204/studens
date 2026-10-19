@@ -5,12 +5,13 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { createHash } from "node:crypto";
 import { spawn } from "node:child_process";
+import { readConfig } from "./config.ts";
 import { classroomsRoot, packageRoot } from "./paths.ts";
 
 export const DEFAULT_SERVICE_PORT = 43123;
 export function servicePort(): number {
   const text = process.env.PI_CLASSROOM_SERVICE_PORT;
-  if (text === undefined) return DEFAULT_SERVICE_PORT;
+  if (text === undefined) return readConfig().port ?? DEFAULT_SERVICE_PORT;
   if (!/^[0-9]+$/.test(text) || Number(text) < 1 || Number(text) > 65535)
     throw new Error("PI_CLASSROOM_SERVICE_PORT must be an integer from 1 to 65535.");
   return Number(text);

@@ -2,6 +2,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { classroomDir, isValidSlug } from "./paths.ts";
+import { modelSelection } from "./teacher-models.ts";
 import type { TeacherIdentity, TeacherPlan } from "./teacher.ts";
 
 export interface TeacherRequest {
@@ -20,6 +21,9 @@ export interface TeacherRequest {
   plan?: TeacherPlan;
   /** Original model response, saved before contract decoding. */
   modelOutput?: unknown;
+  /** Snapshot taken only when a new inference request starts. */
+  requestedModel?: string | null;
+  resolvedModel?: string;
   /** Version 2 uses score-free grade_quiz_answers. Absent on older saved plans. */
   planVersion?: 2;
   planRubricDigest?: string;
@@ -57,6 +61,13 @@ export function readTeacherState(classroom: string): TeacherState | null {
       !Array.isArray(state.messages)
     )
       throw new Error(`Invalid teacher state for ${classroom}.`);
+    if (state.identity.requestedModel !== undefined) modelSelection(state.identity.requestedModel);
+    if (
+      state.identity.selectionRevision !== undefined &&
+      (!Number.isSafeInteger(state.identity.selectionRevision) ||
+        state.identity.selectionRevision < 0)
+    )
+      throw new Error(`Invalid model selection revision for ${classroom}.`);
     return state;
   } catch (err) {
     if ((err as NodeJS.ErrnoException).code === "ENOENT") return null;

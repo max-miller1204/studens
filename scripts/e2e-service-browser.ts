@@ -41,7 +41,9 @@ readline.createInterface({input:process.stdin}).on('line', line => {
  const m = JSON.parse(line);
  if (!m.id) return;
  if (m.method === 'initialize') send({id:m.id,result:{}});
- else if (m.method === 'thread/start' || m.method === 'thread/resume') send({id:m.id,result:{thread:{id:m.params.threadId || 'browser-teacher-session'}}});
+ else if (m.method === 'config/read') send({id:m.id,result:{config:{model:'fixture-model'}}});
+ else if (m.method === 'model/list') send({id:m.id,result:{data:[{id:'fixture-model',model:'fixture-model',displayName:'Fixture model',isDefault:true}],nextCursor:null}});
+ else if (m.method === 'thread/start' || m.method === 'thread/resume') send({id:m.id,result:{model:m.params.model,thread:{id:m.params.threadId || 'browser-teacher-session'}}});
  else if (m.method === 'turn/start') {
   const turns = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : [];
   turns.push({threadId:m.params.threadId, prompt:m.params.input[0].text, schema:m.params.outputSchema});
@@ -234,7 +236,7 @@ readline.createInterface({input:process.stdin}).on('line', line => {
       failed.requests.length !== 1 ||
       failed.requests[0].status !== "failed" ||
       failed.requests[0].error !==
-        `codex ask request ${failed.requests[0].id} in rust/001-ownership: Fixture teacher failure`
+        `codex model configured default ask request ${failed.requests[0].id} in rust/001-ownership: Fixture teacher failure`
     )
       throw new Error("The first failure was not saved.");
     snapshot("failed-request");

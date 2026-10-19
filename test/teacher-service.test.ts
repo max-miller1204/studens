@@ -217,6 +217,8 @@ describe("persistent teacher", () => {
     expect(store.listGrades("rust", location.lesson)).toHaveLength(1);
     const state = readTeacherState("rust")!;
     state.requests[0].status = "planned";
+    state.identity.requestedModel = "new-model-after-saved-plan";
+    state.identity.selectionRevision = 1;
     state.requests[0].applied = 0;
     saveTeacherState("rust", state);
     const restarted = new TeacherService(async () => {
@@ -240,7 +242,7 @@ describe("persistent teacher", () => {
     await teacher.idle();
     const state = readTeacherState("rust")!;
     expect(state.requests[0].error).toBe(
-      `claude chat request ${state.requests[0].id} in rust/001-ownership: Claude authentication expired.`,
+      `claude model configured default chat request ${state.requests[0].id} in rust/001-ownership: Claude authentication expired.`,
     );
     teacher.attach("rust", "claude");
     await teacher.idle();
@@ -834,4 +836,84 @@ it("recovers an older unsupported pretest record on explicit retry and preserves
   expect(store.listGrades("rust", location.lesson)).toEqual([originalGrade]);
   expect(store.listLearningRecords("rust")).toHaveLength(0);
   await restarted.stop();
+});
+
+it("snapshots model settings between requests, retains identity and rejects stale choices", async () => {
+  const seen: Array<{ model: unknown; session: unknown }> = [];
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let started!: () => void;
+  const began = new Promise<void>((resolve) => {
+    started = resolve;
+  });
+  const teacher = new TeacherService(
+    async (identity, _prompt, _cwd, save, _signal, _contract, _output, active) => {
+      seen.push({ model: identity.requestedModel, session: identity.sessionId });
+      save("same-conversation");
+      if (seen.length === 1) {
+        started();
+        await gate;
+      }
+      active?.(`actual-${identity.requestedModel}`);
+      return plan([]);
+    },
+  );
+  teacher.attach("rust", "codex");
+  teacher.setModel("rust", "first-model", 0);
+  teacher.chat("rust", location.lesson, "First reply", randomUUID());
+  await began;
+  teacher.setModel("rust", "second-model", 1);
+  expect(teacher.settings("rust")?.running?.requestedModel).toBe("first-model");
+  expect(() => teacher.setModel("rust", "stale-model", 1)).toThrow(/another page/);
+  teacher.chat("rust", location.lesson, "Second reply", randomUUID());
+  expect(seen).toHaveLength(1);
+  release();
+  await teacher.idle();
+  expect(seen).toEqual([
+    { model: "first-model", session: undefined },
+    { model: "second-model", session: "same-conversation" },
+  ]);
+  expect(readTeacherState("rust")?.identity).toMatchObject({
+    requestedModel: "second-model",
+    sessionId: "same-conversation",
+    activeModel: "actual-second-model",
+    activeRequestedModel: "second-model",
+  });
+  await teacher.stop();
+  const restarted = new TeacherService(async () => {
+    throw new Error("Restart must not run a completed request");
+  });
+  restarted.restore();
+  await restarted.idle();
+  expect(restarted.settings("rust")?.identity.requestedModel).toBe("second-model");
+  expect(readTeacherState("rust")?.requests.every((r) => r.status === "done")).toBe(true);
+  await restarted.stop();
+});
+
+it("keeps model errors until explicit request retry and never retries on selection", async () => {
+  let calls = 0;
+  const teacher = new TeacherService(async (identity) => {
+    calls++;
+    if (identity.requestedModel === "unavailable")
+      throw new Error("Selected model unavailable for this account.");
+    return plan([]);
+  });
+  teacher.attach("rust", "claude");
+  teacher.setModel("rust", "unavailable", 0);
+  const id = randomUUID();
+  teacher.chat("rust", location.lesson, "Continue", id);
+  await teacher.idle();
+  expect(teacher.settings("rust")?.error).toMatch(/model unavailable.*Selected model unavailable/);
+  teacher.setModel("rust", null, 1);
+  await teacher.idle();
+  expect(calls).toBe(1);
+  const request = readTeacherState("rust")!.requests[0];
+  expect(request.status).toBe("failed");
+  teacher.retry("rust", request.id);
+  await teacher.idle();
+  expect(calls).toBe(2);
+  expect(readTeacherState("rust")!.requests[0].status).toBe("done");
+  await teacher.stop();
 });

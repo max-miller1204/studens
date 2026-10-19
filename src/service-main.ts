@@ -174,7 +174,7 @@ const ipc = http.createServer((req, res) => {
 });
 try {
   if (fs.existsSync(paths.socket)) fs.unlinkSync(paths.socket);
-  teacher.connect();
+  teacher.connect(() => links.share());
   await server.start(port);
   teacher.restore();
   await new Promise<void>((resolve, reject) => {

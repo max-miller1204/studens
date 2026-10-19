@@ -41,6 +41,7 @@ export default function classroomExtension(pi: ExtensionAPI): void {
   );
 
   server.setHooks({
+    applyConnectionSettings: () => piLinks().share(),
     onAsk: (annotation) => bridge.ask(annotation),
     onFollowUp: (annotation, followUp) => bridge.followUp(annotation, followUp),
     onQuizSubmit: (submission) => bridge.grade(submission),

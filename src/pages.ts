@@ -222,7 +222,7 @@ ${lessons.map((lesson, i) => lessonRow(lesson, i, data.progress.dueByLesson[less
   ${classroom.mission ? `<p class="cl-lede">${escapeHtml(missionWhy(classroom.mission) ?? "")}</p>` : ""}
 </div>
 ${progressSection(data)}
-<p><a href="/c/${encodeURIComponent(classroom.name)}/reviews">Review history</a></p>
+<p><a href="/c/${encodeURIComponent(classroom.name)}/reviews">Review history</a> · <a href="/c/${encodeURIComponent(classroom.name)}/settings">Settings</a></p>
 <section class="cl-section">
   <h2 class="cl-section-title">Lessons</h2>
   ${lessonList}
@@ -567,5 +567,57 @@ export function notFoundPage(message: string): string {
     title: "Not found — Classrooms",
     breadcrumb: `<a class="cl-crumb" href="/">Classrooms</a>`,
     body: emptyState("Not found", escapeHtml(message)),
+  });
+}
+
+/** Settings load through the validated API so read errors have an explicit retry. */
+export function settingsPage(classroom: Classroom): string {
+  return shell({
+    title: `Settings — ${classroom.title}`,
+    breadcrumb: `<a class="cl-crumb" href="/">Classrooms</a><span class="cl-crumb-sep" aria-hidden="true">/</span><a class="cl-crumb" href="/c/${encodeURIComponent(classroom.name)}">${escapeHtml(classroom.title)}</a><span class="cl-crumb-sep" aria-hidden="true">/</span><span class="cl-crumb cl-crumb-current">Settings</span>`,
+    body: `
+<div class="cl-settings" data-cl-settings="${escapeHtml(classroom.name)}">
+  <div class="cl-hero"><h1>Settings</h1><p class="cl-lede">Make ${escapeHtml(classroom.title)} work for you.</p></div>
+  <p role="alert" data-settings-error hidden></p><button class="cl-button cl-button-quiet" data-settings-load hidden>Reload settings</button>
+  <div data-settings-content hidden>
+    <section class="cl-settings-section" aria-labelledby="preferences-heading">
+      <h2 id="preferences-heading">How you like to learn</h2>
+      <p>These preferences guide every lesson in this classroom. Leave a field blank to let your teacher adapt.</p>
+      <form data-settings-form="preferences">
+        <label>Pace<input name="pace" maxlength="200" placeholder="For example, slower with time to practise" list="pace-ideas"></label>
+        <datalist id="pace-ideas"><option value="Slower, with time to practise"><option value="Steady, one idea at a time"><option value="Faster, with fewer pauses"></datalist>
+        <label>Depth<input name="depth" maxlength="200" placeholder="For example, detailed explanations and examples" list="depth-ideas"></label>
+        <datalist id="depth-ideas"><option value="Concise, focus on the essentials"><option value="Detailed, with worked examples"><option value="Explore the underlying theory"></datalist>
+        <label>Tone<input name="tone" maxlength="200" placeholder="For example, direct and encouraging" list="tone-ideas"></label>
+        <datalist id="tone-ideas"><option value="Direct and practical"><option value="Warm and encouraging"><option value="Ask questions that help me reason"></datalist>
+        <button class="cl-button" type="submit">Save preferences</button><p role="status" data-save-status></p>
+      </form>
+    </section>
+    <section class="cl-settings-section" aria-labelledby="teacher-heading">
+      <h2 id="teacher-heading">Your teacher</h2><p data-teacher-owner></p><p role="alert" data-teacher-status-error hidden></p>
+      <p data-teacher-active></p><p data-teacher-request></p><p data-teacher-work></p><div role="alert" data-teacher-error hidden></div>
+      <form data-settings-form="model" hidden>
+        <div><label for="teacher-model">Teacher model</label><select id="teacher-model" name="model"><option value="">Use tool’s configured default</option></select></div>
+        <label data-custom-model hidden>Model ID<input name="customModel" maxlength="200" autocomplete="off" placeholder="Enter your configured or custom model ID"></label>
+        <p>Changes apply to the next teacher request. Your conversation and grades stay here. Model access is checked when you send a request.</p>
+        <p role="alert" data-model-error hidden></p><button class="cl-button cl-button-quiet" type="button" data-model-load>Reload models</button>
+        <button class="cl-button" type="submit">Save teacher model</button><p role="status" data-save-status></p>
+      </form>
+    </section>
+    <section class="cl-settings-section" aria-labelledby="connection-heading">
+      <h2 id="connection-heading">Connection</h2><p>Shared by your classrooms on this computer.</p><p data-connection-current></p>
+      <form data-settings-form="connection">
+        <label>Local port<input name="port" type="number" min="1" max="65535" step="1" placeholder="Automatic"></label>
+        <p>Local port changes take effect after you stop and restart the classroom server. Get its new link from your agent.</p>
+        <label class="cl-settings-check"><input name="tailscale" type="checkbox">Enable Tailscale links while connected</label>
+        <p>Only people on your tailnet can use these links. Changes to links apply when you save.</p>
+        <label>Claude and Codex HTTPS port<input name="tailscalePort" type="number" min="1" max="65535" step="1" required></label>
+        <label>Pi HTTPS port<input name="piTailscalePort" type="number" min="1" max="65535" step="1" required></label>
+        <p data-connection-override></p>
+        <button class="cl-button" type="submit">Save connection settings</button><p role="status" data-save-status></p>
+      </form>
+    </section>
+  </div>
+</div><script type="module" src="/static/settings.mjs"></script>`,
   });
 }

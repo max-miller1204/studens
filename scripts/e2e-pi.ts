@@ -187,6 +187,28 @@ try {
   });
   await playwright(session, fixture.root, "open", classroomUrl);
   browserOpen = true;
+  await playwrightCode(
+    session,
+    fixture.root,
+    `async page=>{
+    await page.getByRole('link',{name:'Settings',exact:true}).click();
+    await page.getByText('Pi · your live session chooses the teacher model. Change it in Pi.',{exact:true}).waitFor();
+    if(await page.getByLabel('Teacher model',{exact:true}).isVisible())throw new Error('Pi offered a persistent teacher model selector.');
+    await page.getByLabel('Pace',{exact:true}).fill('Steady, one idea at a time');
+    await page.getByLabel('Depth',{exact:true}).fill('Detailed, with worked examples');
+    await page.getByLabel('Tone',{exact:true}).fill('Direct and encouraging');
+    await page.getByRole('button',{name:'Save preferences',exact:true}).click();
+    await page.getByRole('status').filter({hasText:'Preferences saved'}).waitFor();
+    await page.getByRole('button',{name:'Save connection settings',exact:true}).click();
+    await page.getByRole('status').filter({hasText:'Links updated'}).waitFor();
+    await page.reload();
+    if(await page.getByLabel('Pace',{exact:true}).inputValue()!=='Steady, one idea at a time')throw new Error('Pi preferences did not survive reload.');
+    ${artifacts ? `await page.evaluate(()=>scrollTo(0,0));await page.screenshot({path:${JSON.stringify(path.join(artifacts, "pi-settings.png"))},fullPage:true});` : ""}
+    await page.getByRole('link',{name:'Rust',exact:true}).click();return {};
+  }`,
+  );
+  if (fs.existsSync(path.join(fixture.root, ".pi-teach-service")))
+    throw new Error("Pi settings started a persistent service.");
   if (artifacts)
     fs.writeFileSync(
       path.join(artifacts, "pi-reading.json"),

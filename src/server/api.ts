@@ -6,6 +6,7 @@ import { sendJson } from "./http.ts";
 import { handleDraft, handleGlossary, handleReflect, handleState } from "./learner-state.ts";
 import { handleQuizSubmit } from "./quizzes.ts";
 import { handleReview } from "./review.ts";
+import { handleSettings } from "./settings.ts";
 import { handleTeacher } from "./teacher.ts";
 
 export async function handleApi(
@@ -15,6 +16,8 @@ export async function handleApi(
   url: URL,
 ): Promise<void> {
   const route = rest.join("/");
+  if (route === "settings" || route === "settings/models")
+    return handleSettings(req, res, url, route === "settings/models");
   if (route === "folders") return handleFolders(req, res);
   if (
     (route === "review" && req.method === "GET") ||
