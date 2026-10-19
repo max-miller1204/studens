@@ -3,7 +3,6 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as store from "../src/store.ts";
 import { lessonHtml } from "../test/helpers.ts";
-import { until } from "./harness.ts";
 import { playwrightCode } from "./playwright.ts";
 
 export async function driveCriterionProbe(
@@ -63,14 +62,19 @@ export async function driveCriterionProbe(
   }`,
   );
   try {
-    const state = await until("real host criterion grade", 185_000, async () => {
-      const state = await (await fetch(`${base}/api/state?classroom=rust&lesson=${lesson}`)).json();
+    let state;
+    const deadline = Date.now() + 185_000;
+    while (Date.now() < deadline) {
+      state = await (await fetch(`${base}/api/state?classroom=rust&lesson=${lesson}`)).json();
       const failed = state.teacher?.requests?.find(
         (r: { status: string }) => r.status === "failed",
       );
       if (failed) throw new Error(failed.error);
-      return state.quizzes[0]?.grade ? state : null;
-    });
+      if (state.quizzes[0]?.grade) break;
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    }
+    if (!state?.quizzes[0]?.grade)
+      throw new Error("Timed out waiting for real host criterion grade.");
     evidence("stored-criteria", {
       state,
       submissions: store.listSubmissions("rust", lesson),
