@@ -35,3 +35,62 @@ export async function selectLocateAnswer(segment: {
 }): Promise<void> {
   if ((await segment.getAttribute("aria-pressed")) !== "true") await segment.click();
 }
+
+/** Exercise public local practice with arbitrary answers, without submitting assessment work. */
+export async function checkPractice(page: any): Promise<number> {
+  const writes: string[] = [];
+  const record = (request: any) => {
+    if (!["GET", "HEAD"].includes(request.method())) writes.push(request.url());
+  };
+  page.on("request", record);
+  let checked = 0;
+  try {
+    for (const form of await page.locator("form.cl-practice").all()) {
+      if ((await form.getAttribute("data-state")) !== "fresh")
+        throw new Error("Practice controls are not ready.");
+      for (const question of await form.locator(".cl-q").all()) {
+        const type = await question.getAttribute("data-type");
+        if (type === "choice" || type === "multi") await question.locator("input").first().check();
+        if (type === "term") await question.locator("input").fill("practice answer");
+        if (type === "numeric") {
+          await question.locator(".cl-number").fill("2");
+          const unit = question.locator(".cl-unit");
+          if (await unit.count()) {
+            // Preserve authored fixed units and selected scalar/unit options.
+            if (
+              (await unit.isEnabled()) &&
+              (await unit.evaluate((el: any) => el.tagName === "INPUT" && !el.readOnly))
+            )
+              await unit.fill("units");
+          }
+        }
+        if (type === "cloze")
+          for (const blank of await question.locator("[data-blank]").all())
+            await blank.fill("practice answer");
+        if (type === "match")
+          for (const select of await question.locator(".cl-match-select").all())
+            await select.selectOption({ index: 1 });
+        if (type === "order")
+          await question.getByRole("button", { name: "Move down" }).first().click();
+        if (type === "locate") {
+          await question.locator(".cl-segment").first().focus();
+          await page.keyboard.press("Space");
+        }
+      }
+      await form.getByRole("button", { name: "Check answer", exact: true }).focus();
+      await page.keyboard.press("Enter");
+      if (
+        (await form.locator(".cl-practice-feedback").count()) !==
+        (await form.locator(".cl-q").count())
+      )
+        throw new Error("Practice did not show feedback for every answer.");
+      if ((await form.getAttribute("data-state")) !== "fresh")
+        throw new Error("Practice locked after feedback.");
+      checked++;
+    }
+    if (writes.length) throw new Error("Practice wrote server state: " + writes.join(", "));
+    return checked;
+  } finally {
+    page.off("request", record);
+  }
+}
