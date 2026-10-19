@@ -2,7 +2,13 @@ import * as fs from "node:fs";
 import type * as http from "node:http";
 import * as path from "node:path";
 import { injectLessonRuntime } from "../lesson-html.ts";
-import { classroomPage, reviewHistoryPage, folderLoadErrorPage, landingPage } from "../pages.ts";
+import {
+  classroomPage,
+  settingsPage,
+  reviewHistoryPage,
+  folderLoadErrorPage,
+  landingPage,
+} from "../pages.ts";
 import {
   classroomDir,
   isFile,
@@ -105,6 +111,8 @@ export function handleClassroomRoute(
       }),
     );
   }
+
+  if (second === "settings" && !tail.length) return sendHtml(res, settingsPage(classroom));
 
   // Review history is public; its documents and quiz state use the guarded routes below.
   if (second === "reviews") {

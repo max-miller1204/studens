@@ -400,7 +400,7 @@ describe("explicit teacher handoff", () => {
       let runs = 0;
       const teacher = new TeacherService(async (identity, prompt) => {
         runs++;
-        expect(identity).toEqual({ backend, sessionId: "existing-teacher" });
+        expect(identity).toEqual({ backend, sessionId: "existing-teacher", requestedModel: null });
         expect(prompt).toContain(input.submission_id);
         return plan();
       });

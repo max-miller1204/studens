@@ -27,7 +27,7 @@ Set `PI_CLASSROOM_CONFIG` to read the settings from another file.
 For Pi, use a configured fixed port to keep URLs stable across session restarts. Only one
 session can use that port at a time. With no port configured, each session uses an
 ephemeral port. Claude Code and Codex use service port `43123` by default.
-Set `PI_CLASSROOM_SERVICE_PORT` to change it. See the [service guide](USAGE.md#claude-code-and-codex).
+A configured `port` also applies to the service. `PI_CLASSROOM_SERVICE_PORT` takes priority over that file. See the [service guide](USAGE.md#claude-code-and-codex).
 Get the current URL from `open_classroom` or `/classroom`.
 
 ## Storage
@@ -90,3 +90,15 @@ filesystem paths. From a lesson, use:
 Do not use `../assets/<path>` from a lesson. It resolves to `/c/assets/<path>`.
 From a reference document, use `/c/<classroom>/<lesson>` for lesson links. Replace
 `{{CLASSROOM_NAME}}` in the reference template with the classroom directory name.
+
+## Settings page
+
+Open a classroom and select **Settings** beside Review history. Connection settings are shared across classrooms and use the validated configuration file above; unrelated keys are preserved. Local port changes apply only after an explicit server stop and restart. Obtain the new link from your agent. Tailnet link changes apply on save using the current host’s owned route, while environment overrides still take priority. A failed link update reports that the settings were saved and asks for another explicit save to retry.
+
+Pace, depth, and tone are optional single-line preferences, at most 200 characters each. They are stored as `- Pace:`, `- Depth:`, and `- Tone:` bullets inside `NOTES.md`’s `## Preferences` section. Other preferences, the notes index, and other classrooms are preserved. Missing notes start from the canonical notes template. A stale page must reload before saving over a newer edit.
+
+Claude Code and Codex classrooms also offer **Teacher model**. **Use tool’s configured default** reads the installed tool’s effective configuration for the next request, including when a previous request selected another model. The dropdown is discovered from the installed host: Codex uses paginated `model/list` and its configured model; Claude uses its initialization catalog and effective settings. **Custom model ID…** supports configured/provider IDs that are absent from the picker. Discovery does not guarantee account access. The Claude discovery protocol was verified with Claude Code 2.1.303; unsupported host protocols report an error and require explicit action.
+
+Selections are private to the classroom’s `.teacher.json`, survive service restarts, and never edit global CLI configuration. Claude receives `--model`; Codex receives the model on thread start/resume and turn start. **Last answering model** comes from Claude’s assistant messages or the completed Codex turn’s resolved thread model, independently of the requested/default setting. A reported reroute or unexpected resolution fails the request before its plan is applied.
+
+A setting change applies between teacher requests and keeps the existing conversation. Running work finishes with its original setting; saved plans recover without another model request or grade. A model error names the selection and stays visible until explicit request retry. Choosing another setting alone does not retry the request. Pi continues to use its live session’s model; change that model in Pi.

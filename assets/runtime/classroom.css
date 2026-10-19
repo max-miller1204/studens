@@ -1859,3 +1859,71 @@ figure:has(> .cl-diagram) figcaption {
     display: block;
   }
 }
+
+/* Settings use the same document shell on desktop and phones. */
+.cl-settings {
+  max-width: 680px;
+  margin-inline: auto;
+}
+.cl-settings-section {
+  padding-block: 24px;
+  border-top: 1px solid var(--cl-border);
+}
+.cl-settings-section h2 {
+  margin: 0 0 12px;
+}
+.cl-settings-section p {
+  overflow-wrap: anywhere;
+}
+.cl-settings form {
+  display: grid;
+  gap: 14px;
+}
+.cl-settings label {
+  display: grid;
+  gap: 6px;
+  font-weight: 600;
+}
+.cl-settings input:not([type="checkbox"]),
+.cl-settings select {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--cl-border);
+  border-radius: 8px;
+  background: var(--cl-bg);
+  color: var(--cl-text);
+  font: inherit;
+}
+.cl-settings .cl-settings-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.cl-settings button {
+  justify-self: start;
+}
+.cl-settings [role="alert"] {
+  color: var(--cl-error, #b42318);
+  overflow-wrap: anywhere;
+}
+.cl-settings [role="status"] {
+  margin: 0;
+}
+.cl-settings [hidden] {
+  display: none;
+}
+
+.cl-settings-error-context {
+  color: var(--cl-text-muted);
+  font-size: 0.875em;
+}
+.cl-settings [data-teacher-error] summary {
+  cursor: pointer;
+}
+.cl-settings [data-teacher-error] pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 0.8em;
+}
