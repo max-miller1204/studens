@@ -58,6 +58,9 @@
       data-cl-after-pretest template until grading. Skip only if the learner asks.
     * .cl-q-stimulus: code, a passage, a table, an image, or a diagram for a question.
       Give images useful alt text. Grading receives the stimulus text and alt text.
+    * form.cl-practice: short ungraded checks between sections. Read practice.html.
+      Local feedback only; no saved attempt, grade, score, review, or teacher wake.
+      Public practice keys must use different examples from the graded assessment.
     * form.cl-reflect: an ungraded self-explanation. Read it. It is not proof of
       mastery.
     * Glossary terms from GLOSSARY.md are marked on the page automatically.
@@ -135,6 +138,10 @@
             objective. Show a concrete case before you ask for work.
           </p>
         </section>
+
+        <!-- Optional: add a short form.cl-practice here before the next section.
+             Read assets/templates/practice.html for controls and public feedback.
+             Keep it inside this gate and out of private assessment files. -->
 
         <!--
         REPLACE: the question below is unfinished on purpose. Its data-type is not a

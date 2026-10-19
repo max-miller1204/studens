@@ -6,7 +6,7 @@ Start with the shared [launch and doctor instructions](../SKILL.md). Each browse
 | -------------------- | ------------------------ | --------------------------------------------------------------- |
 | Group classrooms     | [folders.md](folders.md) | Classrooms page, folders, move controls, reload, explicit retry |
 | Read and ask         | [reading.md](reading.md) | Lesson text, quiz text, cards, glossary, diagrams, math, theme  |
-| Answer quizzes       | [quizzes.md](quizzes.md) | Quiz controls, pretest gate, reload, second tab                 |
+| Answer quizzes       | [quizzes.md](quizzes.md) | Quiz and practice controls, pretest gate, reload, second tab    |
 | Start a review       | [review.md](review.md)   | Classroom progress, private variants, publication retry         |
 | Teacher conversation | [teacher.md](teacher.md) | Pi and service panels, explicit retry, MCP reconnect            |
 
