@@ -1,47 +1,112 @@
 import { expect, it } from "vitest";
 import { lessonModelPlan, LESSON_OUTPUT_SCHEMA } from "../src/lesson-output.ts";
 import { planSchema } from "../src/teacher.ts";
-const document = {
-  title: "Lesson",
-  summary: "Summary",
-  lesson_html: '<main>"quoted"\n\\backslash\ttext</main>',
-  rubric_json: '{"pretest-1":{"p1":{"points":1}}}',
-  teaching_plan_json: '{"version":1}',
-  message: "Ready",
-};
-it("serializes provider HTML by code into the canonical durable plan without repairing content", () => {
-  const plan = lessonModelPlan(document);
-  expect(plan.calls).toHaveLength(1);
-  expect(plan.calls[0].name).toBe("publish_lesson");
-  const { message, ...fields } = document;
-  expect(JSON.parse(plan.calls[0].arguments_json)).toEqual(fields);
-  expect(plan).toMatchObject({ message, learning_record: "", notes_markdown: "" });
+import { validateLessonDocument } from "../src/next-lesson.ts";
+import { makeFixture, seedClassroom, seedPreparedReviewSource } from "./helpers.ts";
+import { nextLessonDocument } from "./next-lesson-fixture.ts";
+import { lessonOutput, simpleLessonOutput } from "./lesson-output-fixture.ts";
+
+it("code serializes raw HTML, including private variant HTML, into a canonical valid document", () => {
+  const f = makeFixture();
+  try {
+    seedClassroom(f);
+    seedPreparedReviewSource(f.root);
+    const document = nextLessonDocument(f.root);
+    const input = lessonOutput(document);
+    const plan = lessonModelPlan(input);
+    const decoded = JSON.parse(plan.calls[0].arguments_json);
+    expect(decoded.lesson_html).toBe(document.lesson_html);
+    expect(JSON.parse(decoded.rubric_json)).toEqual(JSON.parse(document.rubric_json));
+    expect(JSON.parse(decoded.teaching_plan_json)).toEqual(JSON.parse(document.teaching_plan_json));
+    expect(() => validateLessonDocument(decoded)).not.toThrow();
+    expect(plan).toMatchObject({ message: "Ready", learning_record: "", notes_markdown: "" });
+    const variant = input.variants[0];
+    variant.html += '\n<!-- "quoted" \\slash\t -->';
+    const privateKey = JSON.parse(
+      JSON.parse(lessonModelPlan(input).calls[0].arguments_json).rubric_json,
+    );
+    expect(privateKey[variant.quiz][variant.question].variants[0].html).toBe(variant.html);
+  } finally {
+    f.cleanup();
+  }
 });
-it("uses dedicated supported fields only for explicit lesson requests", () => {
+it("uses the dedicated supported schema only for explicit lesson requests", () => {
   expect(planSchema({ operations: ["publish_lesson"], research: true })).toEqual(
     LESSON_OUTPUT_SCHEMA,
   );
   expect(planSchema({ operations: ["answer_lesson_question"] })).toHaveProperty("properties.calls");
   expect(LESSON_OUTPUT_SCHEMA.additionalProperties).toBe(false);
-  expect(LESSON_OUTPUT_SCHEMA.required).toHaveLength(6);
+  expect(LESSON_OUTPUT_SCHEMA.required).toHaveLength(7);
+  function inspect(schema: any, depth = 0): number {
+    const next = depth + (schema.type === "object" || schema.type === "array" ? 1 : 0);
+    if (schema.type === "object") {
+      expect(schema.additionalProperties).toBe(false);
+      expect(schema.required).toEqual(Object.keys(schema.properties));
+    }
+    return Math.max(
+      next,
+      ...Object.values(schema.properties ?? {}).map((v) => inspect(v, next)),
+      ...(schema.items ? [inspect(schema.items, next)] : []),
+      ...(schema.anyOf ?? []).map((v: any) => inspect(v, next)),
+    );
+  }
+  // Arrays count too; flattened variants keep mapping keys inside the provider's ten-level limit.
+  expect(inspect(LESSON_OUTPUT_SCHEMA)).toBeLessThanOrEqual(10);
 });
 it.each([
-  null,
-  { ...document, message: "" },
-  { ...document, lesson_html: 5 },
-  { ...document, calls: [] },
-  {
-    calls: [{ name: "publish_lesson", arguments_json: "malformed" }],
-    message: "Ready",
-    learning_record: null,
-    notes_markdown: "",
+  [{ kind: "text", value: 'quoted "answer"\n' }, 'quoted "answer"\n'],
+  [{ kind: "list", values: ["a", "b"] }, ["a", "b"]],
+  [
+    { kind: "numeric", value: 4, tolerance: 0.1, unit: "m" },
+    { value: 4, tolerance: 0.1, unit: "m" },
+  ],
+  [{ kind: "numeric", value: 4, tolerance: null, unit: null }, { value: 4 }],
+  [
+    {
+      kind: "map",
+      entries: [
+        { key: "a", value: "b" },
+        { key: "c", value: ["d", "e"] },
+      ],
+    },
+    { a: "b", c: ["d", "e"] },
+  ],
+])(
+  "converts typed expected answers without parsing or changing their content",
+  (expected, canonical) => {
+    const input = structuredClone(simpleLessonOutput);
+    input.quizzes[0].questions[0].rubric.expected = expected as any;
+    const document = JSON.parse(lessonModelPlan(input).calls[0].arguments_json);
+    expect(JSON.parse(document.rubric_json)["check-1"].q1.expected).toEqual(canonical);
   },
-])("rejects missing, extra, and legacy model-authored call fields", (input) => {
+);
+it.each([
+  null,
+  { ...simpleLessonOutput, message: "" },
+  { ...simpleLessonOutput, lesson_html: 5 },
+  { ...simpleLessonOutput, calls: [] },
+  { ...simpleLessonOutput, rubric_json: '{"bad":\n' },
+  {
+    ...simpleLessonOutput,
+    objectives: [...simpleLessonOutput.objectives, ...simpleLessonOutput.objectives],
+  },
+  {
+    ...simpleLessonOutput,
+    variants: [
+      { quiz: "missing", question: "q1", id: "v1", html: "x", rubric: {}, task: "application" },
+    ],
+  },
+])("rejects malformed, duplicate, extra and legacy serialized inputs before saving", (input) => {
   expect(() => lessonModelPlan(input)).toThrow();
 });
-it("does not repair private JSON; the existing publication validator must reject it", () => {
-  const invalid = { ...document, rubric_json: '{"pretest-1":\n bad JSON' };
-  expect(JSON.parse(lessonModelPlan(invalid).calls[0].arguments_json).rubric_json).toBe(
-    invalid.rubric_json,
-  );
+it("rejects duplicate mapping keys instead of silently overwriting them", () => {
+  const input = structuredClone(simpleLessonOutput);
+  input.quizzes[0].questions[0].rubric.expected = {
+    kind: "map",
+    entries: [
+      { key: "a", value: "b" },
+      { key: "a", value: "c" },
+    ],
+  } as any;
+  expect(() => lessonModelPlan(input)).toThrow(/duplicate/);
 });

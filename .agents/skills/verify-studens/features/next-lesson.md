@@ -68,3 +68,17 @@ A rejected page requires explicit retry; its output is retained before requestin
 correction. A stopped model turn never retries automatically. Private keys, plans,
 and request documents must remain unavailable over HTTP. These checks establish
 mechanical behavior, not human learning or lesson quality.
+
+Service lesson responses use a dedicated strict schema: direct HTML strings and typed
+private objective, quiz, rubric and variant rows. The host alone serializes the
+canonical private files and saved publication call. Run
+`npx vitest run test/lesson-output.test.ts test/teacher-models.test.ts` to check
+complete-document round trips, private HTML preservation, malformed and duplicate
+input refusal, and the installed CLI structured-schema boundary. These transport
+contracts do not replace the required real service drives.
+
+Pi's event drive requires `agent_settled` after the current answer/grade tool,
+not settlement left over from a prior lesson origin. Its read-only observer records
+`pi-tools.jsonl`: explicit authoring advertises only publication, bounded research
+and the already active reader, then restores the exact previous tool set. The
+execution guards and strict unexpected-tool-error assertion remain active.

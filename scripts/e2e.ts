@@ -434,17 +434,19 @@ async function main(): Promise<void> {
       if (
         resumed.teacher.identity.sessionId !== identity ||
         resumed.quizzes[0].grade.score !== 67 ||
-        resumed.teacher.messages.some((m: any) => m.role === "learner") ||
-        !resumed.teacher.messages.at(-1).text.includes("?")
+        resumed.teacher.messages.some((m: any) => m.role === "learner")
       )
         throw new Error("Resume changed ownership, grade, or learner evidence.");
+      const resumeMessage = resumed.teacher.messages.at(-1);
+      if (resumeMessage?.role !== "teacher" || !resumeMessage.text?.trim())
+        throw new Error("Resume completed without a teacher prompt.");
       await playwrightCode(
         browser,
         root,
         `async page => {
         await page.goto(${JSON.stringify(base)} + '/c/rust/' + ${JSON.stringify(resumeInput.lesson)} + '#cl-teacher');
         await page.waitForFunction(() => document.querySelector('form.cl-quiz')?.dataset.state === 'graded');
-        await page.waitForFunction(() => document.querySelector('.cl-teacher-messages')?.textContent.includes('?'));
+        await page.waitForFunction(text => document.querySelector('.cl-teacher-messages')?.textContent.includes(text), ${JSON.stringify(resumeMessage.text)});
         ${artifacts ? `await page.locator('.cl-teacher').scrollIntoViewIfNeeded(); await page.screenshot({path:${JSON.stringify(path.join(artifacts, `${harness}-historical-resume.png`))}});` : ""}
         return true;
       }`,

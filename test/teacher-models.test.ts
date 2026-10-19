@@ -5,6 +5,8 @@ import { afterEach, beforeEach, expect, it } from "vitest";
 import { makeFixture, type Fixture } from "./helpers.ts";
 import { runStructured, teacherModels, runTeacher } from "../src/teacher.ts";
 import { modelSelection } from "../src/teacher-models.ts";
+import { simpleLessonOutput } from "./lesson-output-fixture.ts";
+import { lessonModelPlan } from "../src/lesson-output.ts";
 let f: Fixture;
 let priorPath: string | undefined;
 let priorModel: string | undefined;
@@ -277,14 +279,7 @@ it.each(["codex", "claude"] as const)(
 it.each(["codex", "claude"] as const)(
   "decodes the dedicated %s lesson response into a saved canonical call by code",
   async (backend) => {
-    const output = {
-      title: "Lesson",
-      summary: "Summary",
-      lesson_html: '<main>"quotes"\n\\slash\ttext</main>',
-      rubric_json: '{"quiz":{}}',
-      teaching_plan_json: '{"version":1}',
-      message: "Ready",
-    };
+    const output = simpleLessonOutput;
     f.write("behavior.json", JSON.stringify({ output }));
     let raw: unknown;
     const plan = await runTeacher(
@@ -299,9 +294,7 @@ it.each(["codex", "claude"] as const)(
       },
     );
     expect(raw).toEqual(output);
-    const { message, ...document } = output;
-    expect(JSON.parse(plan.calls[0].arguments_json)).toEqual(document);
-    expect(plan).toMatchObject({ message, learning_record: "", notes_markdown: "" });
+    expect(plan).toEqual(lessonModelPlan(output));
     const all = messages();
     const schema =
       backend === "codex"

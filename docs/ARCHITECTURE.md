@@ -151,8 +151,9 @@ source notation to grading. Answers and feedback render Markdown server-side.
   only publication, bounded public research, and an already enabled reader, then
   restore the exact prior active tools. Learner turns arriving during that scope
   wait until restoration and the prior run ends. Only explicit authoring enables
-  web research and classroom resource reads. Provider lesson responses carry HTML
-  directly; code serializes the canonical saved publication call. Save and validate complete output before
+  web research and classroom resource reads. Provider lesson responses carry HTML, rubric entries, objective mappings and private
+  variants as typed data. Code serializes both private JSON files and the canonical
+  saved publication call; models never encode nested JSON strings. Save and validate complete output before
   publication, run `scripts/check-lesson.ts` in disposable state, then expose the
   lesson. Recover checked output without a model turn; retain rejected output and
   require explicit retry. Never create learner submissions during checking.
