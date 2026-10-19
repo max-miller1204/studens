@@ -82,7 +82,13 @@ const questions = [
 const html = `<form class="cl-quiz" data-quiz-id="check"><li class="cl-q" data-question-id="closed" data-type="choice"><p class="cl-q-prompt">Which value is the mean squared error?</p><label><input type="radio" name="closed" value="a">2.5</label><label><input type="radio" name="closed" value="b">5</label></li>${questions.map((q) => `<li class="cl-q" data-question-id="${q.id}" data-type="short"><p class="cl-q-prompt">${q.prompt}</p><textarea></textarea></li>`).join("")}</form>`;
 const rubric = {
   check: {
-    closed: { expected: "a", points: 2, full: "The mean squared error is 2.5.", partial: "None." },
+    closed: {
+      criteria: [{ id: "selection", description: "Select the mean squared error", points: 2 }],
+      expected: "a",
+      points: 2,
+      full: "The mean squared error is 2.5.",
+      partial: "None.",
+    },
     ...Object.fromEntries(
       questions.map((q) => [
         q.id,
@@ -91,6 +97,24 @@ const rubric = {
           points: q.points,
           full: `Award ${q.points} for an equivalent correct solution. ${q.expected}`,
           partial: q.partial,
+          criteria:
+            q.id === "alternate"
+              ? [
+                  {
+                    id: "legal",
+                    description: "Preserve each thread's read-before-write order",
+                    points: 2,
+                  },
+                  { id: "overlap", description: "Use both old reads to finish at one", points: 2 },
+                ]
+              : [
+                  { id: "sum", description: "Square and sum the residuals", points: q.points / 2 },
+                  {
+                    id: "mean",
+                    description: "Divide the squared sum by the residual count",
+                    points: q.points / 2,
+                  },
+                ],
         },
       ]),
     ),
@@ -165,6 +189,19 @@ try {
       throw new Error(
         `Rubric disagreement for ${q.id}: ${JSON.stringify(verdict)}. Expected ${q.earned}/${q.points}.`,
       );
+    const expectedCriteria = rubric.check[q.id as keyof typeof rubric.check].criteria;
+    if (verdict.criteria?.length !== expectedCriteria.length)
+      throw new Error(`Missing criterion evidence for ${q.id}.`);
+    for (const c of expectedCriteria) {
+      const allocation = verdict.criteria.find(
+        (v: { criterion_id: string }) => v.criterion_id === c.id,
+      );
+      const earned = q.id === "partial" && c.id === "mean" ? 0 : c.points;
+      if (!allocation || allocation.points_earned !== earned || !allocation.feedback?.trim())
+        throw new Error(
+          `Criterion disagreement for ${q.id}/${c.id}: ${JSON.stringify(allocation)}`,
+        );
+    }
     if (!verdict.feedback.trim()) throw new Error(`Missing feedback for ${q.id}.`);
   }
   const uncertainFeedback = args.questions.find(
@@ -188,6 +225,8 @@ try {
     actualScore: result.details.score,
     cases: questions.map((q) => ({ id: q.id, expected: `${q.earned}/${q.points}` })),
     uncertainFeedback,
+    savedGrades: store.listGrades("rust", "001-ownership"),
+    savedSubmission: submission,
   };
   if (artifacts)
     fs.writeFileSync(

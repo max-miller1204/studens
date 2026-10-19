@@ -1,3 +1,4 @@
+import { driveCriterionProbe } from "./criterion-probe.ts";
 import { seedReteach, driveReteach } from "./e2e-reteach-browser.ts";
 /** Real host and dedicated teacher evaluation. All material is a temporary fixture. */
 import {
@@ -461,6 +462,13 @@ async function main(): Promise<void> {
       base,
       reteachLesson,
       artifacts ? path.join(artifacts, "reteach") : null,
+    );
+
+    await driveCriterionProbe(
+      browser,
+      root,
+      base,
+      artifacts ? path.join(artifacts, "criteria") : null,
     );
 
     log(

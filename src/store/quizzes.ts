@@ -31,6 +31,14 @@ export function createSubmission(
   const rubricDigest = fs.existsSync(rubric)
     ? createHash("sha256").update(fs.readFileSync(rubric)).digest("hex")
     : undefined;
+  if (
+    previous.some(
+      (s) => s.quizId === input.quizId && s.rubricDigest && s.rubricDigest !== rubricDigest,
+    )
+  )
+    throw new Error(
+      "The private rubric changed after an earlier attempt. Restore the original rubric before submitting again.",
+    );
   const page = readLesson(input.classroom, input.lesson);
   if (page?.reviewVariantContract === 1)
     authoredVariants(
@@ -44,7 +52,12 @@ export function createSubmission(
     );
   const privateKey =
     page?.assessmentContract === 1
-      ? parseRubric(fs.readFileSync(rubric, "utf8"), fs.readFileSync(page.htmlPath, "utf8"))
+      ? parseRubric(
+          fs.readFileSync(rubric, "utf8"),
+          fs.readFileSync(page.htmlPath, "utf8"),
+          "machine",
+          page.criterionContract === 1,
+        )
       : undefined;
   const deterministicGrades = privateKey
     ? input.answers.flatMap((answer) => {
@@ -88,6 +101,21 @@ export function createSubmission(
     answers,
     teachingPlan,
     deterministicGrades,
+    rubricCriteria: privateKey
+      ? Object.fromEntries(
+          input.answers.flatMap((a) => {
+            const criteria = privateKey[input.quizId]?.[a.questionId]?.criteria;
+            return criteria
+              ? [
+                  [
+                    a.questionId,
+                    criteria.map(({ id, description, points }) => ({ id, description, points })),
+                  ],
+                ]
+              : [];
+          }),
+        )
+      : undefined,
     id: randomUUID(),
     attempt,
     submittedAt,
@@ -107,6 +135,7 @@ export function createSubmission(
 /** Remove private method labels from learner responses and SSE events. */
 export function publicSubmission(submission: QuizSubmission): QuizSubmission {
   const {
+    rubricCriteria: privateCriteria,
     teachingPlan: privatePlan,
     deterministicGrades: privateGrades,
     earlyReviewKeys: privateEarlyTiming,

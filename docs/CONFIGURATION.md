@@ -54,7 +54,8 @@ Get the current URL from `open_classroom` or `/classroom`.
       annotations.json      your question threads and their answers
       reflections.json      your self-explanations
       quiz/
-        submissions/*.json  your answers
+        key.json            private rubric and predeclared criterion weights
+        submissions/*.json  your answers and private grading snapshots
         grades/*.json       your teacher's grading
 ```
 
@@ -67,6 +68,13 @@ first `.html` file. Lesson order comes from the numeric prefix on the directory 
 
 The `quiz/` directory is never served as static files, only through the JSON API. An
 answer key written to `quiz/key.json` is therefore not readable from the page.
+New scaffold metadata includes `criterionContract: 1`. Private submission files
+save `rubricCriteria` definitions fixed before submission; learner JSON responses
+omit this snapshot and saved machine allocations. After grading, public grades
+include only each submitted question's approved criterion descriptions, earned and
+possible points, and explanations. Regrades add files; saved history is never
+rewritten to infer missing criteria. Older attempts retain their original totals
+and display that no criterion breakdown was recorded.
 
 New reviews open at `/c/<classroom>/reviews/<review-id>`. Review history is at
 `/c/<classroom>/reviews`; reviews do not appear in the lesson list. Existing

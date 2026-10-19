@@ -1,4 +1,5 @@
 /** Dedicated teachers allocate points. The service calculates their total score. */
+import type { CriterionAllocation } from "./criteria.ts";
 import { gradeScore } from "../assets/runtime/grade.mjs";
 import type { ClassroomTool } from "./tools.ts";
 
@@ -9,6 +10,7 @@ export interface AnswerGrades {
   feedback_markdown: string;
   questions: Array<{
     question_id: string;
+    criteria?: CriterionAllocation[];
     correct: boolean;
     feedback: string;
     points_earned?: number;

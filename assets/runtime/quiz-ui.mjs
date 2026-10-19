@@ -741,6 +741,28 @@ export function createQuizzes({ config, drafts, placeTeacherPanel }) {
       verdict.innerHTML = `<div class="cl-q-verdict-label">${escapeText(questionGradeLabel(questionGrade))}</div><div class="cl-q-verdict-feedback">${
         questionGrade.feedbackHtml || escapeText(questionGrade.feedback)
       }</div>`;
+      if (questionGrade.criteria?.length) {
+        const list = document.createElement("ul");
+        list.className = "cl-q-criteria";
+        list.setAttribute("aria-label", "Rubric criteria");
+        for (const criterion of questionGrade.criteria) {
+          const item = document.createElement("li");
+          const outcome =
+            criterion.pointsEarned === criterion.pointsPossible
+              ? "Met"
+              : criterion.pointsEarned > 0
+                ? "Partly met"
+                : "Missed";
+          item.innerHTML = `<div><strong>${escapeText(outcome)} · ${escapeText(criterion.description)}</strong> <span>(${escapeText(String(criterion.pointsEarned))}/${escapeText(String(criterion.pointsPossible))} points)</span></div><div>${criterion.feedbackHtml || escapeText(criterion.feedback)}</div>`;
+          list.appendChild(item);
+        }
+        verdict.appendChild(list);
+      } else {
+        const notice = document.createElement("p");
+        notice.className = "cl-quiz-status";
+        notice.textContent = "No criterion breakdown was recorded for this answer.";
+        verdict.appendChild(notice);
+      }
       question.appendChild(verdict);
     }
   }

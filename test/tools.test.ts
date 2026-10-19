@@ -105,6 +105,7 @@ describe("grade_lesson_quiz", () => {
           points: 2,
           full: "Names the owner.",
           partial: "No partial credit.",
+          criteria: [{ id: "owner", description: "Identify the owner", points: 2 }],
           variants: ["v1", "v2"].map((id) => ({
             id,
             html: `<li class="cl-q" data-question-id="${id}" data-type="term"><p class="cl-q-prompt">Name the owner in a fresh case.</p><input type="text"></li>`,
@@ -189,6 +190,9 @@ describe("grade_lesson_quiz", () => {
           feedback: "Correct.",
           points_earned: 3,
           points_possible: 3,
+          criteria: [
+            { criterion_id: "owner", points_earned: 2, feedback: "The owner is identified." },
+          ],
         },
       ],
     };
