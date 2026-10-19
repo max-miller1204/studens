@@ -141,15 +141,20 @@ export async function handleQuizSubmit(
   hooks?.canAccept?.(classroom);
   if (reviewSessions(classroom).some((s) => s.lesson === lesson && s.status !== "done"))
     return sendJson(res, { error: "This review is not ready." }, 409);
+  let submission: store.QuizSubmission;
+  try {
+    submission = store.createSubmission({
+      classroom,
+      lesson,
+      quizId,
+      quizTitle: String(body["quizTitle"] ?? "Check on learning").slice(0, 200),
+      kind,
+      answers,
+    });
+  } catch (err) {
+    return sendJson(res, { error: `Invalid assessment contract: ${(err as Error).message}` }, 400);
+  }
   store.clearDraft(classroom, lesson, `quiz:${quizId}`);
-  const submission = store.createSubmission({
-    classroom,
-    lesson,
-    quizId,
-    quizTitle: String(body["quizTitle"] ?? "Check on learning").slice(0, 200),
-    kind,
-    answers,
-  });
 
   if (!completeClosedSubmission(submission)) hooks?.onQuizSubmit(submission);
   sendJson(res, store.publicSubmission(submission), 201);

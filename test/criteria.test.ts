@@ -346,3 +346,29 @@ it("names invalid saved criterion identities instead of throwing a null derefere
     }),
   ).toThrow(/declared criterion ids/);
 });
+
+it("returns a specific HTTP error and preserves drafts when later weights change", async () => {
+  const first = submit();
+  await tool().execute(args(first.id));
+  const draft = { q: { value: "Keep this work" } };
+  store.saveDraft(location.classroom, location.lesson, "quiz:check", draft);
+  f.write(
+    "rust/001-ownership/quiz/key.json",
+    JSON.stringify({
+      check: {
+        q: { ...entry, criteria: definitions.map((c, i) => ({ ...c, points: i === 0 ? 1 : 3 })) },
+      },
+    }),
+  );
+  const base = await server.start(0);
+  const response = await fetch(base + "/api/quiz/submit", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ...location, quizId: "check", kind: "check", answers: first.answers }),
+  });
+  expect(response.status).toBe(400);
+  expect((await response.json()).error).toMatch(/rubric changed after an earlier attempt/);
+  expect(store.readDrafts(location.classroom, location.lesson)["quiz:check"]).toEqual(draft);
+  expect(store.listSubmissions(location.classroom, location.lesson)).toHaveLength(1);
+  expect(store.listGrades(location.classroom, location.lesson)).toHaveLength(1);
+});
