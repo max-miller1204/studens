@@ -140,6 +140,7 @@ async function loadState() {
     review?.restore();
     for (const reflection of state.reflections) reflections.applyReflection(reflection);
     if (state.teacher) teacher.renderTeacher(state.teacher);
+    teacher.renderReteach(state.reteach ?? []);
     if (!draftsRestored) {
       draftsRestored = true;
       restoreDrafts(state.drafts);
@@ -162,6 +163,7 @@ function connectEvents() {
 
   source.addEventListener("grade", (event) => {
     const payload = JSON.parse(event.data);
+    teacher.renderReteach(payload.reteach ?? []);
     quizzes.applyQuizState({
       submission: payload.submission,
       grade: payload.grade,

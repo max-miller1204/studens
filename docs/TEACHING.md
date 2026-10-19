@@ -467,6 +467,15 @@ remembered answer. Write the rubric in the review lesson's `quiz/key.json`.
 
 ## Lesson health
 
+Items with three cumulative incomplete attempts and an unresolved latest result pause
+from spaced review. Same-attempt objective probes count once; grade revisions do not
+create attempts. Classroom Progress offers a short re-teach on the original lesson
+page. Explain the idea another way, use a short worked example, then ask one small
+question in that page's teacher panel. The request itself cannot change grades or
+write learning evidence. Preserve history: a later successful answer can resolve the
+current gap under the existing evidence rules, but assisted study is not delayed
+retention. Two misses remain an early warning in `lesson_health`.
+
 Call `lesson_health` before you plan the next lesson. It reports long question
 threads, quiz questions missed more than once, words the glossary says to avoid,
 errors in `GLOSSARY.md`, and the learner's self-explanations. It also reports

@@ -1,3 +1,4 @@
+import { reteachOffers, reteachPrompt } from "./reteach.ts";
 /**
  * bridge.ts — the wire between the browser and the agent running in this session.
  *
@@ -162,25 +163,38 @@ export class ClassroomBridge {
    * same when it resends after a network error, so a resend never wakes the agent twice.
    */
   chat(classroom: string, lesson: string, text: string, id: string): void {
+    const reteach = id.startsWith("reteach:");
+    const durable =
+      reteach ||
+      isStoredReview(lesson) ||
+      piResumes(classroom).some(
+        (request) => request.lesson === lesson && request.id.startsWith("chat:reteach:"),
+      );
+    if (durable) {
+      this.requireResumeOwner(classroom);
+      this.restoreResumes();
+      if (piResumes(classroom).some((r) => r.id === `chat:${id}`)) return;
+    }
     const { message, added } = store.addPanelMessage(classroom, {
       id: `chat:${id}`,
       lesson,
       role: "learner",
       text,
     });
-    if (!added) return;
-    if (isStoredReview(lesson)) {
+    if (!added && !durable) return;
+    const prompt = panelReplyPrompt(
+      classroom,
+      lesson,
+      message,
+      store.listPanelMessages(classroom, lesson),
+    );
+    if (durable) {
       this.startResume({
         id: message.id,
         classroom,
         lesson,
         kind: "chat",
-        prompt: panelReplyPrompt(
-          classroom,
-          lesson,
-          message,
-          store.listPanelMessages(classroom, lesson),
-        ),
+        prompt: reteach ? reteachPrompt(prompt) : prompt,
         unresolvedKeys: [],
         status: "running",
         ownerPid: process.pid,
@@ -193,12 +207,7 @@ export class ClassroomBridge {
       classroom,
       lesson,
       kind: "chat",
-      prompt: panelReplyPrompt(
-        classroom,
-        lesson,
-        message,
-        store.listPanelMessages(classroom, lesson),
-      ),
+      prompt,
     });
   }
 
@@ -207,9 +216,12 @@ export class ClassroomBridge {
     const origin = this.pending[0];
     if (origin?.kind === "refill" && toolName !== REFILL_TOOL.name)
       throw new Error("Background refill turns may only save private review variants.");
-    if (origin?.kind === "panel" && origin.request.kind === "resume")
+    if (
+      origin?.kind === "panel" &&
+      (origin.request.kind === "resume" || origin.request.id.startsWith("chat:reteach:"))
+    )
       throw new Error(
-        "Teacher resumption permits only a panel message. Wait for the learner's panel reply before writing evidence.",
+        "Teacher resumption permits only a panel message. Re-teaching also requires a learner reply before evidence. Wait for the learner's panel reply before writing evidence.",
       );
   }
 
@@ -500,6 +512,7 @@ export class ClassroomBridge {
   panelState(classroom: string, lesson: string): unknown {
     this.restoreResumes();
     return {
+      reteach: reteachOffers(classroom, lesson),
       identity: { backend: "pi" },
       requests: [
         ...this.panel.values(),

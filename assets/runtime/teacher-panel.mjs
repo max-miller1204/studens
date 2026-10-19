@@ -17,6 +17,10 @@ export function createTeacherPanel({ config, contentRoot, drafts }) {
   /** Teacher messages already shown. Null until the first render. */
   let teacherSeen = null;
   let teacherNotice = null;
+  let reteachItems = [];
+  let reteachScrolled = false;
+  const reteachRequested = new Set();
+  const reteachSaved = new Set();
 
   /** What the panel says while a request runs. Cards show their own progress. */
   const TEACHER_WORKING = {
@@ -36,6 +40,12 @@ export function createTeacherPanel({ config, contentRoot, drafts }) {
         ? "Your teacher is the Pi session that opened this classroom."
         : `${state.identity.backend} teacher. Session: ${state.identity.sessionId || "Starts with your first request"}.`;
 
+    for (const request of state.requests) reteachRequested.add(request.id);
+    for (const message of state.messages) {
+      if (message.role === "teacher") reteachRequested.add(message.id);
+      else reteachSaved.add(message.id);
+    }
+    renderReteach(state.reteach ?? reteachItems);
     const messages = teacherPanel.querySelector(".cl-teacher-messages");
     messages.replaceChildren();
     for (const message of state.messages) {
@@ -108,6 +118,7 @@ export function createTeacherPanel({ config, contentRoot, drafts }) {
     <h2>Your teacher</h2>
     <p class="cl-teacher-identity"></p>
     <p class="cl-teacher-hint">Feedback and follow-up questions appear here. Answer them here too.</p>
+    <div id="cl-reteach" hidden></div>
     <div class="cl-teacher-messages" aria-live="polite"></div>
     <div class="cl-teacher-requests" aria-live="polite"></div>
     <form>
@@ -153,6 +164,61 @@ export function createTeacherPanel({ config, contentRoot, drafts }) {
         }, ""),
       );
     });
+  }
+
+  function renderReteach(items) {
+    reteachItems = items;
+    if (!items.length && !teacherPanel) return;
+    if (!teacherPanel) {
+      buildTeacherPanel();
+      placeTeacherPanel();
+    }
+    const region = teacherPanel.querySelector("#cl-reteach");
+    region.hidden = items.length === 0;
+    region.replaceChildren();
+    if (!items.length) return;
+    const heading = document.createElement("h3");
+    heading.textContent = "Try a short re-teach";
+    const hint = document.createElement("p");
+    hint.textContent =
+      "These ideas are paused from review after repeated misses. Your teacher can explain them another way. Your original grades and history stay saved.";
+    region.append(heading, hint);
+    for (const item of items) {
+      const row = document.createElement("div");
+      const prompt = document.createElement("p");
+      prompt.textContent = `${item.prompt} (${item.misses} misses)`;
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "cl-button";
+      button.textContent = reteachRequested.has(item.id)
+        ? "Re-teach requested"
+        : reteachSaved.has(item.id)
+          ? "Retry short re-teach"
+          : "Start short re-teach";
+      button.disabled = reteachRequested.has(item.id);
+      const error = document.createElement("p");
+      error.setAttribute("role", "alert");
+      if (reteachSaved.has(item.id) && !reteachRequested.has(item.id))
+        error.textContent = "Re-teaching was interrupted before it was queued. Retry to continue.";
+      button.onclick = async () => {
+        button.disabled = true;
+        error.textContent = "";
+        try {
+          const result = await teacherPost("reteach", { key: item.key });
+          reteachRequested.add(result.id);
+          renderReteach(reteachItems);
+        } catch (err) {
+          error.textContent = err.message;
+          button.disabled = false;
+        }
+      };
+      row.append(prompt, button, error);
+      region.append(row);
+    }
+    if (!reteachScrolled && window.location.hash === "#cl-reteach") {
+      region.scrollIntoView({ block: "start" });
+      reteachScrolled = true;
+    }
   }
 
   /** Put the panel after the quiz handed in last, or at the end of the lesson. */
@@ -224,5 +290,5 @@ export function createTeacherPanel({ config, contentRoot, drafts }) {
       );
     else teacherPanel.querySelector("textarea").value = value;
   }
-  return { renderTeacher, placeTeacherPanel, restoreDraft };
+  return { renderTeacher, renderReteach, placeTeacherPanel, restoreDraft };
 }
