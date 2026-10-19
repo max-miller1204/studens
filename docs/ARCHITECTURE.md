@@ -53,8 +53,8 @@ never the working directory or files outside the package.
 | Boundary                                        | Entry points                                                     |
 | ----------------------------------------------- | ---------------------------------------------------------------- |
 | Pi commands, origins, status                    | `index.ts`, `commands.ts`, `bridge.ts`, `status-widget.ts`       |
-| HTTP, SSE, static path guards                   | `server.ts`, `paths.ts`                                          |
-| Disk state and discovery                        | `store.ts`                                                       |
+| HTTP lifecycle, feature routes, static guards   | `server.ts`, `server/`, `paths.ts`                               |
+| Disk state API and feature storage              | `store.ts`, `store/`                                             |
 | Shared tools and host prompts                   | `tools.ts`, `prompts.ts`                                         |
 | MCP dispatch and control transport              | `mcp.ts`, `mcp-stdio.ts`, `service-client.ts`, `service-main.ts` |
 | Durable requests and plans                      | `service-state.ts`, `teacher-service.ts`                         |
@@ -65,6 +65,18 @@ never the working directory or files outside the package.
 | Review schedule, learning evidence, diagnostics | `review.ts`, `evidence.ts`, `health.ts`                          |
 | HTML and Markdown                               | `pages.ts`, `lesson-html.ts`, `markdown.ts`                      |
 | Tailnet route ownership and links               | `phone-access.ts`, `tailnet-links.ts`                            |
+
+`server.ts` keeps the loopback singleton and public exports. `server/` owns
+classroom pages, records, folders, annotations, quizzes, review, teacher endpoints,
+and learner state. Shared HTTP helpers, hooks, and the SSE registry live there;
+closing the singleton closes its SSE clients before the HTTP server.
+
+`store.ts` preserves the public storage exports. `store/` separates filesystem
+discovery, lesson summaries, folders, annotations, quiz history and submissions,
+review evidence, reflections, panel messages, drafts, and records. Discovery and
+quiz history do not depend on submission creation, so lesson and review reads do
+not create circular feature dependencies. Canonical path helpers and static guards
+remain in `paths.ts`. Persisted formats and request ordering are unchanged.
 
 Names in the table are under `src/` unless stated. `assets/runtime/classroom.js`
 boots the lesson features and dispatches saved state and SSE events. `highlights.mjs`
