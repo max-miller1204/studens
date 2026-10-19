@@ -3,7 +3,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { afterEach, beforeEach, expect, it } from "vitest";
 import { makeFixture, type Fixture } from "./helpers.ts";
-import { runStructured, teacherModels } from "../src/teacher.ts";
+import { runStructured, teacherModels, runTeacher } from "../src/teacher.ts";
 import { modelSelection } from "../src/teacher-models.ts";
 let f: Fixture;
 let priorPath: string | undefined;
@@ -28,7 +28,7 @@ if(backend==='claude'&&!process.argv.includes('--input-format')) {
   if(model==='unavailable') {send({type:'result',is_error:true,result:'Model unavailable for this account.'});return;}
   const actual=behavior.reroute?'other-model':model==='quick'?'actual-quick':model;
   send({type:'assistant',message:{model:actual}});
-  send({type:'result',session_id:'same-session',structured_output:{ok:true}});
+  send({type:'result',session_id:'same-session',structured_output:behavior.output??{ok:true}});
  });
 } else readline.createInterface({input:process.stdin}).on('line',line=>{
  const m=JSON.parse(line);log(m);
@@ -46,7 +46,7 @@ if(backend==='claude'&&!process.argv.includes('--input-format')) {
   send({id:m.id,result:{turn:{id:'turn'}}});
   if(behavior.foreignReroute)send({method:'model/rerouted',params:{threadId:m.params.threadId,turnId:'stale-turn',fromModel:m.params.model,toModel:'other-model',reason:'unavailable'}});
   if(behavior.reroute)send({method:'model/rerouted',params:{threadId:m.params.threadId,turnId:'turn',fromModel:m.params.model,toModel:'other-model',reason:'unavailable'}});
-  send({method:'item/completed',params:{threadId:m.params.threadId,turnId:'turn',item:{type:'agentMessage',text:'{"ok":true}'}}});
+  send({method:'item/completed',params:{threadId:m.params.threadId,turnId:'turn',item:{type:'agentMessage',text:JSON.stringify(behavior.output??{ok:true})}}});
   send({method:'turn/completed',params:{threadId:m.params.threadId,turn:{id:'turn',status:'completed'}}});
  }
 });
@@ -271,5 +271,50 @@ it.each(["codex", "claude"] as const)(
       }
       expect(starts[1].params.threadId).toBe(session);
     }
+  },
+);
+
+it.each(["codex", "claude"] as const)(
+  "decodes the dedicated %s lesson response into a saved canonical call by code",
+  async (backend) => {
+    const output = {
+      title: "Lesson",
+      summary: "Summary",
+      lesson_html: '<main>"quotes"\n\\slash\ttext</main>',
+      rubric_json: '{"quiz":{}}',
+      teaching_plan_json: '{"version":1}',
+      message: "Ready",
+    };
+    f.write("behavior.json", JSON.stringify({ output }));
+    let raw: unknown;
+    const plan = await runTeacher(
+      { backend, requestedModel: backend === "claude" ? "quick" : "custom-id" },
+      "Explicit lesson",
+      f.root,
+      () => {},
+      undefined,
+      { operations: ["publish_lesson"], required: true, research: true },
+      (value) => {
+        raw = value;
+      },
+    );
+    expect(raw).toEqual(output);
+    const { message, ...document } = output;
+    expect(JSON.parse(plan.calls[0].arguments_json)).toEqual(document);
+    expect(plan).toMatchObject({ message, learning_record: "", notes_markdown: "" });
+    const all = messages();
+    const schema =
+      backend === "codex"
+        ? all.find((m) => m.method === "turn/start").params.outputSchema
+        : JSON.parse(
+            all.find((m) => m.args && !m.args.includes("--input-format")).args[
+              all
+                .find((m) => m.args && !m.args.includes("--input-format"))
+                .args.indexOf("--json-schema") + 1
+            ],
+          );
+    expect(schema.properties).toHaveProperty("lesson_html");
+    expect(schema.properties).not.toHaveProperty("calls");
+    expect(schema.additionalProperties).toBe(false);
   },
 );

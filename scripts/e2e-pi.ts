@@ -61,6 +61,19 @@ fixture.write(
 );
 
 const session = `studens-pi-${process.pid}`;
+const toolsAudit = path.join(artifacts ?? fixture.root, "pi-tools.jsonl");
+const toolsObserver = fixture.write(
+  "tool-observer.ts",
+  `import fs from 'node:fs';
+export default function(pi) {
+ let lesson=false;
+ const save=(phase)=>fs.appendFileSync(${JSON.stringify(toolsAudit)},JSON.stringify({phase,lesson,tools:pi.getActiveTools()})+'\\n');
+ pi.on('session_start',()=>{save('initial');});
+ pi.on('before_agent_start',event=>{lesson=event.prompt.startsWith('Explicit Next lesson request ');save('before');});
+ pi.on('agent_end',()=>{save('after');});
+ pi.on('session_shutdown',()=>{save('shutdown');});
+}`,
+);
 const child = spawn(
   "pi",
   [
@@ -81,6 +94,8 @@ const child = spawn(
     "--offline",
     "--extension",
     path.join(root, "index.ts"),
+    "--extension",
+    toolsObserver,
   ],
   {
     cwd: fixture.root,
@@ -277,6 +292,27 @@ try {
   await until("lesson authoring run", () =>
     toolRunSettled(events, "publish_lesson") ? true : null,
   );
+  const audit = fs
+    .readFileSync(toolsAudit, "utf8")
+    .trim()
+    .split("\n")
+    .map((line) => JSON.parse(line));
+  const initialTools = audit.find((entry) => entry.phase === "initial")?.tools;
+  const authoring = audit.filter((entry) => entry.lesson && entry.phase === "before");
+  if (!initialTools || !authoring.length) throw new Error("Pi active-tool audit is missing.");
+  const expectedTools = [
+    ...initialTools.filter((name: string) => name === "read"),
+    "publish_lesson",
+    "read_lesson_source",
+  ];
+  for (const entry of authoring)
+    if (JSON.stringify(entry.tools) !== JSON.stringify(expectedTools))
+      throw new Error("Pi advertised tools outside the explicit lesson set.");
+  const completedTools = audit
+    .filter((entry) => entry.lesson && entry.phase === "after")
+    .at(-1)?.tools;
+  if (JSON.stringify(completedTools) !== JSON.stringify(initialTools))
+    throw new Error("Pi did not restore its exact original tool set after authoring.");
   await playwrightCode(
     session,
     fixture.root,

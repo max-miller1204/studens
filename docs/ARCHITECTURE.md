@@ -147,8 +147,12 @@ source notation to grading. Answers and feedback render Markdown server-side.
 - **Explicit next lessons are private until checked.** The classroom control saves
   an owner-bound request in `.lesson-requests.json`. Its optional topic and status
   survive reload. Service authoring shares the classroom request queue and teacher
-  identity; Pi authors in its live session. Only explicit authoring enables web
-  research and classroom resource reads. Save and validate complete output before
+  identity; Pi authors in its live session. Its explicit authoring turns advertise
+  only publication, bounded public research, and an already enabled reader, then
+  restore the exact prior active tools. Learner turns arriving during that scope
+  wait until restoration and the prior run ends. Only explicit authoring enables
+  web research and classroom resource reads. Provider lesson responses carry HTML
+  directly; code serializes the canonical saved publication call. Save and validate complete output before
   publication, run `scripts/check-lesson.ts` in disposable state, then expose the
   lesson. Recover checked output without a model turn; retain rejected output and
   require explicit retry. Never create learner submissions during checking.

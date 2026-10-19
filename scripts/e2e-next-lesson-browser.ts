@@ -40,7 +40,13 @@ export async function verifyNextLessonBrowser(artifacts: string | null): Promise
             ),
           }
         : document;
+    let activeTools = ["read", "bash", "publish_lesson", "read_lesson_source"];
+    const originalTools = [...activeTools];
     const bridge = new ClassroomBridge({
+      getActiveTools: () => [...activeTools],
+      setActiveTools: (names) => {
+        activeTools = [...names];
+      },
       sendUserMessage: () => {
         runs++;
         const request = lessonRequests("rust").at(-1)!;
@@ -233,6 +239,7 @@ export async function verifyNextLessonBrowser(artifacts: string | null): Promise
       assert.equal(corrected.failedAttempts?.length, 1);
       assert.equal(runs, 3);
       assert.equal(store.listSubmissions("rust", corrected.lesson).length, 0);
+      if (host === "pi") assert.deepEqual(activeTools, originalTools);
       const state = readTeacherState("rust");
       if (host !== "pi") {
         assert.equal(state?.identity.sessionId, `fixture-${host}`);

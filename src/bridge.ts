@@ -84,6 +84,8 @@ import {
 /** Minimal shape of the pi API this module needs, so tests can pass a stub. */
 export interface MessageSender {
   sendUserMessage(text: string, options?: { deliverAs?: string }): void;
+  getActiveTools?(): string[];
+  setActiveTools?(names: string[]): void;
 }
 
 /** A run whose final text belongs in a lesson's teacher panel. */
@@ -112,6 +114,9 @@ export class ClassroomBridge {
   private readonly sessionId = randomUUID();
   private lessonTimer?: ReturnType<typeof setTimeout>;
   private readonly deferredLessons = new Map<string, LessonRequest>();
+  private lessonTools?: string[];
+  private readonly lessonDeferredTurns = new Map<Origin, string>();
+  private lessonTurnTimer?: ReturnType<typeof setTimeout>;
   private readonly deferredResumes = new Map<string, PiResume>();
   /** Panel runs not yet finished, or finished with nothing to say. */
   private readonly panel = new Map<string, PanelRequest>();
@@ -136,7 +141,47 @@ export class ClassroomBridge {
   }
 
   private send(text: string): void {
+    const origin = this.pending.at(-1);
+    if (
+      origin &&
+      ((this.lessonTools && origin.kind !== "lesson") || this.lessonDeferredTurns.size)
+    ) {
+      this.lessonDeferredTurns.set(origin, text);
+      this.startLessonDeferredTurn();
+      return;
+    }
     this.pi.sendUserMessage(text, this.idle() ? undefined : { deliverAs: "followUp" });
+  }
+
+  /** Learner work arriving during authoring starts only after tools and the run are restored. */
+  private startLessonDeferredTurn(): void {
+    const origin = this.pending[0];
+    if (!origin || !this.lessonDeferredTurns.has(origin) || this.lessonTools) return;
+    if (!this.idle()) {
+      if (!this.lessonTurnTimer)
+        this.lessonTurnTimer = setTimeout(() => {
+          this.lessonTurnTimer = undefined;
+          this.startLessonDeferredTurn();
+        }, 25);
+      return;
+    }
+    const text = this.lessonDeferredTurns.get(origin)!;
+    this.lessonDeferredTurns.delete(origin);
+    try {
+      this.pi.sendUserMessage(text);
+    } catch (error) {
+      this.pending.shift();
+      const message = `Pi could not start queued teacher work: ${(error as Error).message}`;
+      if (origin.kind === "panel") {
+        origin.request.status = "failed";
+        origin.request.error = message;
+        if (origin.request.durable) this.persistResume(origin.request);
+        this.publish(origin.request.classroom, origin.request.lesson);
+      } else if (origin.kind === "ask") markFailed(origin.annotationId, origin.turn);
+      else if (origin.kind === "review") updateReview(origin.session, "failed", message);
+      else if (origin.kind === "refill") updateRefill(origin.request, "failed", message);
+      this.startLessonDeferredTurn();
+    }
   }
 
   /** Ask the agent to answer a highlighted-text question. */
@@ -412,11 +457,38 @@ export class ClassroomBridge {
     const origin: Origin = { kind: "lesson", request: running };
     this.pending.push(origin);
     try {
+      if (!this.pi.getActiveTools || !this.pi.setActiveTools)
+        throw new Error("Pi active-tool controls are unavailable for explicit lesson authoring.");
+      if (this.lessonTools)
+        throw new Error("Pi's previous tool set has not been restored. Retry restoration first.");
+      this.lessonTools = [...this.pi.getActiveTools()];
+      const selected = [
+        ...this.lessonTools.filter((name) => name === "read"),
+        LESSON_TOOL.name,
+        "read_lesson_source",
+      ];
+      this.pi.setActiveTools(selected);
+      if (JSON.stringify(this.pi.getActiveTools()) !== JSON.stringify(selected))
+        throw new Error("Pi could not activate the exact explicit-lesson tool set.");
       this.send(nextLessonPrompt({ ...running, error: request.error }, "pi"));
     } catch (error) {
       this.pending.splice(this.pending.indexOf(origin), 1);
+      try {
+        this.restoreLessonTools();
+      } catch (restore) {
+        error = new Error(
+          `Pi tool restoration failed: ${(restore as Error).message}. Original error: ${(error as Error).message}`,
+        );
+      }
       updateLessonRequest(running, { status: "failed", error: (error as Error).message });
     }
+  }
+  private restoreLessonTools(): void {
+    if (!this.lessonTools) return;
+    this.pi.setActiveTools!([...this.lessonTools]);
+    if (JSON.stringify(this.pi.getActiveTools!()) !== JSON.stringify(this.lessonTools))
+      throw new Error("Pi could not restore its previous active tool set.");
+    this.lessonTools = undefined;
   }
   retryNextLesson(request: LessonRequest): void {
     requireLessonOwner(request, "pi");
@@ -537,7 +609,7 @@ export class ClassroomBridge {
     }
     if (
       this.pending[0]?.kind === "lesson" &&
-      ![LESSON_TOOL.name, "read_lesson_source", "read", "web_search", "web_fetch"].includes(name)
+      ![LESSON_TOOL.name, "read_lesson_source", "read"].includes(name)
     )
       throw new Error(
         `Next lesson authoring cannot use ${name}. Return the lesson through publish_lesson; only read and web research are permitted.`,
@@ -745,6 +817,7 @@ export class ClassroomBridge {
     try {
       this.finishOrigin(messages);
     } finally {
+      this.startLessonDeferredTurn();
       if (!this.pending.length && this.deferredLessons.size) this.startNextLesson();
       if (!this.pending.length) {
         const request = this.deferredResumes.values().next().value;
@@ -759,14 +832,18 @@ export class ClassroomBridge {
   private finishOrigin(messages: readonly unknown[]): void {
     const origin = this.pending.shift();
     if (origin?.kind === "lesson") {
-      const saved = lessonRequests(origin.request.classroom).find(
-        (r) => r.id === origin.request.id,
-      )!;
-      if (saved.status === "running")
-        updateLessonRequest(saved, {
-          status: "failed",
-          error: "Pi finished without publishing the requested lesson. Retry this request.",
-        });
+      try {
+        const saved = lessonRequests(origin.request.classroom).find(
+          (r) => r.id === origin.request.id,
+        )!;
+        if (saved.status === "running")
+          updateLessonRequest(saved, {
+            status: "failed",
+            error: "Pi finished without publishing the requested lesson. Retry this request.",
+          });
+      } finally {
+        this.restoreLessonTools();
+      }
       return;
     }
     if (origin?.kind === "refill") {
@@ -836,51 +913,58 @@ export class ClassroomBridge {
 
   /** Drop queued origins — used when the session shuts down. */
   reset(): void {
-    if (this.lessonTimer) clearTimeout(this.lessonTimer);
-    this.lessonTimer = undefined;
-    if (this.refillTimer) clearTimeout(this.refillTimer);
-    this.refillTimer = undefined;
-    this.refillClassrooms.clear();
-    for (const origin of this.pending)
-      if (origin.kind === "review")
-        updateReview(
-          origin.session,
-          "failed",
-          "Pi stopped during review creation. Retry this review.",
-        );
-    for (const origin of this.pending)
-      if (origin.kind === "refill") {
-        const saved = refillRequests(origin.request.classroom).find(
-          (r) => r.id === origin.request.id,
-        );
-        if (saved && saved.status !== "done")
-          updateRefill(
-            saved,
+    try {
+      if (this.lessonTurnTimer) clearTimeout(this.lessonTurnTimer);
+      this.lessonTurnTimer = undefined;
+      this.lessonDeferredTurns.clear();
+      if (this.lessonTimer) clearTimeout(this.lessonTimer);
+      this.lessonTimer = undefined;
+      if (this.refillTimer) clearTimeout(this.refillTimer);
+      this.refillTimer = undefined;
+      this.refillClassrooms.clear();
+      for (const origin of this.pending)
+        if (origin.kind === "review")
+          updateReview(
+            origin.session,
             "failed",
-            "Pi stopped during background review work. Retry this request.",
+            "Pi stopped during review creation. Retry this review.",
           );
+      for (const origin of this.pending)
+        if (origin.kind === "refill") {
+          const saved = refillRequests(origin.request.classroom).find(
+            (r) => r.id === origin.request.id,
+          );
+          if (saved && saved.status !== "done")
+            updateRefill(
+              saved,
+              "failed",
+              "Pi stopped during background review work. Retry this request.",
+            );
+        }
+      for (const request of this.panel.values())
+        if (request.durable && request.status === "running") {
+          request.status = "failed";
+          request.error = "Pi stopped during teacher resumption. Retry this request.";
+          this.persistResume(request);
+        }
+      for (const request of [
+        ...this.deferredLessons.values(),
+        ...this.pending.flatMap((o) => (o.kind === "lesson" ? [o.request] : [])),
+      ]) {
+        const saved = lessonRequests(request.classroom).find((r) => r.id === request.id)!;
+        if (saved.status !== "done")
+          updateLessonRequest(saved, {
+            status: "failed",
+            error: "Pi stopped during lesson creation. Retry this request.",
+          });
       }
-    for (const request of this.panel.values())
-      if (request.durable && request.status === "running") {
-        request.status = "failed";
-        request.error = "Pi stopped during teacher resumption. Retry this request.";
-        this.persistResume(request);
-      }
-    for (const request of [
-      ...this.deferredLessons.values(),
-      ...this.pending.flatMap((o) => (o.kind === "lesson" ? [o.request] : [])),
-    ]) {
-      const saved = lessonRequests(request.classroom).find((r) => r.id === request.id)!;
-      if (saved.status !== "done")
-        updateLessonRequest(saved, {
-          status: "failed",
-          error: "Pi stopped during lesson creation. Retry this request.",
-        });
+      this.deferredLessons.clear();
+      this.deferredResumes.clear();
+      this.pending.length = 0;
+      this.panel.clear();
+    } finally {
+      this.restoreLessonTools();
     }
-    this.deferredLessons.clear();
-    this.deferredResumes.clear();
-    this.pending.length = 0;
-    this.panel.clear();
   }
 }
 

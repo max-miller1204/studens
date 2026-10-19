@@ -28,6 +28,7 @@ import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { piRefillTool } from "./src/review-refill.ts";
 import { resumeTeacherTool } from "./src/teacher-resume.ts";
 import { ClassroomBridge } from "./src/bridge.ts";
+import type { MessageSender } from "./src/bridge.ts";
 import { piLinks, registerClassroomCommands } from "./src/commands.ts";
 import * as server from "./src/server.ts";
 import { attachStatusWidget, detachStatusWidget } from "./src/status-widget.ts";
@@ -36,9 +37,7 @@ import { registerClassroomTools } from "./src/tools.ts";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 export default function classroomExtension(pi: ExtensionAPI): void {
-  const bridge = new ClassroomBridge(
-    pi as unknown as { sendUserMessage(text: string, o?: any): void },
-  );
+  const bridge = new ClassroomBridge(pi as unknown as MessageSender);
 
   server.setHooks({
     applyConnectionSettings: () => piLinks().share(),
@@ -105,14 +104,17 @@ export default function classroomExtension(pi: ExtensionAPI): void {
   });
 
   pi.on("session_shutdown", async () => {
-    bridge.reset();
-    detachStatusWidget();
     try {
-      await piLinks().stop(true);
-    } catch (err) {
-      // The next session replaces a route whose target no longer listens.
-      console.error("[classroom] tailnet route cleanup failed", err);
+      bridge.reset();
+    } finally {
+      detachStatusWidget();
+      try {
+        await piLinks().stop(true);
+      } catch (err) {
+        // The next session replaces a route whose target no longer listens.
+        console.error("[classroom] tailnet route cleanup failed", err);
+      }
+      await server.close();
     }
-    await server.close();
   });
 }

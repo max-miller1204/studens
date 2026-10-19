@@ -18,6 +18,23 @@ import { TeacherService } from "../src/teacher-service.ts";
 import { readTeacherState, saveTeacherState } from "../src/service-state.ts";
 import { ClassroomBridge } from "../src/bridge.ts";
 import * as store from "../src/store.ts";
+function lessonSender(send: (...args: any[]) => void) {
+  let tools = [
+    "bash",
+    "read",
+    "custom_tool",
+    "grade_lesson_quiz",
+    "publish_lesson",
+    "read_lesson_source",
+  ];
+  return {
+    sendUserMessage: send,
+    getActiveTools: () => [...tools],
+    setActiveTools: (names: string[]) => {
+      tools = [...names];
+    },
+  };
+}
 let fixture: Fixture;
 beforeEach(() => {
   fixture = makeFixture();
@@ -108,7 +125,7 @@ it("keeps authoring sequential after the actual learner reply and scopes researc
 });
 it("keeps live Pi authoring behind the preceding origin and restricts writes", () => {
   const send = vi.fn();
-  const bridge = new ClassroomBridge({ sendUserMessage: send });
+  const bridge = new ClassroomBridge(lessonSender(send));
   bridge.noteForeignTurn();
   const r = startLessonRequest("rust", randomUUID(), "next", "pi");
   bridge.nextLesson(r);
@@ -145,7 +162,7 @@ it("retains rejected page code when explicit retry asks for a corrected authorin
   expect(retry.rejectedDocuments).toEqual([document]);
 });
 it("limits Pi resource reading to the requested classroom and packaged guidance", async () => {
-  const bridge = new ClassroomBridge({ sendUserMessage: () => {} });
+  const bridge = new ClassroomBridge(lessonSender(() => {}));
   bridge.nextLesson(startLessonRequest("rust", randomUUID(), "", "pi"));
   expect(() =>
     bridge.assertLessonTool("read", { path: path.join(fixture.root, "rust/MISSION.md") }),
@@ -216,7 +233,7 @@ it("recovers a saved validated service plan without another model turn or duplic
 
 it("queues explicit Pi retry until the failed turn ends and rejects same-turn reauthoring", async () => {
   const send = vi.fn();
-  const bridge = new ClassroomBridge({ sendUserMessage: send });
+  const bridge = new ClassroomBridge(lessonSender(send));
   const request = startLessonRequest("rust", randomUUID(), "", "pi");
   bridge.nextLesson(request);
   const document = nextLessonDocument(fixture.root);
@@ -259,4 +276,118 @@ it("rejects lesson publication from an ordinary panel reply before any authoring
   expect(lessonRequests("rust")).toEqual([]);
   expect(store.listLessons("rust")).toHaveLength(1);
   await service.stop();
+});
+
+it("advertises only explicit lesson tools and restores the exact previous set after failed origin and shutdown", () => {
+  const pi = lessonSender(vi.fn());
+  const prior = ["custom_tool", "bash"];
+  pi.setActiveTools(prior);
+  const bridge = new ClassroomBridge(pi);
+  bridge.nextLesson(startLessonRequest("rust", randomUUID(), "", "pi"));
+  expect(pi.getActiveTools()).toEqual(["publish_lesson", "read_lesson_source"]);
+  expect(() => bridge.assertLessonTool("bash")).toThrow("cannot use bash");
+  bridge.onAgentEnd([]);
+  expect(pi.getActiveTools()).toEqual(prior);
+  bridge.retryNextLesson(lessonRequests("rust")[0]);
+  expect(pi.getActiveTools()).toEqual(["publish_lesson", "read_lesson_source"]);
+  bridge.reset();
+  expect(pi.getActiveTools()).toEqual(prior);
+  expect(lessonRequests("rust")[0].status).toBe("failed");
+});
+it("restores tools after send failure and refuses missing activation controls without a model turn", () => {
+  const send = vi.fn(() => {
+    throw new Error("Explicit send failure");
+  });
+  const pi = lessonSender(send),
+    prior = pi.getActiveTools(),
+    bridge = new ClassroomBridge(pi);
+  bridge.nextLesson(startLessonRequest("rust", randomUUID(), "", "pi"));
+  expect(pi.getActiveTools()).toEqual(prior);
+  expect(lessonRequests("rust")[0].error).toContain("Explicit send failure");
+  bridge.reset();
+  const absent = vi.fn();
+  const missing = new ClassroomBridge({ sendUserMessage: absent });
+  missing.retryNextLesson(lessonRequests("rust")[0]);
+  expect(absent).not.toHaveBeenCalled();
+  expect(lessonRequests("rust")[0].error).toContain("controls are unavailable");
+  missing.reset();
+});
+it("restores tools even when reading failed authoring state throws during origin completion", () => {
+  const pi = lessonSender(vi.fn()),
+    prior = pi.getActiveTools(),
+    bridge = new ClassroomBridge(pi);
+  bridge.nextLesson(startLessonRequest("rust", randomUUID(), "", "pi"));
+  fixture.write("rust/.lesson-requests.json", "invalid state");
+  expect(() => bridge.onAgentEnd([])).toThrow();
+  expect(pi.getActiveTools()).toEqual(prior);
+});
+it("does not run a model if Pi ignores a required lesson tool activation", () => {
+  const send = vi.fn();
+  let active = ["bash", "read"];
+  const prior = [...active];
+  const bridge = new ClassroomBridge({
+    sendUserMessage: send,
+    getActiveTools: () => [...active],
+    setActiveTools: (names) => {
+      active = names.filter((n) => n !== "publish_lesson");
+    },
+  });
+  bridge.nextLesson(startLessonRequest("rust", randomUUID(), "", "pi"));
+  expect(send).not.toHaveBeenCalled();
+  expect(active).toEqual(prior);
+  expect(lessonRequests("rust")[0].status).toBe("failed");
+  expect(lessonRequests("rust")[0].error).toContain("exact explicit-lesson tool set");
+  bridge.reset();
+});
+
+it("queues learner turns arriving during Pi authoring until exact tools are restored, preserving order", () => {
+  const seen: string[][] = [];
+  const send = vi.fn(() => {
+    seen.push(pi.getActiveTools());
+  });
+  const pi = lessonSender(send),
+    prior = pi.getActiveTools(),
+    bridge = new ClassroomBridge(pi);
+  bridge.nextLesson(startLessonRequest("rust", randomUUID(), "", "pi"));
+  bridge.chat("rust", "001-ownership", "First learner reply", randomUUID());
+  bridge.chat("rust", "001-ownership", "Second learner reply", randomUUID());
+  expect(send).toHaveBeenCalledTimes(1);
+  bridge.onAgentEnd([]);
+  expect(send).toHaveBeenCalledTimes(2);
+  expect(seen[1]).toEqual(prior);
+  bridge.onAgentEnd([
+    { role: "assistant", content: [{ type: "text", text: "First teacher reply" }] },
+  ]);
+  expect(send).toHaveBeenCalledTimes(3);
+  expect(seen[2]).toEqual(prior);
+  bridge.onAgentEnd([
+    { role: "assistant", content: [{ type: "text", text: "Second teacher reply" }] },
+  ]);
+  expect(
+    store
+      .listPanelMessages("rust", "001-ownership")
+      .filter((m) => m.role === "teacher")
+      .map((m) => m.text),
+  ).toEqual(["First teacher reply", "Second teacher reply"]);
+  bridge.reset();
+});
+it("keeps a queued Pi send failure explicit and does not retry it automatically", () => {
+  const send = vi.fn(() => {
+    if (send.mock.calls.length === 2) throw new Error("Queued transport unavailable");
+  });
+  const pi = lessonSender(send),
+    prior = pi.getActiveTools(),
+    bridge = new ClassroomBridge(pi);
+  bridge.nextLesson(startLessonRequest("rust", randomUUID(), "", "pi"));
+  bridge.chat("rust", "001-ownership", "Actual learner reply", randomUUID());
+  bridge.onAgentEnd([]);
+  expect(send).toHaveBeenCalledTimes(2);
+  expect(pi.getActiveTools()).toEqual(prior);
+  expect((bridge.panelState("rust", "001-ownership") as any).requests[0]).toMatchObject({
+    status: "failed",
+    error: expect.stringContaining("Queued transport unavailable"),
+  });
+  bridge.onAgentEnd([]);
+  expect(send).toHaveBeenCalledTimes(2);
+  bridge.reset();
 });

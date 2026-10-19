@@ -4,6 +4,7 @@ import { JsonObjectStream } from "./json-object-stream.ts";
 import { claudeModels } from "./teacher-models.ts";
 import type { ModelCatalog, ModelChoice } from "./teacher-models.ts";
 import { TeacherDeadline } from "./teacher-deadline.ts";
+import { LESSON_OUTPUT_SCHEMA, lessonModelPlan } from "./lesson-output.ts";
 
 export type Backend = "codex" | "claude";
 export interface TeacherIdentity {
@@ -74,6 +75,8 @@ export interface PlanContract {
 
 /** Limit structured output to operations permitted by the current request. */
 export function planSchema(contract: PlanContract) {
+  if (contract.operations.length === 1 && contract.operations[0] === "publish_lesson")
+    return LESSON_OUTPUT_SCHEMA;
   const calls = PLAN_SCHEMA.properties.calls;
   return {
     ...PLAN_SCHEMA,
@@ -172,6 +175,8 @@ export const runTeacher: RunTeacher = async (
     contract.research,
   );
   saveModelOutput?.(raw);
+  if (contract.operations.length === 1 && contract.operations[0] === "publish_lesson")
+    return lessonModelPlan(raw);
   return parseModelPlan(raw);
 };
 
