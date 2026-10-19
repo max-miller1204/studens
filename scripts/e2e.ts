@@ -1,3 +1,9 @@
+import {
+  seedDailyCompanion,
+  startDailyActions,
+  finishDailyActions,
+} from "./daily-review-actions.ts";
+import { dailyReviews } from "../src/store/daily-review.ts";
 import { seedReteach, driveReteach } from "./e2e-reteach-browser.ts";
 /** Real host and dedicated teacher evaluation. All material is a temporary fixture. */
 import {
@@ -273,13 +279,26 @@ async function main(): Promise<void> {
       );
     seedTransferObjective(true);
     closeReviewVariants(root);
+    seedDailyCompanion(root);
+    const companion = await control<any>("/rpc", {
+      client: `daily-${harness}-${process.pid}`,
+      backend: harness,
+      message: {
+        jsonrpc: "2.0",
+        id: 1301,
+        method: "tools/call",
+        params: {
+          name: "open_classroom",
+          arguments: { classroom: "z-biology", teacher_backend: harness },
+        },
+      },
+    });
+    if (companion.error || companion.result?.isError) throw new Error(JSON.stringify(companion));
     await playwrightCode(
       browser,
       root,
       `async page => {
-      await page.goto(${JSON.stringify(base + "/c/rust")});
-      await page.waitForFunction(() => !document.querySelector('[data-cl-review-start]').disabled);
-      await page.getByRole('button', {name:'Start review',exact:true}).click();
+      ${startDailyActions(base)}
       return true;
     }`,
     );
@@ -376,6 +395,21 @@ async function main(): Promise<void> {
       );
     log(
       "PASS: real owning teacher receives a durable bad-question report; reload preserves it and grades",
+    );
+    await playwrightCode(
+      browser,
+      root,
+      `async page => { ${finishDailyActions(artifacts ? path.join(artifacts, `${harness}-daily-complete.png`) : null)} return true; }`,
+    );
+    if (dailyReviews().length !== 1 || dailyReviews()[0].groups.length !== 2)
+      throw new Error("Actual daily plans lost.");
+    if (artifacts)
+      fs.writeFileSync(
+        path.join(artifacts, "stored-daily.json"),
+        JSON.stringify(dailyReviews(), null, 2),
+      );
+    log(
+      "PASS: actual host daily batch, separate Rust/Biology groups, real Rust correction/report, reload and completion",
     );
     const resumeInput = seedHistoricalReview(root);
     const identity = checked.teacher.identity.sessionId;

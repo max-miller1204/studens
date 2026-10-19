@@ -38,6 +38,7 @@ import { completeClosedSubmission } from "./quiz-grading.ts";
 import { hooks } from "./server/hooks.ts";
 import { closeEvents } from "./server/events.ts";
 import { sendJson, sendNotFound, splitPath } from "./server/http.ts";
+import { handleDailyPage } from "./server/daily-review.ts";
 import { handleApi } from "./server/api.ts";
 import {
   handleLanding,
@@ -67,6 +68,7 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
   // Reason: lessons are plain documents with no <link rel="icon">, so the browser asks
   // for /favicon.ico and logs a 404 in the console on every lesson view.
   if (segments.length === 1 && segments[0] === "favicon.ico") return sendFavicon(res);
+  if (segments[0] === "reviews") return handleDailyPage(res, segments.slice(1));
   if (segments[0] === "static") return handleStatic(res, segments.slice(1));
   if (segments[0] === "c") return handleClassroomRoute(res, segments.slice(1), getBaseUrl());
   if (segments[0] === "doc") return handleDoc(res, segments.slice(1));
