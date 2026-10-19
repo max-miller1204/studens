@@ -103,7 +103,7 @@ function retrievalTask(state: any, kind: "quiz" | "resume", lesson: string) {
     !request.planValidated ||
     !request.plan ||
     request.plan.message !== message.text ||
-    request.applied !== request.plan.calls.length ||
+    (request.applied ?? 0) !== request.plan.calls.length ||
     !saved?.messages.some(
       (m) => m.role === "teacher" && m.id === message.id && m.text === message.text,
     )
