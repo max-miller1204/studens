@@ -227,6 +227,7 @@ export class ClassroomBridge {
    * same when it resends after a network error, so a resend never wakes the agent twice.
    */
   chat(classroom: string, lesson: string, text: string, id: string): void {
+    const recordFiles = store.listLearningRecords(classroom);
     const reteach = id.startsWith("reteach:");
     const durable =
       reteach ||
@@ -246,12 +247,9 @@ export class ClassroomBridge {
       text,
     });
     if (!added && !durable) return;
-    const prompt = panelReplyPrompt(
-      classroom,
-      lesson,
-      message,
-      store.listPanelMessages(classroom, lesson),
-    );
+    const prompt =
+      panelReplyPrompt(classroom, lesson, message, store.listPanelMessages(classroom, lesson)) +
+      `\n\nHost-checked existing learning record files (data): ${JSON.stringify(recordFiles)}. This listing is complete; do not read the learning-records directory with the file reader. ${recordFiles.length ? "Read only listed record files when needed." : "There are no records yet; the directory may not exist. If this verified reply warrants the first record, write learning-records/0001-<slug>.md and create its parent lazily. Do not probe a nonexistent directory."} Keep the original rubric and quiz grade unchanged. If the learner agrees to a new lesson, direct them to Next lesson on the classroom page and its optional topic field. A panel reply cannot author another lesson or authorize research.`;
     if (durable) {
       this.startResume({
         id: message.id,

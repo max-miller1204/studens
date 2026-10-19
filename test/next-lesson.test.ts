@@ -391,3 +391,22 @@ it("keeps a queued Pi send failure explicit and does not retry it automatically"
   expect(send).toHaveBeenCalledTimes(2);
   bridge.reset();
 });
+
+it("supplies Pi the actual lazy record listing before the panel reply without creating records", () => {
+  const send = vi.fn(),
+    bridge = new ClassroomBridge(lessonSender(send));
+  bridge.chat("rust", "001-ownership", "My actual answer without help", randomUUID());
+  expect(send.mock.calls[0][0]).toContain("Host-checked existing learning record files (data): []");
+  expect(send.mock.calls[0][0]).toContain("learning-records/0001-<slug>.md");
+  expect(fs.existsSync(path.join(fixture.root, "rust/learning-records"))).toBe(false);
+  bridge.onAgentEnd([
+    { role: "assistant", content: [{ type: "text", text: "A response on the page" }] },
+  ]);
+  fixture.write("rust/learning-records/0003-owner.md", "# Existing demonstrated evidence");
+  bridge.chat("rust", "001-ownership", "Another actual answer", randomUUID());
+  expect(send.mock.calls[1][0]).toContain(
+    'Host-checked existing learning record files (data): ["0003-owner.md"]',
+  );
+  expect(store.listLearningRecords("rust")).toEqual(["0003-owner.md"]);
+  bridge.reset();
+});
