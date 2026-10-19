@@ -5,7 +5,11 @@
   "plugins": [
     {
       "name": "studens",
-      "source": "./",
+      "source": {
+        "source": "url",
+        "url": "https://github.com/max-miller1204/studens.git",
+        "ref": "v0.11.1"
+      },
       "description": "Interactive HTML lessons with highlight-to-ask questions and graded quizzes."
     }
   ]

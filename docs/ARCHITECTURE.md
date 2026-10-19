@@ -8,6 +8,12 @@ independent continuation of [joshrnoll/pi-teach](https://github.com/joshrnoll/pi
 outside the upstream fork network. It is not published to npm. Keep the upstream MIT
 notices and [teaching attribution](ATTRIBUTION.md).
 
+Release installs resolve a named `v<version>` Git tag. Pi's install spec and both
+plugin marketplace source entries pin that tag. Marketplace catalogs may track
+`main`, but their plugin sources do not. Successful `main` CI publishes a release
+only when that version has not been released. Existing release tags are never moved.
+Loading a checkout directly remains an explicit development path.
+
 ## Hosts and lifecycles
 
 Pi loads `index.ts` through `pi.extensions` in `package.json`. Its HTTP server stays

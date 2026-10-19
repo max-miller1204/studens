@@ -10,7 +10,7 @@ question, get answers in a saved thread, and submit quizzes for feedback.
 **Pi**
 
 ```sh
-pi install git:github.com/max-miller1204/studens
+pi install git:github.com/max-miller1204/studens@v0.11.1
 ```
 
 **Claude Code**
@@ -29,6 +29,11 @@ codex plugin add studens@studens
 
 Claude Code and Codex need Node 22.18 or later. The plugin installs its runtime
 dependency on first start. There is no build step.
+
+Pi installs the named release tag. Both plugin marketplaces also fetch the plugin
+from a release tag, even when the catalog tracks `main`. Merging a feature PR does
+not change the installed release. See [updating Studens](docs/USAGE.md#updating-studens)
+for upgrades and moving an existing checkout installation to releases.
 
 Upgrading from pi-teach? Remove the old plugin before installing Studens; see the
 [upgrade guide](docs/USAGE.md#upgrading-from-pi-teach). Existing classrooms stay in place.
