@@ -1740,6 +1740,7 @@ figure:has(> .cl-diagram) figcaption {
   margin-bottom: 0;
 }
 .cl-teacher-request {
+  overflow-wrap: anywhere;
   display: flex;
   flex-wrap: wrap;
   align-items: center;

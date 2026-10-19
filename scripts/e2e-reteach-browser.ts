@@ -91,7 +91,7 @@ export async function driveReteach(
   });
   if (expectFailure) {
     await code(
-      `await page.getByRole('button',{name:'Retry request',exact:true}).waitFor();${shot("failed-mobile")}await page.reload();await page.getByRole('button',{name:'Retry request',exact:true}).waitFor();await page.getByRole('button',{name:'Re-teach requested',exact:true}).waitFor();`,
+      `await page.getByRole('button',{name:'Retry request',exact:true}).waitFor();${shot("failed-mobile")}await page.reload();await page.getByRole('button',{name:'Retry request',exact:true}).waitFor();await page.getByRole('button',{name:'Re-teach requested',exact:true}).waitFor();if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth))throw new Error('Failed re-teach request overflows mobile');`,
     );
     if (
       (await state()).teacher.requests.filter((r: any) => r.id.startsWith("chat:reteach:"))

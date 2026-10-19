@@ -89,7 +89,8 @@ The initial failed plan is a fixture at the production recovery boundary.
 
 The repeated-miss fixtures in the same browser target inspect three saved failures,
 paused due counts, desktop and mobile offers, a Pi message interrupted before queuing,
-failed teacher work, explicit retry, the explanation, a learner reply, and reload.
+failed teacher work with request errors contained within the mobile viewport, explicit
+retry, the explanation, a learner reply, and reload.
 Inspect `reteach/pi/result.json`, `reteach/service/result.json`, and their screenshots.
 They require unchanged assessments and no delayed-retention credit. Real host drives
 also include this entry after their existing teacher checks; an earlier host failure
