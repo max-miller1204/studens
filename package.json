@@ -5,7 +5,7 @@
   "description": "Interactive HTML lessons for Pi, Claude Code, and Codex, with passage questions and graded quizzes.",
   "type": "module",
   "license": "MIT",
-  "author": "Josh Noll",
+  "author": "Max Miller",
   "homepage": "https://github.com/max-miller1204/studens#readme",
   "repository": {
     "type": "git",
