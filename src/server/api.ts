@@ -17,8 +17,9 @@ export async function handleApi(
   const route = rest.join("/");
   if (route === "folders") return handleFolders(req, res);
   if (
-    (route === "review" && req.method === "GET") ||
-    ((route === "review" || route === "review/retry") && req.method === "POST")
+    ((route === "review" || route === "review/items") && req.method === "GET") ||
+    ((route === "review" || route === "review/retry" || route === "review/item") &&
+      req.method === "POST")
   )
     return handleReview(req, res, route, url);
   if ((route === "teacher/chat" || route === "teacher/retry") && req.method === "POST")

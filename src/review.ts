@@ -35,6 +35,8 @@ export interface ReviewEvent {
   evidence?: PerformanceEvidence;
   /** First feedback time for the attempt. A regrade does not create a new exposure. */
   feedbackAt?: number;
+  /** Selected before its due date; replay must never extend this interval. */
+  early?: boolean;
   source?: "chat";
   learningRecord?: string;
   prompt: string;
@@ -45,6 +47,8 @@ export interface ReviewEvent {
 
 export interface ReviewItem {
   key: string;
+  retiredAt?: number;
+  controlRevision?: number;
   lesson: string;
   quizId: string;
   questionId: string;
@@ -177,6 +181,7 @@ export function scheduleItems(events: ReviewEvent[]): ReviewItem[] {
       const full = event.correct && (event.credit === undefined || event.credit === 1);
       const independentFull = full && independent(event.evidence);
       const feedbackAt = Math.max(event.at, event.feedbackAt ?? event.at);
+      const scheduledDueAt = dueAt;
       if (i === 0) dueAt = feedbackAt + DAY_MS;
       if (!full) {
         box = 0;
@@ -193,7 +198,7 @@ export function scheduleItems(events: ReviewEvent[]): ReviewItem[] {
           if (context === "delayed-transfer") delayedTransfers++;
         }
         baselineAt ??= event.at;
-        if (i > 0 && elapsed >= DAY_MS && event.at >= dueAt) {
+        if (i > 0 && !event.early && elapsed >= DAY_MS && event.at >= dueAt) {
           box = nextBox(box, true);
           const base = REVIEW_INTERVALS_DAYS[box];
           const interval =
@@ -212,6 +217,10 @@ export function scheduleItems(events: ReviewEvent[]): ReviewItem[] {
           context === "assisted"
             ? "Assisted performance: keep the scheduled independent review."
             : "Unknown independence: keep the scheduled review; no retention claim.";
+      }
+      if (event.early) {
+        dueAt = Math.min(scheduledDueAt, dueAt);
+        scheduleReason += " Early review cannot extend the scheduled interval.";
       }
       exposureAt = Math.max(exposureAt, feedbackAt);
     }
@@ -270,13 +279,18 @@ export function scheduleItems(events: ReviewEvent[]): ReviewItem[] {
 }
 
 export function isDue(item: ReviewItem, now: number): boolean {
-  return item.dueAt <= now;
+  return item.retiredAt === undefined && item.dueAt <= now;
 }
 
 /** Mix distinct strategies within related groups. Keep unrelated items in due order. */
-export function pickReviewItems(items: ReviewItem[], now: number, limit: number): ReviewItem[] {
+export function pickReviewItems(
+  items: ReviewItem[],
+  now: number,
+  limit: number,
+  early = false,
+): ReviewItem[] {
   const due = items
-    .filter((item) => isDue(item, now))
+    .filter((item) => item.retiredAt === undefined && (early || isDue(item, now)))
     .sort((a, b) => a.dueAt - b.dueAt || a.key.localeCompare(b.key));
   const pools = new Map<string, ReviewItem[]>();
   for (const item of due) {
@@ -316,6 +330,7 @@ export function pickReviewItems(items: ReviewItem[], now: number, limit: number)
 
 export interface ReviewSummary {
   total: number;
+  retired?: number;
   due: number;
   /** Items that become due within the next three days, not counting those due now. */
   dueSoon: number;
@@ -327,8 +342,11 @@ export interface ReviewSummary {
 }
 
 export function summarize(items: ReviewItem[], now: number): ReviewSummary {
+  const retired = items.filter((item) => item.retiredAt !== undefined).length;
+  items = items.filter((item) => item.retiredAt === undefined);
   const upcoming = items.filter((item) => !isDue(item, now));
   return {
+    retired,
     total: items.length,
     due: items.length - upcoming.length,
     dueSoon: upcoming.filter((item) => item.dueAt <= now + 3 * DAY_MS).length,
@@ -346,4 +364,12 @@ export function relativeDay(at: number, now: number): string {
   if (days === 1) return "tomorrow";
   if (days === -1) return "yesterday";
   return days > 0 ? `in ${days} days` : `${-days} days ago`;
+}
+
+/** Topic choices reuse saved objective groups, then objectives, then historical lessons. */
+export function reviewTopic(item: ReviewItem): { id: string; label: string } {
+  return {
+    id: JSON.stringify([item.lesson, item.objective?.interleaveGroup ?? item.objectiveId ?? null]),
+    label: `${item.lesson}: ${item.objective?.interleaveGroup ?? item.objective?.statement ?? "Historical questions"}`,
+  };
 }

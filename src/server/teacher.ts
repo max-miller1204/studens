@@ -24,8 +24,13 @@ export async function handleTeacher(
     )
       return sendJson(res, { error: "Invalid teacher reply." }, 400);
     if (!hooks?.onTeacherChat) return sendJson(res, { error: "No dedicated teacher." }, 409);
-    store.clearDraft(classroom, lesson, "teacher");
-    hooks.onTeacherChat(classroom, lesson, text.trim(), id);
+    try {
+      hooks.canAccept?.(classroom);
+      hooks.onTeacherChat(classroom, lesson, text.trim(), id);
+      store.clearDraft(classroom, lesson, "teacher");
+    } catch (error) {
+      return sendJson(res, { error: (error as Error).message }, 409);
+    }
     return sendJson(res, { saved: true }, 201);
   }
   if (route === "teacher/retry" && req.method === "POST") {

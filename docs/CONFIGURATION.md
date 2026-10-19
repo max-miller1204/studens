@@ -45,7 +45,8 @@ Get the current URL from `open_classroom` or `/classroom`.
     learning-records/       NNNN-slug.md: what you have actually learned
     reference/*.html        cheat sheets, built to be revisited and printed
     assets/                 shared components across lessons
-    .reviews.json           durable review requests and saved documents
+    .review-controls.json   retirement state and revisions; evidence stays in quiz history
+    .reviews.json           durable review requests, selected options, and saved documents
     .reviews/review-<id>/   review pages, drafts, panel state, and private quiz history
     NNN-lesson-name/
       lesson.html           the lesson
@@ -71,6 +72,21 @@ New reviews open at `/c/<classroom>/reviews/<review-id>`. Review history is at
 `/c/<classroom>/reviews`; reviews do not appear in the lesson list. Existing
 numbered review directories and their lesson links remain usable. The `.reviews/`
 directory is never a static route, and review keys and plans remain private.
+
+Progress offers sizes 3 through 12 and topics from saved objective groups.
+Ungrouped items use the original objective; historical items use their lesson.
+Early selections save their timing on submissions: neither a success nor a miss
+can extend the scheduled interval. Immediate or assisted performance remains
+separate from delayed retention evidence. Retirement excludes an item from active
+counts and future selections while retaining its actual quiz evidence and every
+published review. Restore it from `Manage review items`. Edits use a private lock
+and revisions; stale or interrupted edits require an explicit retry.
+
+`Flag bad question` prepares a report in the review's teacher panel. Add the problem
+and send it there. Reports use the same durable teacher requests, saved messages,
+owner checks, and explicit failure retry as other panel replies. They do not change
+question pools, saved grades, or historical links. Private control and teacher state
+are never static routes.
 
 ### Links in teaching documents
 

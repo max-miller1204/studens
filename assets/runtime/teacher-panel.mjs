@@ -224,5 +224,18 @@ export function createTeacherPanel({ config, contentRoot, drafts }) {
       );
     else teacherPanel.querySelector("textarea").value = value;
   }
-  return { renderTeacher, placeTeacherPanel, restoreDraft };
+  function flagQuestion({ key, prompt, quizId, questionId }) {
+    if (!teacherPanel)
+      throw new Error("No teacher panel is connected. Reload, then retry reporting.");
+    const field = teacherPanel.querySelector("textarea");
+    if (field.value.trim())
+      throw new Error("Send or clear your existing teacher reply before flagging a question.");
+    field.value = `Bad question report\nReview item: ${key}\nReview: ${config.lesson} / ${quizId} / ${questionId}\nQuestion: ${prompt}\nProblem: `;
+    field.dispatchEvent(new Event("input"));
+    teacherPanel.querySelector(".cl-teacher-hint").textContent =
+      "Describe the problem after ‘Problem:’, then select Send reply. Your teacher receives this report here; failures show Retry request.";
+    teacherPanel.scrollIntoView({ block: "start" });
+    field.focus();
+  }
+  return { renderTeacher, placeTeacherPanel, restoreDraft, flagQuestion };
 }

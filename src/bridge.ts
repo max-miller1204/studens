@@ -162,6 +162,7 @@ export class ClassroomBridge {
    * same when it resends after a network error, so a resend never wakes the agent twice.
    */
   chat(classroom: string, lesson: string, text: string, id: string): void {
+    if (isStoredReview(lesson)) this.requireResumeOwner(classroom);
     const { message, added } = store.addPanelMessage(classroom, {
       id: `chat:${id}`,
       lesson,
