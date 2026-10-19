@@ -4,7 +4,15 @@
  */
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { classroomDir, classroomsRoot, isDir, isFile, isValidSlug } from "../paths.ts";
+import {
+  classroomDir,
+  classroomsRoot,
+  isDir,
+  isFile,
+  isValidSlug,
+  lessonDir,
+  isStoredReview,
+} from "../paths.ts";
 import { mtime, readJson, writeJson } from "./json.ts";
 
 export interface ClassroomMeta {
@@ -117,9 +125,13 @@ export function readClassroom(name: string): Classroom | null {
     title: meta?.title ?? titleFromSlug(name),
     emoji: meta?.emoji ?? "📚",
     createdAt: meta?.createdAt ?? mtime(dir),
-    updatedAt: Math.max(mtime(dir), ...lessons.map((l) => mtime(path.join(dir, l))), 0),
+    updatedAt: Math.max(mtime(dir), ...lessons.map((l) => mtime(lessonDir(name, l))), 0),
     mission: isFile(missionPath) ? fs.readFileSync(missionPath, "utf8") : null,
-    lessonCount: lessons.length,
+    lessonCount: lessons.filter(
+      (l) =>
+        !isStoredReview(l) &&
+        readJson<LessonMeta>(path.join(lessonDir(name, l), "lesson.json"))?.kind !== "review",
+    ).length,
   };
 }
 
@@ -151,15 +163,18 @@ export function listLessonDirs(classroom: string): string[] {
   // Reason: these are classroom-level, never lessons — skip them before the (more
   // expensive) HTML lookup.
   const reserved = new Set(["reference", "assets", "learning-records", "notes", "quiz"]);
-  return fs
-    .readdirSync(dir)
-    .filter(
-      (name) =>
-        isValidSlug(name) &&
-        !reserved.has(name) &&
-        isDir(path.join(dir, name)) &&
-        resolveLessonHtml(path.join(dir, name)) !== null,
-    );
+  const reviews = path.join(dir, ".reviews");
+  const names = [
+    ...fs.readdirSync(dir).filter((name) => !isStoredReview(name)),
+    ...(isDir(reviews) ? fs.readdirSync(reviews).filter(isStoredReview) : []),
+  ];
+  return names.filter(
+    (name) =>
+      isValidSlug(name) &&
+      !reserved.has(name) &&
+      isDir(lessonDir(classroom, name)) &&
+      resolveLessonHtml(lessonDir(classroom, name)) !== null,
+  );
 }
 
 /** Every (classroom, lesson) pair on disk, without reading lesson contents. */

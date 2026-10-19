@@ -292,6 +292,28 @@ export function seedTransferObjective(prepare = false, history = true): void {
     });
 }
 
+/** Use closed prepared variants while preserving each source question and plan. */
+export function closeReviewVariants(
+  root: string,
+  classroom = "rust",
+  lesson = "001-ownership",
+): void {
+  const file = path.join(root, classroom, lesson, "quiz/key.json");
+  const key = JSON.parse(fs.readFileSync(file, "utf8"));
+  for (const quiz of Object.values(key) as any[])
+    for (const question of Object.values(quiz) as any[])
+      for (const variant of question.variants ?? []) {
+        variant.html = `<li class="cl-q" data-question-id="${variant.id}" data-type="choice"><p class="cl-q-prompt">A value moves into a new scope. Who releases it?</p><ul class="cl-options"><li><label><input type="radio" name="${variant.id}" value="owner">The new owner</label></li><li><label><input type="radio" name="${variant.id}" value="old">The old binding</label></li></ul></li>`;
+        variant.rubric = {
+          ...variant.rubric,
+          expected: "owner",
+          full: "The current owner releases the value.",
+          partial: "The old binding no longer owns it.",
+        };
+      }
+  fs.writeFileSync(file, JSON.stringify(key));
+}
+
 /** A preauthored private pool, shared by browser and host verification. */
 export function seedPreparedReviewSource(
   root: string,

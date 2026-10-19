@@ -1,4 +1,6 @@
 /** Test browser questions, quiz grading, and the teacher panel check in a real Pi session. */
+import { closedReviewActions, refillRetryActions } from "./review-card-actions.ts";
+import { lessonUrl } from "../src/paths.ts";
 import { highlightText } from "./browser-actions.ts";
 import { spawn } from "node:child_process";
 import * as fs from "node:fs";
@@ -10,6 +12,7 @@ import { refillRequests } from "../src/review-refill.ts";
 import { currentReview } from "../src/review-session.ts";
 import {
   makeFixture,
+  closeReviewVariants,
   lessonHtml,
   seedClassroom,
   seedHistoricalReview,
@@ -428,6 +431,7 @@ try {
     "[e2e:pi] PASS: chat-origin historical review resumes in the panel with its 67% grade preserved",
   );
   seedTransferObjective(true);
+  closeReviewVariants(fixture.root);
   await playwrightCode(
     session,
     fixture.root,
@@ -447,7 +451,7 @@ try {
     session,
     fixture.root,
     `async page => {
-    await page.waitForURL(${JSON.stringify(base)} + ${JSON.stringify(`/c/rust/${reviewSession.lesson}`)});
+    await page.waitForURL(${JSON.stringify(base)} + ${JSON.stringify(lessonUrl("rust", reviewSession.lesson) + "*")});
     await page.waitForFunction(() => document.querySelector('form.cl-quiz')?.dataset.state === 'fresh');
     if (await page.locator('.cl-quiz-error').count()) throw new Error('Authored review has contract errors.');
     ${artifacts ? `await page.screenshot({path:${JSON.stringify(path.join(artifacts, "pi-review.png"))},fullPage:true});` : ""}
@@ -460,6 +464,45 @@ try {
       JSON.stringify(reviewSession, null, 2),
     );
   console.log("[e2e:pi] PASS: prepared review opens from the classroom page without authoring");
+  await playwrightCode(
+    session,
+    fixture.root,
+    `async page => {
+      ${closedReviewActions(artifacts ? path.join(artifacts, "pi-review-correction.png") : null)}
+      return true;
+    }`,
+  );
+
+  const settledRefills = await until("background refill result", () => {
+    const requests = refillRequests("rust").filter(
+      (request) => request.lesson === reviewSession.lesson,
+    );
+    return requests.length &&
+      requests.every((request) => ["done", "failed"].includes(request.status))
+      ? requests
+      : null;
+  });
+  const failedRefills = settledRefills.filter((request) => request.status === "failed");
+  if (failedRefills.length) {
+    console.log(
+      "Explicit browser retry after saved background errors: " +
+        failedRefills.map((request) => request.error).join("; "),
+    );
+    if (artifacts)
+      fs.writeFileSync(
+        path.join(artifacts, "failed-review-refills.json"),
+        JSON.stringify(failedRefills, null, 2),
+      );
+    await playwrightCode(
+      session,
+      fixture.root,
+      `async page => { ${refillRetryActions(
+        failedRefills.map((request) => request.id),
+        artifacts ? path.join(artifacts, "review-refills-failed.png") : null,
+      )} return true; }`,
+    );
+  }
+
   const refills = await until("background private refill", () => {
     const requests = refillRequests("rust").filter((r) => r.lesson === reviewSession.lesson);
     if (requests.some((r) => r.status === "failed"))

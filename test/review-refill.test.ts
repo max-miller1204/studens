@@ -286,3 +286,34 @@ it("does not restart Pi refills after a persistent teacher takes ownership", asy
   expect(refillRequests("rust")[0].status).toBe("queued");
   bridge.reset();
 });
+
+it("refreshes queued refills after earlier pool writes and keeps explicit retry errors", async () => {
+  const session = startReview("rust", randomUUID(), "service").session;
+  completePreparedReview(session);
+  const requests = discoverRefills("rust", "service");
+  expect(requests).toHaveLength(2);
+  const order: string[] = [];
+  const teacher = new TeacherService(async (_identity, prompt) => {
+    const current = refillRequests("rust").find((request) => request.status === "running")!;
+    if (order.length) {
+      const firstVariant = JSON.parse(refillPlan(requests[0]).calls[0].arguments_json).variants[0]
+        .id;
+      expect(prompt).toContain(`"id":"${firstVariant}"`);
+    }
+    order.push(current.id);
+    return refillPlan(current);
+  });
+  teacher.attach("rust", "codex");
+  await teacher.idle();
+  expect(order).toHaveLength(2);
+  expect(refillRequests("rust").every((request) => request.status === "done")).toBe(true);
+  await teacher.stop();
+  const request = refillRequests("rust")[0];
+  delete request.plan;
+  request.status = "failed";
+  request.error = "A prior generated variant reused an existing id.";
+  fixture.write("rust/.review-refills.json", JSON.stringify({ version: 1, requests: [request] }));
+  const retried = refreshRefill(request);
+  updateRefill(retried, "queued");
+  expect(refreshRefill(refillRequests("rust")[0]).prompt).toContain(request.error);
+});

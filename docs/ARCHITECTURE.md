@@ -82,7 +82,8 @@ Names in the table are under `src/` unless stated. `assets/runtime/classroom.js`
 boots the lesson features and dispatches saved state and SSE events. `highlights.mjs`
 owns selection and the question composer; `cards.mjs` owns annotation threads;
 `quiz-ui.mjs`, `reflections.mjs`, `glossary-ui.mjs`, and `teacher-panel.mjs` own their
-respective page features. Each feature keeps its own state and receives its lesson
+respective page features. `review-screen.mjs` presents one review quiz card at a time,
+with shared grading, drafts, and the teacher panel. Each feature keeps its own state and receives its lesson
 config, content root, and dependencies at construction. `drafts.mjs` serializes draft
 saves; each feature restores its own draft after saved state has rendered.
 `lesson-dom.mjs` holds shared DOM helpers, while `anchor.mjs` stays DOM-free.
@@ -125,6 +126,12 @@ source notation to grading. Answers and feedback render Markdown server-side.
 - **Submission order is total.** Timestamps increase strictly per lesson. Attempts
   count submissions; regrades are revisions. Use `latestGrades()` consistently for
   scores, quiz state, health, and review. Refuse another attempt while one is ungraded.
+- **Review history is separate.** New review identities resolve under classroom `.reviews/`
+  and use `/c/<classroom>/reviews/<review-id>`. Each card has a durable quiz and grade;
+  all cards must be graded before the session completes. Keep numbered legacy review
+  paths and saved documents unchanged. Both layouts participate in discovery and recovery,
+  while reviews stay out of the learner's lesson list and lesson count. Closed misses
+  enqueue durable corrective panel requests, with one request per submission.
 - **Reviews are derived.** Schedule lesson-local objectives from saved answer evidence;
   questions are probes. Same-attempt probes count as one exposure, and any incomplete
   probe resets the objective. Historical answers without objective context keep their

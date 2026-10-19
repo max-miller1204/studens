@@ -1,3 +1,4 @@
+import { lessonDir } from "../src/paths.ts";
 import { afterEach, beforeEach, expect, it } from "vitest";
 import { randomUUID } from "node:crypto";
 import * as fs from "node:fs";
@@ -38,14 +39,14 @@ afterEach(() => fixture.cleanup());
 it("saves the complete assembly before writes and rotates variants only for new reviews", () => {
   const first = startReview("rust", randomUUID(), "pi").session;
   expect(first.variants).toEqual({ "001-ownership/check-1/q1": "v1" });
-  expect(fs.existsSync(path.join(fixture.root, "rust", first.lesson))).toBe(false);
+  expect(fs.existsSync(lessonDir("rust", first.lesson))).toBe(false);
   expect(startReview("rust", randomUUID(), "pi").session.document).toEqual(first.document);
   // Publication must use the saved bytes, including after source edits.
   fixture.write("rust/001-ownership/quiz/key.json", "{}");
   completePreparedReview(first);
-  expect(
-    fs.readFileSync(path.join(fixture.root, "rust", first.lesson, "lesson.html"), "utf8"),
-  ).toBe(first.document!.lesson_html);
+  expect(fs.readFileSync(path.join(lessonDir("rust", first.lesson), "lesson.html"), "utf8")).toBe(
+    first.document!.lesson_html,
+  );
   seedPreparedReviewSource(fixture.root);
   writeGradedAttempt({
     lesson: first.lesson,

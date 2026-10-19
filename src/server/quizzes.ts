@@ -2,7 +2,7 @@ import * as fs from "node:fs";
 import type * as http from "node:http";
 import * as path from "node:path";
 import { isContractId, isQuizKind } from "../../assets/runtime/quiz.mjs";
-import { isValidSlug, lessonDir } from "../paths.ts";
+import { isValidSlug, lessonDir, isStoredReview } from "../paths.ts";
 import { stageLesson } from "../pretest.ts";
 import { authoredQuizzes } from "../quiz-authoring.ts";
 import { completeClosedSubmission } from "../quiz-grading.ts";
@@ -97,6 +97,18 @@ export async function handleQuizSubmit(
     }
   }
 
+  if (isStoredReview(lesson)) {
+    const quizzes = authoredQuizzes(fs.readFileSync(page.htmlPath, "utf8"));
+    const index = quizzes.findIndex((quiz) => quiz.id === quizId);
+    const states = store.latestQuizStates(classroom, lesson);
+    if (
+      quizzes
+        .slice(0, index)
+        .some((quiz) => !states.some((state) => state.quizId === quiz.id && state.grade))
+    )
+      return sendJson(res, { error: "Grade the previous review card first." }, 409);
+  }
+
   // A review question must name an item the learner was graded on before. Otherwise
   // its grade would start a schedule for an item that does not exist.
   if (kind === "review") {
@@ -118,6 +130,8 @@ export async function handleQuizSubmit(
   // Reason: a retake is a new attempt at a graded quiz. While the last attempt waits on
   // the teacher, a second one would only reach them as a duplicate.
   const latest = store.latestQuizStates(classroom, lesson).find((q) => q.quizId === quizId);
+  if (latest?.grade && isStoredReview(lesson))
+    return sendJson(res, { error: "This review card is already graded." }, 409);
   if (latest && !latest.grade) {
     return sendJson(res, { error: "The last attempt at this quiz is not graded yet" }, 409);
   }

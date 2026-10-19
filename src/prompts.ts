@@ -363,7 +363,10 @@ export function gradePrompt(
     "",
     answers,
     "",
-    "Confidence changes feedback only. Reinforce correct but uncertain answers with a brief explanation. Accept equivalent valid solutions under the rubric. Assistance does not change credit. Label immediate and assisted success honestly. Neither proves delayed retention. Use the saved teaching plan for objective context.",
+    "Confidence changes feedback only. Reinforce correct but uncertain answers with a brief explanation. Accept equivalent valid solutions under the rubric. Assistance does not change credit. Label immediate and assisted success honestly. Neither proves delayed retention.",
+    submission.instructionalContract === 1
+      ? `Use the saved teaching plan at ${path.join(lessonDir(submission.classroom, submission.lesson), "quiz", "plan.json")} for objective context.`
+      : "This historical assessment has no validated teaching plan. Use its saved answer context; do not assume a plan file exists.",
     "Read the lesson and its private quiz/key.json rubric before grading. Use the criteria set before submission. Do not change the rubric between attempts. For an incomplete answer, name the missing idea and award only the points specified by the rubric. If no rubric exists, report the authoring gap and stop. Ask the teacher to supply the rubric before grading.",
     ...(submission.assessmentContract === 1
       ? [

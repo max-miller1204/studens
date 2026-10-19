@@ -1,4 +1,5 @@
 /** Real host and dedicated teacher evaluation. All material is a temporary fixture. */
+import { closedReviewActions, refillRetryActions } from "./review-card-actions.ts";
 import { highlightText } from "./browser-actions.ts";
 import { spawn } from "node:child_process";
 import * as fs from "node:fs";
@@ -8,9 +9,13 @@ import * as net from "node:net";
 import { refillRequests } from "../src/review-refill.ts";
 import { useTestModel, until, harnessCommand, parseHarness } from "./harness.ts";
 import { playwright, playwrightCode } from "./playwright.ts";
-import { seedHistoricalReview, seedTransferObjective } from "../test/helpers.ts";
+import {
+  seedHistoricalReview,
+  seedTransferObjective,
+  closeReviewVariants,
+} from "../test/helpers.ts";
 import { currentReview } from "../src/review-session.ts";
-import { _overrideClassroomsDir } from "../src/paths.ts";
+import { _overrideClassroomsDir, lessonUrl } from "../src/paths.ts";
 import { notesStub } from "../src/prompts.ts";
 import * as store from "../src/store.ts";
 import { control, serviceStatus } from "../src/service-client.ts";
@@ -22,7 +27,7 @@ const harness = parseHarness(
 const CLASSROOM = "rust",
   LESSON = "001-ownership";
 const RETRIEVAL_REPLY =
-  "The value is dropped when its owner leaves scope. If a String moves to another variable, the new variable owns it. The old variable cannot use it, so the same value is not freed twice. I answered without help.";
+  "The value is dropped when its owner leaves scope. If a String moves to another variable, the new variable owns it. The old variable cannot use it, so the same value is not freed twice. For a String local to an inner block, such as greeting, its memory is released at the closing brace of that block, after the last println inside it and before execution returns to the outer block. That brace ends its owner's scope. I answered without help.";
 const artifacts = process.argv[3] ? path.resolve(process.argv[3]) : null;
 if (artifacts) fs.mkdirSync(artifacts, { recursive: true });
 function log(message: string): void {
@@ -262,6 +267,7 @@ async function main(): Promise<void> {
         ),
       );
     seedTransferObjective(true);
+    closeReviewVariants(root);
     await playwrightCode(
       browser,
       root,
@@ -285,7 +291,7 @@ async function main(): Promise<void> {
       browser,
       root,
       `async page => {
-      await page.waitForURL(${JSON.stringify(base)} + ${JSON.stringify(`/c/rust/${review.lesson}`)});
+      await page.waitForURL(${JSON.stringify(base)} + ${JSON.stringify(lessonUrl("rust", review.lesson) + "*")});
       await page.waitForFunction(() => document.querySelector('form.cl-quiz')?.dataset.state === 'fresh');
       if (await page.locator('.cl-quiz-error').count()) throw new Error('Authored review has contract errors.');
       ${artifacts ? `await page.screenshot({path:${JSON.stringify(path.join(artifacts, `${harness}-review.png`))},fullPage:true});` : ""}
@@ -295,6 +301,43 @@ async function main(): Promise<void> {
     if (artifacts)
       fs.writeFileSync(path.join(artifacts, "stored-review.json"), JSON.stringify(review, null, 2));
     log("PASS: prepared review opens from the classroom page without authoring");
+    await playwrightCode(
+      browser,
+      root,
+      `async page => {
+      ${closedReviewActions(artifacts ? path.join(artifacts, `${harness}-review-correction.png`) : null)}
+      return true;
+    }`,
+    );
+
+    const settledRefills = await until("background refill result", 305_000, () => {
+      const requests = refillRequests("rust").filter((request) => request.lesson === review.lesson);
+      return requests.length &&
+        requests.every((request) => ["done", "failed"].includes(request.status))
+        ? requests
+        : null;
+    });
+    const failedRefills = settledRefills.filter((request) => request.status === "failed");
+    if (failedRefills.length) {
+      console.log(
+        "Explicit browser retry after saved background errors: " +
+          failedRefills.map((request) => request.error).join("; "),
+      );
+      if (artifacts)
+        fs.writeFileSync(
+          path.join(artifacts, "failed-review-refills.json"),
+          JSON.stringify(failedRefills, null, 2),
+        );
+      await playwrightCode(
+        browser,
+        root,
+        `async page => { ${refillRetryActions(
+          failedRefills.map((request) => request.id),
+          artifacts ? path.join(artifacts, "review-refills-failed.png") : null,
+        )} return true; }`,
+      );
+    }
+
     const refills = await until("background private refill", 305_000, () => {
       const requests = refillRequests(CLASSROOM).filter((r) => r.lesson === review.lesson);
       if (requests.some((r) => r.status === "failed"))

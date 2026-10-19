@@ -1791,3 +1791,67 @@ figure:has(> .cl-diagram) figcaption {
   color: var(--cl-text);
   font: inherit;
 }
+
+/* The review document retains every card for recovery; only the active one paints. */
+[data-cl-review-screen] .cl-quiz:not([data-review-active="true"]),
+.cl-review-page .cl-quiz[hidden] {
+  display: none;
+}
+.cl-review-page .cl-lesson-shell {
+  max-width: 46rem;
+  padding: 1rem;
+}
+.cl-review-page .cl-lesson-shell > header h1 {
+  font-size: 1.75rem;
+  margin-bottom: 0.5rem;
+}
+.cl-review-page .cl-quiz {
+  margin: 1rem 0;
+  padding: 1rem;
+  overflow-wrap: anywhere;
+  scroll-margin-top: 5rem;
+}
+.cl-review-page .cl-questions {
+  list-style: none;
+  padding: 0;
+}
+.cl-review-page .cl-q {
+  padding: 0;
+}
+.cl-review-page .cl-q::before {
+  display: none;
+}
+.cl-review-page .cl-q input[type="text"],
+.cl-review-page .cl-q textarea,
+.cl-review-page .cl-q select {
+  max-width: 100%;
+  min-height: 2.75rem;
+  font-size: 1rem;
+}
+.cl-review-progress {
+  font-variant-numeric: tabular-nums;
+}
+.cl-review-navigation {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 1rem 0;
+}
+.cl-review-page .cl-button,
+.cl-review-page .cl-options label {
+  min-height: 2.75rem;
+}
+.cl-review-page .cl-teacher {
+  margin: 1rem 0;
+}
+@media (max-width: 480px) {
+  .cl-review-page .cl-quiz-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .cl-review-page .cl-answer-report {
+    display: block;
+  }
+}

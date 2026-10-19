@@ -17,6 +17,7 @@ export interface LessonRuntimeConfig {
   baseUrl: string;
   delivery?: "push" | "wait" | "service";
   pendingPretests?: string[];
+  reviewScreen?: boolean;
 }
 
 /** The `<head>` additions: shared stylesheet plus the no-flash theme bootstrap. */
@@ -75,5 +76,7 @@ export function injectLessonRuntime(html: string, config: LessonRuntimeConfig): 
       () => `<script type="application/json" id="cl-config">${toScriptJson(config)}</script>`,
     );
   }
+  if (config.reviewScreen)
+    html = html.replace(/<body\b([^>]*)>/i, "<body$1 data-cl-review-screen>");
   return insertBeforeBodyEnd(insertInHead(html, headInjection()), bodyInjection(config));
 }
