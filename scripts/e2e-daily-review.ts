@@ -244,6 +244,9 @@ export async function verifyDailyReview(artifacts: string | null): Promise<void>
         await page.getByText('Yes, the cell membrane controls transport.',{exact:true}).waitFor();
         ${shot("correction-mobile")}
         await page.getByRole('link',{name:'Continue daily review',exact:true}).click();
+        const staleLanding = await page.request.post(${JSON.stringify(`${base}/api/daily-review`)}, {data:{id:crypto.randomUUID()}});
+        const staleResult = await staleLanding.json();
+        if(staleLanding.status()!==202 || staleResult.daily.groups[1].status!=='planned') throw new Error('Delayed landing start published the next classroom.');
         await page.getByRole('button',{name:'Start Rust review',exact:true}).click();
         await page.getByRole('alert').filter({hasText:'publication conflicts with lesson.html'}).waitFor();
         await page.getByRole('button',{name:'Retry Rust review',exact:true}).waitFor();${shot("partial-failure")}
@@ -254,7 +257,11 @@ export async function verifyDailyReview(artifacts: string | null): Promise<void>
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: crypto.randomUUID() }),
       });
-      if (staleStart.status !== 202 || publications !== 2 || !dailyReviews()[0].groups[1].error)
+      if (
+        staleStart.status !== 202 ||
+        Number(publications) !== 2 ||
+        !dailyReviews()[0].groups[1].error
+      )
         throw new Error("A stale landing start retried the later classroom.");
       const beforeRetry = publications;
       save("partial-failure.json", {

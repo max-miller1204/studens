@@ -324,7 +324,7 @@ async function main(): Promise<void> {
     );
     if (artifacts)
       fs.writeFileSync(path.join(artifacts, "stored-review.json"), JSON.stringify(review, null, 2));
-    log("PASS: prepared review opens from the classroom page without authoring");
+    log("PASS: prepared review opens through the daily landing without authoring");
     const correctionResult = await playwrightCode(
       browser,
       root,

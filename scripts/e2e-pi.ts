@@ -495,7 +495,7 @@ try {
       path.join(artifacts, "stored-review.json"),
       JSON.stringify(reviewSession, null, 2),
     );
-  console.log("[e2e:pi] PASS: prepared review opens from the classroom page without authoring");
+  console.log("[e2e:pi] PASS: prepared review opens through the daily landing without authoring");
   const correctionResult = await playwrightCode(
     session,
     fixture.root,
