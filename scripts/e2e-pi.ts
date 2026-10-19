@@ -213,24 +213,65 @@ try {
   await driveRealNextLesson(session, fixture.root, base, "pi", artifacts);
   if ((failure as Error | null)?.message === "Tool failed: publish_lesson") {
     const saved = lessonRequests("rust").at(-1)!;
+    const requests = events.flatMap((e, index) =>
+      e.type === "message_end" &&
+      e.message?.role === "user" &&
+      e.message.content?.some((c: { text?: string }) =>
+        c.text?.startsWith(`Explicit Next lesson request ${saved.id} `),
+      )
+        ? [index]
+        : [],
+    );
+    const failedEnd = events.findIndex((e, index) => index > requests[0] && e.type === "agent_end");
+    const errors = events.flatMap((e, index) =>
+      e.type === "tool_execution_end" && e.isError ? [{ event: e, index }] : [],
+    );
+    const errorText = (e: Record<string, any>) =>
+      e.result?.content?.map((c: { text?: string }) => c.text ?? "").join("\n");
     if (
       saved.status !== "done" ||
       saved.failedAttempts?.length !== 1 ||
-      events.filter(
-        (e) => e.type === "tool_execution_end" && e.toolName === "publish_lesson" && e.isError,
-      ).length !== 1 ||
+      requests.length !== 2 ||
+      failedEnd <= requests[0] ||
+      requests[1] <= failedEnd ||
+      !errors.length ||
+      errors[0].event.toolName !== "publish_lesson" ||
+      errorText(errors[0].event) !== saved.failedAttempts[0].error ||
+      errors.some(
+        ({ event: e, index }, n) =>
+          e.toolName !== "publish_lesson" ||
+          index < requests[0] ||
+          index > failedEnd ||
+          (n > 0 &&
+            errorText(e) !==
+              "This lesson request requires an explicit retry from the classroom page."),
+      ) ||
       !events.some(
-        (e) => e.type === "tool_execution_end" && e.toolName === "publish_lesson" && !e.isError,
+        (e, index) =>
+          index > requests[1] &&
+          e.type === "tool_execution_end" &&
+          e.toolName === "publish_lesson" &&
+          !e.isError,
       )
     )
       throw failure;
-    // Only the authoring rejection explicitly retried and proven recovered above is expected.
-    if (
-      events.some(
-        (e) => e.type === "tool_execution_end" && e.isError && e.toolName !== "publish_lesson",
-      )
-    )
-      throw failure;
+    // Accept only the retained rejection and exact same-origin retry guards before the failed run ends.
+    // The explicit browser retry must create a later origin and publish successfully; every other tool error is fatal.
+    const recovery = {
+      request: saved.id,
+      failedEnd,
+      requests,
+      rejectedError: saved.failedAttempts[0].error,
+      guardedRepublishes: errors.length - 1,
+    };
+    if (artifacts)
+      fs.writeFileSync(
+        path.join(artifacts, "next-lesson-origin-recovery.json"),
+        JSON.stringify(recovery, null, 2),
+      );
+    console.log(
+      `[e2e:pi] Verified explicit authoring recovery; ${errors.length - 1} same-origin republishes were refused before the failed run ended.`,
+    );
     failure = null;
   }
   await playwrightCode(
