@@ -14,6 +14,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { isAssistance, type Assistance } from "./evidence.ts";
 import { parseTeachingPlan, type TeachingPlan } from "./teaching-plan.ts";
 import { parseRubric } from "./rubric.ts";
+import { authoredVariants } from "./review-variants.ts";
 import { gradeClosed } from "./closed-grading.ts";
 import { questionCredit } from "../assets/runtime/grade.mjs";
 import { reviewKey } from "../assets/runtime/quiz.mjs";
@@ -80,6 +81,7 @@ export interface LessonMeta {
   kind?: LessonKind;
   assessmentContract?: 1;
   instructionalContract?: 1;
+  reviewVariantContract?: 1;
 }
 
 export interface Lesson {
@@ -97,6 +99,7 @@ export interface Lesson {
   kind: LessonKind;
   assessmentContract?: 1;
   instructionalContract?: 1;
+  reviewVariantContract?: 1;
   annotationCount: number;
   /** Grade of the most recent graded submission that is not a pretest, when one exists. */
   latestScore: number | null;
@@ -482,6 +485,8 @@ export function readLesson(classroom: string, lesson: string): Lesson | null {
     throw new Error(`Unknown instructional contract for ${classroom}/${lesson}.`);
   if (meta?.assessmentContract !== undefined && meta.assessmentContract !== 1)
     throw new Error("Unsupported assessment contract version.");
+  if (meta?.reviewVariantContract !== undefined && meta.reviewVariantContract !== 1)
+    throw new Error("Unsupported review variant contract version.");
   const grades = latestGrades(classroom, lesson);
   const submissions = listSubmissions(classroom, lesson);
   const gradedIds = new Set(grades.map((g) => g.submissionId));
@@ -503,6 +508,7 @@ export function readLesson(classroom: string, lesson: string): Lesson | null {
     summary: meta?.summary ?? "",
     assessmentContract: meta?.assessmentContract,
     instructionalContract: meta?.instructionalContract,
+    reviewVariantContract: meta?.reviewVariantContract,
     htmlPath,
     createdAt: meta?.createdAt ?? mtime(htmlPath),
     updatedAt: mtime(htmlPath),
@@ -729,6 +735,16 @@ export function createSubmission(
     ? createHash("sha256").update(fs.readFileSync(rubric)).digest("hex")
     : undefined;
   const page = readLesson(input.classroom, input.lesson);
+  if (page?.reviewVariantContract === 1)
+    authoredVariants(
+      fs.readFileSync(rubric, "utf8"),
+      fs.readFileSync(
+        path.join(lessonDir(input.classroom, input.lesson), "quiz/plan.json"),
+        "utf8",
+      ),
+      fs.readFileSync(page.htmlPath, "utf8"),
+      true,
+    );
   const privateKey =
     page?.assessmentContract === 1
       ? parseRubric(fs.readFileSync(rubric, "utf8"), fs.readFileSync(page.htmlPath, "utf8"))

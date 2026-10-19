@@ -35,7 +35,9 @@ description: Teach a topic or create challenging quizzes and tests in the classr
 10. When `begin_teaching` reports items due for review, offer a review before new
     material. Create it with `scaffold_review`.
 11. Before you plan a lesson, call `lesson_health`. Fix a lesson that keeps failing.
-12. Create each lesson with `scaffold_lesson` and each review with `scaffold_review`.
+12. Prepare two or three private review variants per check question before sharing a new lesson.
+    Follow docs/TEACHING-PLAN.md. Keep pools in quiz/key.json and quiz/plan.json.
+    Create each lesson with `scaffold_lesson` and each review with `scaffold_review`.
     Use mode quiz for an explicit quiz or test request. Keep it assessment-only.
     Use mode pretest for a standalone diagnostic. New lessons start with a pretest
     by default. Keep teaching and later checks behind its server gate.

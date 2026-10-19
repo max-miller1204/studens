@@ -83,3 +83,49 @@ advance it. The server replays the objective snapshot saved with each attempt, n
 the current plan. Historical attempts without that snapshot retain their original
 `<lesson>/<quiz id>/<question id>` keys and unknown context. Previously saved review
 questions and chat checks may continue to use those question links.
+
+## Private review variants
+
+Every check question in a newly scaffolded lesson or quiz needs two or three private
+variants. Pretests and review questions do not need pools. In the question's
+`quiz/key.json` entry, add a `variants` array. Each entry has `id`, `html`, and
+`rubric`; the rubric uses the same expected-answer and points contract as the
+original question. For example (provide two or three entries):
+
+```json
+{
+  "id": "v1",
+  "html": "<li class=\"cl-q\" data-question-id=\"v1\" data-type=\"short\"><p class=\"cl-q-prompt\">Explain who releases a value moved into a new scope.</p><textarea></textarea></li>",
+  "rubric": {
+    "expected": "The new owner releases the value when its scope ends.",
+    "points": 1,
+    "full": "Identify the new owner and its scope.",
+    "partial": "Zero without the new owner or scope."
+  }
+}
+```
+
+Each fragment is one complete `li.cl-q`. Use the variant id as its question id.
+Include the stimulus and controls. Omit `data-review-of`, forms, templates, scripts,
+event handlers, teaching, hints, and answers. Media links must start with `/c/` so
+that they resolve from a review page. Keep element ids and radio names unique
+within the fragment; the assembler namespaces them when combining questions.
+
+In the original question's `quiz/plan.json` mapping, add `variants` with the same
+ids. Each mapping uses `objective: "original"`, `support: "independent"`, and a
+suitable mental task. For example:
+
+```json
+{
+  "variants": {
+    "v1": { "objective": "original", "task": "retrieval", "support": "independent" },
+    "v2": { "objective": "original", "task": "application", "support": "independent" }
+  }
+}
+```
+
+The reserved objective reference carries the source objective's full policy forward.
+Use fresh cases and solve each variant against its private rubric. Changing numbers
+alone does not establish transfer. All pool files stay off static HTTP routes.
+Legacy lessons without pools remain readable and keep their grades and schedules;
+prepare their pools explicitly to make them eligible for instant review.
