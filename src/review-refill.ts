@@ -8,7 +8,7 @@ import { validateVariant } from "./review-variants.ts";
 import type { PreparedVariant } from "./review-variants.ts";
 import { reviewSessions } from "./review-session.ts";
 import type { ReviewOwner } from "./review-session.ts";
-import type { ReviewItem } from "./review.ts";
+import { answerReviewKey, findReviewItem, type ReviewItem } from "./review.ts";
 import * as store from "./store.ts";
 import { answerSummary } from "./quiz.ts";
 import type { ClassroomTool } from "./tools.ts";
@@ -179,9 +179,9 @@ export function discoverRefills(classroom: string, owner: ReviewOwner): RefillRe
       for (const verdict of grade.questions) {
         if (verdict.correct) continue;
         const answer = submission.answers.find((a) => a.questionId === verdict.questionId);
-        const key =
-          answer?.reviewOf ?? `${submission.lesson}/${submission.quizId}/${verdict.questionId}`;
-        const item = items.find((item) => item.key === key);
+        if (!answer) throw new Error(`Graded question ${verdict.questionId} has no saved answer.`);
+        const key = answerReviewKey(submission.lesson, submission.quizId, answer);
+        const item = findReviewItem(items, key);
         if (item)
           add(
             {
@@ -222,8 +222,8 @@ export function validateRefill(request: RefillRequest, value: unknown): Prepared
     throw new Error(
       `Refill ${request.id} needs ${request.reason === "miss" ? "one" : "two"} variants.`,
     );
-  const [lesson, quiz, question] = request.key.split("/");
-  const pool = lessonPools(request.classroom, lesson).get(`${quiz}/${question}`);
+  const { lesson, quizId, questionId } = request.input;
+  const pool = lessonPools(request.classroom, lesson).get(`${quizId}/${questionId}`);
   if (!pool?.length) throw new Error(`Original private pool is missing: ${request.key}.`);
   const variants = value.map((v) => validateVariant(v, v?.plan, pool[0].objective));
   if (variants.some((v) => pool.some((old) => old.id === v.id)))
@@ -257,7 +257,7 @@ export function applyRefill(request: RefillRequest): void {
     (r) => r.id === request.id && r.owner === request.owner,
   );
   if (!saved?.plan) throw new Error("No saved refill plan to apply.");
-  const [lesson, quiz, question] = request.key.split("/");
+  const { lesson, quizId, questionId } = saved.input;
   const target = privatePoolPath(request.classroom, lesson, "review-pool.json");
   const state = fs.existsSync(target)
     ? JSON.parse(fs.readFileSync(target, "utf8"))
@@ -265,7 +265,7 @@ export function applyRefill(request: RefillRequest): void {
   if (!state || state.version !== 1 || !Array.isArray(state.batches))
     throw new Error("Invalid private supplemental pool.");
   const previous = state.batches.find((b: { requestId: string }) => b.requestId === request.id);
-  const batch = { requestId: request.id, key: `${quiz}/${question}`, variants: saved.plan };
+  const batch = { requestId: request.id, key: `${quizId}/${questionId}`, variants: saved.plan };
   if (previous && JSON.stringify(previous) !== JSON.stringify(batch))
     throw new Error("Published refill conflicts with its saved plan.");
   if (!previous) {
@@ -344,8 +344,8 @@ export function piRefillTool(): ClassroomTool {
 /** Explicit retry may refresh authoring context, never the saved learner mistake. */
 export function refreshRefill(request: RefillRequest): RefillRequest {
   if (request.plan) return request;
-  const [lesson, quiz, question] = request.key.split("/");
-  const pool = lessonPools(request.classroom, lesson).get(`${quiz}/${question}`);
+  const { lesson, quizId, questionId } = request.input;
+  const pool = lessonPools(request.classroom, lesson).get(`${quizId}/${questionId}`);
   if (!pool?.length) throw new Error(`Original private pool is missing: ${request.key}.`);
   const requests = refillRequests(request.classroom);
   const saved = requests.find((r) => r.id === request.id && r.owner === request.owner)!;

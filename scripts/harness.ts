@@ -32,8 +32,25 @@ export function codexHome(): string {
     path.join(home, "config.toml"),
     `model = "${TEST_MODELS.codex.model}"\nmodel_reasoning_effort = "${TEST_MODELS.codex.effort}"\n`,
   );
+  // Exercise this checkout even when the public catalog pins an older release.
+  // Keep the development catalog and package copy inside the disposable home.
+  const marketplace = path.join(home, "test-marketplace");
+  fs.mkdirSync(path.join(marketplace, ".agents/plugins"), { recursive: true });
+  fs.cpSync(ROOT, path.join(marketplace, "studens"), {
+    recursive: true,
+    filter: (source) =>
+      ![".git", "node_modules", ".playwright-cli", "reports"].includes(path.basename(source)),
+  });
+  const catalog = JSON.parse(
+    fs.readFileSync(path.join(ROOT, ".agents/plugins/marketplace.json"), "utf8"),
+  );
+  catalog.plugins[0].source = { source: "local", path: "./studens" };
+  fs.writeFileSync(
+    path.join(marketplace, ".agents/plugins/marketplace.json"),
+    JSON.stringify(catalog),
+  );
   for (const args of [
-    ["plugin", "marketplace", "add", ROOT],
+    ["plugin", "marketplace", "add", marketplace],
     ["plugin", "add", "studens@studens"],
   ]) {
     const run = spawnSync("codex", args, { env: { ...process.env, CODEX_HOME: home } });

@@ -142,7 +142,9 @@ export function startReview(
   for (const item of items) {
     // Objective schedules retain their original question links. Select a prepared
     // probe through those links while keeping the objective as the review identity.
-    const keys = item.questionKeys?.length ? item.questionKeys : [item.key];
+    const keys = item.questionKeys?.length
+      ? item.questionKeys
+      : [`${item.lesson}/${item.quizId}/${item.questionId}`];
     for (const key of keys) {
       const pool = pools
         .get(key)

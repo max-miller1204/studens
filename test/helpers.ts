@@ -393,8 +393,8 @@ export function legacyReview(classroom: string, id: string, owner: "pi" | "servi
 
 /** Fixture model response at the production teacher-plan boundary. */
 export function refillPlan(request: RefillRequest) {
-  const [lesson, quiz, question] = request.key.split("/");
-  const source = lessonPools(request.classroom, lesson).get(`${quiz}/${question}`)![0];
+  const { lesson, quizId, questionId } = request.input;
+  const source = lessonPools(request.classroom, lesson).get(`${quizId}/${questionId}`)![0];
   const variants = Array.from({ length: request.reason === "miss" ? 1 : 2 }, (_, i) => {
     const id = `fresh-${request.id.slice(-12)}-${i + 1}`;
     return {

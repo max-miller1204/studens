@@ -25,6 +25,8 @@ export interface ReviewEvent {
   key: string;
   /** Original question aliases; absent on chat and linked review events. */
   questionKey?: string;
+  /** Source identity remains usable when an older schedule owns the question alias. */
+  sourceQuestionKey?: string;
   /** When the learner answered. */
   at: number;
   correct: boolean;
@@ -124,7 +126,8 @@ export function scheduleItems(events: ReviewEvent[]): ReviewItem[] {
   const items: ReviewItem[] = [];
   for (const [key, probes] of byKey) {
     const questionKeys = [...new Set(probes.flatMap((event) => event.questionKey ?? []))];
-    const [lesson, quizId, questionId] = (questionKeys[0] ?? key).split("/");
+    const source = probes.find((event) => event.sourceQuestionKey)?.sourceQuestionKey;
+    const [lesson, quizId, questionId] = (source ?? questionKeys[0] ?? key).split("/");
     // Several probes in one attempt are one exposure. Every probe must succeed
     // independently; a later correct answer must not erase an incomplete one.
     const list: ReviewEvent[] = [];
