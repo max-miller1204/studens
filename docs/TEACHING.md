@@ -193,10 +193,30 @@ control. Make each control work with the keyboard, label it, and
 show its result visibly. Check it in the browser. Keep local controls outside
 `form.cl-quiz`. You do not need to change the runtime for a new lesson pattern.
 
+### Practice between sections
+
+Place a short `form.cl-practice` after a key teaching section when the learner can
+try that idea before moving on. Read `assets/templates/practice.html` for a copyable
+example and `quiz.html` for its shared answer controls. Keep practice inside the
+pretest gate. Choose a useful prediction, retrieval, or application task, with one
+or two questions and feedback explaining the principle. Use exact-capable answer
+types; open reasoning needs a reflection or a local solution reveal.
+
+`Check answer` gives immediate local feedback. The learner can revise and check
+again. Practice never submits to a teacher, creates a grade, changes a lesson score,
+or enters review. It saves no answers or drafts; reload starts fresh. Keep practice
+out of private `quiz/key.json` and `quiz/plan.json` and do not create variant pools.
+
+Practice keys and feedback are public teaching content. Use fresh examples for the
+later graded assessment. Never copy private graded keys, criteria, or plan details
+into a practice key. Inspect the public source for graded answer cues. Check blank
+and incorrect answers, corrected answers, keyboard use, and reload in the browser.
+
 ### Choosing what to use
 
 | Feature                         | Use it when                                                                                                                               |
 | ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| Practice (`form.cl-practice`)   | Between teaching sections, for short ungraded checks with immediate local feedback. No teacher request, saved attempt, score, or review.  |
 | Pretest (`data-kind="pretest"`) | Before teaching, to find what to stress. Diagnostic only. It never sets the lesson score and never enters review.                         |
 | Check (the default quiz kind)   | After teaching, to test the objective. It sets the lesson score and enters review.                                                        |
 | Review (`scaffold_review`)      | Questions are due and the learner agrees. Write new examples for the returned items. Keep each `data-review-of` exactly.                  |
@@ -269,7 +289,7 @@ Every lesson should close a feedback loop. The quiz markup contract is
 
 Two rules that matter more than they look:
 
-- **Never put the answer key in the page.** They can read the source. Grading is your
+- **Never put a graded answer key in the page.** They can read the source. Grading is your
   job: the submission arrives as a notification and you answer it with
   `grade_lesson_quiz`.
 - **Every option the same length**, in words and ideally characters. Formatting must not

@@ -21,6 +21,12 @@ reply to the teacher's new question below the quiz.
 
 ![Per-question feedback](../screenshots/quiz.png)
 
+Short practice checks can sit between teaching sections. They give immediate local
+feedback, stay editable, and never create grades, lesson scores, review items, or
+teacher requests. Practice resets on reload.
+
+![Inline practice feedback](../screenshots/practice-feedback-desktop.png)
+
 Lessons support glossary recall, bundled diagrams and math, and light or dark themes.
 
 ![A lesson in dark mode](../screenshots/lesson-dark.png)

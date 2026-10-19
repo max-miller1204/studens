@@ -13,6 +13,7 @@ import {
   escapeText,
 } from "./lesson-dom.mjs";
 import { draftStatus } from "./drafts.mjs";
+import { practiceErrors, practiceFeedback } from "./practice.mjs";
 
 /**
  * The quiz contract lives in assets/templates/quiz.html. A form that breaks it is
@@ -32,6 +33,21 @@ export function createQuizzes({ config, drafts, placeTeacherPanel }) {
     const ids = (selector, attribute) =>
       [...question.querySelectorAll(selector)].map((el) => el.getAttribute(attribute) ?? "");
     const count = (selector) => own(question, selector).length;
+    const unit = question.querySelector(".cl-unit");
+    // null means editable text; a list contains the units the control can supply.
+    let unitValues = [];
+    if (unit?.matches("input:not([type]), input[type=text], input[type=search]"))
+      unitValues = unit.readOnly || unit.matches(":disabled") ? [unit.value.trim()] : null;
+    else if (unit?.matches("select") && !unit.multiple)
+      unitValues = [...unit.options]
+        .filter(
+          (option) =>
+            option.selected ||
+            (!unit.matches(":disabled") &&
+              !option.disabled &&
+              !option.closest("optgroup[disabled]")),
+        )
+        .map((option) => option.value.trim());
     return {
       id: question.dataset.questionId ?? null,
       type: question.dataset.type ?? null,
@@ -48,6 +64,7 @@ export function createQuizzes({ config, drafts, placeTeacherPanel }) {
       textareas: count("textarea"),
       numbers: count("input.cl-number"),
       units: count(".cl-unit"),
+      unitValues,
       options: own(question, "input[type=radio], input[type=checkbox]").map((input) =>
         input.getAttribute("value"),
       ),
@@ -62,10 +79,13 @@ export function createQuizzes({ config, drafts, placeTeacherPanel }) {
   /** Problems with the form itself, before its questions are checked. */
   function quizErrors(form, seenQuizIds) {
     const errors = [];
-    const quizId = form.dataset.quizId;
-    if (!quizId) errors.push("The quiz has no data-quiz-id.");
-    else if (!isContractId(quizId)) errors.push(`The data-quiz-id "${quizId}" is not valid.`);
-    else if (seenQuizIds.has(quizId)) errors.push(`Two quizzes use the data-quiz-id "${quizId}".`);
+    const practice = form.matches(".cl-practice");
+    const attribute = practice ? "data-practice-id" : "data-quiz-id";
+    const quizId = form.getAttribute(attribute);
+    if (!quizId) errors.push(`The form has no ${attribute}.`);
+    else if (!isContractId(quizId)) errors.push(`The ${attribute} "${quizId}" is not valid.`);
+    else if (seenQuizIds.has(quizId))
+      errors.push(`Two quiz or practice forms use the id "${quizId}".`);
 
     const kind = form.dataset.kind;
     if (kind !== undefined && !isQuizKind(kind)) {
@@ -87,14 +107,39 @@ export function createQuizzes({ config, drafts, placeTeacherPanel }) {
       "Review. These questions come back to ideas from earlier lessons, so you recall them after a gap.",
   };
 
+  const practiceKeys = new WeakMap();
+
   function hydrateQuizzes() {
     const seenQuizIds = new Set();
-    for (const form of quizForms()) {
+    for (const form of document.querySelectorAll("form.cl-quiz, form.cl-practice")) {
+      const practice = form.matches(".cl-practice");
       const formErrors = quizErrors(form, seenQuizIds);
-      if (form.dataset.quizId) seenQuizIds.add(form.dataset.quizId);
+      const formId = practice ? form.dataset.practiceId : form.dataset.quizId;
+      if (formId) seenQuizIds.add(formId);
       const kind = isQuizKind(form.dataset.kind) ? form.dataset.kind : "check";
-      form.dataset.kind = kind;
+      if (!practice) form.dataset.kind = kind;
 
+      if (practice) {
+        if (form.matches(".cl-quiz")) formErrors.push("Practice must not also be a graded quiz.");
+        if (form.hasAttribute("data-kind")) formErrors.push("Practice does not use data-kind.");
+        try {
+          const keys = form.querySelectorAll(
+            'script[type="application/json"][data-cl-practice-key]',
+          );
+          if (keys.length !== 1)
+            throw new Error("Practice needs one public data-cl-practice-key JSON script.");
+          const key = JSON.parse(keys[0].textContent);
+          formErrors.push(
+            ...practiceErrors(
+              [...form.querySelectorAll(".cl-q")].map((q) => questionShape(q, "check")),
+              key,
+            ),
+          );
+          practiceKeys.set(form, key);
+        } catch (error) {
+          formErrors.push(error.message);
+        }
+      }
       let broken = formErrors.length > 0;
       for (const question of form.querySelectorAll(".cl-q")) {
         const errors = questionErrors(questionShape(question, kind));
@@ -111,7 +156,14 @@ export function createQuizzes({ config, drafts, placeTeacherPanel }) {
         heading.textContent = form.dataset.title;
         form.prepend(heading);
       }
-      if (KIND_NOTES[kind] && !form.querySelector(".cl-quiz-kind")) {
+      if (practice) {
+        const note = document.createElement("p");
+        note.className = "cl-quiz-kind";
+        note.textContent =
+          "Practice · Ungraded. Check your answer here, then try again. Nothing is saved or added to your score or review.";
+        form.prepend(note);
+      }
+      if (!practice && KIND_NOTES[kind] && !form.querySelector(".cl-quiz-kind")) {
         const note = document.createElement("p");
         note.className = "cl-quiz-kind";
         note.textContent = KIND_NOTES[kind];
@@ -137,12 +189,14 @@ export function createQuizzes({ config, drafts, placeTeacherPanel }) {
         submit.className = "cl-submit";
         submit.textContent = "Submit for grading";
       }
+      if (practice) submit.textContent = "Check answer";
       submit.classList.add("cl-button");
       footer.appendChild(submit);
 
       const status = document.createElement("span");
       status.className = "cl-quiz-status";
       status.dataset.clQuizStatus = "";
+      status.setAttribute("role", "status");
       footer.appendChild(status);
 
       if (broken) {
@@ -160,6 +214,16 @@ export function createQuizzes({ config, drafts, placeTeacherPanel }) {
       form.addEventListener("submit", (event) => {
         if (event.target === form) onQuizSubmit(event, form);
       });
+      if (practice) {
+        const clearFeedback = (event) => {
+          if (event.target.closest(".cl-card-panel")) return;
+          form.querySelectorAll(".cl-practice-feedback").forEach((node) => node.remove());
+          setQuizStatus(form, "");
+        };
+        form.addEventListener("input", clearFeedback);
+        form.addEventListener("change", clearFeedback);
+        continue;
+      }
       const saveQuiz = (event) => {
         if (form.dataset.state !== "fresh" || event.target.closest(".cl-card-panel")) return;
         scheduleDraft(
@@ -481,6 +545,21 @@ export function createQuizzes({ config, drafts, placeTeacherPanel }) {
       return;
     }
 
+    if (form.matches(".cl-practice")) {
+      const key = practiceKeys.get(form);
+      form.querySelectorAll(".cl-practice-feedback").forEach((node) => node.remove());
+      for (const [index, answer] of answers.entries()) {
+        const result = practiceFeedback(answer, key[answer.questionId]);
+        const feedback = document.createElement("p");
+        feedback.className = "cl-practice-feedback";
+        feedback.dataset.correct = String(result.correct);
+        feedback.textContent = `${result.correct ? "Correct." : "Not yet."} ${result.feedback}`;
+        questions[index].append(feedback);
+      }
+      setQuizStatus(form, "Feedback shown. You can change your answer and check again.");
+      return;
+    }
+
     setQuizState(form, "submitted");
     form.dataset.activeAttempt = String(Number(form.dataset.attempts ?? "0") + 1);
     // Save the last keystrokes before the submission. The server removes the draft
@@ -541,7 +620,8 @@ export function createQuizzes({ config, drafts, placeTeacherPanel }) {
       submit.disabled = locked;
       if (state === "graded") submit.textContent = "Graded";
       else if (state === "submitted") submit.textContent = "Submitted";
-      else submit.textContent = "Submit for grading";
+      else
+        submit.textContent = form.matches(".cl-practice") ? "Check answer" : "Submit for grading";
     }
   }
 

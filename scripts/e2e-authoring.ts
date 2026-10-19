@@ -66,7 +66,7 @@ import {
   until,
   type Harness,
 } from "./harness.ts";
-import { selectLocateAnswer } from "./browser-actions.ts";
+import { checkPractice, selectLocateAnswer } from "./browser-actions.ts";
 import { playwright, playwrightCode } from "./playwright.ts";
 
 const AUTHORING_TIMEOUT_MS = 30 * 60_000;
@@ -366,6 +366,7 @@ const SUBMIT_LESSON = `async page => {
       controls.set(i, { label, keyboard, changed: before !== after });
     }
   }
+  await (${checkPractice.toString()})(page);
   const submitted = [];
   for (const form of await page.locator('form.cl-quiz').all()) {
     if ((await form.getAttribute('data-state')) !== 'fresh') continue;
