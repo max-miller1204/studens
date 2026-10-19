@@ -1,4 +1,5 @@
 import { verifySettingsBrowser } from "./e2e-settings-browser.ts";
+import { verifyReviewControls } from "./e2e-review-controls.ts";
 import { verifyReviewCards } from "./e2e-review-cards.ts";
 import { verifyReteachBrowser } from "./e2e-reteach-browser.ts";
 import { verifyClosedBrowser } from "./e2e-closed-browser.ts";
@@ -380,6 +381,7 @@ await verifyFoldersBrowser(artifacts ? path.join(artifacts, "folders") : null);
 
 await verifyClosedBrowser(artifacts ? path.join(artifacts, "closed") : null);
 
+await verifyReviewControls(artifacts ? path.join(artifacts, "review-controls") : null);
 await verifyReviewCards(artifacts ? path.join(artifacts, "review-cards") : null);
 await verifyReteachBrowser(artifacts ? path.join(artifacts, "reteach") : null);
 

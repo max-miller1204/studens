@@ -6,6 +6,8 @@ import { isContractId, parseReviewKey, questionErrors } from "../assets/runtime/
 import {
   DEFAULT_REVIEW_SIZE,
   isDue,
+  MAX_REVIEW_SIZE,
+  reviewTopic,
   pickReviewItems,
   relativeDay,
   summarize,
@@ -32,6 +34,7 @@ export interface ReviewSession {
   /** Saved before any publication writes, so recovery never needs a model. */
   document?: ReviewDocument;
   variants?: Record<string, string>;
+  options?: { limit: number; topic?: string; early: boolean };
   error?: string;
 }
 export interface ReviewDocument {
@@ -62,6 +65,14 @@ export function reviewSessions(classroom: string): ReviewSession[] {
           !/^[a-f0-9-]{36}$/.test(request.id) ||
           !Number.isFinite(request.at) ||
           !["queued", "running", "done", "failed"].includes(request.status) ||
+          (request.options !== undefined &&
+            (!request.options ||
+              !Number.isInteger(request.options.limit) ||
+              request.options.limit < 3 ||
+              request.options.limit > MAX_REVIEW_SIZE ||
+              typeof request.options.early !== "boolean" ||
+              (request.options.topic !== undefined &&
+                (typeof request.options.topic !== "string" || !request.options.topic)))) ||
           !Array.isArray(request.items) ||
           request.items.length === 0 ||
           request.items.some((item) => !item || !parseReviewKey(item.key)) ||
@@ -124,8 +135,15 @@ export function startReview(
   id: string,
   owner: ReviewOwner,
   limit = DEFAULT_REVIEW_SIZE,
+  options: { topic?: string; early?: boolean } = {},
 ): { session: ReviewSession; added: boolean } {
   if (!store.readClassroom(classroom)) throw new Error(`No such classroom: ${classroom}.`);
+  if (!Number.isInteger(limit) || limit < 3 || limit > MAX_REVIEW_SIZE)
+    throw new Error(`Review size must be a whole number from 3 to ${MAX_REVIEW_SIZE}.`);
+  if (options.early !== undefined && typeof options.early !== "boolean")
+    throw new Error("Early review must be true or false.");
+  if (options.topic !== undefined && (typeof options.topic !== "string" || !options.topic))
+    throw new Error("Choose an existing review topic.");
   const requests = reviewSessions(classroom);
   const existing =
     requests.find((r) => r.id === id) ?? [...requests].reverse().find(resumableReview);
@@ -134,7 +152,13 @@ export function startReview(
     return { session: existing, added: false };
   }
   const at = Date.now();
-  const items = store.reviewItems(classroom);
+  const active = store.reviewItems(classroom).filter((item) => item.retiredAt === undefined);
+  if (options.topic !== undefined && !active.some((item) => reviewTopic(item).id === options.topic))
+    throw new Error("This review topic is no longer active. Reload and choose a topic.");
+  const items =
+    options.topic === undefined
+      ? active
+      : active.filter((item) => reviewTopic(item).id === options.topic);
   const pools = new Map<string, PreparedVariant[]>();
   for (const lesson of new Set(items.map((item) => item.lesson))) {
     const source = store.readLesson(classroom, lesson);
@@ -161,11 +185,13 @@ export function startReview(
     }
   }
   const eligible = items.filter((item) => itemPools.has(item.key));
-  const picked = pickReviewItems(eligible, at, limit);
+  const picked = pickReviewItems(eligible, at, limit, options.early);
   if (!picked.length) {
-    if (items.some((item) => isDue(item, at)) && !eligible.some((item) => isDue(item, at)))
+    const selectable = (item: ReviewItem) =>
+      !item.needsReteach && (options.early || isDue(item, at));
+    if (items.some(selectable) && !eligible.some(selectable))
       throw new Error(
-        "No prepared variants for the due questions. Prepare private review pools in their original lessons, then retry.",
+        `No prepared variants for the ${options.early ? "selected" : "due"} questions. Prepare private review pools in their original lessons, then retry.`,
       );
     const next = summarize(eligible, at).nextDueAt;
     throw new Error(
@@ -184,6 +210,7 @@ export function startReview(
     lesson: `review-${id}`,
     at,
     items: picked,
+    options: { limit, topic: options.topic, early: options.early ?? false },
     status: "queued",
   };
   if (fs.existsSync(lessonDir(classroom, session.lesson)))
@@ -208,6 +235,7 @@ export function publicReview(session: ReviewSession | null): unknown {
     status: session.status,
     error: session.error,
     count: session.items.length,
+    options: session.options,
     resumable: resumableReview(session),
     url: lessonUrl(session.classroom, session.lesson),
   };

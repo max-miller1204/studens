@@ -25,6 +25,8 @@ export interface QuizSubmission {
   teachingPlan?: TeachingPlan;
   /** Private, durable allocations computed before the submission is written. */
   deterministicGrades?: QuizQuestionGrade[];
+  /** Code-owned selection timing; replay does not depend on the current schedule. */
+  earlyReviewKeys?: string[];
 }
 
 export interface QuizQuestionGrade {

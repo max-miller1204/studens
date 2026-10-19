@@ -56,6 +56,7 @@ function init() {
     config,
     contentRoot,
     placeTeacherPanel: teacher.placeTeacherPanel,
+    flagQuestion: teacher.flagQuestion,
   });
   reflections.hydrateReflections();
   // The glossary waits for the saved highlights: they anchor to the lesson text, and
