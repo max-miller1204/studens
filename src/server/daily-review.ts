@@ -84,6 +84,10 @@ function openGroup(request: DailyReview, classroom: unknown, retry: boolean): vo
       saveDailyReview(request);
       if (group.empty) return;
     }
+    if (session && !plannedReviewEligible(session))
+      throw new Error(
+        "Saved review selections are no longer due or eligible. Restore their eligibility before retrying this already-started publication.",
+      );
     session ??= savePlannedReview(group.plan);
     if (session.status === "failed") {
       if (!retry) return;

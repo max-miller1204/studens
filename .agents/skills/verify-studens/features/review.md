@@ -232,3 +232,10 @@ If an unstarted group’s canonical due selection changes, opening it shows a st
 selection error. Explicit retry refreshes the plan before publication. If no due
 items remain, that group finishes with no new review or grade. Published reviews
 retain their saved questions and assessment history.
+
+A failed child publication also rechecks current eligibility before explicit retry.
+If its item was retired or paused after the failure, the specific error persists
+without publishing it or replaying completed groups. Repair the cause (for example,
+restore the selected item), then explicitly retry the same saved plan. Already
+published cards remain available. A queued early review retains its saved early
+option while applying all other canonical exclusions.

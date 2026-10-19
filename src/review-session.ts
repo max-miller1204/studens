@@ -272,9 +272,12 @@ export function planReview(
 /** Recheck through the canonical picker when a saved group has not been published. */
 export function plannedReviewEligible(session: ReviewSession): boolean {
   const eligible = new Set(
-    pickReviewItems(store.reviewItems(session.classroom), Date.now(), Number.MAX_SAFE_INTEGER).map(
-      (item) => item.key,
-    ),
+    pickReviewItems(
+      store.reviewItems(session.classroom),
+      Date.now(),
+      Number.MAX_SAFE_INTEGER,
+      session.options?.early ?? false,
+    ).map((item) => item.key),
   );
   return session.items.every((item) => eligible.has(item.key));
 }

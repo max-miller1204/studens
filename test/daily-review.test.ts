@@ -422,7 +422,7 @@ describe("daily review durability", () => {
     });
     const due = store.reviewItems("rust")[0].dueAt;
     const early = startReview("rust", randomUUID(), "service", 3, { early: true }).session;
-    completePreparedReview(early);
+    expect(early.status).toBe("queued");
     const id = randomUUID();
     await post("daily-review", { id });
     await finish("biology");
@@ -480,6 +480,32 @@ describe("daily review durability", () => {
     expect(store.listGrades("rust", early.lesson)).toHaveLength(1);
     expect(store.reviewItems("rust")[0].dueAt).toBe(due);
     expect(dailyReviews()[0].groups[1].plan.criterionContract).toBe(1);
+  });
+  it("refuses to republish an ineligible failed group and preserves its owner's retry plan", async () => {
+    const id = randomUUID();
+    await post("daily-review", { id });
+    await finish("biology");
+    const plan = dailyReviews()[0].groups[1].plan;
+    const target = fixture.write(
+      `rust/.reviews/${plan.lesson}/lesson.html`,
+      "Conflicting document",
+    );
+    await post("daily-review/continue", { id, classroom: "rust" });
+    expect(reviewSessions("rust")[0].status).toBe("failed");
+    fs.unlinkSync(target);
+    const item = store.reviewItems("rust")[0];
+    store.setReviewRetired("rust", item.key, true, 0);
+    const completed = store.listGrades("biology", reviewSessions("biology")[0].lesson);
+    const retried = await post("daily-review/retry", { id, classroom: "rust" });
+    expect.soft(reviewSessions("rust")[0].status).toBe("failed");
+    expect(retried.body.daily.groups[1].error).toContain("no longer due or eligible");
+    await fetch(`${base}/api/daily-review?id=${id}`);
+    expect(store.listGrades("biology", reviewSessions("biology")[0].lesson)).toEqual(completed);
+    expect(dailyReviews()[0].groups[1].plan.document).toEqual(plan.document);
+    store.setReviewRetired("rust", item.key, false, 1);
+    await post("daily-review/retry", { id, classroom: "rust" });
+    expect(reviewSessions("rust")).toHaveLength(1);
+    expect(reviewSessions("rust")[0]).toMatchObject({ id: plan.id, status: "done" });
   });
   it("reports malformed state and empty eligibility without writes", async () => {
     for (const classroom of ["biology", "rust"])
