@@ -10,6 +10,7 @@ import { randomUUID } from "node:crypto";
 
 import { _overrideClassroomsDir, classroomsRoot, submissionsDir } from "../src/paths.ts";
 import * as store from "../src/store.ts";
+import { DAY_MS } from "../src/review.ts";
 import { _overrideConfigPath } from "../src/config.ts";
 
 export interface Fixture {
@@ -156,14 +157,22 @@ export function reviewDocument(
     .map((item, i) => {
       const id = `r${i + 1}`;
       objectives[id] = item.objective ?? { statement: "Explain ownership.", application: false };
-      questions[id] = { objective: id, task: "retrieval", support: "independent" };
+      questions[id] = {
+        objective: id,
+        task: item.progress === "transfer-needed" ? "transfer" : "retrieval",
+        support: "independent",
+      };
       rubric[id] = {
         expected: "The new owner releases it.",
         points: 1,
         full: "Name the new owner.",
         partial: "Zero points if the owner is wrong.",
       };
-      return `<li class="cl-q" data-question-id="${id}" data-type="short" data-review-of="${item.key}"><p class="cl-q-prompt">A String moves to a second binding. Who releases it?</p><textarea></textarea></li>`;
+      const prompt =
+        item.progress === "transfer-needed"
+          ? "A setup routine hands its resource handle to a long-running worker, then returns. Explain which scope determines when the resource is released and why."
+          : "A String moves to a second binding. Who releases it?";
+      return `<li class="cl-q" data-question-id="${id}" data-type="short" data-review-of="${item.key}"><p class="cl-q-prompt">${prompt}</p><textarea></textarea></li>`;
     })
     .join("\n");
   return {
@@ -234,4 +243,30 @@ export function seedHistoricalReview(root: string): {
     gradedAt: Date.now(),
   });
   return { ...input, submission_id: submission.id };
+}
+
+/** Three independent retrieval occasions leave an application objective needing transfer. */
+export function seedTransferObjective(): void {
+  const start = Date.now() - 20 * DAY_MS;
+  for (const day of [0, 2, 9])
+    writeGradedAttempt({
+      at: start + day * DAY_MS,
+      quizId: "transfer-history",
+      answers: (day === 0 ? ["q1", "q2", "q3"] : ["q1"]).map((id) =>
+        termAnswer(id, "dropped", {
+          prompt: "What happens when a value's owner leaves scope?",
+          learning: {
+            objectiveId: "ownership",
+            objective: {
+              statement: "Explain when the current owner releases a value.",
+              application: true,
+            },
+            task: "retrieval",
+            support: "independent",
+            assistance: "none",
+          },
+        }),
+      ),
+      correct: { q1: true, ...(day === 0 ? { q2: true, q3: true } : {}) },
+    });
 }

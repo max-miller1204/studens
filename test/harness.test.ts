@@ -161,11 +161,17 @@ describe("browser launch detection", () => {
     "playwright-cli -s=lesson --help open",
     "playwright-cli --help",
     "playwright-cli snapshot",
+    "playwright-cli open --help",
+    "playwright-cli -s=lesson open -h",
+    "/bin/bash -lc 'playwright-cli -s=lesson open --help'",
+    "playwright-cli open http://127.0.0.1:3000 --help",
   ])("does not treat help or inspection as a launch: %s", (command) => {
     expect(isPlaywrightLaunch(command)).toBe(false);
   });
   it.each([
     "playwright-cli open",
+    "playwright-cli open --help && playwright-cli -s=lesson open http://127.0.0.1:3000 --config=/plugin/assets/playwright-headless.json",
+    "playwright-cli -s=lesson open about:blank; playwright-cli open --help",
     "playwright-cli -s=lesson --raw open http://127.0.0.1:3000",
     "playwright-cli --help open && playwright-cli -s=lesson open http://127.0.0.1:3000 --config=/plugin/assets/playwright-headless.json",
   ])("recognizes actual launches: %s", (command) => {

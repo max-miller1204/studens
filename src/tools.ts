@@ -670,6 +670,8 @@ export function classroomTools(host: ToolHost): ClassroomTool[] {
             `   Evidence: ${item.progress}; latest context ${item.context}; ${item.delayedSuccesses} delayed successes; ${item.delayedTransfers} delayed transfers.`,
             `   Schedule policy: ${item.schedulePolicy}. ${item.scheduleReason}`,
             `   Objective policy: ${JSON.stringify(item.objective ?? { statement: "Recover the original objective from the question. Historical context is unknown." })}`,
+            `   Required review task: ${item.progress === "transfer-needed" ? "transfer, support independent. Use an unfamiliar application; do not reuse a prior probe or merely change names or numbers." : "independent retrieval or a fresh application that fits the objective."}`,
+            `   Previously answered probes: ${JSON.stringify(item.prompts ?? [item.prompt])}`,
             `   Original question: ${item.prompt || "(question text unavailable)"}`,
             `   Their last answer (${item.lastCorrect ? "correct" : item.lastCredit > 0 ? "partial credit" : "wrong"}): ${item.lastAnswer || "(blank)"}`,
             `   Your last feedback: ${item.lastFeedback}`,

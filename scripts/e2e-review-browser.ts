@@ -12,6 +12,7 @@ import {
   makeFixture,
   reviewDocument,
   seedClassroom,
+  seedTransferObjective,
   termAnswer,
   writeGradedAttempt,
 } from "../test/helpers.ts";
@@ -21,27 +22,13 @@ export async function verifyReviewBrowser(artifacts: string | null): Promise<voi
   for (const host of ["pi", "service"] as const) {
     const fixture = makeFixture();
     seedClassroom(fixture);
-    writeGradedAttempt({
-      at: Date.now() - 2 * DAY_MS,
-      answers: (host === "service" ? ["q1", "q2", "q3"] : ["q1"]).map((id) =>
-        termAnswer(
-          id,
-          "owner",
-          host === "service"
-            ? {
-                learning: {
-                  objectiveId: "ownership",
-                  objective: { statement: "Explain ownership.", application: true },
-                  task: "retrieval",
-                  support: "independent",
-                  assistance: "none",
-                },
-              }
-            : {},
-        ),
-      ),
-      correct: { q1: true, ...(host === "service" ? { q2: true, q3: true } : {}) },
-    });
+    if (host === "service") seedTransferObjective();
+    else
+      writeGradedAttempt({
+        at: Date.now() - 2 * DAY_MS,
+        answers: [termAnswer("q1", "owner")],
+        correct: { q1: true },
+      });
     const evidence = artifacts ? path.join(artifacts, host) : null;
     if (evidence) fs.mkdirSync(evidence, { recursive: true });
     const session = `studens-review-${host}-${process.pid}`;
@@ -97,8 +84,11 @@ export async function verifyReviewBrowser(artifacts: string | null): Promise<voi
         throw new Error("Fixture review provider failure.");
       }
       const document = reviewDocument(currentReview("rust")!.items);
-      if (runs === 2)
-        document.lesson_html = document.lesson_html.replace("<textarea></textarea>", "");
+      if (runs === 2) {
+        const plan = JSON.parse(document.teaching_plan_json);
+        plan.quizzes.review.questions.r1.task = "retrieval";
+        document.teaching_plan_json = JSON.stringify(plan);
+      }
       return {
         calls: [
           {
@@ -212,7 +202,7 @@ export async function verifyReviewBrowser(artifacts: string | null): Promise<voi
       }
       await code(`
         await page.getByRole('button', {name:'Retry review',exact:true}).waitFor();
-        if (!(await page.locator('[data-cl-review-status]').innerText()).includes('needs exactly 1 textarea')) throw new Error('The invalid control error is missing.');
+        if (!(await page.locator('[data-cl-review-status]').innerText()).includes(${JSON.stringify(host === "service" ? "requires an independent transfer task" : "needs exactly 1 textarea")})) throw new Error('The invalid review plan error is missing.');
         ${shot("invalid-review-controls")}
         const response = page.waitForResponse(r => r.url().endsWith('/api/review/retry'));
         await page.getByRole('button', {name:'Retry review',exact:true}).click();
@@ -309,9 +299,18 @@ export async function verifyReviewBrowser(artifacts: string | null): Promise<voi
           store.reviewItems("rust")[0].context !== "unknown")
       )
         throw new Error("A review invented objective context for historical history.");
-      if (!grade || grade.score !== 100 || store.reviewItems("rust")[0].attempts !== 2)
+      if (
+        !grade ||
+        grade.score !== 100 ||
+        store.reviewItems("rust")[0].attempts !== (host === "service" ? 4 : 2)
+      )
         throw new Error("The review grade did not update its original item.");
       if (host === "service") {
+        if (
+          store.reviewItems("rust")[0].progress !== "retained-evidence" ||
+          store.reviewItems("rust")[0].delayedTransfers !== 1
+        )
+          throw new Error("The transfer review did not update the objective's retained evidence.");
         await code(`
           await page.goto(${JSON.stringify(`${base}/c/rust/${request.lesson}`)});
           await page.getByRole('textbox', {name:'Reply to your teacher',exact:true}).fill('I will return to this later.');
@@ -358,7 +357,13 @@ export async function verifyReviewBrowser(artifacts: string | null): Promise<voi
                 "private files",
                 "submit and grade",
                 "schedule original item",
-                ...(host === "service" ? ["three probes share one objective schedule"] : []),
+                ...(host === "service"
+                  ? [
+                      "three probes share one objective schedule",
+                      "transfer-needed rejects recall",
+                      "delayed transfer completes retained evidence",
+                    ]
+                  : []),
                 ...(host === "service" ? ["regenerate rejected panel plan"] : []),
               ],
             },

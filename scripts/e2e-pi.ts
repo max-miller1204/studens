@@ -6,15 +6,13 @@ import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import * as store from "../src/store.ts";
-import { DAY_MS } from "../src/review.ts";
 import { currentReview } from "../src/review-session.ts";
 import {
   makeFixture,
   lessonHtml,
   seedClassroom,
-  writeGradedAttempt,
-  termAnswer,
   seedHistoricalReview,
+  seedTransferObjective,
 } from "../test/helpers.ts";
 import { playwright, playwrightCode } from "./playwright.ts";
 import { TEST_MODELS } from "./harness.ts";
@@ -428,14 +426,7 @@ try {
   console.log(
     "[e2e:pi] PASS: chat-origin historical review resumes in the panel with its 67% grade preserved",
   );
-  writeGradedAttempt({
-    at: Date.now() - 2 * DAY_MS,
-    quizId: "historical",
-    answers: [
-      termAnswer("q1", "dropped", { prompt: "What happens when a value's owner leaves scope?" }),
-    ],
-    correct: { q1: true },
-  });
+  seedTransferObjective();
   await playwrightCode(
     session,
     fixture.root,

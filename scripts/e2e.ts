@@ -7,8 +7,7 @@ import * as path from "node:path";
 import * as net from "node:net";
 import { useTestModel, harnessCommand, parseHarness } from "./harness.ts";
 import { playwright, playwrightCode } from "./playwright.ts";
-import { writeGradedAttempt, termAnswer, seedHistoricalReview } from "../test/helpers.ts";
-import { DAY_MS } from "../src/review.ts";
+import { seedHistoricalReview, seedTransferObjective } from "../test/helpers.ts";
 import { currentReview } from "../src/review-session.ts";
 import { _overrideClassroomsDir } from "../src/paths.ts";
 import { notesStub } from "../src/prompts.ts";
@@ -261,14 +260,7 @@ async function main(): Promise<void> {
           2,
         ),
       );
-    writeGradedAttempt({
-      at: Date.now() - 2 * DAY_MS,
-      quizId: "historical",
-      answers: [
-        termAnswer("q1", "dropped", { prompt: "What happens when a value's owner leaves scope?" }),
-      ],
-      correct: { q1: true },
-    });
+    seedTransferObjective();
     await playwrightCode(
       browser,
       root,
