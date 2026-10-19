@@ -179,11 +179,11 @@ export function browserCommands(harness: Harness, events: string): string[] {
 
 /** Help on either side of open does not launch; inspect chained invocations separately. */
 export function isPlaywrightLaunch(command: string): boolean {
-  return [...command.matchAll(/\bplaywright-cli\b[^;&|\n]*/g)].some(
-    ([invocation]) =>
-      !/(?:^|\s)(?:--help|-h)(?=\s|["']|$)/.test(invocation) &&
-      /\bplaywright-cli(?:\s+-[^\s]+)*\s+open(?:\s|$)/.test(invocation),
-  );
+  return [...command.matchAll(/\bplaywright-cli([^;&|\n]*)/g)].some((match) => {
+    const invocation = match[1];
+    if (/(?:^|\s)(?:--help|-h)(?=\s|["']|$)/.test(invocation)) return false;
+    return /^(?:\s+-[^\s]+)*\s+open(?:\s|["']|$)/.test(invocation);
+  });
 }
 
 /** Recognize successful packaged checks from their execution receipts. */
