@@ -9,6 +9,9 @@ initLinks();
 const folderControl = document.querySelector("[data-cl-folders]");
 if (folderControl) initFolders(folderControl);
 
+const nextControl = document.querySelector("[data-cl-next-lesson]");
+if (nextControl) initNextLesson(nextControl);
+
 const reviewControl = document.querySelector("[data-cl-review]");
 if (reviewControl) initReview(reviewControl);
 
@@ -233,4 +236,119 @@ function initFolders(control) {
   window.addEventListener("pageshow", (event) => {
     if (event.persisted) window.location.reload();
   });
+}
+
+function initNextLesson(control) {
+  const classroom = control.dataset.clNextLesson;
+  const button = control.querySelector("[data-cl-next-start]");
+  const topic = control.querySelector("textarea");
+  const status = control.querySelector("[data-cl-next-status]");
+  const link = control.querySelector("[data-cl-next-open]");
+  const key = `studens-next-lesson:${classroom}`;
+  let current = null,
+    busy = false,
+    action = "start",
+    timer;
+  async function request(route, body) {
+    const response = await fetch(
+      `/api/${route}`,
+      body
+        ? {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          }
+        : undefined,
+    );
+    const data = await response.json();
+    if (!response.ok)
+      throw new Error(
+        typeof data.error === "string"
+          ? data.error
+          : "Next lesson response has no error description.",
+      );
+    if (!Object.hasOwn(data, "lesson"))
+      throw new Error("Next lesson response has no lesson status.");
+    return data.lesson;
+  }
+  function show(next) {
+    current = next;
+    clearTimeout(timer);
+    const pending = next && ["queued", "running"].includes(next.status);
+    topic.disabled = Boolean(next && next.status !== "done");
+    button.disabled = Boolean(pending);
+    link.hidden = next?.status !== "done";
+    if (next?.status === "done") {
+      link.href = next.url;
+      action = "start";
+      button.textContent = "Next lesson";
+      status.textContent = "Your lesson is ready.";
+      if (sessionStorage.getItem(key) === next.id) {
+        sessionStorage.removeItem(key);
+        window.location.assign(next.url);
+      }
+    } else if (pending) {
+      topic.value = next.topic;
+      button.textContent = next.status === "queued" ? "Lesson queued…" : "Creating lesson…";
+      status.textContent =
+        next.status === "queued"
+          ? "Your lesson request is queued. You can leave and return."
+          : "Your teacher is creating and checking your lesson. You can leave and return.";
+      timer = setTimeout(check, 1000);
+    } else if (next?.status === "failed") {
+      topic.value = next.topic;
+      action = "retry";
+      button.textContent = "Retry lesson";
+      status.textContent = next.error;
+    } else {
+      action = "start";
+      button.textContent = "Next lesson";
+      status.textContent =
+        "Your teacher will choose the next objective if you leave the topic blank.";
+    }
+  }
+  function fail(error) {
+    clearTimeout(timer);
+    action = "check";
+    button.disabled = false;
+    button.textContent = "Check lesson status";
+    status.textContent = error.message;
+  }
+  async function check() {
+    try {
+      show(await request(`lesson?classroom=${encodeURIComponent(classroom)}`));
+    } catch (error) {
+      fail(error);
+    }
+  }
+  button.addEventListener("click", async () => {
+    if (busy) return;
+    busy = true;
+    button.disabled = true;
+    try {
+      if (action === "check") {
+        await check();
+        return;
+      }
+      const id =
+        action === "retry" ? current.id : sessionStorage.getItem(key) || crypto.randomUUID();
+      sessionStorage.setItem(key, id);
+      show(
+        await request(action === "retry" ? "lesson/retry" : "lesson", {
+          classroom,
+          id,
+          topic: topic.value,
+        }),
+      );
+    } catch (error) {
+      fail(error);
+    } finally {
+      busy = false;
+    }
+  });
+  window.addEventListener("pagehide", () => clearTimeout(timer));
+  window.addEventListener("pageshow", (event) => {
+    if (event.persisted) check();
+  });
+  check();
 }

@@ -1,6 +1,7 @@
 import { verifySettingsBrowser } from "./e2e-settings-browser.ts";
 import { verifyReviewCards } from "./e2e-review-cards.ts";
 import { verifyReteachBrowser } from "./e2e-reteach-browser.ts";
+import { verifyNextLessonBrowser } from "./e2e-next-lesson-browser.ts";
 import { verifyClosedBrowser } from "./e2e-closed-browser.ts";
 import { verifyFoldersBrowser } from "./e2e-folders-browser.ts";
 import { verifyResumeBrowser } from "./e2e-resume-browser.ts";
@@ -384,3 +385,4 @@ await verifyReviewCards(artifacts ? path.join(artifacts, "review-cards") : null)
 await verifyReteachBrowser(artifacts ? path.join(artifacts, "reteach") : null);
 
 await verifySettingsBrowser(artifacts ? path.join(artifacts, "settings") : null);
+await verifyNextLessonBrowser(artifacts ? path.join(artifacts, "next-lesson") : null);

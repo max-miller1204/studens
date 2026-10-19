@@ -1927,3 +1927,30 @@ figure:has(> .cl-diagram) figcaption {
   overflow-wrap: anywhere;
   font-size: 0.8em;
 }
+
+.cl-next-lesson {
+  margin-bottom: 1.5rem;
+}
+.cl-next-lesson label {
+  display: block;
+  margin-bottom: 0.5rem;
+}
+.cl-next-lesson textarea {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 40rem;
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
+  border: 1px solid var(--cl-border);
+  border-radius: 0.5rem;
+  font: inherit;
+  color: inherit;
+  background: var(--cl-surface);
+  resize: vertical;
+}
+.cl-next-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}

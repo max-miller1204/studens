@@ -39,6 +39,7 @@ export const PLAN_SCHEMA = {
               "grade_quiz_answers",
               "record_retrieval_check",
               "publish_review",
+              "publish_lesson",
             ],
           },
           arguments_json: { type: "string" },
@@ -68,6 +69,7 @@ export interface PlanContract {
   required?: boolean;
   messageRequired?: boolean;
   notesAllowed?: boolean;
+  research?: boolean;
 }
 
 /** Limit structured output to operations permitted by the current request. */
@@ -167,6 +169,7 @@ export const runTeacher: RunTeacher = async (
     planSchema(contract),
     signal,
     saveActiveModel,
+    contract.research,
   );
   saveModelOutput?.(raw);
   return parseModelPlan(raw);
@@ -181,10 +184,21 @@ export async function runStructured(
   schema: Record<string, unknown>,
   signal?: AbortSignal,
   saveActiveModel?: (model: string) => void,
+  research = false,
 ): Promise<unknown> {
   return identity.backend === "codex"
-    ? runCodex(identity, prompt, cwd, saveIdentity, schema, signal, saveActiveModel)
-    : runClaude(identity, prompt, cwd, saveIdentity, schema, signal, saveActiveModel);
+    ? runCodex(
+        identity,
+        prompt,
+        cwd,
+        saveIdentity,
+        schema,
+        signal,
+        saveActiveModel,
+        false,
+        research,
+      )
+    : runClaude(identity, prompt, cwd, saveIdentity, schema, signal, saveActiveModel, research);
 }
 
 async function runClaude(
@@ -195,6 +209,7 @@ async function runClaude(
   schema: Record<string, unknown>,
   signal?: AbortSignal,
   saveActiveModel?: (model: string) => void,
+  research = false,
 ): Promise<unknown> {
   const catalog = await claudeModels(cwd);
   const model = identity.requestedModel ?? catalog.configuredModel;
@@ -209,13 +224,14 @@ async function runClaude(
     "--json-schema",
     JSON.stringify(schema),
     "--tools",
-    "",
+    research ? "WebSearch,WebFetch" : "",
     "--strict-mcp-config",
     "--mcp-config",
     '{"mcpServers":{}}',
     "--permission-mode",
     "dontAsk",
   ];
+  if (research) args.push("--allowedTools", "WebSearch", "WebFetch");
   if (identity.sessionId) args.push("--resume", identity.sessionId);
   const child = spawn("claude", args, { cwd, stdio: ["pipe", "pipe", "pipe"], signal });
   let stdout = "",
@@ -284,6 +300,7 @@ async function runCodex(
   signal?: AbortSignal,
   saveActiveModel?: (model: string) => void,
   catalogOnly = false,
+  research = false,
 ): Promise<unknown> {
   const child = spawn("codex", ["app-server", "--stdio"], {
     cwd,
@@ -436,7 +453,11 @@ async function runCodex(
       cwd,
       approvalPolicy: "never",
       sandbox: "read-only",
-      config: { mcp_servers: {}, features: { shell_tool: false } },
+      config: {
+        mcp_servers: {},
+        features: { shell_tool: false },
+        web_search: research ? "live" : "disabled",
+      },
     };
     const result = identity.sessionId
       ? await request("thread/resume", { ...config, threadId: identity.sessionId })

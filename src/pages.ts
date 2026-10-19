@@ -209,10 +209,7 @@ export function classroomPage(data: ClassroomPageData): string {
 
   const lessonList =
     lessons.length === 0
-      ? emptyState(
-          "No lessons yet",
-          "Ask your teacher for the next lesson in your agent session. It will show up here.",
-        )
+      ? emptyState("No lessons yet", "Choose Next lesson to ask your teacher to create one.")
       : `<ol class="cl-lessons">
 ${lessons.map((lesson, i) => lessonRow(lesson, i, data.progress.dueByLesson[lesson.name] ?? 0)).join("\n")}
 </ol>`;
@@ -225,6 +222,12 @@ ${progressSection(data)}
 <p><a href="/c/${encodeURIComponent(classroom.name)}/reviews">Review history</a> · <a href="/c/${encodeURIComponent(classroom.name)}/settings">Settings</a></p>
 <section class="cl-section">
   <h2 class="cl-section-title">Lessons</h2>
+  <div class="cl-next-lesson" data-cl-next-lesson="${escapeHtml(classroom.name)}">
+    <label for="cl-next-topic">What would you like to learn next? <span>(optional)</span></label>
+    <textarea id="cl-next-topic" rows="2" maxlength="2000" placeholder="Let your teacher choose, or suggest a topic"></textarea>
+    <div class="cl-next-actions"><button type="button" class="cl-button" data-cl-next-start disabled>Next lesson</button><a data-cl-next-open hidden>Open lesson</a></div>
+    <p class="cl-progress-note" data-cl-next-status role="status" aria-live="polite">Checking lesson status…</p>
+  </div>
   ${lessonList}
 </section>
 ${sidePanel(data)}`;

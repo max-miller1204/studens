@@ -144,6 +144,14 @@ source notation to grading. Answers and feedback render Markdown server-side.
   Validate keys, rubric, controls, and plan before publication. Hide unfinished
   reviews from lists, routes, and submissions. Repeated clicks reuse work; published
   reviews open across hosts. Saved service plans resume without another model turn.
+- **Explicit next lessons are private until checked.** The classroom control saves
+  an owner-bound request in `.lesson-requests.json`. Its optional topic and status
+  survive reload. Service authoring shares the classroom request queue and teacher
+  identity; Pi authors in its live session. Only explicit authoring enables web
+  research and classroom resource reads. Save and validate complete output before
+  publication, run `scripts/check-lesson.ts` in disposable state, then expose the
+  lesson. Recover checked output without a model turn; retain rejected output and
+  require explicit retry. Never create learner submissions during checking.
 - **Variant refills are background work.** Save private refill requests with their host
   and learner mistake. Run them after queued learner requests in the same sequential
   teacher session. Save validated output before atomically adding a supplemental

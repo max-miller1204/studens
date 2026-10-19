@@ -219,3 +219,57 @@ it("ignores model reroutes from a stale turn in the same resumed thread", async 
   ).resolves.toEqual({ ok: true });
   expect(active).toBe("custom-id");
 });
+
+it.each(["codex", "claude"] as const)(
+  "keeps %s model selection and active reporting while research is enabled for one explicit turn only",
+  async (backend) => {
+    let session: string | undefined;
+    const active: string[] = [];
+    for (const research of [true, false])
+      await expect(
+        runStructured(
+          {
+            backend,
+            sessionId: session,
+            requestedModel: backend === "claude" ? "quick" : "custom-id",
+          },
+          "Explicit lesson, then ordinary reply",
+          f.root,
+          (id) => {
+            session = id;
+          },
+          schema,
+          undefined,
+          (model) => active.push(model),
+          research,
+        ),
+      ).resolves.toEqual({ ok: true });
+    expect(active).toEqual(
+      backend === "claude" ? ["actual-quick", "actual-quick"] : ["custom-id", "custom-id"],
+    );
+    const all = messages();
+    if (backend === "claude") {
+      const turns = all.filter((m) => m.args && !m.args.includes("--input-format"));
+      expect(turns.map((m) => m.args[m.args.indexOf("--tools") + 1])).toEqual([
+        "WebSearch,WebFetch",
+        "",
+      ]);
+      expect(turns[0].args.slice(turns[0].args.indexOf("--allowedTools") + 1)).toEqual([
+        "WebSearch",
+        "WebFetch",
+      ]);
+      expect(turns[1].args).not.toContain("--allowedTools");
+      expect(turns[1].args).toContain(session);
+    } else {
+      const starts = all.filter((m) => ["thread/start", "thread/resume"].includes(m.method));
+      expect(starts.map((m) => m.params.config.web_search)).toEqual(["live", "disabled"]);
+      for (const start of starts) {
+        expect(start.params.config.features.shell_tool).toBe(false);
+        expect(start.params.config.mcp_servers).toEqual({});
+        expect(start.params.sandbox).toBe("read-only");
+        expect(start.params.model).toBe("custom-id");
+      }
+      expect(starts[1].params.threadId).toBe(session);
+    }
+  },
+);
