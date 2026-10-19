@@ -1954,3 +1954,55 @@ figure:has(> .cl-diagram) figcaption {
   align-items: center;
   gap: 1rem;
 }
+
+/* Learner review controls use the same compact flow on classroom and card pages. */
+.cl-review-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin: 1rem 0;
+  align-items: end;
+}
+.cl-review-options label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+  max-width: 100%;
+}
+.cl-review-options label:has(input) {
+  flex-direction: row;
+  align-items: center;
+}
+.cl-review-options select {
+  max-width: 100%;
+  padding: 0.5rem;
+}
+.cl-review-items {
+  margin: 1.5rem 0;
+}
+.cl-review-item {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--cl-border);
+}
+.cl-review-item a {
+  overflow-wrap: anywhere;
+}
+.cl-review-item p {
+  flex-basis: 100%;
+  margin: 0;
+}
+.cl-review-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+.cl-review-actions p {
+  flex-basis: 100%;
+  margin: 0;
+}

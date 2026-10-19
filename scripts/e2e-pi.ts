@@ -2,7 +2,11 @@ import { seedReteach, driveReteach } from "./e2e-reteach-browser.ts";
 import { lessonRequests } from "../src/next-lesson.ts";
 import { driveRealNextLesson } from "./next-lesson-actions.ts";
 /** Test browser questions, quiz grading, and the teacher panel check in a real Pi session. */
-import { closedReviewActions, refillRetryActions } from "./review-card-actions.ts";
+import {
+  closedReviewActions,
+  refillRetryActions,
+  reportQuestionActions,
+} from "./review-card-actions.ts";
 import { lessonUrl } from "../src/paths.ts";
 import { highlightText } from "./browser-actions.ts";
 import { spawn } from "node:child_process";
@@ -594,14 +598,19 @@ try {
       JSON.stringify(reviewSession, null, 2),
     );
   console.log("[e2e:pi] PASS: prepared review opens from the classroom page without authoring");
-  await playwrightCode(
+  const correctionResult = await playwrightCode(
     session,
     fixture.root,
     `async page => {
       ${closedReviewActions(artifacts ? path.join(artifacts, "pi-review-correction.png") : null)}
-      return true;
+      return { failures: correctiveFailures };
     }`,
   );
+  if (artifacts)
+    fs.writeFileSync(
+      path.join(artifacts, "corrective-reply-retries.json"),
+      JSON.stringify(correctionResult, null, 2),
+    );
 
   const settledRefills = await until("background refill result", () => {
     const requests = refillRequests("rust").filter(
@@ -642,6 +651,25 @@ try {
   if (artifacts)
     fs.writeFileSync(path.join(artifacts, "stored-refills.json"), JSON.stringify(refills, null, 2));
   console.log("[e2e:pi] PASS: durable background refill saves private variants");
+  await playwrightCode(
+    session,
+    fixture.root,
+    `async page => { ${reportQuestionActions(artifacts ? path.join(artifacts, "pi-question-report.png") : null)} return true; }`,
+  );
+  if (artifacts)
+    fs.writeFileSync(
+      path.join(artifacts, "stored-question-report.json"),
+      JSON.stringify(
+        await (
+          await fetch(`${base}/api/state?classroom=rust&lesson=${reviewSession.lesson}`)
+        ).json(),
+        null,
+        2,
+      ),
+    );
+  console.log(
+    "[e2e:pi] PASS: real Pi teacher receives a durable bad-question report and preserves grades",
+  );
   const reteachLesson = seedReteach(fixture.root);
   await driveReteach(
     session,

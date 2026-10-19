@@ -1,7 +1,11 @@
 import { seedReteach, driveReteach } from "./e2e-reteach-browser.ts";
 import { driveRealNextLesson } from "./next-lesson-actions.ts";
 /** Real host and dedicated teacher evaluation. All material is a temporary fixture. */
-import { closedReviewActions, refillRetryActions } from "./review-card-actions.ts";
+import {
+  closedReviewActions,
+  refillRetryActions,
+  reportQuestionActions,
+} from "./review-card-actions.ts";
 import { highlightText } from "./browser-actions.ts";
 import { spawn } from "node:child_process";
 import * as fs from "node:fs";
@@ -309,14 +313,19 @@ async function main(): Promise<void> {
     if (artifacts)
       fs.writeFileSync(path.join(artifacts, "stored-review.json"), JSON.stringify(review, null, 2));
     log("PASS: prepared review opens from the classroom page without authoring");
-    await playwrightCode(
+    const correctionResult = await playwrightCode(
       browser,
       root,
       `async page => {
       ${closedReviewActions(artifacts ? path.join(artifacts, `${harness}-review-correction.png`) : null)}
-      return true;
+      return { failures: correctiveFailures };
     }`,
     );
+    if (artifacts)
+      fs.writeFileSync(
+        path.join(artifacts, "corrective-reply-retries.json"),
+        JSON.stringify(correctionResult, null, 2),
+      );
 
     const settledRefills = await until("background refill result", 305_000, () => {
       const requests = refillRequests("rust").filter((request) => request.lesson === review.lesson);
@@ -358,6 +367,23 @@ async function main(): Promise<void> {
         JSON.stringify(refills, null, 2),
       );
     log("PASS: durable background refill saves private variants without learner or grade writes");
+    await playwrightCode(
+      browser,
+      root,
+      `async page => { ${reportQuestionActions(artifacts ? path.join(artifacts, `${harness}-question-report.png`) : null)} return true; }`,
+    );
+    if (artifacts)
+      fs.writeFileSync(
+        path.join(artifacts, "stored-question-report.json"),
+        JSON.stringify(
+          await (await fetch(`${base}/api/state?classroom=rust&lesson=${review.lesson}`)).json(),
+          null,
+          2,
+        ),
+      );
+    log(
+      "PASS: real owning teacher receives a durable bad-question report; reload preserves it and grades",
+    );
     const resumeInput = seedHistoricalReview(root);
     const identity = checked.teacher.identity.sessionId;
     const [resumeCommand, resumeArgs] = harnessCommand(

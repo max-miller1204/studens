@@ -8,7 +8,14 @@
 
 import { escapeHtml, renderMarkdown } from "./markdown.ts";
 import { lessonUrl } from "./paths.ts";
-import { DEFAULT_REVIEW_SIZE, relativeDay, type ReviewSummary } from "./review.ts";
+import {
+  DEFAULT_REVIEW_SIZE,
+  MAX_REVIEW_SIZE,
+  reviewTopic,
+  relativeDay,
+  type ReviewItem,
+  type ReviewSummary,
+} from "./review.ts";
 import type { Classroom, ClassroomFolder, Lesson } from "./store.ts";
 
 // ── Shell ─────────────────────────────────────────────────────────────────────
@@ -135,6 +142,14 @@ export function folderLoadErrorPage(message: string, retryUrl: string): string {
   });
 }
 
+export function reviewLoadErrorPage(message: string, retryUrl: string): string {
+  return shell({
+    title: "Cannot load review state",
+    breadcrumb: '<a class="cl-crumb" href="/">Classrooms</a>',
+    body: `<h1>Cannot load review state</h1><p role="alert">${escapeHtml(message)}</p><p>Fix the saved review state, then retry loading.</p><a class="cl-button" href="${escapeHtml(retryUrl)}">Retry loading review state</a>`,
+  });
+}
+
 function classroomCard(classroom: Classroom, due: number): string {
   const why = missionWhy(classroom.mission);
   return `<li class="cl-card cl-classroom-card">
@@ -189,6 +204,7 @@ export interface ClassroomProgress {
   /** Lesson name → questions from that lesson that are due for review. */
   dueByLesson: Record<string, number>;
   reteach?: Array<{ lesson: string; prompt: string }>;
+  items?: ReviewItem[];
   glossaryTerms: number;
   /** The time the page is built, for "due tomorrow". */
   now: number;
@@ -274,12 +290,13 @@ export function reviewHistoryPage(
 function progressSection(data: ClassroomPageData): string {
   const { review, glossaryTerms, now } = data.progress;
   const records = data.learningRecords.length;
-  if (review.total === 0 && glossaryTerms === 0 && records === 0) return "";
+  if (review.total === 0 && !review.retired && glossaryTerms === 0 && records === 0) return "";
 
   const stat = (value: string, label: string, tone = "") =>
     `<div class="cl-stat"${tone ? ` data-tone="${tone}"` : ""}><span class="cl-stat-value">${value}</span><span class="cl-stat-label">${escapeHtml(label)}</span></div>`;
 
   const stats = [
+    stat(String(review.retired ?? 0), "retired items"),
     stat(String(review.due), "due for review", review.due > 0 ? "due" : ""),
     stat(`${review.retained}/${review.total}`, "items with retained evidence"),
     stat(String(review.transferNeeded), "need transfer evidence"),
@@ -308,12 +325,38 @@ function progressSection(data: ClassroomPageData): string {
   ${
     review.total > 0
       ? `<div class="cl-review-start" data-cl-review="${escapeHtml(data.classroom.name)}" data-due="${review.due}" data-review-size="${DEFAULT_REVIEW_SIZE}">
+    <div class="cl-review-options">
+    <label>Review size<select data-cl-review-size>${Array.from(
+      { length: MAX_REVIEW_SIZE - 2 },
+      (_, index) => index + 3,
+    )
+      .map(
+        (size) =>
+          `<option value="${size}"${size === DEFAULT_REVIEW_SIZE ? " selected" : ""}>${size === 3 ? "Quick 3" : `${size} items`}</option>`,
+      )
+      .join("")}</select></label>
+    <label>Topic<select data-cl-review-topic><option value="">All topics in this classroom</option>${[
+      ...new Map(
+        (data.progress.items ?? [])
+          .filter((item) => item.retiredAt === undefined)
+          .map((item) => {
+            const topic = reviewTopic(item);
+            return [topic.id, topic];
+          }),
+      ).values(),
+    ]
+      .map((topic) => `<option value="${escapeHtml(topic.id)}">${escapeHtml(topic.label)}</option>`)
+      .join("")}</select></label>
+    <label><input type="checkbox" data-cl-review-early> Review early anyway</label>
+    </div>
+    <p class="cl-progress-note">Early review never extends the scheduled interval. Immediate or assisted answers do not establish retention.</p>
     <button type="button" class="cl-button" data-cl-review-start disabled>Start review</button>
     <p class="cl-progress-note" data-cl-review-status role="status" aria-live="polite">Checking review status…</p>
     <a data-cl-review-open hidden>Open review</a>
   </div>`
       : ""
   }
+${(data.progress.items ?? []).length ? `<details class="cl-review-items"><summary>Manage review items</summary><p>Retired items leave active review counts and future selections. Saved answers, grades, and published reviews stay available.</p>${(data.progress.items ?? []).map((item) => `<div class="cl-review-item" data-review-item="${escapeHtml(item.key)}" data-revision="${item.controlRevision ?? 0}" data-retired="${item.retiredAt !== undefined}"><a href="${lessonUrl(data.classroom.name, item.lesson)}">${escapeHtml(item.objective?.statement ?? item.prompt)}</a><span>${item.retiredAt === undefined ? "Active" : "Retired"} · ${item.attempts} saved exposures</span><button class="cl-button" type="button" data-review-retire>${item.retiredAt === undefined ? "Retire item" : "Restore item"}</button><p role="status" data-review-item-status></p></div>`).join("")}</details>` : ""}
 </section>`;
 }
 

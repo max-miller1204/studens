@@ -1,5 +1,6 @@
 /** Handle shell navigation, theme controls, and classroom review requests. */
 
+import { wireRetirement } from "./review-controls.mjs";
 import { initLinks } from "./links.mjs";
 import { initTheme } from "./theme.mjs";
 
@@ -14,6 +15,19 @@ if (nextControl) initNextLesson(nextControl);
 
 const reviewControl = document.querySelector("[data-cl-review]");
 if (reviewControl) initReview(reviewControl);
+for (const row of document.querySelectorAll("[data-review-item]")) {
+  wireRetirement({
+    button: row.querySelector("[data-review-retire]"),
+    status: row.querySelector("[data-review-item-status]"),
+    classroom: location.pathname.split("/")[2],
+    item: {
+      key: row.dataset.reviewItem,
+      revision: Number(row.dataset.revision),
+      retiredAt: row.dataset.retired === "true" ? 1 : undefined,
+    },
+    saved: () => location.reload(),
+  });
+}
 
 function initReview(control) {
   const classroom = control.dataset.clReview;
@@ -21,6 +35,36 @@ function initReview(control) {
   const status = control.querySelector("[data-cl-review-status]");
   const link = control.querySelector("[data-cl-review-open]");
   const key = `pi-classroom-review:${classroom}`;
+  const size = control.querySelector("[data-cl-review-size]");
+  const topic = control.querySelector("[data-cl-review-topic]");
+  const early = control.querySelector("[data-cl-review-early]");
+  const preferencesKey = `${key}:options`;
+  let preferenceError = null;
+  const preferences = sessionStorage.getItem(preferencesKey);
+  if (preferences) {
+    try {
+      const saved = JSON.parse(preferences);
+      if (
+        ![...size.options].some((option) => option.value === String(saved.size)) ||
+        ![...topic.options].some((option) => option.value === saved.topic) ||
+        typeof saved.early !== "boolean"
+      )
+        throw new Error("The saved size or topic is no longer available.");
+      size.value = String(saved.size);
+      topic.value = saved.topic;
+      early.checked = saved.early;
+    } catch (error) {
+      preferenceError = `Cannot read saved review options: ${error.message}`;
+    }
+  }
+  for (const field of [size, topic, early])
+    field.addEventListener("change", () => {
+      sessionStorage.setItem(
+        preferencesKey,
+        JSON.stringify({ size: Number(size.value), topic: topic.value, early: early.checked }),
+      );
+      if (action === "start") show(session);
+    });
   let session = null;
   let action = "start";
   let busy = false;
@@ -49,13 +93,15 @@ function initReview(control) {
   }
   function show(next) {
     session = next;
+    for (const field of [size, topic, early])
+      field.disabled = next && (next.status !== "done" || next.resumable);
     link.hidden = !next || next.status !== "done" || next.resumable;
     if (!link.hidden) link.href = next.url;
     if (next?.status === "queued" || next?.status === "running") {
       openWhenReady = true;
       button.disabled = true;
       button.textContent = "Creating review…";
-      status.textContent = `Your teacher is creating a review of ${next.count} due items. You can leave this page and return.`;
+      status.textContent = `Your teacher is creating a review of ${next.count} selected items. You can leave this page and return.`;
       timer = setTimeout(check, 1000);
     } else if (next?.status === "failed") {
       action = "retry";
@@ -74,10 +120,10 @@ function initReview(control) {
     } else {
       action = "start";
       button.textContent = "Start review";
-      button.disabled = Number(control.dataset.due) === 0;
+      button.disabled = Number(control.dataset.due) === 0 && !early.checked;
       status.textContent = button.disabled
         ? "No questions are due for review."
-        : `Review up to ${control.dataset.reviewSize} due items with new examples.`;
+        : `Review up to ${size.value} ${early.checked ? "selected" : "due"} items with new examples.`;
     }
   }
   function failed(error) {
@@ -89,6 +135,13 @@ function initReview(control) {
   }
   async function check() {
     clearTimeout(timer);
+    if (preferenceError) {
+      action = "reset";
+      button.disabled = false;
+      button.textContent = "Reset review options";
+      status.textContent = preferenceError;
+      return;
+    }
     try {
       show(await request(`/api/review?classroom=${encodeURIComponent(classroom)}`));
     } catch (error) {
@@ -97,6 +150,10 @@ function initReview(control) {
   }
   button.addEventListener("click", async () => {
     if (busy) return;
+    if (action === "reset") {
+      sessionStorage.removeItem(preferencesKey);
+      return location.reload();
+    }
     if (action === "open") return window.location.assign(session.url);
     busy = true;
     button.disabled = true;
@@ -115,6 +172,9 @@ function initReview(control) {
         const next = await request(action === "retry" ? "/api/review/retry" : "/api/review", {
           classroom,
           id,
+          size: Number(size.value),
+          topic: topic.value || undefined,
+          early: early.checked,
         });
         sessionStorage.removeItem(key);
         openWhenReady = true;
