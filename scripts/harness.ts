@@ -15,6 +15,17 @@ export const TEST_MODELS = {
   codex: { model: "gpt-6-luna", effort: "low" },
 } as const;
 
+/** Readiness belongs to the completed tool's run, never an earlier settlement. */
+export function toolRunSettled(
+  events: readonly { type?: string; toolName?: string }[],
+  toolName: string,
+): boolean {
+  const tool = events.findLastIndex(
+    (event) => event.type === "tool_execution_end" && event.toolName === toolName,
+  );
+  return tool >= 0 && events.slice(tool + 1).some((event) => event.type === "agent_settled");
+}
+
 /** Claude Code prefixes plugin MCP tools with this. Codex reports the bare name. */
 export const CLAUDE_PREFIX = "mcp__plugin_studens_classroom__";
 

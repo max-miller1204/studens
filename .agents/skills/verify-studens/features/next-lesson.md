@@ -42,7 +42,10 @@ an owner error without changing work. Neither page check creates learner submiss
 The real host targets in the shared skill now start a lesson from the classroom
 before the original reading/quiz/panel paths. They request an official Rust source,
 check saved output and a page-check receipt, open and reload the page, and verify
-zero submissions or grades from checking. A rejected model plan is retained and
+zero submissions, grades, or learning records from checking. They bind the receipt to
+all saved document fields. Service drives select the fixed verification model through
+Settings, check the requested and answering models on the authoring request, then
+reset to the configured default before the ordinary teacher checks. A rejected model plan is retained and
 receives at most one explicit browser retry with its actual error in context.
 Inspect `stored-next-lesson.json`, `*-next-lesson.png`, and any
 `next-lesson-failed.json` / `next-lesson-retry-failed.json`. Host model output may
@@ -53,8 +56,12 @@ fail validation; a fixture success does not cancel a real-host failure.
 Pi stays in its live session. Claude and Codex keep the persistent service and
 teacher conversation identity. Research tools are enabled only for explicit
 lesson authoring; ordinary questions and panel replies retain their permissions.
-Pi's `read_lesson_source` reads public HTTP sources and rejects private network
-URLs. Resource reads stay within the requested classroom and packaged guidance.
+Pi's `read_lesson_source` pins every HTTP(S) connection to its checked public DNS
+answer, checks each redirect independently, and retains hostname and TLS validation.
+Run `npx vitest run test/lesson-research.test.ts` for the DNS, destination, redirect,
+size, and timeout contracts. Private, mapped, link-local, and transition addresses
+must be refused. Resource reads stay within the requested classroom and packaged
+guidance.
 
 A saved document that passed the page check recovers without another model turn.
 A rejected page requires explicit retry; its output is retained before requesting

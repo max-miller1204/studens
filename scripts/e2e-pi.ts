@@ -22,7 +22,7 @@ import {
   seedTransferObjective,
 } from "../test/helpers.ts";
 import { playwright, playwrightCode } from "./playwright.ts";
-import { TEST_MODELS } from "./harness.ts";
+import { TEST_MODELS, toolRunSettled } from "./harness.ts";
 
 const fixture = makeFixture();
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -274,6 +274,9 @@ try {
     );
     failure = null;
   }
+  await until("lesson authoring run", () =>
+    toolRunSettled(events, "publish_lesson") ? true : null,
+  );
   await playwrightCode(
     session,
     fixture.root,
@@ -329,12 +332,7 @@ try {
       : null,
   );
   await until("answer turn", () =>
-    events
-      .slice(readingStart)
-      .some((e) => e.type === "tool_execution_end" && e.toolName === "answer_lesson_question") &&
-    events.slice(readingStart).some((e) => e.type === "agent_settled")
-      ? true
-      : null,
+    toolRunSettled(events.slice(readingStart), "answer_lesson_question") ? true : null,
   );
   if (artifacts)
     fs.writeFileSync(
@@ -370,7 +368,7 @@ try {
     if (quizCard.quiz?.questionId !== "q1" || quizCard.quiz.graded)
       throw new Error(`The quiz card lost its question: ${JSON.stringify(quizCard.quiz)}`);
     await until("quiz question turn", () =>
-      events.slice(start).some((e) => e.type === "agent_settled") ? true : null,
+      toolRunSettled(events.slice(start), "answer_lesson_question") ? true : null,
     );
     console.log(`[e2e:pi] quiz question answered before grading: ${quizCard.answerMarkdown}`);
   }
@@ -406,7 +404,7 @@ try {
       throw new Error(`Wrong verdict for attempt ${attempt}`);
     const run = await until("grading turn", () => {
       const next = events.slice(start);
-      return next.some((e) => e.type === "agent_settled") ? next : null;
+      return toolRunSettled(next, "grade_lesson_quiz") ? next : null;
     });
     if (!run.some((e) => e.type === "tool_execution_end" && e.toolName === "grade_lesson_quiz"))
       throw new Error("Pi did not grade with the tool");
