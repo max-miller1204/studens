@@ -273,6 +273,37 @@ it("queues explicit Pi retry until the failed turn ends and rejects same-turn re
   bridge.reset();
 });
 
+it("acknowledges only an identical completed Pi publication in its owning origin without writes", async () => {
+  const { createHash } = await import("node:crypto");
+  const bridge = new ClassroomBridge(lessonSender(() => {}));
+  const request = startLessonRequest("rust", randomUUID(), "", "pi");
+  bridge.nextLesson(request);
+  const document = nextLessonDocument(fixture.root);
+  updateLessonRequest(saveLessonDocument(request, document), {
+    pageCheck: {
+      hash: createHash("sha256").update(JSON.stringify(document)).digest("hex"),
+      report: "Fixture receipt at the production publication boundary.",
+    },
+  });
+  const first = await bridge.lessonTool().execute(piLessonArguments(document));
+  const statePath = path.join(fixture.root, "rust/.lesson-requests.json");
+  const before = fs.readFileSync(statePath, "utf8");
+  expect(await bridge.lessonTool().execute(piLessonArguments(document))).toEqual(first);
+  expect(fs.readFileSync(statePath, "utf8")).toBe(before);
+  await expect(
+    bridge.lessonTool().execute(piLessonArguments({ ...document, title: "Changed" })),
+  ).rejects.toThrow("cannot be changed");
+  expect(fs.readFileSync(statePath, "utf8")).toBe(before);
+  expect(store.listLessons("rust").filter((l) => l.name === request.lesson)).toHaveLength(1);
+  expect(store.listSubmissions("rust", request.lesson)).toEqual([]);
+  expect(store.listGrades("rust", request.lesson)).toEqual([]);
+  bridge.onAgentEnd([]);
+  await expect(bridge.lessonTool().execute(piLessonArguments(document))).rejects.toThrow(
+    "No explicit lesson request",
+  );
+  bridge.reset();
+});
+
 it("rejects lesson publication from an ordinary panel reply before any authoring writes", async () => {
   const service = new TeacherService(async (_identity, _prompt, _cwd, _save, _signal, contract) => {
     expect(contract.research).toBeUndefined();

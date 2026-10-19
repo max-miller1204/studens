@@ -561,6 +561,23 @@ export class ClassroomBridge {
         const saved = lessonRequests(origin.request.classroom).find(
           (r) => r.id === origin.request.id,
         )!;
+        const ready = () => ({
+          details: {},
+          content: [
+            {
+              type: "text" as const,
+              text: `Lesson ready: /c/${saved.classroom}/${saved.lesson}\nThis request is complete. End this authoring turn.`,
+            },
+          ],
+        });
+        if (saved.status === "done") {
+          if (
+            !saved.document ||
+            JSON.stringify(piLessonDocument(input)) !== JSON.stringify(saved.document)
+          )
+            throw new Error("Published lesson output cannot be changed by replaying its request.");
+          return ready();
+        }
         if (saved.status !== "running")
           throw new Error(
             "This lesson request requires an explicit retry from the classroom page.",
@@ -569,15 +586,7 @@ export class ClassroomBridge {
         try {
           const request = saveLessonDocument(origin.request, piLessonDocument(input));
           await completeLessonRequest(request);
-          return {
-            details: {},
-            content: [
-              {
-                type: "text" as const,
-                text: `Lesson ready: /c/${request.classroom}/${request.lesson}`,
-              },
-            ],
-          };
+          return ready();
         } catch (error) {
           updateLessonRequest(origin.request, {
             status: "failed",

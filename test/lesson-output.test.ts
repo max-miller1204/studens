@@ -70,16 +70,18 @@ it("uses the dedicated supported schema only for explicit lesson requests", () =
   expect(inspect(LESSON_OUTPUT_SCHEMA)).toBeLessThanOrEqual(10);
 });
 it.each([
-  [{ kind: "text", value: 'quoted "answer"\n' }, 'quoted "answer"\n'],
-  [{ kind: "list", values: ["a", "b"] }, ["a", "b"]],
+  ['quoted "answer"\n', 'quoted "answer"\n'],
   [
-    { kind: "numeric", value: 4, tolerance: 0.1, unit: "m" },
+    ["a", "b"],
+    ["a", "b"],
+  ],
+  [
+    { value: 4, tolerance: 0.1, unit: "m" },
     { value: 4, tolerance: 0.1, unit: "m" },
   ],
-  [{ kind: "numeric", value: 4, tolerance: null, unit: null }, { value: 4 }],
+  [{ value: 4 }, { value: 4 }],
   [
     {
-      kind: "map",
       entries: [
         { key: "a", value: "b" },
         { key: "c", value: ["d", "e"] },
@@ -118,7 +120,6 @@ it.each([
 it("rejects duplicate mapping keys instead of silently overwriting them", () => {
   const input = structuredClone(simpleLessonOutput);
   input.quizzes[0].questions[0].rubric.expected = {
-    kind: "map",
     entries: [
       { key: "a", value: "b" },
       { key: "a", value: "c" },
@@ -132,4 +133,10 @@ it("preserves fixed criteria and refuses missing or inconsistent weights", () =>
   expect(() => lessonModelPlan(input)).toThrow(/sum/);
   input.quizzes[0].questions[0].rubric.criteria = [];
   expect(() => lessonModelPlan(input)).toThrow(/non-empty/);
+});
+
+it("refuses legacy expected tags instead of carrying lesson transport into canonical tools", () => {
+  const input = structuredClone(simpleLessonOutput);
+  input.quizzes[0].questions[0].rubric.expected = { kind: "text", value: "map" } as any;
+  expect(() => lessonModelPlan(input)).toThrow(/extra fields/);
 });

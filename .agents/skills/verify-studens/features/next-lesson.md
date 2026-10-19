@@ -83,3 +83,10 @@ not settlement left over from a prior lesson origin. Its read-only observer reco
 `pi-tools.jsonl`: explicit authoring advertises only publication, bounded research
 and the already active reader, then restores the exact previous tool set. The
 execution guards and strict unexpected-tool-error assertion remain active.
+
+During an owning Pi authoring turn, repeating an already completed publication with
+the identical complete document returns its existing lesson without writes. Changed
+output and any request outside that origin remain errors. The service transport
+keeps string/list/numeric expected answers in canonical types; only dynamic mapping
+keys use entry rows. Later refills explicitly return to canonical tool arguments in
+the same teacher conversation. Strict private-key validation remains authoritative.

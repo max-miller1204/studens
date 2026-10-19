@@ -20,18 +20,13 @@ const array = (items: Record<string, unknown>, minItems = 0, maxItems?: number) 
 const strings = array(text, 1);
 const expectedSchema = {
   anyOf: [
-    object({ kind: { type: "string", enum: ["text"] }, value: text }),
-    object({ kind: { type: "string", enum: ["list"] }, values: strings }),
-    object({
-      kind: { type: "string", enum: ["numeric"] },
-      value: { type: "number" },
-      tolerance: nullable({ type: "number", minimum: 0 }),
-      unit: nullable(text),
-    }),
-    object({
-      kind: { type: "string", enum: ["map"] },
-      entries: array(object({ key: text, value: { anyOf: [text, strings] } }), 1),
-    }),
+    text,
+    strings,
+    object({ value: { type: "number" } }),
+    object({ value: { type: "number" }, tolerance: { type: "number", minimum: 0 } }),
+    object({ value: { type: "number" }, unit: text }),
+    object({ value: { type: "number" }, tolerance: { type: "number", minimum: 0 }, unit: text }),
+    object({ entries: array(object({ key: text, value: { anyOf: [text, strings] } }), 1) }),
   ],
 };
 const criterionSchema = object({
@@ -142,30 +137,15 @@ function pairs(value: unknown, label: string, decode: (row: Record<string, unkno
   );
 }
 function expected(value: unknown): unknown {
-  if (!value || typeof value !== "object" || Array.isArray(value))
-    throw new Error("Expected answer must be typed data.");
-  const tag = (value as Record<string, unknown>).kind;
-  if (tag === "text") {
-    const row = shape(value, ["kind", "value"], "Text key");
-    return string(row.value, "Expected text");
-  }
-  if (tag === "list") {
-    const row = shape(value, ["kind", "values"], "List key");
-    const values = rows(row.values, "Expected list").map((v) => string(v, "Expected list value"));
+  if (typeof value === "string") return string(value, "Expected text");
+  if (Array.isArray(value)) {
+    const values = value.map((v) => string(v, "Expected list value"));
     if (!values.length) throw new Error("Expected list is empty.");
     return values;
   }
-  if (tag === "numeric") {
-    const row = shape(value, ["kind", "value", "tolerance", "unit"], "Numeric key"),
-      unit = optionalString(row.unit, "Expected unit");
-    return {
-      value: number(row.value, "Expected number"),
-      ...(row.tolerance === null ? {} : { tolerance: number(row.tolerance, "Expected tolerance") }),
-      ...(unit === undefined ? {} : { unit }),
-    };
-  }
-  if (tag === "map") {
-    const row = shape(value, ["kind", "entries"], "Mapping key"),
+  if (!value || typeof value !== "object") throw new Error("Expected answer must be typed data.");
+  if (Object.hasOwn(value, "entries")) {
+    const row = shape(value, ["entries"], "Mapping key"),
       seen = new Set<string>();
     const entries = rows(row.entries, "Expected mapping");
     if (!entries.length) throw new Error("Expected mapping is empty.");
@@ -184,8 +164,24 @@ function expected(value: unknown): unknown {
       }),
     );
   }
-  throw new Error("Expected answer has an unknown representation.");
+  const row = value as Record<string, unknown>;
+  if (
+    !Object.hasOwn(row, "value") ||
+    Object.keys(row).some((key) => !["value", "tolerance", "unit"].includes(key))
+  )
+    throw new Error("Expected numeric answer has missing or extra fields.");
+  const tolerance = Object.hasOwn(row, "tolerance")
+    ? number(row.tolerance, "Expected tolerance")
+    : undefined;
+  if (tolerance !== undefined && tolerance < 0)
+    throw new Error("Expected tolerance must be nonnegative.");
+  return {
+    value: number(row.value, "Expected number"),
+    ...(tolerance === undefined ? {} : { tolerance }),
+    ...(Object.hasOwn(row, "unit") ? { unit: string(row.unit, "Expected unit") } : {}),
+  };
 }
+
 function rubric(value: unknown) {
   const row = shape(
       value,

@@ -166,7 +166,10 @@ export const runTeacher: RunTeacher = async (
 ) => {
   const raw = await runStructured(
     identity,
-    prompt,
+    contract.operations.includes("save_review_variants")
+      ? prompt +
+          "\n\nCurrent response format: canonical service plan and save_review_variants tool arguments. The earlier explicit-lesson response schema applies only to publish_lesson. Here rubric.expected uses canonical private keys directly: a string option id for choice, id arrays for multi/order/locate, a value/tolerance/unit object for numeric, or keyed objects for match/cloze. Never use lesson-transport wrappers such as kind/value or entries around an expected answer. Follow this request's tool definitions and inline canonical contract."
+      : prompt,
     cwd,
     saveIdentity,
     planSchema(contract),

@@ -8,18 +8,9 @@ export function lessonOutput(document: LessonDocument) {
     const e = raw.expected;
     return {
       expected:
-        typeof e === "string"
-          ? { kind: "text", value: e }
-          : Array.isArray(e)
-            ? { kind: "list", values: e }
-            : typeof e.value === "number"
-              ? {
-                  kind: "numeric",
-                  value: e.value,
-                  tolerance: e.tolerance ?? null,
-                  unit: e.unit ?? null,
-                }
-              : { kind: "map", entries: Object.entries(e).map(([key, value]) => ({ key, value })) },
+        typeof e === "string" || Array.isArray(e) || typeof e.value === "number"
+          ? e
+          : { entries: Object.entries(e).map(([key, value]) => ({ key, value })) },
       criteria: raw.criteria,
       points: raw.points,
       full: raw.full,
@@ -90,7 +81,7 @@ export const simpleLessonOutput = {
         {
           id: "q1",
           rubric: {
-            expected: { kind: "text", value: "The owner." },
+            expected: "The owner.",
             criteria: [{ id: "owner", description: "Identify the current owner.", points: 1 }],
             points: 1,
             full: "Identify the owner.",
