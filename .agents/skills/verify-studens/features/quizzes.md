@@ -34,6 +34,14 @@ keeps a specific error after reload and requires `Retry request`; the corrected 
 saves one grade. Inspect `criteria/rejected-plan.json` and `criteria/retried-plan.json`.
 These are fixture teachers, not real model adherence checks.
 
+The real Pi, Claude, and Codex drives also append a criterion calculation after
+their existing lifecycle checks. Inspect `criteria/stored-criteria.json`,
+`criteria/criteria-reloaded.json`, and the desktop/mobile captures. The teacher
+must save 2/2 for the squared sum and 0/2 for the missing average, keep the form
+locked after reload, and post the follow-up on the lesson page. Inspect the actual
+teacher message for the retrieval task; it may use an imperative sentence. These
+runs do not establish human retention.
+
 The math quiz stores its prompt, stimulus, and choice label as TeX. Its grade feedback draws as MathML after reload. Inspect `stored-math.json` for the saved submission, grade, and review prompt.
 
 Invalid option values must show contract errors and block submission. A grade that arrives before the submit response must keep the quiz graded. A pretest grade must release teaching through one reload and preserve a reflection draft.
