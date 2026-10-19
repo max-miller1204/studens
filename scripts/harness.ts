@@ -20,8 +20,10 @@ export function toolRunSettled(
   events: readonly { type?: string; toolName?: string }[],
   toolName: string,
 ): boolean {
-  const tool = events.findLastIndex(
-    (event) => event.type === "tool_execution_end" && event.toolName === toolName,
+  const tool = events.reduce(
+    (last, event, index) =>
+      event.type === "tool_execution_end" && event.toolName === toolName ? index : last,
+    -1,
   );
   return tool >= 0 && events.slice(tool + 1).some((event) => event.type === "agent_settled");
 }
