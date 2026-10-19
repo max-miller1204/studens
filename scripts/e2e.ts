@@ -1,3 +1,4 @@
+import { seedReteach, driveReteach } from "./e2e-reteach-browser.ts";
 /** Real host and dedicated teacher evaluation. All material is a temporary fixture. */
 import { highlightText } from "./browser-actions.ts";
 import { spawn } from "node:child_process";
@@ -383,6 +384,15 @@ async function main(): Promise<void> {
       initiating.kill();
       if (artifacts) fs.writeFileSync(path.join(artifacts, "resume-host-output.log"), resumeOutput);
     }
+
+    const reteachLesson = seedReteach(root);
+    await driveReteach(
+      browser,
+      root,
+      base,
+      reteachLesson,
+      artifacts ? path.join(artifacts, "reteach") : null,
+    );
 
     log(
       "PASS: host exit, idle wake, answer, grade, locked quiz, teacher reply, stable session, private rubric",

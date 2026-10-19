@@ -187,6 +187,7 @@ export interface ClassroomProgress {
   review: ReviewSummary;
   /** Lesson name → questions from that lesson that are due for review. */
   dueByLesson: Record<string, number>;
+  reteach?: Array<{ lesson: string; prompt: string }>;
   glossaryTerms: number;
   /** The time the page is built, for "due tomorrow". */
   now: number;
@@ -271,6 +272,7 @@ function progressSection(data: ClassroomPageData): string {
   ${review.total > 0 ? `<div class="cl-meter" role="meter" aria-label="Items with retained evidence" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${percent}"><span style="width: ${percent}%"></span></div>` : ""}
   <p class="cl-progress-note">Retained evidence needs independent answers after a delay. Application skills also need transfer. Old records with missing context stay unknown.</p>
   ${note ? `<p class="cl-progress-note">${escapeHtml(note)}</p>` : ""}
+  ${(data.progress.reteach ?? []).map((item) => `<p class="cl-progress-note">Review paused after repeated misses: ${escapeHtml(item.prompt)} <a href="/c/${escapeHtml(data.classroom.name)}/${escapeHtml(item.lesson)}#cl-reteach">Open short re-teach</a></p>`).join("")}
   ${
     review.total > 0
       ? `<div class="cl-review-start" data-cl-review="${escapeHtml(data.classroom.name)}" data-due="${review.due}" data-review-size="${DEFAULT_REVIEW_SIZE}">

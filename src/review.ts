@@ -13,6 +13,8 @@ export const REVIEW_INTERVALS_DAYS = [1, 3, 7, 21, 60] as const;
 export const REVIEW_POLICY = "elapsed-independent-v1";
 export const RETENTION_SPAN_DAYS = 7;
 export const RETENTION_SUCCESSES = 2;
+/** Cumulative incomplete exposures while the latest performance remains unresolved. */
+export const RETEACH_MISSES = 3;
 
 export const DEFAULT_REVIEW_SIZE = 5;
 export const MAX_REVIEW_SIZE = 12;
@@ -80,6 +82,8 @@ export interface ReviewItem {
   lastAnswer: string;
   lastFeedback: string;
   attempts: number;
+  misses?: number;
+  needsReteach?: boolean;
 }
 
 /** The box after one more graded answer. */
@@ -154,6 +158,7 @@ export function scheduleItems(events: ReviewEvent[]): ReviewItem[] {
         evidence,
       };
     }
+    let misses = 0;
     let box = 0;
     let dueAt = list[0].at + DAY_MS;
     let exposureAt = list[0].at;
@@ -179,6 +184,7 @@ export function scheduleItems(events: ReviewEvent[]): ReviewItem[] {
       const feedbackAt = Math.max(event.at, event.feedbackAt ?? event.at);
       if (i === 0) dueAt = feedbackAt + DAY_MS;
       if (!full) {
+        misses++;
         box = 0;
         delayedSuccesses = 0;
         delayedTransfers = 0;
@@ -264,13 +270,17 @@ export function scheduleItems(events: ReviewEvent[]): ReviewItem[] {
       lastAnswer: last.answer,
       lastFeedback: last.feedback,
       attempts: list.length,
+      misses,
+      needsReteach:
+        misses >= RETEACH_MISSES &&
+        !(last.correct && (last.credit === undefined || last.credit === 1)),
     });
   }
   return items.sort((a, b) => a.dueAt - b.dueAt || a.key.localeCompare(b.key));
 }
 
 export function isDue(item: ReviewItem, now: number): boolean {
-  return item.dueAt <= now;
+  return !item.needsReteach && item.dueAt <= now;
 }
 
 /** Mix distinct strategies within related groups. Keep unrelated items in due order. */
@@ -327,10 +337,11 @@ export interface ReviewSummary {
 }
 
 export function summarize(items: ReviewItem[], now: number): ReviewSummary {
-  const upcoming = items.filter((item) => !isDue(item, now));
+  const scheduled = items.filter((item) => !item.needsReteach);
+  const upcoming = scheduled.filter((item) => !isDue(item, now));
   return {
     total: items.length,
-    due: items.length - upcoming.length,
+    due: scheduled.length - upcoming.length,
     dueSoon: upcoming.filter((item) => item.dueAt <= now + 3 * DAY_MS).length,
     retained: items.filter((item) => item.progress === "retained-evidence").length,
     transferNeeded: items.filter((item) => item.progress === "transfer-needed").length,

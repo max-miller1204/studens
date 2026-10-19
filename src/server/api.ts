@@ -21,7 +21,10 @@ export async function handleApi(
     ((route === "review" || route === "review/retry") && req.method === "POST")
   )
     return handleReview(req, res, route, url);
-  if ((route === "teacher/chat" || route === "teacher/retry") && req.method === "POST")
+  if (
+    (route === "teacher/chat" || route === "teacher/retry" || route === "teacher/reteach") &&
+    req.method === "POST"
+  )
     return handleTeacher(req, res, route);
   if (route === "events" && req.method === "GET") return handleEvents(req, res, url);
   if (route === "state" && req.method === "GET") return handleState(res, url);
