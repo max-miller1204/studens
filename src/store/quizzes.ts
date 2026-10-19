@@ -109,6 +109,7 @@ export function publicSubmission(submission: QuizSubmission): QuizSubmission {
   const {
     teachingPlan: privatePlan,
     deterministicGrades: privateGrades,
+    earlyReviewKeys: privateEarlyTiming,
     ...publicFields
   } = submission;
   return {

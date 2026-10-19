@@ -1,10 +1,11 @@
+import * as fs from "node:fs";
 import { randomUUID } from "node:crypto";
 import * as path from "node:path";
 import { questionCredit } from "../../assets/runtime/grade.mjs";
 import { reviewKey } from "../../assets/runtime/quiz.mjs";
 import type { Assistance } from "../evidence.ts";
 import { isAssistance } from "../evidence.ts";
-import { classroomDir } from "../paths.ts";
+import { classroomDir, isValidSlug } from "../paths.ts";
 import type { QuizAnswer } from "../quiz.ts";
 import { answerSummary, answersByQuestion, kindOf } from "../quiz.ts";
 import type { ReviewEvent, ReviewItem } from "../review.ts";
@@ -49,6 +50,9 @@ export function reviewEvents(classroom: string): ReviewEvent[] {
             : {}),
           at: submission.submittedAt,
           feedbackAt,
+          early: submission.earlyReviewKeys?.includes(
+            answerReviewKey(lesson, submission.quizId, group[0]),
+          ),
           evidence: group[0].learning,
           correct: verdict.correct,
           credit: credit.earned / credit.possible,
@@ -93,7 +97,14 @@ export function reviewEvents(classroom: string): ReviewEvent[] {
 
 /** Every review item in a classroom, with its schedule, soonest due first. */
 export function reviewItems(classroom: string): ReviewItem[] {
-  return scheduleItems(reviewEvents(classroom));
+  const items = scheduleItems(reviewEvents(classroom));
+  for (const control of readReviewControls(classroom)) {
+    const item = findReviewItem(items, control.key);
+    if (!item) throw new Error(`Review control refers to an unknown item: ${control.key}`);
+    item.controlRevision = control.revision;
+    item.retiredAt = control.retiredAt;
+  }
+  return items;
 }
 
 /** A successful chat retrieval check linked to an existing quiz item. */
@@ -177,4 +188,102 @@ export function lessonReviewItems(classroom: string, lesson: string): ReviewItem
       reviewedHere.has(item.key) ||
       item.questionKeys?.some((key) => reviewedHere.has(key)),
   );
+}
+
+interface ReviewControl {
+  key: string;
+  revision: number;
+  retiredAt?: number;
+}
+function reviewControlsFile(classroom: string): string {
+  if (!isValidSlug(classroom)) throw new Error("Invalid classroom.");
+  const root = classroomDir(classroom);
+  const file = path.join(root, ".review-controls.json");
+  for (const target of [root, file]) {
+    try {
+      if (fs.lstatSync(target).isSymbolicLink())
+        throw new Error("Review controls cannot use symlinks.");
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+    }
+  }
+  return file;
+}
+function readReviewControls(classroom: string): ReviewControl[] {
+  const file = reviewControlsFile(classroom);
+  let saved;
+  try {
+    saved = JSON.parse(fs.readFileSync(file, "utf8"));
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return [];
+    throw new Error(`Cannot read review controls: ${(error as Error).message}`);
+  }
+  if (
+    saved?.version !== 1 ||
+    !Array.isArray(saved.items) ||
+    saved.items.some(
+      (item: ReviewControl) =>
+        !item ||
+        typeof item.key !== "string" ||
+        !Number.isSafeInteger(item.revision) ||
+        item.revision < 1 ||
+        (item.retiredAt !== undefined && (!Number.isFinite(item.retiredAt) || item.retiredAt <= 0)),
+    ) ||
+    new Set(saved.items.map((item: ReviewControl) => item.key)).size !== saved.items.length
+  )
+    throw new Error("Invalid review controls. Restore the saved file, then explicitly retry.");
+  return saved.items;
+}
+/** Retain all evidence and use revisions to reject stale actions from another tab. */
+export function setReviewRetired(
+  classroom: string,
+  key: string,
+  retired: boolean,
+  revision: number,
+): ReviewItem {
+  const lock = `${reviewControlsFile(classroom)}.lock`;
+  let descriptor: number;
+  try {
+    descriptor = fs.openSync(lock, "wx", 0o600);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "EEXIST")
+      throw new Error(
+        `Another server has locked review item edits. Retry after it finishes. If a server stopped during a save, remove ${lock} before retrying.`,
+      );
+    throw error;
+  }
+  try {
+    fs.writeFileSync(descriptor, `${process.pid}\n`);
+    return applyReviewRetirement(classroom, key, retired, revision);
+  } finally {
+    fs.closeSync(descriptor);
+    fs.unlinkSync(lock);
+  }
+}
+function applyReviewRetirement(
+  classroom: string,
+  key: string,
+  retired: boolean,
+  revision: number,
+): ReviewItem {
+  const item = findReviewItem(reviewItems(classroom), key);
+  if (!item) throw new Error(`No graded review item: ${key}`);
+  if ((item.retiredAt !== undefined) === retired) return item;
+  if (revision !== (item.controlRevision ?? 0))
+    throw new Error("This review item changed in another tab. Reload before retrying.");
+  const items = readReviewControls(classroom).filter((control) => control.key !== item.key);
+  const control = {
+    key: item.key,
+    revision: revision + 1,
+    ...(retired ? { retiredAt: Date.now() } : {}),
+  };
+  items.push(control);
+  const target = reviewControlsFile(classroom);
+  const temp = `${target}.${randomUUID()}.tmp`;
+  fs.writeFileSync(temp, JSON.stringify({ version: 1, items }, null, 2), {
+    mode: 0o600,
+    flag: "wx",
+  });
+  fs.renameSync(temp, target);
+  return { ...item, retiredAt: control.retiredAt, controlRevision: control.revision };
 }

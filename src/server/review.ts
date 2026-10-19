@@ -19,12 +19,55 @@ export async function handleReview(
   route: string,
   url: URL,
 ): Promise<void> {
+  if (route === "review/items" && req.method === "GET") {
+    const classroom = url.searchParams.get("classroom");
+    if (!isValidSlug(classroom) || !store.readClassroom(classroom))
+      return sendJson(res, { error: "Unknown classroom." }, 404);
+    try {
+      return sendJson(res, {
+        items: store.reviewItems(classroom).map((item) => ({
+          key: item.key,
+          retiredAt: item.retiredAt,
+          revision: item.controlRevision ?? 0,
+        })),
+      });
+    } catch (error) {
+      return sendJson(res, { error: (error as Error).message }, 409);
+    }
+  }
+  if (route === "review/item" && req.method === "POST") {
+    const body = (await readJsonBody(req)) as Record<string, unknown>;
+    if (
+      !body ||
+      !isValidSlug(body.classroom) ||
+      typeof body.key !== "string" ||
+      typeof body.retired !== "boolean" ||
+      !Number.isSafeInteger(body.revision) ||
+      (body.revision as number) < 0
+    )
+      return sendJson(res, { error: "Invalid review item action." }, 400);
+    if (!store.readClassroom(body.classroom))
+      return sendJson(res, { error: "Unknown classroom." }, 404);
+    try {
+      const item = store.setReviewRetired(
+        body.classroom,
+        body.key,
+        body.retired,
+        body.revision as number,
+      );
+      return sendJson(res, {
+        item: { key: item.key, retiredAt: item.retiredAt, revision: item.controlRevision ?? 0 },
+      });
+    } catch (error) {
+      return sendJson(res, { error: (error as Error).message }, 409);
+    }
+  }
   if (route === "review" && req.method === "GET") {
     const classroom = url.searchParams.get("classroom");
     if (!isValidSlug(classroom) || !store.readClassroom(classroom))
       return sendJson(res, { error: "Unknown classroom." }, 404);
-    const session = currentReview(classroom);
     try {
+      const session = currentReview(classroom);
       if (session && session.status !== "done" && hooks?.reviewOwner)
         requireReviewOwner(session, hooks.reviewOwner);
       return sendJson(res, { review: publicReview(session) });
@@ -55,7 +98,13 @@ export async function handleReview(
         requireReviewOwner(session, hooks.reviewOwner);
         hooks.onReviewRetry(session);
       } else {
-        session = startReview(body.classroom, body.id, hooks.reviewOwner).session;
+        session = startReview(
+          body.classroom,
+          body.id,
+          hooks.reviewOwner,
+          body.size === undefined ? undefined : (body.size as number),
+          { topic: body.topic as string | undefined, early: body.early as boolean | undefined },
+        ).session;
         if (session.status === "queued") hooks.onReview(session);
       }
       return sendJson(
