@@ -14,3 +14,5 @@ Matching fixture captures from main `ff52f741` and this migration. Both use the 
 | dark, mobile, teacher    | ![Before dark mobile teacher](base/dark-mobile-teacher.png)       | ![After dark mobile teacher](after/dark-mobile-teacher.png)       |
 
 Desktop: 1280×900. Mobile: 375×812. Full-page images can be taller than the viewport. Source ports and generated request IDs differ. See [capture provenance](provenance.json) for inspected image hashes and source hashes.
+
+Actual Pi runtime captures: [saved reflection and card follow-up after initiating Pi exit](pi-reflection-followup.png), and [tailnet links disabled through Settings](pi-tailnet-disabled.png). These use Pi SDK selection `openai-codex/gpt-6-luna`, low thinking; provider-resolved routing is independently unverified. The reflection and follow-up create no grades. The tailnet check uses unused HTTPS port 8445 and preserves the unrelated port 443 route.

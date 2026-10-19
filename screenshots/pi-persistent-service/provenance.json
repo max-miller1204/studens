@@ -8,7 +8,7 @@
   "themes": ["light", "dark"],
   "fullPage": true,
   "notes": "Source-owned ephemeral listener ports and generated request IDs differ. Base is a full git archive of the stated commit including docs/ATTRIBUTION.md; after is this worktree. Captures were inspected in contact sheets. Actual-model/lifecycle receipts are retained outside the repository.",
-  "sourceParent": "7c61d6e386966fab20f3d3be5e4448eefadc8501",
+  "sourceParent": "c7d490fb16627e2910c0c9c8e0c1af6ca9b19b48",
   "viewports": {
     "desktop": [1280, 900],
     "mobile": [375, 812]
@@ -64,50 +64,50 @@
     },
     {
       "file": "after/dark-desktop-settings.png",
-      "sha256": "e7468d5630d2f04a20559cecf46b0e512c66a5c5c5481039b865fc54a7a90d41",
-      "capture": "/tmp/studens-issue39/screenshots/after-main72/dark-desktop-settings.png",
+      "sha256": "58f40da6deee155966a047b046cee6322fc6be8a687a53e07a72d1e5c897bfc0",
+      "capture": "/tmp/studens-issue39/screenshots/after-sdk-label/dark-desktop-settings.png",
       "inspected": true
     },
     {
       "file": "after/dark-desktop-teacher.png",
-      "sha256": "e60637eb0b5be13846cc0811b8b4b057167637e1dae1af305a814676ad8a17f2",
-      "capture": "/tmp/studens-issue39/screenshots/after-main72/dark-desktop-teacher.png",
+      "sha256": "caa80cf99ba2d07b653c9c483e531c0e44e53c8bad706450115fae4baf73417e",
+      "capture": "/tmp/studens-issue39/screenshots/after-sdk-label/dark-desktop-teacher.png",
       "inspected": true
     },
     {
       "file": "after/dark-mobile-settings.png",
-      "sha256": "cddd681b95fc0c7d1a634e5d8d126cc9b16c0a458475cef5ead8a9b57d75b282",
-      "capture": "/tmp/studens-issue39/screenshots/after-main72/dark-mobile-settings.png",
+      "sha256": "0f229675e2dd9600ee33ab93efa48e4679b9b352d7dadc0858d0966d47b2a1b2",
+      "capture": "/tmp/studens-issue39/screenshots/after-sdk-label/dark-mobile-settings.png",
       "inspected": true
     },
     {
       "file": "after/dark-mobile-teacher.png",
-      "sha256": "0d1be73209039b40e4bde5dbc60f28e3bcee5ad46a091dccf6fab3f69d092d9f",
-      "capture": "/tmp/studens-issue39/screenshots/after-main72/dark-mobile-teacher.png",
+      "sha256": "332ed98d0a3596767157706adf5fc26bb92df986ca9481d1fc2b2c1cefdcb1d7",
+      "capture": "/tmp/studens-issue39/screenshots/after-sdk-label/dark-mobile-teacher.png",
       "inspected": true
     },
     {
       "file": "after/light-desktop-settings.png",
-      "sha256": "cec74ef2a3dbe14eebafd7824ea864b86ce73c4a64777473af929d53b4c614c6",
-      "capture": "/tmp/studens-issue39/screenshots/after-main72/light-desktop-settings.png",
+      "sha256": "1fc62ac224104fc8c2d05705b4d0d3736a09f47ba0c51d895a2458ff025b0b8d",
+      "capture": "/tmp/studens-issue39/screenshots/after-sdk-label/light-desktop-settings.png",
       "inspected": true
     },
     {
       "file": "after/light-desktop-teacher.png",
-      "sha256": "7c5a487aa4e07937de59f3c8e7b999a4dc4466244d6d0ae113d685a351e820f8",
-      "capture": "/tmp/studens-issue39/screenshots/after-main72/light-desktop-teacher.png",
+      "sha256": "3b080ddb1fed6d5f96cd1ffd50766258d918c1e3b21332a4ec11e3287c136807",
+      "capture": "/tmp/studens-issue39/screenshots/after-sdk-label/light-desktop-teacher.png",
       "inspected": true
     },
     {
       "file": "after/light-mobile-settings.png",
-      "sha256": "a6dbb1a1411cb8e9afb68155218ff579513f8c1bc6c8a7d531ab95ac14635279",
-      "capture": "/tmp/studens-issue39/screenshots/after-main72/light-mobile-settings.png",
+      "sha256": "f996f645c59c55e302d76d60056c86677c3f43e1b6f4777b95dadf59f86e34d0",
+      "capture": "/tmp/studens-issue39/screenshots/after-sdk-label/light-mobile-settings.png",
       "inspected": true
     },
     {
       "file": "after/light-mobile-teacher.png",
-      "sha256": "2ad033fba91558efcbf5416521db752d8f17a71cf1a18e50ee27d4e8f4989366",
-      "capture": "/tmp/studens-issue39/screenshots/after-main72/light-mobile-teacher.png",
+      "sha256": "4c104d9a13ba187ea38c568812cc8222b8c9a6da8346627659e6e12f49f3754b",
+      "capture": "/tmp/studens-issue39/screenshots/after-sdk-label/light-mobile-teacher.png",
       "inspected": true
     }
   ],
@@ -273,9 +273,9 @@
     "assets/runtime/review-screen.mjs": "d6b888fe2204bd9751347e72f03234112a9072592cdb7efe6b8862a5b80b81cb",
     "assets/runtime/settings-error.d.mts": "ce69d0602447c76d5c703d1574afb711cd4edbc88e2a3758d2a19df16f321d3f",
     "assets/runtime/settings-error.mjs": "a9ca988cf1cdc832ce978eecac8ce37bc90a61218d2a9b5b2cdaf2530b7265c8",
-    "assets/runtime/settings.mjs": "f297a46999e95057b4ca77fc3fcf06bf3204a729e24fa7566c196db1cead7306",
+    "assets/runtime/settings.mjs": "bee94624c73c13d8d5a9fe4fbd64373a815c49012a69a1084ee1472590dfe5b8",
     "assets/runtime/shell.js": "f0a0730599165c3e88249c8def837330e28b1a1cac12b9f5d8a7ffdd81d010b7",
-    "assets/runtime/teacher-panel.mjs": "4e231050d137931f017e1286509babe871546d2a055ecebc4a389fed2994ba1d",
+    "assets/runtime/teacher-panel.mjs": "e2ab380859133a45f9a30fba7bfb5d6ec80c56a8ecbf5e322ad69a714c6015ae",
     "assets/runtime/theme.mjs": "4b845fb937bc85f16ebec8c8866b94e76831e05c82c282f44905c0b77c3b903e",
     "assets/runtime/vendor/mermaid/LICENSE": "ec9fb67dcb25eccc416ed56e1aab819222c805a2a4bfe4cb19e7556bf2ffde80",
     "assets/runtime/vendor/mermaid/VERSION": "a712c758275b460d18fa77a26ed3589689bb3f69dcc1ea99b913e32db92a5cd2",
@@ -314,7 +314,7 @@
     "src/paths.ts": "a861509b3726a98a552ed496dfcf36e6e799a8bf059e0253e538452d9bc992d9",
     "src/phone-access.ts": "b6f23f9f8f55ad25c729f48a01502e9fa74f5ebe743ac08104dc8c3b6b10d9dd",
     "src/pi-service-client.ts": "09fc4ae889c551e7f91a7077b2f309b0a67df371d35b24cd2c2a226cb5c05b02",
-    "src/pi-teacher.ts": "b6c04053e3fdf9d77ec2d062ad49882a38d1c8cf95a8dd2271127147293c709c",
+    "src/pi-teacher.ts": "6613bcd7ff4ead32d494558a1cf313cd66484584b433257529d063024c384733",
     "src/pretest.ts": "23f8214659ce13d76947b18398c8ac59b952b7612d9d02b3bd25a784aabd8a54",
     "src/prompts.ts": "e6f5595bc10b4257d759629f0f508571e02d194ca17ee0a06cc1c4154bf69f72",
     "src/quiz-authoring.ts": "ae2cf1fe6dc6b203cf89c1ebb1f354c972710e9541a166a601ba0fc4db2ea99b",
@@ -342,7 +342,7 @@
     "src/server/review.ts": "ded5162ed03887bfec73380ccb7373257ad1899abbe1050d21e86ea9ee492a7d",
     "src/server/settings.ts": "4398a80db5b4fd1992917c098343a8fa050798a42ff587f8bcc2d469803c7bd0",
     "src/server/teacher.ts": "8e829e1caff39546d83281f5ae736aaf6a8dd29a5cebd4691e96df99b4004f5f",
-    "src/service-client.ts": "4b6b1f6ff591809633f61def0868416c517e59d741412c6d05e21c594c53b149",
+    "src/service-client.ts": "a01e55b0941ef82b9c4d6b7d6228dcc9133f4504ad49365e8e10c2bffbbd4119",
     "src/service-main.ts": "a8ed785ea84ed3a4e98873d9a73a151c0309d0a9503ff83a9ef2151d3306a12d",
     "src/service-state.ts": "e7ba89d29cacf97451d20eb8561b9c3c7d22e195310e8d26222ee423d2ccdea7",
     "src/service-tools.ts": "0242c1c8c4be500294ed43e90b449c50758ef96fea7a3d06de460a653e88a596",
@@ -372,5 +372,24 @@
     "src/teaching-plan.ts": "9e25a6ea16e788fde60678857a75adea3a97ac9a5b839b1b9d13d63be12503d1",
     "src/tools.ts": "7673667fd3d2ca2b7b4e671d30b954f9536021bfdbdf9b5e43e5e121c13863d7",
     "test/helpers.ts": "ed7ada3fc1950f1f83395006127a5bca004c60fc66cbaec4123c3bdfe78b8317"
-  }
+  },
+  "piModelProvenance": "Pi records the successful SDK-selected provider/model. SDK 0.83.0 does not independently attest provider-resolved response identity. Exact-ID/no-SDK-fallback checks remain.",
+  "additionalImages": [
+    {
+      "file": "pi-reflection-followup.png",
+      "capture": "/tmp/studens-issue39/pi-authoring-smoke-corrected/reflection-followup.png",
+      "sha256": "edbceaadb50a2f4aa38de17a01871f2e1bef139697095f1594bc5040a0c28af1",
+      "inspected": true,
+      "caption": "Actual Pi SDK teacher after initiating exit: reflection, annotation and follow-up persisted after reload; zero grades.",
+      "revision": "c7d490fb16627e2910c0c9c8e0c1af6ca9b19b48"
+    },
+    {
+      "file": "pi-tailnet-disabled.png",
+      "capture": "/tmp/studens-issue39/final-combined-phone/phone/settings-tailnet-disabled.png",
+      "sha256": "654a791950c8039d40d29bce4d37267a799641755f3f289b11c28d96db00718d",
+      "inspected": true,
+      "caption": "Actual Pi extension classroom and lesson links survive exit; settings disable removes only its owned unused8445 route; unrelated443 unchanged.",
+      "revision": "c7d490fb16627e2910c0c9c8e0c1af6ca9b19b48"
+    }
+  ]
 }
