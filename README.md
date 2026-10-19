@@ -27,8 +27,8 @@ codex plugin marketplace add max-miller1204/studens
 codex plugin add studens@studens
 ```
 
-Claude Code and Codex need Node 22.18 or later. The plugin installs its runtime
-dependency on first start. There is no build step.
+All hosts require Node 22.19 or later, including the packaged Pi SDK. The plugin installs its runtime
+dependencies on first start. There is no build step.
 
 Pi installs the named release tag. Both plugin marketplaces also fetch the plugin
 from a release tag, even when the catalog tracks `main`. Merging a feature PR does

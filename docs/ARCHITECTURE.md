@@ -46,7 +46,7 @@ request content, and answering tool because they can arrive many turns later.
 
 ## Runtime and files
 
-There is no build step. Pi loads `.ts`; Claude Code and Codex use Node 22.18+ type
+There is no build step. Pi loads `.ts`; Claude Code and Codex use Node 22.19+ type
 stripping. Relative imports end in `.ts`, and type-only imports use `import type`.
 No enums or parameter properties. Browser code is `.mjs`/`.js`, served directly.
 Shared browser modules need handwritten `.d.mts` sidecars for TypeScript callers.

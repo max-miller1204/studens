@@ -42,8 +42,8 @@ const artifacts = requestedArtifacts ?? fs.mkdtempSync(path.join(os.tmpdir(), "s
 
 function doctor(surface: string): void {
   const [major, minor] = process.versions.node.split(".").map(Number);
-  if (major < 22 || (major === 22 && minor < 18))
-    throw new Error("Node 22.18 or later is required.");
+  if (major < 22 || (major === 22 && minor < 19))
+    throw new Error("Node 22.19 or later is required.");
   if (!fs.existsSync(path.join(root, "node_modules/typescript")))
     throw new Error("Dependencies are missing. Run npm ci.");
   if (surface === "checks") return;

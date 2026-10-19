@@ -6,7 +6,7 @@
  * Claude Code and Codex copy the repository and run this file, so it does two things
  * first:
  *
- *   1. Checks that Node can run TypeScript directly (Node 22.18 or later).
+ *   1. Checks that Node can run TypeScript directly (Node 22.19 or later).
  *   2. Installs the runtime dependencies on the first run, from the lockfile.
  *
  * Every failure stops the server with a message on stderr. stdout is the MCP transport,
@@ -19,15 +19,17 @@ import { fileURLToPath } from "node:url";
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 
-if (!process.features.typescript) {
+const [nodeMajor, nodeMinor] = process.versions.node.split(".").map(Number);
+if (nodeMajor < 22 || (nodeMajor === 22 && nodeMinor < 19) || !process.features.typescript) {
   throw new Error(
-    `studens needs Node 22.18 or later to run TypeScript without a build step. Found Node ${process.versions.node}.`,
+    `studens needs Node 22.19 or later for its runtime dependencies and TypeScript without a build step. Found Node ${process.versions.node}.`,
   );
 }
 
 function hasRuntimeDependencies() {
   try {
     import.meta.resolve("marked");
+    import.meta.resolve("@earendil-works/pi-coding-agent");
     return true;
   } catch {
     return false;

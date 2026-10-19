@@ -31,7 +31,11 @@ it.each([".claude-plugin/plugin.json", ".codex-plugin/plugin.json"])(
     const lock = readJson("package-lock.json");
     expect(lock["name"]).toBe(pkg["name"]);
     expect(lock["version"]).toBe(pkg["version"]);
-    expect(lock["packages"][""]).toMatchObject({ name: pkg["name"], version: pkg["version"] });
+    expect(lock["packages"][""]).toMatchObject({
+      name: pkg["name"],
+      version: pkg["version"],
+      engines: pkg["engines"],
+    });
   },
 );
 
