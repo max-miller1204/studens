@@ -376,6 +376,11 @@ export function gradePrompt(
       : `Then call \`grade_lesson_quiz\` with \`submission_id: "${submission.id}"\`, a \`score\` out of 100, short \`feedback_markdown\` covering the whole quiz, and a \`questions\` entry for every question id above. Set \`correct\` to true only for full credit. For partial credit or weighted questions, supply \`points_earned\` and \`points_possible\` for every question. The score must equal 100 times total earned points divided by total possible points. Integer rounding is allowed. With no points, answers use equal-weight binary grading. That is what renders the grade on their page.`,
     "",
     kind === "pretest" ? PRETEST_FOLLOW_UP : QUIZ_FOLLOW_UP,
+    ...(delivery === "service" && kind !== "pretest"
+      ? [
+          "Put the complete corrective retrieval question in the top-level message field: that field is the teacher panel. feedback_markdown and questions[].feedback belong to the locked graded quiz. The panel message must contain the question itself so the learner can answer there.",
+        ]
+      : []),
     ...(delivery === "push" ? ["", PANEL_REPLY] : []),
   ].join("\n");
 }
