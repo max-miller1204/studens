@@ -399,7 +399,9 @@ export function createHighlights({ config, contentRoot, drafts, cards }) {
   function ignoreSelectingClick(event) {
     const target = event.target instanceof Element ? event.target : null;
     if (!target || target.closest("input, select, textarea, button")) return;
-    const control = target.closest("form.cl-quiz label, form.cl-quiz .cl-segment");
+    const control = target.closest(
+      "form.cl-quiz label, form.cl-quiz .cl-segment, form.cl-practice label, form.cl-practice .cl-segment",
+    );
     const selection = window.getSelection();
     if (!control || !selection || selection.isCollapsed || selection.rangeCount === 0) return;
     if (!selection.getRangeAt(0).intersectsNode(control)) return;

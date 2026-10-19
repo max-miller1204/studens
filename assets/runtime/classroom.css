@@ -1136,7 +1136,8 @@ mark.cl-hl.cl-hl-pending {
 
 /* ── Quizzes ──────────────────────────────────────────────────────────────── */
 
-.cl-quiz {
+.cl-quiz,
+.cl-practice {
   margin: 2.5rem 0;
   padding: 1.25rem 1.4rem 1.4rem;
   border: 1px solid var(--cl-border);
@@ -2053,4 +2054,29 @@ figure:has(> .cl-diagram) figcaption {
 .cl-daily-summary .cl-button,
 [data-cl-daily] .cl-button {
   white-space: normal;
+}
+
+/* Inline practice stays editable after feedback. */
+.cl-practice {
+  margin: 1.5rem 0;
+  box-shadow: none;
+  border-inline-start: 3px solid var(--cl-accent);
+}
+.cl-practice-feedback {
+  margin: 0.8rem 0 0;
+  padding: 0.65rem 0.8rem;
+  border-inline-start: 3px solid var(--cl-danger);
+  background: var(--cl-surface-2);
+}
+.cl-practice-feedback[data-correct="true"] {
+  border-color: var(--cl-accent);
+}
+.cl-practice .cl-quiz-footer {
+  flex-wrap: wrap;
+}
+.cl-practice .cl-submit {
+  flex-shrink: 0;
+}
+.cl-practice .cl-quiz-status {
+  flex: 1 1 12rem;
 }
