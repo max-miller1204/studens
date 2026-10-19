@@ -917,7 +917,10 @@ export function reviewEvents(classroom: string): ReviewEvent[] {
         events.push({
           key: answerReviewKey(lesson, submission.quizId, group[0]),
           ...(!group[0].reviewOf
-            ? { questionKey: reviewKey(lesson, submission.quizId, questionId) }
+            ? {
+                questionKey: reviewKey(lesson, submission.quizId, questionId),
+                sourceQuestionKey: reviewKey(lesson, submission.quizId, questionId),
+              }
             : {}),
           at: submission.submittedAt,
           feedbackAt,

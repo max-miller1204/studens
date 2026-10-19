@@ -9,6 +9,7 @@ import {
   saveRefillPlan,
   applyRefill,
   piRefillTool,
+  refreshRefill,
 } from "../src/review-refill.ts";
 import { lessonPools } from "../src/review-pool.ts";
 import { startReview, completePreparedReview } from "../src/review-session.ts";
@@ -20,6 +21,7 @@ import {
   makeFixture,
   seedClassroom,
   seedPreparedReviewSource,
+  seedTransferObjective,
   termAnswer,
   writeGradedAttempt,
   refillPlan,
@@ -39,6 +41,53 @@ beforeEach(() => {
 afterEach(() => fixture.cleanup());
 const variants = (request: ReturnType<typeof discoverRefills>[number]) =>
   JSON.parse(refillPlan(request).calls[0].arguments_json).variants;
+
+it.each(["miss", "low"] as const)(
+  "refills an objective's original question pool after a %s",
+  (reason) => {
+    if (reason === "low") {
+      seedTransferObjective(true);
+      completePreparedReview(startReview("rust", randomUUID(), "service").session);
+    } else {
+      writeGradedAttempt({
+        at: 2,
+        answers: [
+          termAnswer("q1", "the original owner", {
+            learning: {
+              objectiveId: "owner",
+              objective: { statement: "Explain ownership.", application: false },
+              task: "retrieval",
+              support: "independent",
+              assistance: "none",
+            },
+          }),
+        ],
+        correct: { q1: false },
+      });
+    }
+    const request = discoverRefills("rust", "service").find(
+      (r) => r.key.includes("/@objective/") && r.reason === reason,
+    );
+    expect(request).toBeDefined();
+    expect(() => refreshRefill(request!)).not.toThrow();
+    const input = request!.input;
+    const sourceKey = `${input.quizId}/${input.questionId}`;
+    const before = lessonPools("rust", input.lesson).get(sourceKey)!.length;
+    const keyPath = path.join(fixture.root, "rust", input.lesson, "quiz/key.json");
+    const originalKey = fs.readFileSync(keyPath, "utf8");
+    const originalGrades = store.listGrades("rust", input.lesson);
+    updateRefill(request!, "running");
+    saveRefillPlan(request!, variants(request!));
+    applyRefill(request!);
+    updateRefill(request!, "planned");
+    applyRefill(request!);
+    expect(lessonPools("rust", input.lesson).get(sourceKey)).toHaveLength(
+      before + (reason === "miss" ? 1 : 2),
+    );
+    expect(fs.readFileSync(keyPath, "utf8")).toBe(originalKey);
+    expect(store.listGrades("rust", input.lesson)).toEqual(originalGrades);
+  },
+);
 
 it("deduplicates targeted misses and low pools, and keeps plans and keys private", () => {
   const request = discoverRefills("rust", "pi")[0];

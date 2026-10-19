@@ -40,7 +40,8 @@ stays available. Inspect
 `review/pi/result.json` and `review/service/result.json` and their screenshots.
 The service fixture combines three probes into one transfer-needed objective and
 grades its prepared independent transfer. Publication contracts reject retrieval
-or assisted tasks for that objective before writes.
+or assisted tasks for that objective before writes. Its background refill retry
+must append to the original question pool while retaining the objective key.
 
 For service or shared prompt changes, select the real Claude and Codex drives from
 the project skill. Each drives a prepared review after the teacher conversation.
