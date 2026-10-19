@@ -49,6 +49,16 @@ export function practiceErrors(shapes, key) {
         case "multi":
           valid = subset(expected, shape.options);
           break;
+        case "numeric": {
+          const unit = (expected.unit ?? "").trim();
+          if (unit && shape.units !== 1)
+            throw new Error(`numeric practice requires one .cl-unit control for "${unit}".`);
+          if (shape.units > 0 && shape.unitValues !== null && !shape.unitValues?.includes(unit))
+            throw new Error(
+              `numeric .cl-unit control cannot supply ${unit ? `"${unit}"` : "an empty unit"}.`,
+            );
+          break;
+        }
         case "order":
           valid = sameIds(expected, shape.orderItems);
           break;

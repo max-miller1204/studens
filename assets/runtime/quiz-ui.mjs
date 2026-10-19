@@ -33,6 +33,21 @@ export function createQuizzes({ config, drafts, placeTeacherPanel }) {
     const ids = (selector, attribute) =>
       [...question.querySelectorAll(selector)].map((el) => el.getAttribute(attribute) ?? "");
     const count = (selector) => own(question, selector).length;
+    const unit = question.querySelector(".cl-unit");
+    // null means editable text; a list contains the units the control can supply.
+    let unitValues = [];
+    if (unit?.matches("input:not([type]), input[type=text], input[type=search]"))
+      unitValues = unit.readOnly || unit.matches(":disabled") ? [unit.value.trim()] : null;
+    else if (unit?.matches("select") && !unit.multiple)
+      unitValues = [...unit.options]
+        .filter(
+          (option) =>
+            option.selected ||
+            (!unit.matches(":disabled") &&
+              !option.disabled &&
+              !option.closest("optgroup[disabled]")),
+        )
+        .map((option) => option.value.trim());
     return {
       id: question.dataset.questionId ?? null,
       type: question.dataset.type ?? null,
@@ -49,6 +64,7 @@ export function createQuizzes({ config, drafts, placeTeacherPanel }) {
       textareas: count("textarea"),
       numbers: count("input.cl-number"),
       units: count(".cl-unit"),
+      unitValues,
       options: own(question, "input[type=radio], input[type=checkbox]").map((input) =>
         input.getAttribute("value"),
       ),

@@ -7,7 +7,10 @@ export interface PracticeKey {
   incorrect: string;
 }
 export declare function practiceEntry(type: QuestionType, entry: unknown): RubricQuestion;
-export declare function practiceErrors(shapes: QuestionShape[], key: unknown): string[];
+export declare function practiceErrors(
+  shapes: (QuestionShape & { unitValues?: string[] | null })[],
+  key: unknown,
+): string[];
 export declare function practiceFeedback(
   answer: QuizAnswer,
   entry: PracticeKey,

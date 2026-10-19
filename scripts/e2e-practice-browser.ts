@@ -1,6 +1,7 @@
 /** Local practice uses real quiz controls without entering the assessment lifecycle. */
 import * as fs from "node:fs";
 import * as path from "node:path";
+import assert from "node:assert/strict";
 import { makeFixture, seedClassroom, lessonHtml } from "../test/helpers.ts";
 import * as server from "../src/server.ts";
 import * as store from "../src/store.ts";
@@ -184,6 +185,171 @@ export async function verifyPracticeBrowser(artifacts: string | null): Promise<v
       );
     console.log(
       "PASS: local practice, eight exact types, feedback, keyboard retry, reload, private rubric isolation, no teacher or practice records, graded neighbor unchanged",
+    );
+  } finally {
+    if (opened) await playwright(session, fixture.root, "close");
+    await server.close();
+    fixture.cleanup();
+  }
+  await verifyNumericPracticeBrowser(artifacts);
+}
+
+/** Numeric public keys must have a control capable of supplying the exact unit. */
+export async function verifyNumericPracticeBrowser(artifacts: string | null): Promise<void> {
+  const fixture = makeFixture();
+  seedClassroom(fixture);
+  if (artifacts) fs.mkdirSync(artifacts, { recursive: true });
+  const session = `studens-numeric-practice-${process.pid}`;
+  const cases = [
+    { id: "missing", control: "", unit: "m", broken: true },
+    { id: "element", control: '<span class="cl-unit">m</span>', unit: "m", broken: true },
+    {
+      id: "disabled",
+      control: '<input class="cl-unit" type="text" disabled>',
+      unit: "m",
+      broken: true,
+    },
+    {
+      id: "readonly",
+      control: '<input class="cl-unit" type="text" readonly>',
+      unit: "m",
+      broken: true,
+    },
+    {
+      id: "options",
+      control: '<select class="cl-unit"><option>cm</option></select>',
+      unit: "m",
+      broken: true,
+    },
+    {
+      id: "disabled-option",
+      control: '<select class="cl-unit"><option disabled>m</option><option>cm</option></select>',
+      unit: "m",
+      broken: true,
+    },
+    {
+      id: "scalar-options",
+      control: '<select class="cl-unit"><option>m</option></select>',
+      broken: true,
+    },
+    {
+      id: "text",
+      control: '<label>Unit <input class="cl-unit" type="text"></label>',
+      unit: "m",
+      broken: false,
+    },
+    {
+      id: "select",
+      control:
+        '<label>Unit <select class="cl-unit"><option>cm</option><option value=" m ">Meters</option></select></label>',
+      unit: " m ",
+      broken: false,
+    },
+    {
+      id: "fixed",
+      control: '<label>Unit <input class="cl-unit" type="text" readonly value="m"></label>',
+      unit: "m",
+      broken: false,
+    },
+    { id: "scalar", control: "", broken: false },
+    {
+      id: "scalar-select",
+      control:
+        '<label>Unit <select class="cl-unit"><option value="">None</option><option>m</option></select></label>',
+      broken: false,
+    },
+  ];
+  const forms = cases
+    .map(
+      (c) =>
+        `<form class="cl-practice" data-practice-id="${c.id}"><ol class="cl-questions"><li class="cl-q" data-question-id="p" data-type="numeric"><p class="cl-q-prompt">Enter two${c.unit ? " meters" : ""}.</p><label>Number <input class="cl-number" type="text"></label>${c.control}</li></ol><script type="application/json" data-cl-practice-key>${JSON.stringify({ p: { expected: { value: 2, ...(c.unit ? { unit: c.unit } : {}) }, correct: "Two is the required value.", incorrect: "Check the value and unit." } })}</script></form>`,
+    )
+    .join("");
+  fixture.write("rust/001-ownership/lesson.html", lessonHtml("Numeric practice", forms));
+  let turns = 0,
+    opened = false;
+  server.setHooks({
+    onAsk: () => {
+      turns++;
+    },
+    onFollowUp: () => {
+      turns++;
+    },
+    onReflect: () => {
+      turns++;
+    },
+    onQuizSubmit: () => {
+      turns++;
+    },
+  });
+  const files = (dir: string): Record<string, string> =>
+    Object.fromEntries(
+      fs
+        .readdirSync(dir, { recursive: true })
+        .map(String)
+        .filter((name) => fs.statSync(path.join(dir, name)).isFile())
+        .map((name) => [name, fs.readFileSync(path.join(dir, name)).toString("base64")]),
+    );
+  try {
+    const base = await server.start(0);
+    const before = files(path.join(fixture.root, "rust"));
+    await playwright(session, fixture.root, "open", base + "/c/rust/001-ownership");
+    opened = true;
+    const result = await playwrightCode(
+      session,
+      fixture.root,
+      `async page=>{
+      await page.waitForFunction(()=>[...document.querySelectorAll('form.cl-practice')].every(f=>f.dataset.state));
+      const writes=[],errors=[];page.on('request',r=>{if(!['GET','HEAD'].includes(r.method()))writes.push({url:r.url(),method:r.method()})});page.on('pageerror',e=>errors.push(e.message));
+      const cases=${JSON.stringify(cases)},observations=[];
+      for(const c of cases){
+        const form=page.locator('[data-practice-id="'+c.id+'"]'),button=form.getByRole('button',{name:'Check answer',exact:true});
+        const state=await form.getAttribute('data-state'),contract=await form.locator('.cl-contract-error').allTextContents();
+        if(c.broken){if(state!=='broken'||!await button.isDisabled()||!contract.join(' ').includes(c.id==='missing'?'requires one .cl-unit':'cannot supply'))throw Error('Missing configuration error '+c.id);}
+        else {
+          if(state!=='fresh'||contract.length)throw Error('Valid numeric rejected '+c.id);
+          await button.click();if(!await form.getByRole('status').innerText().then(t=>t.includes('Answer every question')))throw Error('Blank numeric accepted');
+          await form.locator('.cl-number').fill('2 m');await button.click();if(!await form.getByRole('status').innerText().then(t=>t.includes('not a number')))throw Error('Combined numeric accepted');
+          await form.locator('.cl-number').fill('2');
+          if(c.id==='text'){await form.locator('.cl-unit').fill('cm');await button.click();if(await form.locator('.cl-practice-feedback[data-correct="false"]').count()!==1)throw Error('Wrong unit accepted');await form.locator('.cl-unit').fill(' m ');if(await form.locator('.cl-practice-feedback').count())throw Error('Stale unit feedback');}
+          if(c.id==='select')await form.locator('.cl-unit').selectOption(' m ');
+          await button.focus();await page.keyboard.press('Enter');
+          if(await form.locator('.cl-practice-feedback[data-correct="true"]').count()!==1)throw Error('Valid numeric answer rejected '+c.id);
+          if(await form.locator('.cl-number').isDisabled()||await button.isDisabled())throw Error('Numeric retry locked');
+        }
+        observations.push({id:c.id,state,contract,feedback:await form.locator('.cl-practice-feedback').allTextContents()});
+      }
+      await page.waitForTimeout(600);if(writes.length||errors.length)throw Error(JSON.stringify({writes,errors}));
+      const state=await(await page.request.get(${JSON.stringify(base)}+'/api/state?classroom=rust&lesson=001-ownership')).json();
+      if(state.quizzes.length||state.annotations.length||state.reflections.length||Object.keys(state.drafts).length||state.reteach.length)throw Error('Practice saved learner state');
+      await page.reload();await page.locator('[data-practice-id="text"][data-state="fresh"]').waitFor();
+      if(await page.locator('.cl-practice-feedback').count()||await page.locator('[data-practice-id="text"] .cl-number').inputValue()||await page.locator('[data-practice-id="text"] .cl-unit').inputValue())throw Error('Numeric practice restored on reload');
+      return {observations,writes,errors,state,reloadReset:true};
+    }`,
+    );
+    assert.equal(turns, 0);
+    assert.deepEqual(store.listSubmissions("rust", "001-ownership"), []);
+    assert.deepEqual(store.listGrades("rust", "001-ownership"), []);
+    assert.deepEqual(store.reviewItems("rust"), []);
+    assert.deepEqual(files(path.join(fixture.root, "rust")), before);
+    if (artifacts)
+      fs.writeFileSync(
+        path.join(artifacts, "numeric-result.json"),
+        JSON.stringify(
+          {
+            result,
+            turns,
+            persistedFilesUnchanged: true,
+            submissions: [],
+            grades: [],
+            reviews: [],
+          },
+          null,
+          2,
+        ),
+      );
+    console.log(
+      "PASS: numeric practice required units, usable controls, scalar, wrong unit, parser errors, keyboard retry, reload, no HTTP or persisted writes",
     );
   } finally {
     if (opened) await playwright(session, fixture.root, "close");

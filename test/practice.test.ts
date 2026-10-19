@@ -56,3 +56,26 @@ it("rejects a public key with ids outside the authored controls", () => {
     "Practice key must contain exactly the practice question ids.",
   );
 });
+
+it("requires numeric units to be answerable through their controls", () => {
+  const shape = { id: "p1", type: "numeric", units: 0 } as QuestionShape;
+  const key = { p1: entry({ value: 2, unit: "m" }) };
+  expect(practiceErrors([shape], key)).toEqual([
+    'Practice question p1: numeric practice requires one .cl-unit control for "m".',
+  ]);
+  expect(practiceErrors([{ ...shape, units: 1, unitValues: null }], key)).toEqual([]);
+  expect(practiceErrors([{ ...shape, units: 1, unitValues: ["cm", "m"] }], key)).toEqual([]);
+  for (const unitValues of [[], ["cm"]])
+    expect(practiceErrors([{ ...shape, units: 1, unitValues }], key)).toHaveLength(1);
+  const scalar = { p1: entry({ value: 2 }) };
+  expect(practiceErrors([shape], scalar)).toEqual([]);
+  expect(practiceErrors([{ ...shape, units: 1, unitValues: ["m"] }], scalar)).toHaveLength(1);
+  expect(practiceErrors([{ ...shape, units: 1, unitValues: [""] }], scalar)).toEqual([]);
+  expect(
+    practiceFeedback({ questionId: "p1", type: "numeric", value: "2", unit: "cm" }, key.p1).correct,
+  ).toBe(false);
+  expect(
+    practiceFeedback({ questionId: "p1", type: "numeric", value: "2 m", unit: "m" }, key.p1)
+      .correct,
+  ).toBe(false);
+});

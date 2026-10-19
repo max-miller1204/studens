@@ -39,6 +39,11 @@ eight exact-capable controls. `Check answer` gives immediate explanations while
 keeping inputs editable. Blank input and invalid numbers show specific errors.
 Changing an answer clears feedback; keyboard submission checks the correction.
 Reload starts fresh. A malformed key disables practice with a contract error.
+Numeric keys that require a unit need a control that can supply it; missing controls,
+unavailable select values, and unusable unit elements are disabled explicitly.
+Scalar-only, text-unit, fixed-unit, and matching select controls stay answerable.
+Inspect `practice/numeric-result.json` for wrong-unit feedback, strict number input,
+keyboard retry, reset, and unchanged classroom files.
 Inspect `practice/practice-feedback.png` and `practice/practice-result.json`: no
 practice HTTP writes, saved drafts, submissions, grades, review items, or teacher
 calls. A neighboring graded check still submits and scores normally. Public practice
