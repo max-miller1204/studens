@@ -96,6 +96,9 @@ export function handleClassroomRoute(
         progress: {
           review: summarize(items, now),
           dueByLesson,
+          reteach: items
+            .filter((item) => item.needsReteach)
+            .map((item) => ({ lesson: item.lesson, prompt: item.prompt })),
           glossaryTerms: store.readGlossary(name).terms.length,
           now,
         },

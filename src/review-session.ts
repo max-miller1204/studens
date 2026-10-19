@@ -5,6 +5,7 @@ import { classroomDir, isValidSlug, lessonDir, lessonUrl, isStoredReview } from 
 import { isContractId, parseReviewKey, questionErrors } from "../assets/runtime/quiz.mjs";
 import {
   DEFAULT_REVIEW_SIZE,
+  isDue,
   pickReviewItems,
   relativeDay,
   summarize,
@@ -162,14 +163,16 @@ export function startReview(
   const eligible = items.filter((item) => itemPools.has(item.key));
   const picked = pickReviewItems(eligible, at, limit);
   if (!picked.length) {
-    if (items.some((item) => item.dueAt <= at) && !eligible.some((item) => item.dueAt <= at))
+    if (items.some((item) => isDue(item, at)) && !eligible.some((item) => isDue(item, at)))
       throw new Error(
         "No prepared variants for the due questions. Prepare private review pools in their original lessons, then retry.",
       );
     const next = summarize(eligible, at).nextDueAt;
     throw new Error(
       next === null
-        ? "No graded questions are due for review."
+        ? items.some((item) => item.needsReteach)
+          ? "Repeatedly missed items are paused from review. Open a short re-teach from classroom Progress."
+          : "No graded questions are due for review."
         : `The next review is due ${relativeDay(next, at)}.`,
     );
   }

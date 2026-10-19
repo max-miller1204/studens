@@ -104,12 +104,19 @@ export function updateRefill(
 }
 
 function prompt(request: RefillRequest, item: ReviewItem, pool: PreparedVariant[]): string {
+  const guide = fs.readFileSync(path.join(docsDir(), "TEACHING-PLAN.md"), "utf8");
+  const contract = /(?:^|\n)## Private review variants\n([\s\S]*?)(?=\n## |$)/
+    .exec(guide)?.[1]
+    .trim();
+  if (!contract)
+    throw new Error("Private review variant contract is missing from docs/TEACHING-PLAN.md.");
   return [
     `Background private review refill ${request.id} for classroom ${request.classroom}, original item ${item.key}.`,
     request.reason === "miss"
       ? `Write one fresh variant aimed at this specific mistake. Learner answer: ${item.lastAnswer}\nFeedback: ${item.lastFeedback}`
       : "Write two fresh variants to replenish this item's low pool.",
-    `Keep the original objective and policy. Use new cases and independent retrieval. Do not include teaching, hints, or expected answers in question HTML. Use the private variant contract in ${path.join(docsDir(), "TEACHING-PLAN.md")}: one complete li.cl-q, its unique id, complete controls, and its own rubric. Closed types need machine-checkable expected keys. Use classroom-absolute media links. Do not use data-review-of. Do not reuse any existing id or prompt.`,
+    `Keep the original objective and policy. Use new cases and independent retrieval. Do not include teaching, hints, or expected answers in question HTML. Use the private variant contract below: one complete li.cl-q, its unique id, complete controls, and its own rubric. Closed types need machine-checkable expected keys. Use classroom-absolute media links. Do not use data-review-of. Do not reuse any existing id or prompt.`,
+    `Private variant contract:\n${contract}`,
     `Original objective: ${JSON.stringify(pool[0].objective)}\nOriginal prompt: ${item.prompt}`,
     `Existing private variants: ${JSON.stringify(pool)}`,
     `Return exactly one save_review_variants call with classroom=${JSON.stringify(request.classroom)}, request_id=${JSON.stringify(request.id)} (copy the entire id, including its refill: prefix), and variants, an array of {id,html,rubric,plan}. Each html is an ordinary HTML string with quoted attributes, encoded once in the arguments JSON. Each plan uses objective=original, support=independent, and a suitable mental task. Keep message empty, learning_record=null, and notes_markdown empty. Do not grade, write learner messages, or edit files. This work is behind learner requests.`,

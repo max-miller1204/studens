@@ -765,7 +765,9 @@ function reviewScheduleLine(submission: store.QuizSubmission): string {
     const key = answerReviewKey(submission.lesson, submission.quizId, group[0]);
     const item = findReviewItem(items, key);
     if (!item) throw new Error(`No review item for ${key} after grading it.`);
-    return `${questionId} ${relativeDay(item.dueAt, now)}`;
+    return item.needsReteach
+      ? `${questionId} paused: offer a short re-teach in the lesson teacher panel`
+      : `${questionId} ${relativeDay(item.dueAt, now)}`;
   });
   return `Next review: ${parts.join(", ")}.`;
 }

@@ -1,3 +1,4 @@
+import { seedReteach, driveReteach } from "./e2e-reteach-browser.ts";
 /** Test browser questions, quiz grading, and the teacher panel check in a real Pi session. */
 import { closedReviewActions, refillRetryActions } from "./review-card-actions.ts";
 import { lessonUrl } from "../src/paths.ts";
@@ -512,6 +513,15 @@ try {
   if (artifacts)
     fs.writeFileSync(path.join(artifacts, "stored-refills.json"), JSON.stringify(refills, null, 2));
   console.log("[e2e:pi] PASS: durable background refill saves private variants");
+  const reteachLesson = seedReteach(fixture.root);
+  await driveReteach(
+    session,
+    fixture.root,
+    base,
+    reteachLesson,
+    artifacts ? path.join(artifacts, "reteach") : null,
+  );
+
   send({ id: "stop", type: "prompt", message: "/classroom stop" });
   await until("server stop", () =>
     events.some((e) => e.id === "stop" && e.type === "response") ? true : null,

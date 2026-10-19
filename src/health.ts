@@ -7,7 +7,7 @@
  * instead of only answering around it.
  */
 
-import { answerReviewKey } from "./review.ts";
+import { answerReviewKey, RETEACH_MISSES } from "./review.ts";
 import { questionOutcome } from "../assets/runtime/grade.mjs";
 import { isQuestionType, parseReviewKey, reviewKey } from "../assets/runtime/quiz.mjs";
 import {
@@ -190,6 +190,11 @@ export function lessonHealthLines(
       );
     }
   }
+  const reteach = stats.filter((s) => !s.lastCorrect && s.misses >= RETEACH_MISSES);
+  for (const s of reteach)
+    lines.push(
+      `- **Re-teach needed:** \`${s.quizId}/${s.questionId}\` has ${s.misses} misses. Paused from review. Offer a short re-teach in the lesson teacher panel; preserve its original grades and history.`,
+    );
   const open = stats.filter((s) => s.lastOutcome === "incorrect" && s.misses < REPEAT_MISS);
   if (open.length > 0) {
     lines.push(

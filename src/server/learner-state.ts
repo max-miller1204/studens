@@ -2,6 +2,7 @@ import type * as http from "node:http";
 import { draftErrors, isDraftKey } from "../../assets/runtime/draft.mjs";
 import { isContractId } from "../../assets/runtime/quiz.mjs";
 import { isValidSlug } from "../paths.ts";
+import { reteachOffers } from "../reteach.ts";
 import { reviewSessions } from "../review-session.ts";
 import * as store from "../store.ts";
 import { hooks } from "./hooks.ts";
@@ -19,6 +20,7 @@ export function handleState(res: http.ServerResponse, url: URL): void {
     })),
     reflections: store.latestReflections(params.classroom, params.lesson),
     drafts: store.readDrafts(params.classroom, params.lesson),
+    reteach: reteachOffers(params.classroom, params.lesson),
     teacher: hooks?.teacherState?.(params.classroom, params.lesson),
   });
 }

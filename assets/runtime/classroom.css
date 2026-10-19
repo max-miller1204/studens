@@ -1702,6 +1702,9 @@ figure:has(> .cl-diagram) figcaption {
   border-radius: 0.5rem;
   background: var(--cl-surface);
 }
+#cl-reteach {
+  scroll-margin-top: 5rem;
+}
 .cl-teacher h2 {
   margin-top: 0;
 }
@@ -1737,6 +1740,7 @@ figure:has(> .cl-diagram) figcaption {
   margin-bottom: 0;
 }
 .cl-teacher-request {
+  overflow-wrap: anywhere;
   display: flex;
   flex-wrap: wrap;
   align-items: center;

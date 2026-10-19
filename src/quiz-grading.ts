@@ -1,5 +1,6 @@
 /** Persist grades through one shared path for every host. */
 import { gradeScore, validateGrade } from "../assets/runtime/grade.mjs";
+import { reteachOffers } from "./reteach.ts";
 import { renderMarkdown } from "./markdown.ts";
 import * as server from "./server.ts";
 import * as store from "./store.ts";
@@ -55,6 +56,7 @@ export function applyGrade(
 
   store.writeGrade(grade);
   server.pushEvent(submission.classroom, submission.lesson, "grade", {
+    reteach: reteachOffers(submission.classroom, submission.lesson),
     submission: store.publicSubmission(submission),
     grade,
   });

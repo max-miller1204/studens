@@ -1,3 +1,4 @@
+import { reteachOffers, reteachPrompt } from "./reteach.ts";
 /** Run one request at a time for each classroom. Persist plans before writes. */
 import {
   discoverRefills,
@@ -293,7 +294,9 @@ export class TeacherService {
       lesson,
       kind: "chat",
       target: id,
-      prompt: `The learner replied in the teacher panel:\n${text}`,
+      prompt: id.startsWith("reteach:")
+        ? `${reteachPrompt(text)}\n\nPut the complete explanation, worked example, and question in this plan's message field. The service posts only that field to this lesson's teacher panel. Other assistant prose and earlier turns in this model session are invisible to the learner. Repeat the full re-teach in message even if you already wrote it elsewhere; do not refer to an explanation above or elsewhere.`
+        : `The learner replied in the teacher panel:\n${text}`,
     });
   }
   private correctReview(submission: store.QuizSubmission): void {
@@ -452,6 +455,7 @@ export class TeacherService {
     const state = this.states.get(classroom);
     if (!state) return null;
     return {
+      reteach: reteachOffers(classroom, lesson),
       identity: state.identity,
       requests: state.requests
         .filter((r) => r.lesson === lesson)
@@ -492,6 +496,7 @@ export class TeacherService {
       case "review":
         return { operations: ["publish_review"], required: true, messageRequired: true };
       case "chat":
+        if (r.target.startsWith("reteach:")) return { operations: [], messageRequired: true };
         return {
           operations: ["record_retrieval_check"],
           messageRequired: true,
@@ -714,11 +719,11 @@ export class TeacherService {
       return;
     }
     if (
-      r.kind === "resume" &&
+      (r.kind === "resume" || (r.kind === "chat" && r.target.startsWith("reteach:"))) &&
       (plan.calls.length || plan.learning_record.trim() || plan.notes_markdown.trim())
     )
       throw new Error(
-        "Teacher resumption permits only a panel message. It cannot write assessment or learning evidence.",
+        "Teacher resumption permits only a panel message. Re-teaching also cannot write assessment or learning evidence.",
       );
     const required =
       r.kind === "quiz"
