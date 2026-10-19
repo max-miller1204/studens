@@ -1,3 +1,6 @@
+import { validateGrade } from "../../assets/runtime/grade.mjs";
+import { validateCriterionGrade } from "../criteria.ts";
+import type { RubricCriterion, CriterionGrade } from "../criteria.ts";
 import * as path from "node:path";
 import { gradesDir, isValidSlug, submissionsDir } from "../paths.ts";
 import type { QuizAnswer, QuizKind } from "../quiz.ts";
@@ -21,6 +24,8 @@ export interface QuizSubmission {
   /** The private rubric bytes when this attempt was saved. Absent in older attempts. */
   rubricDigest?: string;
   assessmentContract?: 1;
+  /** Private criterion definitions fixed when this attempt was submitted. */
+  rubricCriteria?: Record<string, RubricCriterion[]>;
   instructionalContract?: 1;
   teachingPlan?: TeachingPlan;
   /** Private, durable allocations computed before the submission is written. */
@@ -30,6 +35,7 @@ export interface QuizSubmission {
 }
 
 export interface QuizQuestionGrade {
+  criteria?: CriterionGrade[];
   /** Absent on historical binary grades. */
   pointsEarned?: number;
   pointsPossible?: number;
@@ -61,9 +67,22 @@ export function listSubmissions(classroom: string, lesson: string): QuizSubmissi
 /** Every grade file in a lesson, oldest first. A regrade adds a file, so this is history. */
 export function listGrades(classroom: string, lesson: string): QuizGrade[] {
   if (!isValidSlug(classroom) || !isValidSlug(lesson)) return [];
-  return listJsonFiles<QuizGrade>(gradesDir(classroom, lesson)).sort(
+  const grades = listJsonFiles<QuizGrade>(gradesDir(classroom, lesson)).sort(
     (a, b) => a.gradedAt - b.gradedAt,
   );
+  const submissions = listSubmissions(classroom, lesson);
+  for (const grade of grades) {
+    const submission = submissions.find((s) => s.id === grade.submissionId);
+    if (submission) {
+      for (const question of grade.questions) validateCriterionGrade(submission, question);
+      if (Object.keys(submission.rubricCriteria ?? {}).length)
+        validateGrade(grade.score, grade.questions, [
+          ...new Set(submission.answers.map((a) => a.questionId)),
+        ]);
+    } else if (grade.questions.some((q) => q.criteria !== undefined))
+      throw new Error(`Criterion grade ${grade.submissionId} has no saved submission.`);
+  }
+  return grades;
 }
 
 /**
