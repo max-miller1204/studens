@@ -40,7 +40,9 @@ export async function verifyPiPanelBrowser(artifacts: string | null): Promise<vo
         </li>
       </ol>
     </form>
-    <p>Prose after the quiz.</p>`,
+    <p>Prose after the quiz.</p>
+    <div style="height: 2400px"></div>
+    <p>Continue reading the lesson.</p>`,
     ),
   );
   const sent: string[] = [];
@@ -161,13 +163,21 @@ export async function verifyPiPanelBrowser(artifacts: string | null): Promise<vo
     evidence.reply = await code(`
       const notice = page.locator('.cl-teacher-notice');
       await notice.waitFor({state:'visible'});
+      if (!(await notice.textContent()).endsWith('↓')) throw new Error('The notice must point down to the teacher below.');
+      ${artifacts ? `await page.screenshot({ path: ${JSON.stringify(path.join(artifacts, "teacher-notice-below.png"))} });` : ""}
       await notice.click();
+      await page.waitForFunction(() => {
+        const rect = document.querySelector('.cl-teacher').getBoundingClientRect();
+        return rect.top < innerHeight && rect.bottom > 0 && document.querySelector('.cl-teacher-notice').hidden;
+      });
       await page.waitForFunction(() => document.querySelector('.cl-teacher-message[data-role="teacher"] strong')?.textContent === 'Which trait');
       await page.getByRole('textbox', {name:'Reply to your teacher', exact:true}).fill('Drop');
       await page.getByRole('button', {name:'Send reply', exact:true}).click();
       await page.waitForFunction(() => [...document.querySelectorAll('.cl-teacher-message[data-role="learner"]')].some(m => m.textContent.includes('Drop')));
       await page.waitForFunction(() => document.querySelector('.cl-teacher-requests')?.textContent.includes('replying'));
-      return { noticeShown: true };`);
+      await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+      await page.waitForFunction(() => document.querySelector('.cl-teacher').getBoundingClientRect().bottom <= 0);
+      return { noticeShown: true, pointsDown: true, clickRevealedTeacher: true };`);
     const replyPrompt = sent.at(-1) ?? "";
     assert(
       replyPrompt.includes("Which trait") &&
@@ -176,6 +186,29 @@ export async function verifyPiPanelBrowser(artifacts: string | null): Promise<vo
       "The panel reply prompt lost its context.",
     );
     bridge.onAgentEnd(run("Right. `Drop` runs the cleanup."));
+
+    // A reply while reading past the quiz points up; scrolling updates the same notice.
+    evidence.noticeAbove = await code(`
+      const notice = page.locator('.cl-teacher-notice');
+      await notice.waitFor({state:'visible'});
+      if (!(await notice.textContent()).endsWith('↑')) throw new Error('The notice must point up to the teacher above.');
+      ${artifacts ? `await page.screenshot({ path: ${JSON.stringify(path.join(artifacts, "teacher-notice-above.png"))} });` : ""}
+      await page.evaluate(() => window.scrollTo(0, 0));
+      await page.waitForFunction(() => {
+        const notice = document.querySelector('.cl-teacher-notice');
+        return !notice.hidden && notice.textContent.endsWith('↓');
+      });
+      await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+      await page.waitForFunction(() => {
+        const notice = document.querySelector('.cl-teacher-notice');
+        return !notice.hidden && notice.textContent.endsWith('↑');
+      });
+      await notice.click();
+      await page.waitForFunction(() => {
+        const rect = document.querySelector('.cl-teacher').getBoundingClientRect();
+        return rect.top < innerHeight && rect.bottom > 0 && document.querySelector('.cl-teacher-notice').hidden;
+      });
+      return { pointsUp: true, scrollUpdatesDirection: true, clickRevealedTeacher: true };`);
 
     // 5. Everything survives a reload, in place.
     evidence.reload = await code(`
