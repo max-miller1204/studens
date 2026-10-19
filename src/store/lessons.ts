@@ -32,6 +32,8 @@ export function readLesson(classroom: string, lesson: string): Lesson | null {
   const meta = readJson<LessonMeta>(path.join(dir, "lesson.json"));
   if (meta?.instructionalContract !== undefined && meta.instructionalContract !== 1)
     throw new Error(`Unknown instructional contract for ${classroom}/${lesson}.`);
+  if (meta?.criterionContract !== undefined && meta.criterionContract !== 1)
+    throw new Error("Unsupported criterion contract version.");
   if (meta?.assessmentContract !== undefined && meta.assessmentContract !== 1)
     throw new Error("Unsupported assessment contract version.");
   if (meta?.reviewVariantContract !== undefined && meta.reviewVariantContract !== 1)
@@ -56,6 +58,7 @@ export function readLesson(classroom: string, lesson: string): Lesson | null {
     title: meta?.title ?? titleFromHtml(htmlPath) ?? titleFromSlug(lesson),
     summary: meta?.summary ?? "",
     assessmentContract: meta?.assessmentContract,
+    criterionContract: meta?.criterionContract,
     instructionalContract: meta?.instructionalContract,
     reviewVariantContract: meta?.reviewVariantContract,
     htmlPath,

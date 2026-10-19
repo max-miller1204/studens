@@ -14,6 +14,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { createHash, randomUUID } from "node:crypto";
 
+import { allocateCriteria, type CriterionAllocation } from "./criteria.ts";
 import { ASSISTANCE, type Assistance } from "./evidence.ts";
 import { applyAnswer, applyGrade } from "./bridge.ts";
 import { mergeGrades } from "./closed-grading.ts";
@@ -276,11 +277,26 @@ export function classroomTools(host: ToolHost): ClassroomTool[] {
                 type: "number",
                 description: "Maximum points under the rubric. Must be greater than zero.",
               },
+              criteria: {
+                type: "array",
+                description:
+                  "For questions with saved criteria, allocate every criterion once. Omit for historical questions without criteria. Never supply descriptions or weights.",
+                items: object({
+                  criterion_id: str("The fixed private criterion id."),
+                  points_earned: {
+                    type: "number",
+                    description: "Earned points within this criterion's fixed weight.",
+                  },
+                  feedback: str(
+                    "Explain which submitted reasoning met or missed this criterion. Reinforce correct reasoning with the actual step; accept equivalent methods.",
+                  ),
+                }),
+              },
               feedback: str(
                 "One or two sentences on this answer. For a wrong answer, name the idea they missed rather than only restating the right answer.",
               ),
             },
-            ["points_earned", "points_possible"],
+            ["points_earned", "points_possible", "criteria"],
           ),
         },
       }),
@@ -290,6 +306,7 @@ export function classroomTools(host: ToolHost): ClassroomTool[] {
         feedback_markdown: string;
         questions: Array<{
           question_id: string;
+          criteria?: CriterionAllocation[];
           correct: boolean;
           feedback: string;
           points_earned?: number;
@@ -324,6 +341,7 @@ export function classroomTools(host: ToolHost): ClassroomTool[] {
               questionId: q.question_id,
               correct: q.correct,
               feedback: q.feedback,
+              criteria: allocateCriteria(submission, q.question_id, q.criteria),
               pointsEarned: q.points_earned,
               pointsPossible: q.points_possible,
             }));
@@ -345,6 +363,11 @@ export function classroomTools(host: ToolHost): ClassroomTool[] {
                 feedback: q.feedback,
                 points_earned: q.pointsEarned,
                 points_possible: q.pointsPossible,
+                criteria: q.criteria?.map((c) => ({
+                  criterion_id: c.criterionId,
+                  points_earned: c.pointsEarned,
+                  feedback: c.feedback,
+                })),
               })),
             };
           } catch (error) {
@@ -414,6 +437,7 @@ export function classroomTools(host: ToolHost): ClassroomTool[] {
             feedbackMarkdown: params.feedback_markdown,
             questions: params.questions.map((q) => ({
               questionId: q.question_id,
+              criteria: allocateCriteria(submission, q.question_id, q.criteria),
               correct: q.correct,
               pointsEarned: q.points_earned,
               pointsPossible: q.points_possible,
@@ -579,6 +603,7 @@ export function classroomTools(host: ToolHost): ClassroomTool[] {
           summary: params.summary ?? "",
           createdAt: Date.now(),
           assessmentContract: 1,
+          criterionContract: 1,
           instructionalContract: 1,
           ...(mode !== "pretest" ? { reviewVariantContract: 1 as const } : {}),
         });
@@ -697,7 +722,12 @@ export function classroomTools(host: ToolHost): ClassroomTool[] {
             const rubric = path.join(lessonDir(params.classroom, lesson.name), "quiz", "key.json");
             if (fs.existsSync(rubric)) {
               try {
-                parseRubric(fs.readFileSync(rubric, "utf8"), html);
+                parseRubric(
+                  fs.readFileSync(rubric, "utf8"),
+                  html,
+                  "machine",
+                  lesson.criterionContract === 1,
+                );
                 if (lesson.reviewVariantContract === 1)
                   authoredVariants(
                     fs.readFileSync(rubric, "utf8"),

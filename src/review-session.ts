@@ -42,6 +42,8 @@ export interface ReviewSession {
   document?: ReviewDocument;
   variants?: Record<string, string>;
   options?: { limit: number; topic?: string; early: boolean };
+  /** Saved publication requirement; absent on legacy prepared documents. */
+  criterionContract?: 1;
   error?: string;
 }
 export interface ReviewDocument {
@@ -80,6 +82,7 @@ export function reviewSessions(classroom: string): ReviewSession[] {
               typeof request.options.early !== "boolean" ||
               (request.options.topic !== undefined &&
                 (typeof request.options.topic !== "string" || !request.options.topic)))) ||
+          (request.criterionContract !== undefined && request.criterionContract !== 1) ||
           !Array.isArray(request.items) ||
           request.items.length === 0 ||
           request.items.some((item) => !item || !parseReviewKey(item.key)) ||
@@ -251,6 +254,15 @@ export function planReview(
       requests.flatMap((r) => (r.variants?.[item.key] ? [r.variants[item.key]] : [])),
     ),
   );
+  for (const [i, variant] of variants.entries())
+    if (
+      store.readLesson(classroom, picked[i].lesson)?.criterionContract === 1 &&
+      !variant.rubric.criteria?.length
+    )
+      throw new Error(
+        `Prepared review variant for ${picked[i].key} has no predeclared criteria. Prepare its private criteria, then retry.`,
+      );
+  if (variants.every((variant) => variant.rubric.criteria?.length)) session.criterionContract = 1;
   session.variants = Object.fromEntries(picked.map((item, i) => [item.key, variants[i].id]));
   session.document = assembleReview(picked, variants, true);
   validateReview(session, session.document);
@@ -322,7 +334,12 @@ export function validateReview(session: ReviewSession, document: ReviewDocument)
     const errors = questionErrors(shape);
     if (errors.length) throw new Error(`Review question ${shape.id}: ${errors.join(" ")}`);
   }
-  parseRubric(document.rubric_json, document.lesson_html);
+  parseRubric(
+    document.rubric_json,
+    document.lesson_html,
+    "machine",
+    session.criterionContract === 1,
+  );
   const plan = parseTeachingPlan(document.teaching_plan_json, document.lesson_html);
   for (const [i, question] of quizzes
     .flatMap((quiz) => quiz.questions.map((question) => ({ ...question, quizId: quiz.id! })))
@@ -405,6 +422,7 @@ export function publishReview(session: ReviewSession, document: ReviewDocument):
     createdAt: session.at,
     kind: "review",
     assessmentContract: 1,
+    ...(session.criterionContract === 1 ? { criterionContract: 1 as const } : {}),
     instructionalContract: 1,
   });
 }

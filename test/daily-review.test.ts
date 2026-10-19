@@ -9,6 +9,7 @@ import { completePreparedReview, reviewSessions, startReview } from "../src/revi
 import { dailyReviews, startDailyReview } from "../src/store/daily-review.ts";
 import { saveTeacherState } from "../src/service-state.ts";
 import { DAY_MS } from "../src/review.ts";
+import { classroomTools, PI_HOST, isFailure } from "../src/tools.ts";
 import {
   makeFixture,
   seedClassroom,
@@ -329,6 +330,156 @@ describe("daily review durability", () => {
     expect(reviewSessions("rust")).toHaveLength(0);
     expect(store.listGrades("biology", reviewSessions("biology")[0].lesson)).toEqual(completed);
     expect(store.reviewItems("rust")[0].retiredAt).toBeDefined();
+  });
+  it("saves declared criteria before daily publication and rejects a missing new-pool definition", async () => {
+    for (const classroom of ["biology", "rust"]) {
+      const keyFile = path.join(fixture.root, classroom, "001-ownership/quiz/key.json");
+      const key = JSON.parse(fs.readFileSync(keyFile, "utf8"));
+      key["check-1"].q1.criteria = [
+        { id: "answer", description: "Identify the current owner", points: 1 },
+      ];
+      for (const variant of key["check-1"].q1.variants)
+        variant.rubric.criteria = [
+          { id: "answer", description: "Identify the current owner", points: 1 },
+        ];
+      fs.writeFileSync(keyFile, JSON.stringify(key));
+      const metaFile = path.join(fixture.root, classroom, "001-ownership/lesson.json");
+      fs.writeFileSync(
+        metaFile,
+        JSON.stringify({ ...JSON.parse(fs.readFileSync(metaFile, "utf8")), criterionContract: 1 }),
+      );
+    }
+    const id = randomUUID();
+    expect((await post("daily-review", { id })).status).toBe(202);
+    expect(dailyReviews()[0].groups.every((group) => group.plan.criterionContract === 1)).toBe(
+      true,
+    );
+    const session = reviewSessions("biology")[0];
+    expect(store.readLesson("biology", session.lesson)?.criterionContract).toBe(1);
+    await finish("biology");
+    const submission = store.listSubmissions("biology", session.lesson)[0];
+    expect(submission.rubricCriteria?.r1).toEqual([
+      { id: "answer", description: "Identify the current owner", points: 1 },
+    ]);
+    expect(store.listGrades("biology", session.lesson)[0].questions[0].criteria?.[0]).toMatchObject(
+      { criterionId: "answer", pointsEarned: 1, pointsPossible: 1 },
+    );
+    const publicState = await (
+      await fetch(`${base}/api/state?classroom=biology&lesson=${session.lesson}`)
+    ).text();
+    expect(publicState).not.toMatch(
+      /rubricCriteria|earlyReviewKeys|teachingPlan|deterministicGrades/,
+    );
+    const keyFile = path.join(fixture.root, "rust/001-ownership/quiz/key.json");
+    const key = JSON.parse(fs.readFileSync(keyFile, "utf8"));
+    for (const variant of key["check-1"].q1.variants) delete variant.rubric.criteria;
+    fs.writeFileSync(keyFile, JSON.stringify(key));
+    // Existing root selection remains immutable; a fresh planner refuses new missing definitions.
+    const { planReview } = await import("../src/review-session.ts");
+    expect(() => planReview("rust", randomUUID(), "service")).toThrow("no predeclared criteria");
+    expect(dailyReviews()[0].groups[1].plan.criterionContract).toBe(1);
+  });
+  it("keeps both private snapshots in an early judgement group across restart and explicit grading", async () => {
+    const keyFile = path.join(fixture.root, "rust/001-ownership/quiz/key.json");
+    const key = JSON.parse(fs.readFileSync(keyFile, "utf8"));
+    const definitions = [
+      { id: "owner", description: "Identify the current owner", points: 2 },
+      { id: "release", description: "Explain scope-end release", points: 2 },
+    ];
+    for (const variant of key["check-1"].q1.variants) {
+      variant.html = `<li class="cl-q" data-question-id="${variant.id}" data-type="short"><p class="cl-q-prompt">Explain the owner and release.</p><textarea></textarea></li>`;
+      variant.rubric = {
+        expected: "New owner releases at scope end",
+        points: 4,
+        full: "Name owner and release",
+        partial: "Credit each declared step",
+        criteria: definitions,
+      };
+    }
+    fs.writeFileSync(keyFile, JSON.stringify(key));
+    // This early-cap case starts with one exposure, as the canonical control fixture does.
+    // Two prior independent successes would correctly allow an earlier miss interval.
+    for (const directory of ["submissions", "grades"])
+      fs.rmSync(path.join(fixture.root, "rust/001-ownership/quiz", directory), {
+        recursive: true,
+        force: true,
+      });
+    writeGradedAttempt({
+      classroom: "rust",
+      at: Date.now() - 3600000,
+      answers: [
+        termAnswer("q1", "owner", {
+          learning: {
+            objectiveId: "owner",
+            objective: { statement: "Explain ownership.", application: false },
+            task: "retrieval",
+            support: "independent",
+            assistance: "none",
+          },
+        }),
+      ],
+      correct: { q1: true },
+    });
+    const due = store.reviewItems("rust")[0].dueAt;
+    const early = startReview("rust", randomUUID(), "service", 3, { early: true }).session;
+    completePreparedReview(early);
+    const id = randomUUID();
+    await post("daily-review", { id });
+    await finish("biology");
+    await post("daily-review/continue", { id, classroom: "rust" });
+    expect(dailyReviews()[0].groups[1].plan.id).toBe(early.id);
+    expect(dailyReviews()[0].groups[1].plan.options?.early).toBe(true);
+    const response = await post("quiz/submit", {
+      classroom: "rust",
+      lesson: early.lesson,
+      quizId: "review",
+      kind: "review",
+      answers: [
+        {
+          questionId: "r1",
+          type: "short",
+          value: "The new owner",
+          reviewOf: early.items[0].key,
+          assistance: "hint",
+        },
+      ],
+    });
+    expect(response.status).toBe(201);
+    const saved = store.listSubmissions("rust", early.lesson)[0];
+    expect(saved.rubricCriteria?.r1).toEqual(definitions);
+    expect(saved.earlyReviewKeys).toEqual([early.items[0].key]);
+    expect(JSON.stringify(response.body)).not.toMatch(/rubricCriteria|earlyReviewKeys/);
+    await server.close();
+    base = await server.start(0);
+    const state = await (
+      await fetch(`${base}/api/state?classroom=rust&lesson=${early.lesson}`)
+    ).text();
+    expect(state).not.toMatch(/rubricCriteria|earlyReviewKeys|teachingPlan|deterministicGrades/);
+    expect(JSON.parse(state).quizzes[0].grade).toBeNull();
+    expect(store.listSubmissions("rust", early.lesson)[0]).toEqual(saved);
+    const tool = classroomTools(PI_HOST).find((tool) => tool.name === "grade_lesson_quiz")!;
+    const result = await tool.execute({
+      submission_id: saved.id,
+      score: 50,
+      feedback_markdown: "Owner identified; release missing",
+      questions: [
+        {
+          question_id: "r1",
+          correct: false,
+          points_earned: 2,
+          points_possible: 4,
+          feedback: "Explain release",
+          criteria: [
+            { criterion_id: "owner", points_earned: 2, feedback: "You named the current owner" },
+            { criterion_id: "release", points_earned: 0, feedback: "Add scope-end release" },
+          ],
+        },
+      ],
+    });
+    expect(isFailure(result)).toBe(false);
+    expect(store.listGrades("rust", early.lesson)).toHaveLength(1);
+    expect(store.reviewItems("rust")[0].dueAt).toBe(due);
+    expect(dailyReviews()[0].groups[1].plan.criterionContract).toBe(1);
   });
   it("reports malformed state and empty eligibility without writes", async () => {
     for (const classroom of ["biology", "rust"])

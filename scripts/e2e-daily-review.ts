@@ -36,6 +36,26 @@ export async function verifyDailyReview(artifacts: string | null): Promise<void>
       });
       seedPreparedReviewSource(fixture.root, classroom, "001-ownership", "check-1", ["q1", "q2"]);
       closeReviewVariants(fixture.root, classroom);
+      // New pools declare weights before daily planning; legacy histories stay unchanged.
+      const keyFile = path.join(fixture.root, classroom, "001-ownership/quiz/key.json");
+      const key = JSON.parse(fs.readFileSync(keyFile, "utf8"));
+      for (const entry of Object.values(key["check-1"]) as Array<{
+        points: number;
+        criteria?: unknown;
+        variants: Array<{ rubric: { points: number; criteria?: unknown } }>;
+      }>) {
+        const description =
+          classroom === "biology" ? "Identify the cell membrane" : "Identify the current owner";
+        entry.criteria = [{ id: "answer", description, points: entry.points }];
+        for (const variant of entry.variants)
+          variant.rubric.criteria = [{ id: "answer", description, points: variant.rubric.points }];
+      }
+      fs.writeFileSync(keyFile, JSON.stringify(key));
+      const metaFile = path.join(fixture.root, classroom, "001-ownership/lesson.json");
+      fs.writeFileSync(
+        metaFile,
+        JSON.stringify({ ...JSON.parse(fs.readFileSync(metaFile, "utf8")), criterionContract: 1 }),
+      );
       if (classroom === "biology") {
         for (const file of ["lesson.html", "quiz/key.json", "quiz/plan.json"]) {
           const name = path.join(fixture.root, classroom, "001-ownership", file);
@@ -204,6 +224,8 @@ export async function verifyDailyReview(artifacts: string | null): Promise<void>
       `);
       const daily = dailyReviews()[0];
       save("selected-before-progress.json", daily);
+      if (daily.groups.some((group) => group.plan.criterionContract !== 1))
+        throw new Error("Daily plans lost predeclared criterion metadata.");
       if (turns || publications !== 1 || reviewSessions("rust").length)
         throw new Error("Start published extra groups or used teacher authoring.");
       const duplicate = await fetch(`${base}/api/daily-review`, {
@@ -224,6 +246,7 @@ export async function verifyDailyReview(artifacts: string | null): Promise<void>
         await page.locator('form.cl-quiz:visible [data-cl-assistance]').selectOption('none');
         await page.locator('form.cl-quiz:visible button[type="submit"]').click();
         await page.getByText('Question 1 of 2 · 1 answered',{exact:true}).waitFor();
+        if(await page.locator('form.cl-quiz:visible .cl-q-criteria li').count()!==1)throw new Error('Daily closed criterion allocation missing.');
         await page.getByRole('link',{name:'Continue daily review',exact:true}).click();
         await page.getByRole('button',{name:'Continue Biology review',exact:true}).waitFor();
         if(await page.getByRole('button',{name:'Start Rust review',exact:true}).count()) throw new Error('Next classroom enabled before all cards graded.');
@@ -314,6 +337,21 @@ export async function verifyDailyReview(artifacts: string | null): Promise<void>
         )
           throw new Error(`Original evidence/revisions changed in ${c}.`);
         const review = currentReview(c)!;
+        if (
+          store.readLesson(c, review.lesson)?.criterionContract !== 1 ||
+          !store
+            .listSubmissions(c, review.lesson)
+            .every(
+              (submission) =>
+                submission.rubricCriteria && Array.isArray(submission.earlyReviewKeys),
+            )
+        )
+          throw new Error("Daily publication lost criterion/timing snapshots.");
+        const publicState = await (
+          await fetch(`${base}/api/state?classroom=${c}&lesson=${review.lesson}`)
+        ).text();
+        if (/rubricCriteria|earlyReviewKeys|deterministicGrades|teachingPlan/.test(publicState))
+          throw new Error("Daily private submission fields leaked.");
         if (
           store.listGrades(c, review.lesson).length !== 2 ||
           store.listSubmissions(c, review.lesson).length !== 2 ||

@@ -98,6 +98,9 @@ fails once, stays failed on reload, and reaches the fixture teacher only after
 is failed: selection alone must not retry or rewrite its snapshot; explicit retry
 uses the new model in the same conversation, and server restart retains the durable
 report and requested/answering metadata. Its catalog and teacher are fixtures.
+The prepared early cards also retain private criterion definitions and code-owned
+allocations alongside selection timing. The fixture checks both snapshots remain
+off learner state while the saved missed criterion and original due date survive.
 They probe invalid size, a real edit lock, stale revisions,
 corrupt control state with `Retry loading review state`, malformed saved options
 with `Reset review options`, failed item loading with `Retry item state`, an
@@ -123,7 +126,11 @@ page, empty due work, malformed daily state, and private routes. Inspect
 keeps Biology on Claude and Rust on Codex; these fixture teachers prove routing,
 not real model access. Contract tests additionally reject foreign ownership and
 competing unfinished reviews. Daily selections use the same default per-classroom
-size and prepared-variant selection as classroom Progress.
+size and prepared-variant selection as classroom Progress. The daily fixtures
+also use predeclared private criteria, require the saved publication contract,
+render the code-owned closed allocation, and verify criterion/timing snapshots
+remain private. Daily contracts additionally reuse an existing early judgment
+review through restart and grade its fixed components without extending the due cap.
 
 Daily edits also share a root transaction lock across live Pi and service processes.
 If another server is saving, read its specific lock error, then explicitly retry;

@@ -61,6 +61,7 @@ export function dailyReviews(): DailyReview[] {
             !Number.isFinite(g.plan.at) ||
             (g.plan.status !== "done" && g.plan.owner !== request.owner) ||
             !isValidSlug(g.plan.lesson) ||
+            (g.plan.criterionContract !== undefined && g.plan.criterionContract !== 1) ||
             !Array.isArray(g.plan.items) ||
             !g.plan.items.length ||
             g.plan.items.some((item) => !item || typeof item.key !== "string") ||

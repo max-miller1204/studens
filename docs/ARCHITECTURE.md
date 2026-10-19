@@ -152,6 +152,9 @@ source notation to grading. Answers and feedback render Markdown server-side.
   schedule. Later groups need explicit progression. Reads, reloads and repeated
   starts reuse saved requests; publication and ownership failures require retry.
   Daily history links to each classroom’s separate review history and teacher panel.
+  Save declared criterion requirements with new prepared plans and retain their
+  definitions in the private document through publication. Legacy plans remain
+  compatible. Public attempts redact criterion and early-timing snapshots.
 - **Variant refills are background work.** Save private refill requests with their host
   and learner mistake. Run them after queued learner requests in the same sequential
   teacher session. Save validated output before atomically adding a supplemental

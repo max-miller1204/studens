@@ -4,6 +4,7 @@ import {
   finishDailyActions,
 } from "./daily-review-actions.ts";
 import { dailyReviews } from "../src/store/daily-review.ts";
+import { driveCriterionProbe } from "./criterion-probe.ts";
 import { seedReteach, driveReteach } from "./e2e-reteach-browser.ts";
 /** Test browser questions, quiz grading, and the teacher panel check in a real Pi session. */
 import {
@@ -590,6 +591,13 @@ try {
     base,
     reteachLesson,
     artifacts ? path.join(artifacts, "reteach") : null,
+  );
+
+  await driveCriterionProbe(
+    session,
+    fixture.root,
+    base,
+    artifacts ? path.join(artifacts, "criteria") : null,
   );
 
   send({ id: "stop", type: "prompt", message: "/classroom stop" });

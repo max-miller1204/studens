@@ -317,6 +317,26 @@ saves an attempt. The rubric uses quiz ids, then question ids. Each entry needs
 reasoning components. The server rejects altered point limits and a rubric changed
 after submission. Older lesson metadata and saved attempts retain their existing
 contract. Do not rewrite their questions or grades during an upgrade.
+New scaffolds also set `criterionContract: 1`. Before submission, give every rubric
+entry `criteria: [{"id":"sum","description":"Square and sum the residuals","points":2},
+{"id":"mean","description":"Divide by the number of residuals","points":2}]`.
+The ids must be unique; positive weights must sum to the entry's `points` (4 in this
+example). Use meaningful components and accept equivalent solutions. Exact questions
+have one all-or-zero criterion; use judgment questions for component credit. Give
+private review variants their own criteria too. Keep descriptions and keys private
+until grading. Only descriptions and allocations for the submitted question are
+published, never the whole rubric or other questions' answers.
+
+The server saves these definitions privately with the attempt. For each graded
+question with definitions, supply `criteria` entries with `criterion_id`,
+`points_earned`, and explanatory `feedback`. Include each id exactly once; omit
+criterion descriptions and weights. Earned and possible criterion totals must match
+the question totals. Explain the actual reasoning that met or missed each criterion,
+including full-credit work and equivalent approaches. Confidence and assistance do
+not change allocations. Keep teacher-panel advice consistent with the saved grade.
+A regrade adds a revision using the same definitions. Older attempts without saved
+criteria keep their original totals and show no invented breakdown.
+
 Integer rounding is allowed. Without points, grading uses equal-weight binary
 results. Do not mix grading methods during a quiz.
 
