@@ -54,6 +54,7 @@ never the working directory or files outside the package.
 | Durable requests and plans                      | `service-state.ts`, `teacher-service.ts`                         |
 | Model adapters, deadlines, grade decoding       | `teacher.ts`, `teacher-deadline.ts`, `teacher-grading.ts`        |
 | Resume and review publication                   | `teacher-resume.ts`, `review-session.ts`                         |
+| Private variant pools and refills               | `review-variants.ts`, `review-pool.ts`, `review-refill.ts`       |
 | Quiz, rubric, pretest, plan validation          | `quiz.ts`, `rubric.ts`, `pretest.ts`, `teaching-plan.ts`         |
 | Review schedule, learning evidence, diagnostics | `review.ts`, `evidence.ts`, `health.ts`                          |
 | HTML and Markdown                               | `pages.ts`, `lesson-html.ts`, `markdown.ts`                      |
@@ -118,6 +119,9 @@ source notation to grading. Answers and feedback render Markdown server-side.
   Validate keys, rubric, controls, and plan before publication. Hide unfinished
   reviews from lists, routes, and submissions. Repeated clicks reuse work; published
   reviews open across hosts. Saved service plans resume without another model turn.
+- **Private variant supplements preserve rubrics.** Save validated refill output
+  before atomically appending a batch to `quiz/review-pool.json`. Replaying the
+  same request must not duplicate variants or rewrite a submitted answer key.
 - **Drafts never wake a teacher.** Restore them once on load, only into fresh quizzes.
   Reconnect must not overwrite typing. Successful submissions clear their draft.
 - **Folder edits keep classroom paths stable.** Lock `.folders.json` edits and replace

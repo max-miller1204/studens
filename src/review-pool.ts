@@ -2,7 +2,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { classroomDir, isValidSlug, safeStaticFile } from "./paths.ts";
-import { authoredVariants } from "./review-variants.ts";
+import { authoredVariants, validateVariant } from "./review-variants.ts";
 import type { PreparedVariant } from "./review-variants.ts";
 import type { ReviewDocument } from "./review-session.ts";
 import type { ReviewItem } from "./review.ts";
@@ -51,7 +51,33 @@ export function lessonPools(
     return new Map();
   const html = safeStaticFile(classroomDir(classroom), `${lesson}/lesson.html`);
   if (!html) throw new Error(`Missing or unsafe variant source lesson: ${lesson}.`);
-  return authoredVariants(keyText, planText, fs.readFileSync(html, "utf8"), required);
+  const pools = authoredVariants(keyText, planText, fs.readFileSync(html, "utf8"), required);
+  const supplement = privatePoolPath(classroom, lesson, "review-pool.json");
+  if (fs.existsSync(supplement)) {
+    const saved = JSON.parse(fs.readFileSync(supplement, "utf8"));
+    if (!saved || saved.version !== 1 || !Array.isArray(saved.batches))
+      throw new Error("Invalid private supplemental pool.");
+    const requests = new Set<string>();
+    for (const batch of saved.batches) {
+      const pool = pools.get(batch?.key);
+      if (
+        !pool ||
+        typeof batch.requestId !== "string" ||
+        requests.has(batch.requestId) ||
+        !Array.isArray(batch.variants) ||
+        !batch.variants.length
+      )
+        throw new Error("Invalid private variant batch.");
+      requests.add(batch.requestId);
+      for (const variant of batch.variants) {
+        const prepared = validateVariant(variant, variant?.plan, pool[0].objective);
+        if (pool.some((v) => v.id === prepared.id))
+          throw new Error("Duplicate private variant id.");
+        pool.push(prepared);
+      }
+    }
+  }
+  return pools;
 }
 
 /** Prefer an unseen question, then the least-used variant in authored order. */

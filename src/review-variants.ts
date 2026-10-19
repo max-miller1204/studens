@@ -35,6 +35,14 @@ export function validateVariant(
   )
     throw new Error(`Variant ${variant.id} must contain one question li fragment.`);
   for (const tag of fragment.matchAll(new RegExp(`<([a-z][\\w-]*)\\b(${TAG_ATTRIBUTES})>`, "gi"))) {
+    if (/(?:^|\s)(?:on[\w-]+|srcdoc)\s*=/i.test(tag[2]))
+      throw new Error(`Variant ${variant.id} contains active attributes.`);
+    for (const reference of tag[2].matchAll(
+      /\b(?:href|src|action)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi,
+    )) {
+      if (!/^(?:\/c\/|#)/.test(reference[1] ?? reference[2] ?? reference[3]))
+        throw new Error(`Variant ${variant.id} has a non-classroom media reference.`);
+    }
     const attributes = htmlAttributes(tag[2]);
     if (
       [...attributes].some(
