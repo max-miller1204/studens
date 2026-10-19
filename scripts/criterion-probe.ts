@@ -93,7 +93,8 @@ export async function driveCriterionProbe(
       root,
       `async page=>{
       await page.locator('form[data-state="graded"]').waitFor();
-      await page.locator('.cl-teacher-messages').getByText('?',{exact:false}).waitFor();
+      // A retrieval task can use an imperative sentence. Inspect its saved content separately.
+      await page.locator('.cl-teacher-message[data-role="teacher"]').waitFor();
       await page.setViewportSize({width:1280,height:900});await page.evaluate(()=>scrollTo(0,0));
       ${artifacts ? `await page.screenshot({path:${JSON.stringify(path.join(artifacts, "criteria-desktop.png"))},fullPage:true});` : ""}
       await page.setViewportSize({width:375,height:812});
@@ -110,7 +111,7 @@ export async function driveCriterionProbe(
     if (store.listGrades("rust", lesson).length !== 1)
       throw new Error("Real host duplicated a criterion grade");
     console.log(
-      "PASS: real host criterion allocations 2/2 + 0/2 = 2/4, explanatory feedback, panel question, locked form and reload",
+      "PASS: real host criterion allocations 2/2 + 0/2 = 2/4, explanatory feedback, panel message, locked form and reload",
     );
   } catch (error) {
     evidence("criteria-failure", {
