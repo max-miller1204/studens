@@ -331,3 +331,18 @@ it("rejects reallocated criteria on a later attempt while preserving the earlier
   expect(store.listSubmissions(location.classroom, location.lesson)).toHaveLength(1);
   expect(store.listGrades(location.classroom, location.lesson)).toEqual(before);
 });
+
+it("names invalid saved criterion identities instead of throwing a null dereference", () => {
+  const s = submit();
+  const criteria = allocateCriteria(s, "q", raw())!;
+  expect(() =>
+    validateCriterionGrade(s, {
+      questionId: "q",
+      correct: false,
+      pointsEarned: 2,
+      pointsPossible: 4,
+      feedback: "",
+      criteria: [null as never, criteria[1]],
+    }),
+  ).toThrow(/declared criterion ids/);
+});

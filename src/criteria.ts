@@ -98,7 +98,7 @@ export function validateCriterionGrade(
   const criteria = question.criteria;
   if (!Array.isArray(criteria) || criteria.length !== definitions.length)
     throw new Error(`${where}: allocate every declared criterion exactly once.`);
-  const ids = criteria.map((c) => c.criterionId);
+  const ids = criteria.map((c) => c?.criterionId);
   if (new Set(ids).size !== ids.length || definitions.some((c) => !ids.includes(c.id)))
     throw new Error(`${where}: use only the declared criterion ids, exactly once.`);
   let earned = 0,
