@@ -1,5 +1,6 @@
 /** One durable quiz per card; grades and teacher replies keep their existing contracts. */
 import { wireRetirement } from "./review-controls.mjs";
+import { addDailyReviewLink } from "./daily-review.mjs";
 
 export function createReviewScreen({ config, contentRoot, placeTeacherPanel, flagQuestion }) {
   if (!config.reviewScreen) return null;
@@ -38,6 +39,7 @@ export function createReviewScreen({ config, contentRoot, placeTeacherPanel, fla
   previous.hidden = true;
   next.disabled = true;
   navigation.append(previous, next, retry, history);
+  addDailyReviewLink(navigation);
   forms[0].before(progress);
   forms.at(-1).after(navigation);
   const actions = document.createElement("section");

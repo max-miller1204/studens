@@ -199,3 +199,20 @@ export function isFile(p: string): boolean {
     throw err;
   }
 }
+
+/** Guard private state reads/writes, including existing symlink ancestors. */
+export function privateStatePath(relative: string): string {
+  const target = safeJoin(classroomsRoot(), relative);
+  if (!target) throw new Error("Private state path leaves the classrooms root.");
+  let current = path.parse(target).root;
+  for (const segment of target.slice(current.length).split(path.sep).filter(Boolean)) {
+    current = path.join(current, segment);
+    try {
+      if (fs.lstatSync(current).isSymbolicLink())
+        throw new Error(`Private state path cannot be a symlink: ${current}.`);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+    }
+  }
+  return target;
+}

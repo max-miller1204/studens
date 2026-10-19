@@ -1,7 +1,14 @@
 /** Save browser review requests and publish only complete review documents. */
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { classroomDir, isValidSlug, lessonDir, lessonUrl, isStoredReview } from "./paths.ts";
+import {
+  classroomDir,
+  isValidSlug,
+  lessonDir,
+  lessonUrl,
+  isStoredReview,
+  privateStatePath,
+} from "./paths.ts";
 import { isContractId, parseReviewKey, questionErrors } from "../assets/runtime/quiz.mjs";
 import {
   DEFAULT_REVIEW_SIZE,
@@ -35,6 +42,8 @@ export interface ReviewSession {
   document?: ReviewDocument;
   variants?: Record<string, string>;
   options?: { limit: number; topic?: string; early: boolean };
+  /** Saved publication requirement; absent on legacy prepared documents. */
+  criterionContract?: 1;
   error?: string;
 }
 export interface ReviewDocument {
@@ -45,7 +54,7 @@ export interface ReviewDocument {
 
 function file(classroom: string): string {
   if (!isValidSlug(classroom)) throw new Error("Invalid classroom.");
-  return path.join(classroomDir(classroom), ".reviews.json");
+  return privateStatePath(`${classroom}/.reviews.json`);
 }
 export function reviewSessions(classroom: string): ReviewSession[] {
   try {
@@ -73,6 +82,7 @@ export function reviewSessions(classroom: string): ReviewSession[] {
               typeof request.options.early !== "boolean" ||
               (request.options.topic !== undefined &&
                 (typeof request.options.topic !== "string" || !request.options.topic)))) ||
+          (request.criterionContract !== undefined && request.criterionContract !== 1) ||
           !Array.isArray(request.items) ||
           request.items.length === 0 ||
           request.items.some((item) => !item || !parseReviewKey(item.key)) ||
@@ -100,6 +110,7 @@ export function reviewSessions(classroom: string): ReviewSession[] {
 }
 function save(classroom: string, requests: ReviewSession[]): void {
   const target = file(classroom);
+  privateStatePath(`${classroom}/.reviews.json.tmp`);
   fs.writeFileSync(`${target}.tmp`, JSON.stringify({ version: 1, requests }, null, 2), {
     mode: 0o600,
   });
@@ -151,6 +162,28 @@ export function startReview(
     if (existing.status !== "done") requireReviewOwner(existing, owner);
     return { session: existing, added: false };
   }
+  const session = planReview(classroom, id, owner, limit, options);
+  requests.push(session);
+  save(classroom, requests);
+  return { session, added: true };
+}
+
+/** Prepare selections and the complete document without changing classroom state. */
+export function planReview(
+  classroom: string,
+  id: string,
+  owner: ReviewOwner,
+  limit = DEFAULT_REVIEW_SIZE,
+  options: { topic?: string; early?: boolean } = {},
+): ReviewSession {
+  if (!store.readClassroom(classroom)) throw new Error(`No such classroom: ${classroom}.`);
+  if (!Number.isInteger(limit) || limit < 3 || limit > MAX_REVIEW_SIZE)
+    throw new Error(`Review size must be a whole number from 3 to ${MAX_REVIEW_SIZE}.`);
+  if (options.early !== undefined && typeof options.early !== "boolean")
+    throw new Error("Early review must be true or false.");
+  if (options.topic !== undefined && (typeof options.topic !== "string" || !options.topic))
+    throw new Error("Choose an existing review topic.");
+  const requests = reviewSessions(classroom);
   const at = Date.now();
   const active = store.reviewItems(classroom).filter((item) => item.retiredAt === undefined);
   if (options.topic !== undefined && !active.some((item) => reviewTopic(item).id === options.topic))
@@ -221,12 +254,52 @@ export function startReview(
       requests.flatMap((r) => (r.variants?.[item.key] ? [r.variants[item.key]] : [])),
     ),
   );
+  for (const [i, variant] of variants.entries())
+    if (
+      store.readLesson(classroom, picked[i].lesson)?.criterionContract === 1 &&
+      !variant.rubric.criteria?.length
+    )
+      throw new Error(
+        `Prepared review variant for ${picked[i].key} has no predeclared criteria. Prepare its private criteria, then retry.`,
+      );
+  if (variants.every((variant) => variant.rubric.criteria?.length)) session.criterionContract = 1;
   session.variants = Object.fromEntries(picked.map((item, i) => [item.key, variants[i].id]));
   session.document = assembleReview(picked, variants, true);
   validateReview(session, session.document);
+  return session;
+}
+
+/** Recheck through the canonical picker when a saved group has not been published. */
+export function plannedReviewEligible(session: ReviewSession): boolean {
+  const eligible = new Set(
+    pickReviewItems(
+      store.reviewItems(session.classroom),
+      Date.now(),
+      Number.MAX_SAFE_INTEGER,
+      session.options?.early ?? false,
+    ).map((item) => item.key),
+  );
+  return session.items.every((item) => eligible.has(item.key));
+}
+
+/** Commit a previously saved daily selection, refusing competing classroom work. */
+export function savePlannedReview(session: ReviewSession): ReviewSession {
+  const requests = reviewSessions(session.classroom);
+  const existing = requests.find((request) => request.id === session.id);
+  if (existing) return existing;
+  if (requests.some(resumableReview))
+    throw new Error(
+      "Another unfinished review exists in this classroom. Finish it, then retry this group.",
+    );
+  if (!plannedReviewEligible(session))
+    throw new Error(
+      "Daily selections are no longer due or eligible. Retry this classroom to refresh its unstarted selection.",
+    );
+  if (!session.document) throw new Error("The saved daily review document is missing.");
+  validateReview(session, session.document);
   requests.push(session);
-  save(classroom, requests);
-  return { session, added: true };
+  save(session.classroom, requests);
+  return session;
 }
 export function publicReview(session: ReviewSession | null): unknown {
   if (!session) return null;
@@ -264,7 +337,12 @@ export function validateReview(session: ReviewSession, document: ReviewDocument)
     const errors = questionErrors(shape);
     if (errors.length) throw new Error(`Review question ${shape.id}: ${errors.join(" ")}`);
   }
-  parseRubric(document.rubric_json, document.lesson_html);
+  parseRubric(
+    document.rubric_json,
+    document.lesson_html,
+    "machine",
+    session.criterionContract === 1,
+  );
   const plan = parseTeachingPlan(document.teaching_plan_json, document.lesson_html);
   for (const [i, question] of quizzes
     .flatMap((quiz) => quiz.questions.map((question) => ({ ...question, quizId: quiz.id! })))
@@ -347,6 +425,7 @@ export function publishReview(session: ReviewSession, document: ReviewDocument):
     createdAt: session.at,
     kind: "review",
     assessmentContract: 1,
+    ...(session.criterionContract === 1 ? { criterionContract: 1 as const } : {}),
     instructionalContract: 1,
   });
 }
