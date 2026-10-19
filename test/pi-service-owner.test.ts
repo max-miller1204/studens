@@ -1,6 +1,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { randomUUID } from "node:crypto";
+import * as net from "node:net";
 import { expect, it } from "vitest";
 import {
   makeFixture,
@@ -10,7 +11,8 @@ import {
   writeGradedAttempt,
   termAnswer,
 } from "./helpers.ts";
-import { ensureService, servicePaths } from "../src/service-client.ts";
+import { control, ensureService, servicePaths, serviceStatus } from "../src/service-client.ts";
+import { PiServiceClient } from "../src/pi-service-client.ts";
 import { startDailyReview } from "../src/store/daily-review.ts";
 import { reviewSessions } from "../src/review-session.ts";
 import { TeacherService } from "../src/teacher-service.ts";
@@ -29,6 +31,43 @@ it("rejects recorded legacy Pi route ownership without replacing the route or st
     expect(fs.existsSync(servicePaths().lock)).toBe(false);
     expect(fs.existsSync(path.join(servicePaths().dir, "service.log"))).toBe(false);
   } finally {
+    f.cleanup();
+  }
+});
+
+it("rejects legacy route ownership even when the persistent service already runs", async () => {
+  const f = makeFixture();
+  seedClassroom(f);
+  const previousPort = process.env.PI_CLASSROOM_SERVICE_PORT;
+  const previousTailnet = process.env.PI_CLASSROOM_TAILSCALE;
+  const listener = net.createServer();
+  await new Promise<void>((resolve) => listener.listen(0, "127.0.0.1", resolve));
+  process.env.PI_CLASSROOM_SERVICE_PORT = String((listener.address() as net.AddressInfo).port);
+  await new Promise<void>((resolve) => listener.close(() => resolve()));
+  process.env.PI_CLASSROOM_TAILSCALE = "0";
+  try {
+    const original = await ensureService();
+    const file = f.write(
+      ".pi-teach-pi/phone.json",
+      JSON.stringify({ host: "old.tailnet.ts.net", port: 8444, target: "http://127.0.0.1:40000" }),
+    );
+    const before = fs.readFileSync(file);
+    await expect(
+      new PiServiceClient().call("open_classroom", { classroom: "rust" }),
+    ).rejects.toThrow("previous Pi package");
+    expect(fs.readFileSync(file)).toEqual(before);
+    expect(fs.existsSync(path.join(f.root, "rust/.teacher.json"))).toBe(false);
+    expect((await serviceStatus()).pid).toBe(original.pid);
+    // Management remains available so this error cannot trap an incompatible owner.
+    await new PiServiceClient().call("classroom_service", { action: "stop" });
+  } finally {
+    if ((await serviceStatus()).running) await control("/stop", {});
+    for (let i = 0; i < 100 && (await serviceStatus()).running; i++)
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    if (previousPort === undefined) delete process.env.PI_CLASSROOM_SERVICE_PORT;
+    else process.env.PI_CLASSROOM_SERVICE_PORT = previousPort;
+    if (previousTailnet === undefined) delete process.env.PI_CLASSROOM_TAILSCALE;
+    else process.env.PI_CLASSROOM_TAILSCALE = previousTailnet;
     f.cleanup();
   }
 });

@@ -80,6 +80,11 @@ export async function ensureService(): Promise<any> {
       version: string;
     }
   ).version;
+  const legacyRoute = path.join(classroomsRoot(), ".pi-teach-pi", "phone.json");
+  if (fs.existsSync(legacyRoute))
+    throw new Error(
+      `A legacy Pi tailnet route is still recorded at ${legacyRoute}. Stop that server explicitly with the previous Pi package before retrying. No route or saved data was replaced.`,
+    );
   const status = await serviceStatus();
   if (status.running) {
     if (
@@ -92,11 +97,6 @@ export async function ensureService(): Promise<any> {
       );
     return status;
   }
-  const legacyRoute = path.join(classroomsRoot(), ".pi-teach-pi", "phone.json");
-  if (fs.existsSync(legacyRoute))
-    throw new Error(
-      `A legacy Pi tailnet route is still recorded at ${legacyRoute}. Stop that server explicitly with the previous Pi package before retrying. No route or saved data was replaced.`,
-    );
   const paths = servicePaths();
   fs.mkdirSync(paths.dir, { recursive: true, mode: 0o700 });
   const log = fs.openSync(paths.log, "a", 0o600);
