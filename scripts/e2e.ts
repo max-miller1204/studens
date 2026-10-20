@@ -11,11 +11,7 @@ import { driveCriterionProbe } from "./criterion-probe.ts";
 import { seedReteach, driveReteach } from "./e2e-reteach-browser.ts";
 import { driveRealNextLesson } from "./next-lesson-actions.ts";
 /** Real host and dedicated teacher evaluation. All material is a temporary fixture. */
-import {
-  closedReviewActions,
-  refillRetryActions,
-  reportQuestionActions,
-} from "./review-card-actions.ts";
+import { closedReviewActions, reportQuestionActions } from "./review-card-actions.ts";
 import { highlightText } from "./browser-actions.ts";
 import { spawn } from "node:child_process";
 import * as fs from "node:fs";
@@ -531,28 +527,27 @@ async function main(): Promise<void> {
     const settledRefills = await until("background refill result", 305_000, () => {
       const requests = refillRequests("rust").filter((request) => request.lesson === review.lesson);
       return requests.length &&
-        requests.every((request) => ["done", "failed"].includes(request.status))
+        (requests.some((request) => request.status === "failed") ||
+          requests.every((request) => request.status === "done"))
         ? requests
         : null;
     });
     const failedRefills = settledRefills.filter((request) => request.status === "failed");
     if (failedRefills.length) {
-      console.log(
-        "Explicit browser retry after saved background errors: " +
-          failedRefills.map((request) => request.error).join("; "),
-      );
       if (artifacts)
         fs.writeFileSync(
           path.join(artifacts, "failed-review-refills.json"),
           JSON.stringify(failedRefills, null, 2),
         );
-      await playwrightCode(
-        browser,
-        root,
-        `async page => { ${refillRetryActions(
-          failedRefills.map((request) => request.id),
-          artifacts ? path.join(artifacts, "review-refills-failed.png") : null,
-        )} return true; }`,
+      if (artifacts)
+        await playwrightCode(
+          browser,
+          root,
+          `async page=>{await page.evaluate(()=>window.scrollTo(0,0));await page.screenshot({path:${JSON.stringify(path.join(artifacts, "review-refills-failed.png"))},fullPage:true});return true;}`,
+        );
+      throw new Error(
+        "Original background refill failed: " +
+          failedRefills.map((request) => request.error).join("; "),
       );
     }
 

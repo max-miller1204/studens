@@ -5,6 +5,8 @@ import { shell } from "../pages.ts";
 import { searchClassrooms, searchGlossarySource, SEARCH_PAGE_SIZE } from "../store/search.ts";
 import type { SearchResponse } from "../store/search.ts";
 import { searchPassages } from "../search-passages.ts";
+import { glossaryWithOrigins, originHtml } from "../store/lesson-sources.ts";
+import { readGlossary } from "../store.ts";
 import { sendHtml, sendNotFound } from "./http.ts";
 
 function form(query: string): string {
@@ -59,12 +61,15 @@ export function handleSearch(res: http.ServerResponse, url: URL): void {
           res,
           "This glossary term is no longer available. Return to Search to find its current entry.",
         );
+      const origin = glossaryWithOrigins(classroom, readGlossary(classroom)).terms.find(
+        (entry) => entry.term === term,
+      )?.origin;
       return sendHtml(
         res,
         shell({
           title: term,
           breadcrumb: `<a class="cl-crumb" href="/search">Search</a><span class="cl-crumb-sep">/</span><a class="cl-crumb" href="/c/${encodeURIComponent(classroom)}">Classroom</a>`,
-          body: `<article class="cl-doc"><h1>Glossary term</h1>${searchPassages(source).html}<p><a href="/doc/${encodeURIComponent(classroom)}/GLOSSARY.md">Read full glossary</a></p></article>`,
+          body: `<article class="cl-doc"><h1>Glossary term</h1>${searchPassages(source).html}${origin ? originHtml(origin, url.pathname + url.search) : ""}<p><a href="/doc/${encodeURIComponent(classroom)}/GLOSSARY.md">Read full glossary</a></p></article>`,
         }),
       );
     }

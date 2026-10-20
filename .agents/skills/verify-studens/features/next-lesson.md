@@ -48,8 +48,11 @@ check saved output and a page-check receipt, open and reload the page, and verif
 zero submissions, grades, or learning records from checking. They bind the receipt to
 all saved document fields. Service drives select the fixed verification model through
 Settings, check the requested and answering models on the authoring request, then
-reset to the configured default before the ordinary teacher checks. A rejected model plan is retained and
-receives at most one explicit browser retry with its actual error in context.
+reset to the configured default before the ordinary teacher checks. An unexpected rejected model plan stops the native gate on its original request;
+preserve its output and error without a generation reroll. Product explicit Retry
+remains available. Controlled publication-conflict recovery still restarts the
+service and explicitly retries its same validated document and saved plan, checking
+the same native session bytes and identity with no additional inference.
 Inspect `next-lesson-source-provenance.json` for matching checkout and loaded-service
 hashes, `stored-next-lesson.json`, `*-next-lesson.png`, and any
 `next-lesson-failed.json` / `next-lesson-retry-failed.json`. Host model output may
@@ -128,7 +131,7 @@ contracts do not replace the required real service drives.
 
 Run `npx vitest run test/next-lesson.test.ts` for assembled request contracts and
 authoring state recovery. The producer-boundary checks capture the actual Pi,
-Claude and Codex service request: all inline teaching, plan, code, quiz, lesson,
+Claude and Codex service request: all inline teaching, plan, code, teaching-origin, quiz, lesson,
 faded and stepper sources must remain complete; local contract paths and shell /
 browser launch commands must be absent from its operational guidance. Reference
 file instructions belong to the host, which serializes, checks and publishes the
@@ -165,3 +168,15 @@ controlled-loop regression in `test/pi-teacher-native-errors.test.ts` checks tha
 later valid call cannot rescue the turn, raw plan arguments persist before native
 validation, and an explicit retry reopens the same conversation with the failed
 history intact. This is a fixture check with no provider inference.
+
+Teaching-origin authoring uses `data-cl-teaches` on a stable teaching section; see
+`docs/SOURCE-LINKS.md`. The service receives the complete contract in its actual
+producer request, and its typed `lesson_html` carries declarations without new
+filesystem tools or glossary writes. The four-file checker rejects unsafe, duplicate,
+or unreachable declarations before publication while retaining all private validators.
+The browser `lesson-sources/` fixture proves navigation, not native authoring.
+A directed native probe is available as `node scripts/e2e-source-authoring.ts
+<pi|claude|codex> <new-artifact-directory>`; inspect its original native request,
+raw saved output, source hashes, four-file checker receipt and clicked destination.
+This path is separate from repeated autonomous authoring comparisons; a failure
+requires its own evidence and explicit retry rather than another favorable run.

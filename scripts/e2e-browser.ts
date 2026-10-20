@@ -21,6 +21,7 @@ import { verifyFadedBrowser } from "./e2e-faded-browser.ts";
 import { verifyClosedBrowser } from "./e2e-closed-browser.ts";
 import { verifyFoldersBrowser } from "./e2e-folders-browser.ts";
 import { verifyCourseMapBrowser } from "./e2e-course-map-browser.ts";
+import { verifyLessonSources } from "./e2e-lesson-sources.ts";
 import { verifyResumeBrowser } from "./e2e-resume-browser.ts";
 import { verifyCardBrowser } from "./e2e-card-browser.ts";
 import { verifyQuestionErrorsBrowser } from "./e2e-question-errors-browser.ts";
@@ -390,6 +391,7 @@ try {
 
 await verifySearchBrowser(artifacts ? path.join(artifacts, "search") : null);
 await verifyCourseMapBrowser(artifacts ? path.join(artifacts, "course-map") : null);
+await verifyLessonSources(artifacts ? path.join(artifacts, "lesson-sources") : null);
 
 await verifyPiPanelBrowser(artifacts ? path.join(artifacts, "pi-panel") : null);
 await verifyServiceBrowser(artifacts ? path.join(artifacts, "service") : null);
