@@ -1,0 +1,145 @@
+{
+  "base": "67092d07d143050caa6648de5a8280164ce05f96",
+  "sourceCommit": "6f533c54a2687b15df5177e30e89f75fca0f6ec3",
+  "fullGate": "BLOCKED at integrated daily-review/pi server.close; unchanged-base daily control passed; cause not established. Scoped learner fixture and 1187 automated tests PASS.",
+  "afterSourceSHA256": {
+    ".agents/skills/verify-studens/features/README.md": "20efdd9df1c9a90d3cdd91271020f64c59f405c9fe03c8812db0d9dc9b28e6a7",
+    ".agents/skills/verify-studens/features/reading.md": "33c8974e33cb4c81e4a43c2a7fadb233a212fa3cdc23d73402beb73a7b56c60d",
+    "assets/runtime/anchor.d.mts": "c67cda2479f7c2a0e83b5b3a55aa40fde5bcad959badf9f1310b2514e7062136",
+    "assets/runtime/anchor.mjs": "8b4ec2663b8e7d36a6a2a102374c879372785bb477c20be58290750081447f11",
+    "assets/runtime/classroom.css": "cb306b3757d7fef2709acca304087816dfe81ad223180cc0ea071dcf6cc64b2f",
+    "assets/runtime/classroom.js": "cf2ea16f31db7086dc2f556eb3055e49a04c36a35c1f819d4d506faa3084fab2",
+    "assets/runtime/glossary-ui.mjs": "7a6ad351c362894b766347373912abebe3f363fd2c854d7bbdce29fb610aaf10",
+    "assets/runtime/highlights.mjs": "2c0a2d3e9f3488f5a987131fa522612b3d175abc0f244fed7ddd13edde834208",
+    "assets/runtime/learner-marks.mjs": "9e74e64bb96819baa8e6e02263e881dd0621fb94adec35cc4c4239fa179c69ea",
+    "assets/runtime/lesson-dom.mjs": "9294c6ff9d363ba53c8b953b82a3b31e503d18fcc15573dd9b43e1f3e85310dc",
+    "assets/runtime/quiz-ui.mjs": "a26402b5d2d159100a6c2a76a61b03b545d186c8c46f231997be3658ac3702c2",
+    "docs/ARCHITECTURE.md": "192bf6138c8dbbf3c8ef6706025c1be0105db012c98ace6f114fa7aaed147463",
+    "scripts/check-lesson.ts": "f3ed1e67c9ebdf9cc9b342f0650ddfbd1e9ccec1c16078431b3bcbdc05b818c7",
+    "scripts/e2e-authoring.ts": "21d7e432a188569cfe5b2ca15bed41ce9e205343d05dd2b5f3d7031a1ef9febb",
+    "scripts/e2e-browser.ts": "cde1f0954c72b9acc915b4535930b7b2725af711cd1ded9cd3b7a386bfa78243",
+    "scripts/e2e-learner-marks-browser.ts": "c743db4c32b22b6469c90a7f34580090ee2da57c2d29830d14a5c410feefb5c5",
+    "src/paths.ts": "46ce2d290b6c8837a22106080881c521b79a3a37ba88be458f792783be505fc5",
+    "src/server/api.ts": "368f1b0c86c6c546d757b3d4d566918d3773252260f0b786fe0ef43e5986eacb",
+    "src/server/learner-marks.ts": "d81a5cb38d5546e6c29c0d5a16f33f3223e5de9f764eb1f189dd7dcbea5aef9a",
+    "src/store/learner-marks.ts": "47bfcde94470c9ed56622e4088f7844990ea15b1b7bf76d47627ed80ae3d3aac",
+    "test/learner-marks.test.ts": "77bf3b2ddcdf59231dd1c7fc3c04ca8d8c1112bfc077100f3b4ff0c3b8c5fcf0"
+  },
+  "method": "Installed playwright-cli, canonical lesson shell, isolated fixture and actual HTTP. Viewport set before matching loads; full-page captures start at scroll top. After drive uses controlled TeacherService plans only for adjacent Ask/follow-up; marks invoke no teacher.",
+  "beforeRun": "/tmp/studens-27-recovery/capture-base-670.mjs",
+  "afterRun": "node /tmp/studens-27-recovery/run-marks.mjs /tmp/studens-27-final-overlap",
+  "media": {
+    "before-desktop-light.png": {
+      "sha256": "11b15ea8b41d0306262321457997f601936db336e27bc9beb5f1ede77cae1002",
+      "imageWidth": 1280,
+      "imageHeight": 900,
+      "viewport": [1280, 900],
+      "theme": "light",
+      "state": "before"
+    },
+    "after-desktop-light.png": {
+      "sha256": "1e6e5caac2157e558c6c9290d739e623f03681cbcd4555f5b28c125b83e46f28",
+      "imageWidth": 1280,
+      "imageHeight": 900,
+      "viewport": [1280, 900],
+      "theme": "light",
+      "state": "after"
+    },
+    "saved-desktop-light.png": {
+      "sha256": "f61f00439c449144379ae3ef37a16e3b05e1f7648251cbca866b3b28d0b6a448",
+      "imageWidth": 1280,
+      "imageHeight": 1719,
+      "viewport": [1280, 900],
+      "theme": "light",
+      "state": "saved"
+    },
+    "before-desktop-dark.png": {
+      "sha256": "90fb6c58486431f5d471b04594fe6482199f1b7e4ff2308c371b1d150c2b17d0",
+      "imageWidth": 1280,
+      "imageHeight": 900,
+      "viewport": [1280, 900],
+      "theme": "dark",
+      "state": "before"
+    },
+    "after-desktop-dark.png": {
+      "sha256": "0d5ee7d3c329274b13a367027eeb795034679315fa1a4b821b4e1c51f3e027d7",
+      "imageWidth": 1280,
+      "imageHeight": 900,
+      "viewport": [1280, 900],
+      "theme": "dark",
+      "state": "after"
+    },
+    "saved-desktop-dark.png": {
+      "sha256": "4ca9c9b5653a0c07fd9a608a65a3d8af6b22049147199e069a818397cc413102",
+      "imageWidth": 1280,
+      "imageHeight": 1719,
+      "viewport": [1280, 900],
+      "theme": "dark",
+      "state": "saved"
+    },
+    "before-mobile-light.png": {
+      "sha256": "ba18c1b7a8a402af93caf028ac0b244e8ead47dc42c650bccda2bc446aa67d76",
+      "imageWidth": 390,
+      "imageHeight": 844,
+      "viewport": [390, 844],
+      "theme": "light",
+      "state": "before"
+    },
+    "after-mobile-light.png": {
+      "sha256": "22bf2a1eaaf190ad2de3031cd46f06c8681d88a61f382996894906c950cb3d40",
+      "imageWidth": 390,
+      "imageHeight": 844,
+      "viewport": [390, 844],
+      "theme": "light",
+      "state": "after"
+    },
+    "saved-mobile-light.png": {
+      "sha256": "556d3caa509b1240a6799b5094fa3aaa35b745f024e1faf581147df67f37866c",
+      "imageWidth": 390,
+      "imageHeight": 1784,
+      "viewport": [390, 844],
+      "theme": "light",
+      "state": "saved"
+    },
+    "before-mobile-dark.png": {
+      "sha256": "c652c7845e3bab92cb4633b663666462aeac1eaa3f1d3942cd89dddef225d5e4",
+      "imageWidth": 390,
+      "imageHeight": 844,
+      "viewport": [390, 844],
+      "theme": "dark",
+      "state": "before"
+    },
+    "after-mobile-dark.png": {
+      "sha256": "5fb0237d3d6a45324d116cb1989e2ab2cdb97ba756963b427185962ca0017c83",
+      "imageWidth": 390,
+      "imageHeight": 844,
+      "viewport": [390, 844],
+      "theme": "dark",
+      "state": "after"
+    },
+    "saved-mobile-dark.png": {
+      "sha256": "7a2aa2722feb7745f6dbb1c41a29bc0b9b18d6305163c800e254b9cb9f5d5567",
+      "imageWidth": 390,
+      "imageHeight": 1784,
+      "viewport": [390, 844],
+      "theme": "dark",
+      "state": "saved"
+    },
+    "save-error.png": {
+      "sha256": "0bc8224e21bd5f9b6254438d73e3e168fa3aa39f444b9d1b847bc122568a30d1",
+      "imageWidth": 1280,
+      "imageHeight": 1192,
+      "viewport": [1280, 900],
+      "theme": "light",
+      "state": "A rejected locked save retains the note and offers explicit Save note"
+    },
+    "unresolved-passages.png": {
+      "sha256": "0c7f682e604b8bcf36616698e0b68cf171d0e6af25aba8b50fdb0e2398faa9d4",
+      "imageWidth": 1280,
+      "imageHeight": 2262,
+      "viewport": [1280, 900],
+      "theme": "dark",
+      "state": "Edited lesson exposes missing and ambiguous passages"
+    }
+  }
+}

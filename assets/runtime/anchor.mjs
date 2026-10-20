@@ -47,14 +47,14 @@ function countOccurrences(haystack, needle) {
   return count;
 }
 
-/** All non-overlapping start offsets of `needle` in `haystack`. */
-function allIndexesOf(haystack, needle) {
+/** Quote starts; question anchors retain their historical non-overlapping policy. */
+function allIndexesOf(haystack, needle, overlapping = false) {
   const out = [];
   if (!needle) return out;
   let idx = haystack.indexOf(needle);
   while (idx !== -1) {
     out.push(idx);
-    idx = haystack.indexOf(needle, idx + needle.length);
+    idx = haystack.indexOf(needle, idx + (overlapping ? 1 : needle.length));
   }
   return out;
 }
@@ -137,6 +137,26 @@ export function findSelector(text, selector) {
     start: best,
     end: best + selector.exact.length,
     exact: bestScore >= contextLength,
+  };
+}
+
+/**
+ * Learner marks must expose ties rather than guess a different repeated passage.
+ * Uses the same exact quotes and context scoring as question anchors; no fuzzy text.
+ */
+export function resolveSelector(text, selector) {
+  const candidates = allIndexesOf(text, selector.exact, true);
+  if (!candidates.length) return { status: "missing" };
+  const scores = candidates.map((start) => contextScore(text, start, selector));
+  const best = scores.reduce((highest, score) => Math.max(highest, score), -1);
+  const winners = candidates.filter((_, i) => scores[i] === best);
+  if (winners.length !== 1) return { status: "ambiguous" };
+  const start = winners[0];
+  return {
+    status: "resolved",
+    start,
+    end: start + selector.exact.length,
+    exact: best === selector.prefix.length + selector.suffix.length,
   };
 }
 

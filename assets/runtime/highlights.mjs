@@ -15,9 +15,10 @@ import {
 } from "./lesson-dom.mjs";
 import { draftStatus } from "./drafts.mjs";
 
-export function createHighlights({ config, contentRoot, drafts, cards }) {
+export function createHighlights({ config, contentRoot, drafts, cards, learnerMarks }) {
   const { scheduleDraft, saveDraftNow, flushDraft } = drafts;
   let askPill = null;
+  let selectionActions = null;
   let composer = null;
   /** Range captured when the ask pill was shown, before focus moves to the composer. */
   let pendingRange = null;
@@ -28,17 +29,41 @@ export function createHighlights({ config, contentRoot, drafts, cards }) {
   /** The marker at the highlight of a restored question draft, until it is opened. */
   let askMarker = null;
   function buildAskPill() {
+    selectionActions = document.createElement("div");
+    selectionActions.className = "cl-selection-actions";
+    selectionActions.setAttribute("role", "group");
+    selectionActions.setAttribute("aria-label", "Selected passage actions");
+    selectionActions.hidden = true;
     askPill = document.createElement("button");
     askPill.type = "button";
     askPill.className = "cl-ask-pill";
     askPill.hidden = true;
     askPill.innerHTML = '<span aria-hidden="true">✳</span> Ask';
     askPill.addEventListener("click", () => openComposer());
-    document.body.appendChild(askPill);
+    selectionActions.appendChild(askPill);
+    for (const [kind, label] of [
+      ["highlight", "Highlight"],
+      ["note", "Note"],
+      ["bookmark", "Bookmark"],
+    ]) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = label;
+      button.dataset.markAction = kind;
+      button.addEventListener("click", () => {
+        const anchor = pendingRange ? selectorFor(pendingRange) : null;
+        hideAskPill();
+        learnerMarks.start(kind, anchor);
+      });
+      selectionActions.appendChild(button);
+    }
+    selectionActions.title = "Selected passage actions (Alt+M to focus)";
+    document.body.appendChild(selectionActions);
   }
 
   function hideAskPill() {
     if (askPill) askPill.hidden = true;
+    if (selectionActions) selectionActions.hidden = true;
   }
 
   function onSelectionSettled() {
@@ -69,10 +94,11 @@ export function createHighlights({ config, contentRoot, drafts, cards }) {
       pendingRange = range.cloneRange();
       const rect = range.getBoundingClientRect();
       askPill.hidden = false;
+      selectionActions.hidden = false;
       position(
-        askPill,
-        rect.left + rect.width / 2 - askPill.offsetWidth / 2,
-        rect.top - askPill.offsetHeight - 8,
+        selectionActions,
+        rect.left + rect.width / 2 - selectionActions.offsetWidth / 2,
+        rect.top - selectionActions.offsetHeight - 8,
       );
     }, 0);
   }
@@ -418,14 +444,22 @@ export function createHighlights({ config, contentRoot, drafts, cards }) {
     buildAskPill();
     buildComposer();
     document.addEventListener("mouseup", onSelectionSettled);
+    window.addEventListener("resize", hideAskPill);
+    document.addEventListener("selectionchange", () => {
+      if (window.getSelection()?.isCollapsed) hideAskPill();
+    });
     document.addEventListener("keyup", (event) => {
       if (event.key === "Shift" || event.key.startsWith("Arrow")) onSelectionSettled();
     });
     document.addEventListener("mousedown", (event) => {
-      if (askPill && !askPill.contains(event.target)) hideAskPill();
+      if (selectionActions && !selectionActions.contains(event.target)) hideAskPill();
     });
     document.addEventListener("keydown", (event) => {
       if (event.key === "Escape") cancelComposer();
+      if (event.altKey && event.key.toLowerCase() === "m" && !selectionActions.hidden) {
+        event.preventDefault();
+        askPill.focus();
+      }
     });
     // Highlighting an option's text ends in a click on its label. That click must not
     // also choose the option.

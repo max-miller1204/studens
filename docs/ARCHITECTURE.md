@@ -239,6 +239,14 @@ points. See [code exercises](CODE-EXERCISES.md) for the authoring and isolation 
   private pool; never rewrite a submitted rubric. Recover saved output once. Failed
   model work requires explicit retry and cannot block an already prepared review.
   Replaying the same saved batch never duplicates variants.
+- **Learner marks never wake a teacher.** Version-1 `.learner-marks.json` files hold
+  highlights, margin notes, and bookmarks separately from question annotations.
+  Private path guards, an exclusive edit lock, atomic replacement, and per-mark
+  revisions protect writes. Reads and mark actions create no assessment or learning
+  evidence. The canonical text index and text-quote selector anchor marks; tied or
+  missing passages stay unresolved. Browser paint ranges leave authored controls
+  intact, and mark editors remain outside quizzes and their answer snapshots.
+  Unsent mark drafts stay in the tab session; only explicit actions send writes.
 - **Drafts never wake a teacher.** Restore them once on load, only into fresh quizzes.
   Reconnect must not overwrite typing. Successful submissions clear their draft.
 - **Daily edits serialize across hosts.** Lock root batch creation and group edits,
