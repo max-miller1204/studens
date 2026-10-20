@@ -188,8 +188,9 @@ export async function verifyFadedBrowser(artifacts: string | null): Promise<void
       if(!await a.innerText().then(t=>t.includes('Revisited case')))throw Error('Reset erased exposure history');
       await page.reload();await a.locator('.cl-faded-runtime').waitFor();
       if(await a.getAttribute('data-round')!=='0'||await a.locator('textarea').inputValue()||await a.locator('[data-correct]').count())throw Error('Reload restored progress or answers');
-      await page.goto(${JSON.stringify(base)}+'/c/rust');await page.goto(${JSON.stringify(base)}+'/c/rust/001-ownership');await a.locator('.cl-faded-runtime').waitFor();
-      if(await a.getAttribute('data-round')!=='0')throw Error('Navigation retained progress');
+      await a.getByLabel('Explain the method:',{exact:false}).fill('Another explanation before navigating.');await a.getByRole('button',{name:'Try the next case',exact:true}).click();
+      await page.goto(${JSON.stringify(base)}+'/c/rust');await page.goBack();await a.locator('.cl-faded-runtime').waitFor();
+      if(await a.getAttribute('data-round')!=='0'||await a.locator('textarea').inputValue())throw Error('Back navigation retained progress or responses');
       const authored=await (${checkFaded.toString()})(page);if(authored!==2)throw Error('Authoring driver missed instance');
       await page.waitForTimeout(600);page.off('request',record);
       if(writes.length)throw Error('Widget wrote HTTP state: '+writes.join(','));if(errors.length)throw Error(errors.join(' '));
@@ -250,6 +251,7 @@ export async function verifyFadedBrowser(artifacts: string | null): Promise<void
       /<script[^>]*data-cl-faded[^>]*>([\s\S]*?)<\/script>/.exec(widget)![1],
     );
     unitConfig.title = "Unit input contract probe";
+    unitConfig.rounds[0].situation += "\nFirst line.\n// A comment on its own line.\nLast line.";
     for (const round of unitConfig.rounds)
       for (const step of round.steps)
         if (step.response.type === "numeric") step.response.expected.unit = "m";
@@ -264,6 +266,7 @@ export async function verifyFadedBrowser(artifacts: string | null): Promise<void
       fixture.root,
       `async page=>{
       await page.reload();const widget=page.locator('.cl-faded[data-state="ready"]');await widget.waitFor();
+      if((await widget.locator('.cl-faded-situation').innerText()).split(String.fromCharCode(10)).length!==4)throw Error('Authored code line breaks collapsed');
       await widget.getByLabel('Explain the method:',{exact:false}).fill('Apply matching changes.');await widget.getByRole('button',{name:'Try the next case',exact:true}).click();
       await widget.locator('textarea').fill('Check the original relation.');await widget.getByRole('button',{name:'Compare with solution',exact:true}).click();await widget.getByRole('button',{name:'Hand over one more step',exact:true}).click();
       await widget.locator('textarea').first().fill('7');await widget.locator('textarea').last().fill('Check the original relation.');
@@ -276,7 +279,7 @@ export async function verifyFadedBrowser(artifacts: string | null): Promise<void
       if(await widget.locator('[data-correct="false"]').count()!==1||!await widget.locator('.cl-faded-feedback').first().innerText().then(t=>t.includes('assisted practice')))throw Error('Edited compared answer lost assistance or kept stale verdict');
       await widget.locator('textarea').first().fill('7 m');await widget.getByRole('button',{name:'Check my work',exact:true}).click();
       if(!await widget.locator('.cl-faded-status').innerText().then(t=>t.includes('not a finite number')))throw Error('Unit suffix parsed as number');
-      return {wrongUnitRejected:true,trimmedUnitAccepted:true,editedComparisonAssisted:true,numberSuffixRejected:true};
+      return {authoredLineBreaksPreserved:true,wrongUnitRejected:true,trimmedUnitAccepted:true,editedComparisonAssisted:true,numberSuffixRejected:true};
     }`,
     );
     if (artifacts)

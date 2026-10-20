@@ -104,6 +104,23 @@ or learning efficacy. Public practice solutions must use cases distinct from eve
 graded question. Exact terms normalize only case and whitespace; use authored
 alternatives or comparison for mathematically equivalent expressions.
 
+Verify multiline authored situations/solutions keep their line breaks, including
+comments on separate code lines. The browser probe also goes Back from the
+classroom after beginning a completion case: it must return to study with blank
+responses. A saved-output rendering replay must retain the original model bytes
+and publication HTML hash; distinguish that replay from new model inference.
+
+The typed publication probe runs the actual `lessonModelPlan` serializer and
+`completeLessonRequest` checker before publishing all four files:
+`node --input-type=module -e 'import {verifyFadedPublication} from "./scripts/e2e-faded-publication.ts"; await verifyFadedPublication("/tmp/studens-faded-publication")'`.
+Inspect `publication.json`: the initial receipt has zero widgets, the released receipt
+has one, all four hashes match published bytes, and no learner attempts/grades or
+records are created. A malformed public widget version fails the real page checker
+and stays unpublished with its specific error and rejected output retained. This
+uses typed fixture output, not model inference. The service's explicit Next lesson
+prompt includes the complete widget template inline through `authoringSteps`; no
+filesystem tools or new top-level provider schema fields are needed.
+
 For an authored lesson, run `node scripts/check-lesson.ts <classroom> <lesson>`
 with its classrooms root in `PI_CLASSROOMS_DIR`. The command preflights saved
 metadata, private rubric, teaching plan, criteria, and declared review variants

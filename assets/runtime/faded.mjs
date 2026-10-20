@@ -184,6 +184,14 @@ function mount(widget, config) {
         input.spellcheck = content.response.type === "compare";
         label.append(input);
         item.append(label);
+        if (content.response.type === "term")
+          item.append(
+            element(
+              "p",
+              "cl-faded-note",
+              "This text check ignores case, leading/trailing spaces, and repeated spaces. Compare with the solution if you use other equivalent wording or an equivalent expression.",
+            ),
+          );
         let unit = null;
         if (content.response.type === "numeric" && content.response.expected.unit) {
           const unitLabel = element("label", "cl-faded-label", "Unit");
@@ -246,6 +254,7 @@ function mount(widget, config) {
       );
       const input = element("textarea");
       input.rows = 3;
+      input.autocomplete = "off";
       label.append(input);
       host.append(label);
       active.push({ input, checked: false });
@@ -332,5 +341,10 @@ function mount(widget, config) {
     update();
     if (focus) heading.focus();
   }
+  window.addEventListener("pageshow", (event) => {
+    if (!event.persisted) return;
+    round = 0;
+    render();
+  });
   render();
 }

@@ -2225,6 +2225,11 @@ figure:has(> .cl-diagram) figcaption {
 .cl-faded-situation {
   font-weight: 600;
 }
+.cl-faded-situation,
+.cl-faded-solution,
+.cl-faded-feedback {
+  white-space: pre-wrap;
+}
 .cl-faded-steps {
   padding-left: 1.4rem;
 }

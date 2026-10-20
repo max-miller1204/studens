@@ -57,6 +57,19 @@ Inspect the owning native teacher trace before claiming actual research. A sourc
 URL in saved HTML proves a citation, not that a web tool fetched it. Keep native
 tool-scope, rejected-output recovery and successful publication receipts separate.
 
+For a directed faded-widget publication check, prefix a real host target with
+`STUDENS_VERIFY_FADED=1` (for example,
+`STUDENS_VERIFY_FADED=1 npm run verify -- pi --artifacts /tmp/studens-faded-pi`).
+The same option selects the widget topic for Claude and Codex. Inspect
+`faded-authoring.json`: initial widgets must be zero, released widgets at least one,
+all four file hashes must bind publication, and checking must leave learner state
+unchanged. Read the saved HTML and native output for case completeness, principle
+reasoning, answer cues and separation from the graded check. This explicitly asks
+for the widget; it proves directed adoption, not autonomous use or content quality.
+Widget publication and the later host criterion/dispute gates have separate
+observations: a publication receipt does not turn a later failed host gate into PASS.
+Keep any first-output rejection and explicit retry alongside the successful receipt.
+
 ## Gotchas
 
 Pi, Claude and Codex keep the persistent service and their dedicated teacher
