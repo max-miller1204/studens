@@ -190,7 +190,7 @@ it("sends the current canonical envelope and tool scope after lesson/refill hist
           items: { properties: { name: { enum: ["resolve_grade_dispute"] } } },
         });
         // The shared envelope advertises learning_record; dispute application rejects evidence writes.
-        expect(output.learning_record).toBeNull();
+        expect(output).toMatchObject({ learning_record: null });
         expect(schema.properties.notes_markdown).toEqual({ type: "string", enum: [""] });
         expect([...active.keys()]).toEqual(["submit_teacher_plan"]);
         expect(text).toContain(JSON.stringify(schema));
