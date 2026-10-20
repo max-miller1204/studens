@@ -28,7 +28,7 @@ MCP clients attach to that persistent service. Closing stdin detaches the client
 
 Pi's dedicated teacher uses the packaged Pi SDK with the existing Pi account,
 provider catalog, and effective model settings. Configuration is read into memory;
-retry and compaction are disabled for these service turns, without editing global
+retry, compaction, and cache warming are disabled for these service turns, without editing global
 settings. A single structured-output tool returns a plan to the service and cannot
 write learner data. Its persisted Pi session lives in the private service directory.
 Initiating Pi chat context, extensions, skills, and project context files are not

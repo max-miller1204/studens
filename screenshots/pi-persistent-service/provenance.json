@@ -109,6 +109,22 @@
       "sha256": "555acdeebd56486317b0a43dd23ee86cce1cfe1f4ba3abe293a192a1b690d649",
       "capture": "/tmp/studens-issue39/screenshots/after-main69/light-mobile-teacher.png",
       "inspected": true
+    },
+    {
+      "file": "pi-sdk101-panel.png",
+      "sha256": "ea3181fe36df8aad86c530fd00c8619eeb05ea888a77e881d3ac34489716ad61",
+      "capture": "/tmp/studens-issue39/patched-pi/pi/pi-teacher-panel.png",
+      "inspected": true,
+      "source": "85991d01c524ac7db9a2a0a37ef944cf3997787a",
+      "caption": "Actual Pi CLI/SDK1.0.1 initial quiz panel and saved reply, response still pending at capture. Includes retained internal-tool prose quality finding."
+    },
+    {
+      "file": "pi-sdk101-recovered.png",
+      "sha256": "4bba412fa050e8b35a4d4b598af850c672ec75ff3c1cbe55f0787792f51c105c",
+      "capture": "/tmp/studens-issue39/patched-pi/pi/lifecycle/pi-recovered-grade.png",
+      "inspected": true,
+      "source": "85991d01c524ac7db9a2a0a37ef944cf3997787a",
+      "caption": "Actual Pi CLI/SDK1.0.1: saved plan recovered once after storage failure/restart/retry; one locked grade and persistent conversation."
     }
   ],
   "baseSourceHashes": {
@@ -404,5 +420,6 @@
       "revision": "c7d490fb16627e2910c0c9c8e0c1af6ca9b19b48"
     }
   ],
-  "integration": "Accepted main PR69 merged normally after active runs. Fresh matching fixture captures use exact987f4a1 base. Extra actual Pi images retain their original c7d490f provenance; practice/grader extraction leaves these screens and teacher transport unchanged."
+  "integration": "Accepted main PR69 merged normally after active runs. Fresh matching fixture captures use exact987f4a1 base. Extra actual Pi images retain their original c7d490f provenance; practice/grader extraction leaves these screens and teacher transport unchanged.",
+  "dependencyRepair": "No matching UI fixture or route/settings implementation changed in the SDK repair. Original images retain their exact source provenance; additional patched runtime captures below are from clean85991d0."
 }
