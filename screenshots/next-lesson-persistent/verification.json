@@ -1,46 +1,63 @@
 {
   "scope": "PR70 issue3 Change verification; cumulative source-bound acceptance, not whole product or uninterrupted final all-host PASS",
-  "base": "38938d77d4d104939fc1bc81d237cb3b856bf1c6",
-  "runtimeHead": "2b7a1e847fd3a4d8dea022814f6448f03c722077",
+  "base": "3299583563f5fc9342c378ab73633ac1ad92e5df",
+  "runtimeHead": "9478fe3595506b87679fd848f7fffbf76688f4c4",
   "version": "0.11.7 unchanged; no release allocation",
   "checks": {
     "npm-ci": {
       "command": ["npm", "ci"],
       "exitCode": 0
     },
-    "frozen-default": {
+    "joint-default-fixed": {
       "command": [
         "npm",
         "run",
         "verify",
         "--",
         "--artifacts",
-        "/tmp/studens-issue3-recovery-20261020/verify-frozen"
+        "/tmp/studens-issue3-recovery-20261020/verify-joint-fixed"
       ],
       "exitCode": 0
     },
-    "production-audit-final": {
+    "joint-audit": {
       "command": ["npm", "run", "audit"],
       "exitCode": 0
     },
-    "plugin": {
+    "joint-plugin": {
       "command": ["claude", "plugin", "validate", "."],
       "exitCode": 0
     },
-    "sdk-selected": {
+    "joint-contracts-corrected": {
       "command": [
         "npx",
         "vitest",
         "run",
         "test/pi-teacher-envelope.test.ts",
+        "test/grade-dispute.test.ts",
+        "test/teacher-models.test.ts",
         "test/pi-teacher-native-errors.test.ts",
-        "test/pi-teacher-resources.test.ts",
-        "test/lesson-research.test.ts"
+        "test/next-lesson.test.ts"
       ],
       "exitCode": 0
     },
-    "receipt-contracts-final": {
-      "command": ["npx", "vitest", "run", "test/next-lesson.test.ts", "test/lesson-inputs.test.ts"],
+    "joint-types-fixed": {
+      "command": ["npm", "run", "check"],
+      "exitCode": 0
+    },
+    "joint-sdk-fixed": {
+      "command": ["npx", "vitest", "run", "test/pi-teacher-envelope.test.ts"],
+      "exitCode": 0
+    },
+    "joint-pi-dispute": {
+      "command": ["node", "/tmp/studens-issue3-recovery-20261020/joint-pi-dispute.mjs"],
+      "exitCode": 0
+    },
+    "joint-codex-inventory": {
+      "command": ["node", "/tmp/studens-issue3-recovery-20261020/joint-codex-inventory.ts"],
+      "exitCode": 0
+    },
+    "joint-codex-legacy": {
+      "command": ["node", "/tmp/studens-issue3-recovery-20261020/joint-codex-legacy-inventory.ts"],
       "exitCode": 0
     },
     "same-conversation-retry": {
@@ -49,8 +66,6 @@
     },
     "lifecycle": {
       "command": [
-        "env",
-        "PATH=/home/maxmiller/.t3/worktrees/studens/t3-13fc4c00/node_modules/.bin:/home/maxmiller/.local/share/dots/current/bin:/home/maxmiller/.codex/packages/standalone/releases/0.163.0-x86_64-unknown-linux-musl/codex-path:/home/maxmiller/.codex/tmp/arg0-linux/codex-arg0Bfl267:/home/maxmiller/.local/share/mise/installs/bat/latest/.mise-bins:/home/maxmiller/.local/share/mise/installs/bun/latest/bin:/home/maxmiller/.local/share/mise/installs/eza/latest/.mise-bins:/home/maxmiller/.local/share/mise/installs/fastfetch/latest/fastfetch-linux-amd64/usr/bin:/home/maxmiller/.local/share/mise/installs/fd/latest/.mise-bins:/home/maxmiller/.local/share/mise/installs/ffmpeg/latest/.mise-bins:/home/maxmiller/.local/share/mise/installs/fzf/latest:/home/maxmiller/.local/share/mise/installs/gh/latest/gh_2.102.0_linux_amd64/bin:/home/maxmiller/.local/share/mise/installs/github-can1357-oh-my-pi/latest:/home/maxmiller/.local/share/mise/installs/github-charmbracelet-vhs/latest:/home/maxmiller/.local/share/mise/installs/github-koalaman-shellcheck/latest:/home/maxmiller/.local/share/mise/installs/github-scop-bash-completion/latest/completions:/home/maxmiller/.local/share/mise/installs/go/1.27.2/bin:/home/maxmiller/.local/share/mise/installs/gum/latest/gum_2.0.2_Linux_x86_64:/home/maxmiller/.local/share/mise/installs/herdr/latest:/home/maxmiller/.local/share/mise/installs/hunkdiff/latest/hunkdiff-linux-x64:/home/maxmiller/.local/share/mise/installs/imagemagick/latest/.mise-bins:/home/maxmiller/.local/share/mise/installs/jq/latest:/home/maxmiller/.local/share/mise/installs/lazygit/latest:/home/maxmiller/.local/share/mise/installs/neovim/latest/bin:/home/maxmiller/.local/share/mise/installs/pnpm/latest:/home/maxmiller/.local/share/mise/installs/node/lts/bin:/home/maxmiller/.local/share/mise/installs/npm-deepseek-ai-dsh/0.2.0-rc.2/node_modules/.bin:/home/maxmiller/.local/share/mise/installs/npm-earendil-works-pi-coding-agent/latest/node_modules/.bin:/home/maxmiller/.local/share/mise/installs/npm-playwright-cli/latest/node_modules/.bin:/home/maxmiller/.local/share/mise/installs/npm-remotion/latest/node_modules/.bin:/home/maxmiller/.local/share/mise/installs/npm-stepstone/latest/node_modules/.bin:/home/maxmiller/.local/share/mise/installs/opencode/latest/node_modules/.bin:/home/maxmiller/.local/share/mise/installs/pandoc/latest/bin:/home/maxmiller/.local/share/mise/installs/pi/latest/pi:/home/maxmiller/.local/share/mise/installs/pypi-pdfplumber/latest/bin:/home/maxmiller/.local/share/mise/installs/python/3.14.7/bin:/home/maxmiller/.local/share/mise/installs/ripgrep/latest/ripgrep-15.2.0-x86_64-unknown-linux-musl:/home/maxmiller/.cargo/bin:/home/maxmiller/.local/share/mise/installs/starship/latest/.mise-bins:/home/maxmiller/.local/share/mise/installs/tmux/latest:/home/maxmiller/.local/share/mise/installs/uv/latest/.mise-bins:/home/maxmiller/.local/share/mise/installs/zoxide/latest:/home/maxmiller/.local/share/mise/shims:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/home/maxmiller/.local/bin",
         "node",
         "--input-type=module",
         "-e",
@@ -60,8 +75,6 @@
     },
     "retained-lesson-strict-check": {
       "command": [
-        "env",
-        "PI_CLASSROOMS_DIR=/tmp/studens-issue3-persistent-integration-20261020/generated-check-source",
         "PI_CLASSROOM_TAILSCALE=0",
         "node",
         "scripts/check-lesson.ts",
@@ -73,20 +86,12 @@
     "retained-output-publication": {
       "command": ["node", "/tmp/studens-issue3-recovery-20261020/retained-output-publication.mjs"],
       "exitCode": 0
-    },
-    "codex-inventory": {
-      "command": ["node", "/tmp/studens-issue3-recovery-20261020/codex-inventory.ts"],
-      "exitCode": 0
-    },
-    "codex-legacy-inventory": {
-      "command": ["node", "/tmp/studens-issue3-recovery-20261020/codex-legacy-inventory.ts"],
-      "exitCode": 0
     }
   },
   "defaultTests": {
-    "files": 71,
-    "tests": 1022,
-    "browser": "complete PASS"
+    "files": 73,
+    "tests": 1052,
+    "browser": "complete PASS; frozen runtime9478 hashes unchanged"
   },
   "pi": {
     "sdk": "1.0.1",
@@ -96,11 +101,12 @@
     "actualResearch": "4da334e native read_lesson_source official Rust39863bytes; initial invalid lesson output preserved; one explicit retry produced new valid document",
     "sameConversationContinuation": "04bb833; original failed chat5776374f; one explicit retry after schema-derived ordinary request input change; old native prefix/grades unchanged; valid calls[]/message/null/empty output; assistance leaves re-teach paused and0delayed successes/transfers",
     "criteria": "same original conversation2/2+0/2=2/4,one saved grade/locked reload; newly queued refill still running in pre-teardown snapshot, completion unverified",
-    "lifecycle": "04bb833 actual initiator exit/FIFO3 across2tabs/reconnect/model failure+explicit retry/EACCES valid plan restart+retry1grade without inference; production Pi/teacher/prompt/lifecycle code identical in finalruntime"
+    "lifecycle": "04bb833 actual initiator exit/FIFO3 across2tabs/reconnect/model failure+explicit retry/EACCES valid plan restart+retry1grade without inference. Pi adapter byte-identical through current9478; shared queue now additionally dispatches accepted disputes, covered by joint real Pi and default checks.",
+    "jointDisputes": "9212067, runtime identical9478: two first-attempt real disputes in original saved lesson/research session; initiating Pi exited first. Judgment2/4 to4/4 and machine0/1 unchanged, original answers/history/timing/evidence unchanged; exact one resolve_grade_dispute op per current canonical envelope, submit_teacher_plan only, researchfalse. Deliberate initial misgrade fixture, not first-pass grading or learning proof."
   },
   "checker": "2b7a1e8 stages exact4 publication files; new browser assertions bind hashes and recheck older HTML-only receipts without model turn. Retained actual model document also passed actual checker/publication in a labelled isolated fixture,0inference/learnerwrites. Original real publication receipt was HTML-only and is not relabelled.",
-  "codex": "Fresh and copied legacy native catalogs0MCPservers/tools,0inference. apply_patch remains advertised; prior native read-only/never policy-denied scratch write retained. Prior Codex5fullmechanicalPASS did not fetch; Codex4 genuine fetch on identical adapter. No new model reroll.",
-  "claude": "Prior Claude4fullFAIL render/raw wait retained; same-conversation continuation passed previously unreached gates. Adapter/plan schema byte-identical to959 prior source; no new model reroll.",
+  "codex": "Actual production-exported flags in fresh and copied legacy native sessions:0MCPservers/tools,0inference; baseline2servers/290tools retained. apply_patch remains advertised; prior actual native read-only/never policy-denied write retained. Prior Codex5 mechanicalPASS did not fetch; Codex4 did fetch. Current shared dispatch/planenum includes accepted disputes; no new model reroll or whole-source identity claim.",
+  "claude": "Prior Claude4 fullFAIL render/raw wait and same-conversation continuationPASS retained. Accepted23 real Claude dispute source-specific receipt retained. Shared queue/prompt/plan enum adds accepted disputes, exercised by joint default/realPi contracts, not claimed byte-identical whole adapter or fresh Claude generation.",
   "bootstrap": "Accepted85991d0 clean real production-only launcher receipt reused: identical launcher/audit/dependency graph except Studens release metadata; SDK1.0.1/undici8.10.2/brace5.0.12,123manifests/audit0,JSON-RPCstart/stop,0inference. Current actual installed paths/versions verified. ActualNode24.22.0; minimum22.19.0 not executed.",
   "limits": [
     "Original Pi fullrun and first re-teach retry remain FAIL; SDK current schema was already correct, omission cause unproven. Later valid generation is new output, not repair of raw earlier invalid arguments.",
@@ -108,7 +114,9 @@
     "Supplied-answer historical task, support/fading/cues/transfer/rubric-equivalence and exact-source evaluator errors remain unresolved; no teaching-quality or human-learning claim.",
     "Full development npm ci reports7advisories; separate production audit0.",
     "Earlier default run exited0 but source changed; final frozen run is acceptance. Initial recovered-test type error and import-only CJS diagnostic failure preserved.",
-    "Fixture error screenshots prove UI, not model inference. Dark settings error text lower contrast than body in both base and after."
+    "Fixture error screenshots prove UI, not model inference. Dark settings error text lower contrast than body in both base and after.",
+    "Joint SDK fixture initially asserted null-only shared learning_record schema incorrectly; corrected assertion leaves strict host validation intact. New fixture union-field type error caused joint typecheck/default FAIL before browser; corrected test-only9478, final full gate passes.",
+    "Prior cross-host and quality failures remain historical FAILs. Later valid output is new generation, never guessed repair. No uninterrupted exact-final all-host PASS."
   ],
-  "evidence": "provenance.json has62 new unchanged PNG copies with exact source boundaries; all24 earlier public PNG bytes/URLs preserved."
+  "evidence": "91 inspected source-bound PNGs in provenance.json, including24 fresh matching329/921 and5 actual joint Pi. All24 earlier exact-hash public URLs retained; fixture images not inference."
 }

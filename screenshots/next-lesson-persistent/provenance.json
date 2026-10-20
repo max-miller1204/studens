@@ -1,6 +1,6 @@
 {
-  "base": "38938d77d4d104939fc1bc81d237cb3b856bf1c6",
-  "runtimeHead": "2b7a1e847fd3a4d8dea022814f6448f03c722077",
+  "base": "3299583563f5fc9342c378ab73633ac1ad92e5df",
+  "runtimeHead": "9478fe3595506b87679fd848f7fffbf76688f4c4",
   "version": "0.11.7 inherited main; no release allocation",
   "scope": "PR70 issue3; cumulative source-bound mechanical evidence, no uninterrupted final all-host or teaching-quality claim",
   "modelSelection": "Actual Pi SDK1.0.1 openai-codex/gpt-6-luna low selection only, no independent upstream provider attestation. Fixture images prove no model behavior.",
@@ -501,6 +501,239 @@
       "fixture": false,
       "note": "Actual isolated Pi lifecycle: specific model error/explicit retry, saved valid grade plan/EACCES/restart/retry exactly once without inference.",
       "inspection": "Recovery round inspected original."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/base329/dark-desktop-classroom.png",
+      "sha256": "2e5f8a5ebf632e9d7b771e9f7c2a36e277718d5c2def1b65170852d50ff98278",
+      "source": "3299583563f5fc9342c378ab73633ac1ad92e5df",
+      "fixture": true,
+      "note": "Fresh matched accepted dispute main/current Next lesson:1280x900/375x812, both themes; teacher error injected,no inference. Independent ephemeral ports/request IDs differ.",
+      "inspection": "Recovery round inspected all24 originals, no observed page overflow; lower-contrast red settings error also present on base."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/base329/dark-desktop-settings.png",
+      "sha256": "6c77bbef516ed604bd3627203f4b36c7477d24c837872e2adfb799ed4307f064",
+      "source": "3299583563f5fc9342c378ab73633ac1ad92e5df",
+      "fixture": true,
+      "note": "Fresh matched accepted dispute main/current Next lesson:1280x900/375x812, both themes; teacher error injected,no inference. Independent ephemeral ports/request IDs differ.",
+      "inspection": "Recovery round inspected all24 originals, no observed page overflow; lower-contrast red settings error also present on base."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/base329/dark-desktop-teacher.png",
+      "sha256": "c6877706b6646956af1fa3d7a89f9ec258c4fa1561ca17dcef07166e7ab6bd4a",
+      "source": "3299583563f5fc9342c378ab73633ac1ad92e5df",
+      "fixture": true,
+      "note": "Fresh matched accepted dispute main/current Next lesson:1280x900/375x812, both themes; teacher error injected,no inference. Independent ephemeral ports/request IDs differ.",
+      "inspection": "Recovery round inspected all24 originals, no observed page overflow; lower-contrast red settings error also present on base."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/base329/dark-mobile-classroom.png",
+      "sha256": "ff18b2c30a77c91bfa3f309ecf2bc945d357fa3e807e8fb833ecf7e57ecf10f1",
+      "source": "3299583563f5fc9342c378ab73633ac1ad92e5df",
+      "fixture": true,
+      "note": "Fresh matched accepted dispute main/current Next lesson:1280x900/375x812, both themes; teacher error injected,no inference. Independent ephemeral ports/request IDs differ.",
+      "inspection": "Recovery round inspected all24 originals, no observed page overflow; lower-contrast red settings error also present on base."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/base329/dark-mobile-settings.png",
+      "sha256": "7d6fae2e89f5e71655aeaf13aaeb3f7b59821262da51e3a4d7ebef6da382f30c",
+      "source": "3299583563f5fc9342c378ab73633ac1ad92e5df",
+      "fixture": true,
+      "note": "Fresh matched accepted dispute main/current Next lesson:1280x900/375x812, both themes; teacher error injected,no inference. Independent ephemeral ports/request IDs differ.",
+      "inspection": "Recovery round inspected all24 originals, no observed page overflow; lower-contrast red settings error also present on base."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/base329/dark-mobile-teacher.png",
+      "sha256": "51d55b42fa90a0d12162dff691427a28462fa79c4b8a5bca8b54b56c12aba425",
+      "source": "3299583563f5fc9342c378ab73633ac1ad92e5df",
+      "fixture": true,
+      "note": "Fresh matched accepted dispute main/current Next lesson:1280x900/375x812, both themes; teacher error injected,no inference. Independent ephemeral ports/request IDs differ.",
+      "inspection": "Recovery round inspected all24 originals, no observed page overflow; lower-contrast red settings error also present on base."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/base329/light-desktop-classroom.png",
+      "sha256": "e59645c24ef0dae85a4ce24540c4cfdceb2c867fa9951a95d517570de0e7e792",
+      "source": "3299583563f5fc9342c378ab73633ac1ad92e5df",
+      "fixture": true,
+      "note": "Fresh matched accepted dispute main/current Next lesson:1280x900/375x812, both themes; teacher error injected,no inference. Independent ephemeral ports/request IDs differ.",
+      "inspection": "Recovery round inspected all24 originals, no observed page overflow; lower-contrast red settings error also present on base."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/base329/light-desktop-settings.png",
+      "sha256": "031244199c87cd094806d467a74fba903c7d1815157d720ce8709b1c34fd538f",
+      "source": "3299583563f5fc9342c378ab73633ac1ad92e5df",
+      "fixture": true,
+      "note": "Fresh matched accepted dispute main/current Next lesson:1280x900/375x812, both themes; teacher error injected,no inference. Independent ephemeral ports/request IDs differ.",
+      "inspection": "Recovery round inspected all24 originals, no observed page overflow; lower-contrast red settings error also present on base."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/base329/light-desktop-teacher.png",
+      "sha256": "5b451564ec500cecccfb9f9668f609e3f3340732827e91f48ad5af5bbb87b267",
+      "source": "3299583563f5fc9342c378ab73633ac1ad92e5df",
+      "fixture": true,
+      "note": "Fresh matched accepted dispute main/current Next lesson:1280x900/375x812, both themes; teacher error injected,no inference. Independent ephemeral ports/request IDs differ.",
+      "inspection": "Recovery round inspected all24 originals, no observed page overflow; lower-contrast red settings error also present on base."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/base329/light-mobile-classroom.png",
+      "sha256": "d12a89f71ffab90eb0c3ba1c5f7da65cc23a68609b0e8b421f80ace6ef5d7f5a",
+      "source": "3299583563f5fc9342c378ab73633ac1ad92e5df",
+      "fixture": true,
+      "note": "Fresh matched accepted dispute main/current Next lesson:1280x900/375x812, both themes; teacher error injected,no inference. Independent ephemeral ports/request IDs differ.",
+      "inspection": "Recovery round inspected all24 originals, no observed page overflow; lower-contrast red settings error also present on base."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/base329/light-mobile-settings.png",
+      "sha256": "6298801ca8ea46d933c3945a4a973f805176b651320a5f3f52b8980cf754c1e9",
+      "source": "3299583563f5fc9342c378ab73633ac1ad92e5df",
+      "fixture": true,
+      "note": "Fresh matched accepted dispute main/current Next lesson:1280x900/375x812, both themes; teacher error injected,no inference. Independent ephemeral ports/request IDs differ.",
+      "inspection": "Recovery round inspected all24 originals, no observed page overflow; lower-contrast red settings error also present on base."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/base329/light-mobile-teacher.png",
+      "sha256": "9bdabfaf24ddb13aad263170c33eee20c4b01e01bd91f6b78a095fc3e3389ca2",
+      "source": "3299583563f5fc9342c378ab73633ac1ad92e5df",
+      "fixture": true,
+      "note": "Fresh matched accepted dispute main/current Next lesson:1280x900/375x812, both themes; teacher error injected,no inference. Independent ephemeral ports/request IDs differ.",
+      "inspection": "Recovery round inspected all24 originals, no observed page overflow; lower-contrast red settings error also present on base."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/after921/dark-desktop-classroom.png",
+      "sha256": "dd2e6ff156a9cbcf49a9a5830f1a231ff9724727b084b3c9ebadda8f075e3200",
+      "source": "9212067e93c6a9f02ad8b1e16f64dd0056036b78; runtime and images unchanged by test-only9478fe3",
+      "fixture": true,
+      "note": "Fresh matched accepted dispute main/current Next lesson:1280x900/375x812, both themes; teacher error injected,no inference. Independent ephemeral ports/request IDs differ.",
+      "inspection": "Recovery round inspected all24 originals, no observed page overflow; lower-contrast red settings error also present on base."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/after921/dark-desktop-settings.png",
+      "sha256": "34bf89d8ccc78ae195992fc9b1d8c0ac4576a6f1590fddd89ecd377e9b83586e",
+      "source": "9212067e93c6a9f02ad8b1e16f64dd0056036b78; runtime and images unchanged by test-only9478fe3",
+      "fixture": true,
+      "note": "Fresh matched accepted dispute main/current Next lesson:1280x900/375x812, both themes; teacher error injected,no inference. Independent ephemeral ports/request IDs differ.",
+      "inspection": "Recovery round inspected all24 originals, no observed page overflow; lower-contrast red settings error also present on base."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/after921/dark-desktop-teacher.png",
+      "sha256": "356ce922498d2ffc5ff736c385246c7acb320262b87e281f72f56d5e2a648612",
+      "source": "9212067e93c6a9f02ad8b1e16f64dd0056036b78; runtime and images unchanged by test-only9478fe3",
+      "fixture": true,
+      "note": "Fresh matched accepted dispute main/current Next lesson:1280x900/375x812, both themes; teacher error injected,no inference. Independent ephemeral ports/request IDs differ.",
+      "inspection": "Recovery round inspected all24 originals, no observed page overflow; lower-contrast red settings error also present on base."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/after921/dark-mobile-classroom.png",
+      "sha256": "3ef9f67fd0fb97d4723a8c6642df015b52484bce7d86cc5ad0d52b85a1adde18",
+      "source": "9212067e93c6a9f02ad8b1e16f64dd0056036b78; runtime and images unchanged by test-only9478fe3",
+      "fixture": true,
+      "note": "Fresh matched accepted dispute main/current Next lesson:1280x900/375x812, both themes; teacher error injected,no inference. Independent ephemeral ports/request IDs differ.",
+      "inspection": "Recovery round inspected all24 originals, no observed page overflow; lower-contrast red settings error also present on base."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/after921/dark-mobile-settings.png",
+      "sha256": "7653bfa6473c8de9a951681eab00a45bd14af298c271da46f67976ffdca0e07a",
+      "source": "9212067e93c6a9f02ad8b1e16f64dd0056036b78; runtime and images unchanged by test-only9478fe3",
+      "fixture": true,
+      "note": "Fresh matched accepted dispute main/current Next lesson:1280x900/375x812, both themes; teacher error injected,no inference. Independent ephemeral ports/request IDs differ.",
+      "inspection": "Recovery round inspected all24 originals, no observed page overflow; lower-contrast red settings error also present on base."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/after921/dark-mobile-teacher.png",
+      "sha256": "3a2a919a5fd80f4189d24371566fa01078ebb1c3a747604052fe5421fb880ca9",
+      "source": "9212067e93c6a9f02ad8b1e16f64dd0056036b78; runtime and images unchanged by test-only9478fe3",
+      "fixture": true,
+      "note": "Fresh matched accepted dispute main/current Next lesson:1280x900/375x812, both themes; teacher error injected,no inference. Independent ephemeral ports/request IDs differ.",
+      "inspection": "Recovery round inspected all24 originals, no observed page overflow; lower-contrast red settings error also present on base."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/after921/light-desktop-classroom.png",
+      "sha256": "b3b59db907afb5c7491795e9f7ce4a8f3348127bb63222603358fd3501fb43d6",
+      "source": "9212067e93c6a9f02ad8b1e16f64dd0056036b78; runtime and images unchanged by test-only9478fe3",
+      "fixture": true,
+      "note": "Fresh matched accepted dispute main/current Next lesson:1280x900/375x812, both themes; teacher error injected,no inference. Independent ephemeral ports/request IDs differ.",
+      "inspection": "Recovery round inspected all24 originals, no observed page overflow; lower-contrast red settings error also present on base."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/after921/light-desktop-settings.png",
+      "sha256": "79ce9b5a9f6e69ddaed7b21a8a731c0a8ebef73258e3a4521a156831d36d6e97",
+      "source": "9212067e93c6a9f02ad8b1e16f64dd0056036b78; runtime and images unchanged by test-only9478fe3",
+      "fixture": true,
+      "note": "Fresh matched accepted dispute main/current Next lesson:1280x900/375x812, both themes; teacher error injected,no inference. Independent ephemeral ports/request IDs differ.",
+      "inspection": "Recovery round inspected all24 originals, no observed page overflow; lower-contrast red settings error also present on base."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/after921/light-desktop-teacher.png",
+      "sha256": "ddc8521c1bfeda2c05f0e0baa8f4a176d728e4f548a20776a7c47a2b946b6b83",
+      "source": "9212067e93c6a9f02ad8b1e16f64dd0056036b78; runtime and images unchanged by test-only9478fe3",
+      "fixture": true,
+      "note": "Fresh matched accepted dispute main/current Next lesson:1280x900/375x812, both themes; teacher error injected,no inference. Independent ephemeral ports/request IDs differ.",
+      "inspection": "Recovery round inspected all24 originals, no observed page overflow; lower-contrast red settings error also present on base."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/after921/light-mobile-classroom.png",
+      "sha256": "ba242ede06065fe32796fe74ea6dd1185bc448ccb078b32d4f238b8a4601ab5b",
+      "source": "9212067e93c6a9f02ad8b1e16f64dd0056036b78; runtime and images unchanged by test-only9478fe3",
+      "fixture": true,
+      "note": "Fresh matched accepted dispute main/current Next lesson:1280x900/375x812, both themes; teacher error injected,no inference. Independent ephemeral ports/request IDs differ.",
+      "inspection": "Recovery round inspected all24 originals, no observed page overflow; lower-contrast red settings error also present on base."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/after921/light-mobile-settings.png",
+      "sha256": "45648c8b4565b9f3abfe1a224441803e24ea3a32fe2b916d11bfd9e31183f42a",
+      "source": "9212067e93c6a9f02ad8b1e16f64dd0056036b78; runtime and images unchanged by test-only9478fe3",
+      "fixture": true,
+      "note": "Fresh matched accepted dispute main/current Next lesson:1280x900/375x812, both themes; teacher error injected,no inference. Independent ephemeral ports/request IDs differ.",
+      "inspection": "Recovery round inspected all24 originals, no observed page overflow; lower-contrast red settings error also present on base."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/after921/light-mobile-teacher.png",
+      "sha256": "ad638bb5ea038b88427e4d20ba963ee7bd6bccbbd21bbd2b824213ab35ab85e9",
+      "source": "9212067e93c6a9f02ad8b1e16f64dd0056036b78; runtime and images unchanged by test-only9478fe3",
+      "fixture": true,
+      "note": "Fresh matched accepted dispute main/current Next lesson:1280x900/375x812, both themes; teacher error injected,no inference. Independent ephemeral ports/request IDs differ.",
+      "inspection": "Recovery round inspected all24 originals, no observed page overflow; lower-contrast red settings error also present on base."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/joint-dispute/judgment-desktop.png",
+      "sha256": "9460a4431417159b5a87cb681442f6c83068c30866f1af203fe6e631f42c6fc2",
+      "source": "9212067e93c6a9f02ad8b1e16f64dd0056036b78",
+      "fixture": false,
+      "note": "Actual Pi two first-attempt dispute resolutions after original lesson/research history. Original misallocation deliberately seeded. Judgment2/4to4/4,mixed80%;machine0unchanged,original native prefix/history retained,plan-only/researchfalse. No first-pass grading or human-learning claim.",
+      "inspection": "Recovery round inspected original; light/dark,desktop/mobile captures."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/joint-dispute/judgment-mobile.png",
+      "sha256": "0c97a7367ff864387514940dd9aa410c0e74c8144c3dca194f178cd317061b4b",
+      "source": "9212067e93c6a9f02ad8b1e16f64dd0056036b78",
+      "fixture": false,
+      "note": "Actual Pi two first-attempt dispute resolutions after original lesson/research history. Original misallocation deliberately seeded. Judgment2/4to4/4,mixed80%;machine0unchanged,original native prefix/history retained,plan-only/researchfalse. No first-pass grading or human-learning claim.",
+      "inspection": "Recovery round inspected original; light/dark,desktop/mobile captures."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/joint-dispute/machine-dark-desktop.png",
+      "sha256": "cd814a9275e11e8304a784e2d8eebf6db87eaec8e21a217faab78967d14dff0d",
+      "source": "9212067e93c6a9f02ad8b1e16f64dd0056036b78",
+      "fixture": false,
+      "note": "Actual Pi two first-attempt dispute resolutions after original lesson/research history. Original misallocation deliberately seeded. Judgment2/4to4/4,mixed80%;machine0unchanged,original native prefix/history retained,plan-only/researchfalse. No first-pass grading or human-learning claim.",
+      "inspection": "Recovery round inspected original; light/dark,desktop/mobile captures."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/joint-dispute/machine-dark-mobile.png",
+      "sha256": "16ee0c830621c68d8c86a922c55cf1cc4845bb991efe925fa78d61b632010898",
+      "source": "9212067e93c6a9f02ad8b1e16f64dd0056036b78",
+      "fixture": false,
+      "note": "Actual Pi two first-attempt dispute resolutions after original lesson/research history. Original misallocation deliberately seeded. Judgment2/4to4/4,mixed80%;machine0unchanged,original native prefix/history retained,plan-only/researchfalse. No first-pass grading or human-learning claim.",
+      "inspection": "Recovery round inspected original; light/dark,desktop/mobile captures."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/joint-dispute/machine-desktop.png",
+      "sha256": "baac835bbd9d1adca1f7f6d3e4af1a00de3ab66c6a3ffed83629628f48685af6",
+      "source": "9212067e93c6a9f02ad8b1e16f64dd0056036b78",
+      "fixture": false,
+      "note": "Actual Pi two first-attempt dispute resolutions after original lesson/research history. Original misallocation deliberately seeded. Judgment2/4to4/4,mixed80%;machine0unchanged,original native prefix/history retained,plan-only/researchfalse. No first-pass grading or human-learning claim.",
+      "inspection": "Recovery round inspected original; light/dark,desktop/mobile captures."
     }
-  ]
+  ],
+  "jointEvidence": "Additive accepted23 merge; actual same-conversation Pi disputes and current SDK four-phase proof. Previous62 images retain source boundaries; original24 public files preserved."
 }
