@@ -91,6 +91,30 @@ a passing fixture does not erase its rejected output or prove why it failed.
 
 For a changed real Pi path, run `npm run verify -- pi`. For shared service or prompt changes, run `npm run verify -- claude`, then `npm run verify -- codex`. Add `--artifacts <directory>` to retain host evidence. These drives ask a question, submit a wrong answer, and reply in the panel. They check that the quiz score remains unchanged.
 
+For Pi structured-return lifecycle changes, run
+`npx vitest run test/pi-teacher-completion.test.ts test/pi-teacher-envelope.test.ts test/pi-teacher-native-errors.test.ts`.
+These use the installed SDK session, tool wrapper, validator and agent loop with a
+controlled provider stream. Require one provider request for one successful final
+return, including ordinary, typed, lesson, refill, grading and dispute schemas.
+Research may request another response before the final return; the next ordinary
+request must remove research tools while reopening the same session. Same-batch
+duplicate plans, invalid raw arguments, source errors, external cancellation and
+the production timeout must still fail. Raw arguments must save before validation.
+The SDK termination hint applies only when every result in a batch requests it;
+it must never skip other calls already generated in that batch.
+
+For a retained native failure, copy its classroom and exact private session into
+an owned scratch root before starting the service. Save their original hashes and
+request/session identities. Set `PI_CLASSROOMS_DIR` in the process launch
+environment before importing storage modules, and require the service's reported
+root to equal that scratch root. Startup must retain the failure without inference.
+Use its lesson's `Retry request` once, after the causal repair; do not regenerate
+the lesson or create a replacement learner request. Compare the original session
+prefix, appended assistant/tool messages, durable request and answer count, and
+assessment files after reload. Inspect matching before/after screenshots. This
+scoped retry supplements the real Pi target; preserve that target's failures and
+uncovered paths separately.
+
 The service reply fixture reports no help. The drives require the actual reply and reported assistance in a saved retrieval check. They require a linked learning record and keep immediate correction outside retained evidence. Inspect `stored-teacher-state.json` and the retained `classroom/` files.
 
 Dedicated Codex isolation also needs a native catalog check. Start the actual

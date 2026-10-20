@@ -106,6 +106,8 @@ export function piTeacherTools(
         return {
           content: [{ type: "text", text: "Plan recorded. End this turn." }],
           details: {},
+          // Complete the SDK loop; every call already in this batch still runs.
+          terminate: true,
         };
       },
     },
