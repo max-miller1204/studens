@@ -48,6 +48,18 @@ precedes teardown; a status connection during listener close can report
 `connect ECONNRESET`. Keep that transport error visible. Fixture cleanup validates
 the recorded package and port, closes its MCP children, and waits for owned teardown;
 it must not probe the closing listener or treat missing paths alone as process exit.
+The simultaneous-start fixture holds both real startup children before product
+imports. It releases one winner and requires the other start to remain pending
+with HTTP live. Release the loser, require its actual exit and both successful
+same-owner replies, then stop publicly and require natural owner exit and absent
+owner/socket without another start. A matching winner must not complete a start
+while that invocation's child can still claim ownership later.
+For a control-only service change, also drive the actual Pi extension in RPC mode
+with an isolated `PI_CODING_AGENT_DIR` and offline resource loading: use
+`/classroom start`, `/classroom status`, `/classroom rust`, initiating Pi exit,
+reconnect, and `/classroom stop`. Require the same HTTP owner across initiating
+exit, private routes returning 404, no teacher requests or provider calls, and
+owned teardown. This does not replace the model drives for teacher changes.
 The separate private-control boundary checks delayed stop replies at EOF, tool/RPC/
 transport failures, an owner lost between the management probe and request, and an
 unexpected missing socket on detach. Errors stay visible and never trigger a retry
