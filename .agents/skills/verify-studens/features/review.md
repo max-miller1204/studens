@@ -176,6 +176,10 @@ published classroom review still opens across hosts. A delayed landing start aft
 the first classroom is graded must leave the next group planned until its explicit
 `Start <classroom> review` control is used.
 
+Replayed item fields also enter the dedicated teacher context as a complete array.
+Changes to those fields require the real Pi, Claude and Codex targets even though
+viewing the memory map itself must remain inference-free.
+
 For service or shared prompt changes, select the real Claude and Codex drives from
 the project skill. Each opens a prepared closed review, submits a miss, checks its
 immediate grade, receives a real corrective question, and replies in the same panel.
