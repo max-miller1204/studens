@@ -1,6 +1,7 @@
 /** Inert source parsing for public search. No DOM, scripts, learner code or file reads. */
 import { createHash } from "node:crypto";
-import { decodeHtmlAttribute, htmlAttributes, TAG_ATTRIBUTES } from "./authoring-html.ts";
+import { parse } from "parse5";
+import type { DefaultTreeAdapterTypes, ParserError } from "parse5";
 
 export interface SearchPassage {
   id: string;
@@ -58,22 +59,19 @@ const EXCLUDED = new Set([
   "iframe",
   "object",
 ]);
-// HTML optional end tags, not XML nesting. Scope boundaries keep nested lists,
-// tables and inert template contents from closing an outer source passage.
-const P_END = new Set(
-  "address article aside blockquote details dialog div dl fieldset figcaption figure footer form h1 h2 h3 h4 h5 h6 header hgroup hr main menu nav ol p pre search section table ul".split(
+// End tags the HTML parser may legitimately infer. Preserve the existing required
+// block/inert-element guards without turning extraction into an HTML validator.
+const OPTIONAL_END = new Set(
+  "html head body p li dt dd rt rp optgroup option colgroup caption thead tbody tfoot tr td th".split(
     " ",
   ),
 );
-const EOF_OPTIONAL = new Set(["html", "head", "body", "p"]);
+const MALFORMED_TOKEN =
+  /(?:attribute|eof-in-tag|eof-before-tag-name|eof-in-comment|incorrectly-opened-comment|unexpected-solidus-in-tag|end-tag-with-trailing-solidus)/;
 const RUNTIME =
   /(?:^|\s)(?:cl-(?:header|card-panel|ask-pill|badge-marker|term-pop|contract-error|diagram|teacher|teacher-notice|stepper-runtime|faded-runtime|code-runner|practice-feedback|q-verdict|quiz-footer|answer-report|order-controls|expected))(?:\s|$)/;
 export function canonicalText(text: string): string {
-  return decodeHtmlAttribute(text)
-    .replace(/&nbsp;/gi, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .normalize("NFC");
+  return text.replace(/\s+/g, " ").trim().normalize("NFC");
 }
 
 /** Assign ids from canonical quoted text + duplicate occurrence, never source offsets.
@@ -85,110 +83,86 @@ export function searchPassages(html: string): { html: string; passages: SearchPa
     "",
   );
   html = html.replace(/ id="cl-search-[a-f0-9]{24}-[0-9]+"/g, "");
-  interface Node {
-    tag: string;
+  interface Segment {
     start: number;
-    skip: boolean;
     text: string;
-    block: boolean;
     attributeAt?: number;
   }
-  const root: Node = { tag: "@root", start: 0, skip: false, text: "", block: true };
-  const stack: Node[] = [root],
-    found: Array<{ start: number; text: string; attribute: boolean }> = [];
-  const tokens = new RegExp(
-    `<!--[\\s\\S]*?-->|<script\\b${TAG_ATTRIBUTES}>[\\s\\S]*?<\\/script\\s*>|<style\\b${TAG_ATTRIBUTES}>[\\s\\S]*?<\\/style\\s*>|<![^>]*>|<\\/?([a-z][\\w:-]*)\\b${TAG_ATTRIBUTES}>`,
-    "gi",
-  );
-  let cursor = 0;
-  const flush = (node: Node) => {
-    const text = canonicalText(node.text);
-    if (text && !node.skip) {
+  const found: Array<{ start: number; text: string; attribute: boolean }> = [];
+  const document = parse(html, {
+    sourceCodeLocationInfo: true,
+    scriptingEnabled: true,
+    onParseError(error: ParserError) {
+      if (MALFORMED_TOKEN.test(error.code)) throw new Error("Malformed content tag or attribute.");
+    },
+  });
+  const flush = (segment: Segment) => {
+    const text = canonicalText(segment.text);
+    if (text)
       found.push({
-        start: node.attributeAt ?? node.start,
+        start: segment.attributeAt ?? segment.start,
         text,
-        attribute: node.attributeAt !== undefined,
+        attribute: segment.attributeAt !== undefined,
       });
-    }
-    node.attributeAt = undefined;
-    node.text = "";
+    segment.attributeAt = undefined;
+    segment.text = "";
   };
-  const add = (text: string, offset: number) => {
-    if (stack.some((n) => n.skip)) return;
-    if (/<!--|<\/?[a-z][\w:-]*(?:\s|>|\/)/i.test(text))
-      throw new Error("Malformed content tag or attribute.");
-    const node = [...stack].reverse().find((n) => n.block)!;
-    if (!node.text) node.start = offset;
-    node.text += text;
-  };
-  const closeFrom = (index: number) => {
-    for (const node of stack.splice(index)) if (node.block) flush(node);
-  };
-  const closeInScope = (names: string[], boundaries: string[]) => {
-    for (let i = stack.length - 1; i > 0; i--) {
-      const tag = stack[i].tag;
-      if (names.includes(tag)) {
-        closeFrom(i);
-        return;
-      }
-      if (boundaries.includes(tag) || EXCLUDED.has(tag)) return;
-    }
-  };
-  for (const token of html.matchAll(tokens)) {
-    add(html.slice(cursor, token.index), cursor);
-    cursor = token.index + token[0].length;
-    if (!token[1]) continue;
-    const tag = token[1].toLowerCase();
-    if (token[0].startsWith("</")) {
-      const index = stack.map((n) => n.tag).lastIndexOf(tag);
-      if (index < 1) continue;
-      // An unrelated closing tag must never escape an unterminated inert subtree.
-      if (stack.slice(index + 1).some((n) => EXCLUDED.has(n.tag) && n.tag !== "option"))
-        throw new Error("Unclosed content element.");
-      closeFrom(index);
-    } else {
-      if (P_END.has(tag)) closeInScope(["p"], ["table", "td", "th", "button"]);
-      if (tag === "li") closeInScope(["li"], ["ul", "ol", "menu"]);
-      if (tag === "dt" || tag === "dd") closeInScope(["dt", "dd"], ["dl"]);
-      if (tag === "rt" || tag === "rp") closeInScope(["rt", "rp"], ["ruby"]);
-      if (tag === "td" || tag === "th") closeInScope(["td", "th"], ["tr", "table"]);
-      if (tag === "tr") closeInScope(["tr"], ["table"]);
-      if (["tbody", "tfoot", "thead"].includes(tag))
-        closeInScope(["thead", "tbody", "tfoot"], ["table"]);
-      if (["colgroup", "thead", "tbody", "tfoot", "tr"].includes(tag))
-        closeInScope(["caption", "colgroup"], ["table"]);
+  // Validate excluded trees too. A missing template/raw-text close is an error,
+  // never a reason to reveal its contents or silently return a partial index.
+  const validate = (node: DefaultTreeAdapterTypes.Node): void => {
+    if ("tagName" in node) {
+      const location = node.sourceCodeLocation;
       if (
-        tag === "body" ||
-        (!EXCLUDED.has(tag) && !["html", "title", "meta", "link", "base"].includes(tag))
+        location?.startTag &&
+        !location.endTag &&
+        (BLOCKS.has(node.tagName) || EXCLUDED.has(node.tagName)) &&
+        !VOID.has(node.tagName) &&
+        !OPTIONAL_END.has(node.tagName) &&
+        !(
+          node.namespaceURI !== "http://www.w3.org/1999/xhtml" &&
+          /\/\s*>$/.test(html.slice(location.startOffset, location.startTag.endOffset))
+        )
       )
-        closeInScope(["head"], ["html"]);
-      const attrs = htmlAttributes(token[0]);
-      const skip =
-        stack.some((n) => n.skip) ||
-        EXCLUDED.has(tag) ||
-        RUNTIME.test(decodeHtmlAttribute(attrs.get("class") ?? "")) ||
-        /(?:\s)(?:hidden|data-cl-grade|data-cl-pretest-pending)(?=\s|=|\/?>)/i.test(
-          token[0].replace(/"[^"]*"|'[^']*'/g, '""'),
-        ) ||
-        attrs.get("aria-hidden") === "true";
-      const block = BLOCKS.has(tag);
-      if (block && !skip) flush([...stack].reverse().find((n) => n.block)!);
-      if (tag === "br") add(" ", cursor);
-      if (!VOID.has(tag) && !token[0].endsWith("/>"))
-        stack.push({
-          tag,
-          start: cursor,
-          skip,
-          text: "",
-          block,
-          attributeAt: block && !attrs.has("id") ? cursor - 1 : undefined,
-        });
+        throw new Error("Unclosed content element.");
+      if ("content" in node) validate(node.content as DefaultTreeAdapterTypes.DocumentFragment);
     }
-  }
-  add(html.slice(cursor), cursor);
-  if (stack.slice(1).some((n) => !EOF_OPTIONAL.has(n.tag)))
-    throw new Error("Unclosed content element.");
-  closeFrom(1);
+    if ("childNodes" in node) for (const child of node.childNodes) validate(child);
+  };
+  validate(document);
+  const walk = (node: DefaultTreeAdapterTypes.Node, segment: Segment): void => {
+    if ("value" in node) {
+      if (!segment.text) segment.start = node.sourceCodeLocation?.startOffset ?? 0;
+      segment.text += node.value;
+      return;
+    }
+    let own = segment;
+    if ("tagName" in node) {
+      const attrs = new Map(node.attrs.map((a) => [a.name, a.value]));
+      if (
+        EXCLUDED.has(node.tagName) ||
+        RUNTIME.test(attrs.get("class") ?? "") ||
+        ["hidden", "data-cl-grade", "data-cl-pretest-pending"].some((a) => attrs.has(a)) ||
+        attrs.get("aria-hidden") === "true"
+      )
+        return;
+      if (node.tagName === "br") segment.text += " ";
+      if (BLOCKS.has(node.tagName)) {
+        flush(segment);
+        own = {
+          start: node.sourceCodeLocation?.startOffset ?? 0,
+          text: "",
+          attributeAt:
+            !attrs.has("id") && node.sourceCodeLocation?.startTag
+              ? node.sourceCodeLocation.startTag.endOffset - 1
+              : undefined,
+        };
+      }
+    }
+    if ("childNodes" in node) for (const child of node.childNodes) walk(child, own);
+    if (own !== segment) flush(own);
+  };
+  const root: Segment = { start: 0, text: "" };
+  walk(document, root);
   flush(root);
   const occurrences = new Map<string, number>();
   const totals = new Map<string, number>();

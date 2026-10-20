@@ -30,6 +30,7 @@ function hasRuntimeDependencies() {
   try {
     import.meta.resolve("marked");
     import.meta.resolve("@earendil-works/pi-coding-agent");
+    import.meta.resolve("parse5");
     return true;
   } catch {
     return false;

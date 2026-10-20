@@ -51,7 +51,8 @@
   },
   "dependencies": {
     "@earendil-works/pi-coding-agent": "1.0.1",
-    "marked": "^15.0.12"
+    "marked": "^15.0.12",
+    "parse5": "8.0.1"
   },
   "devDependencies": {
     "@stryker-mutator/core": "10.0.0",

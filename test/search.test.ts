@@ -310,6 +310,19 @@ describe("public classroom search", () => {
   });
 });
 describe("inert canonical source anchors", () => {
+  it("matches visible HTML5 named entities without double decoding literal markup", () => {
+    const source =
+      "<p>Entity caf&eacute; &alpha; &copy; &NotEqualTilde; &amp;lt;script&amp;gt;</p>";
+    const parsed = searchPassages(source);
+    expect(parsed.passages[0].text).toBe("Entity café α © ≂̸ &lt;script&gt;");
+    expect(searchPassages("<p>Entity café α © ≂̸ &amp;lt;script&amp;gt;</p>").passages).toEqual(
+      parsed.passages,
+    );
+    f.write("rust/001-ownership/lesson.html", source);
+    for (const query of ["café", "α", "©", "≂̸", "&lt;script&gt;"])
+      expect(searchClassrooms(query).results[0]?.text).toBe(parsed.passages[0].text);
+    expect(searchClassrooms("<script>").total).toBe(0);
+  });
   it("excludes scripts even with fake tags and preserves inline punctuation", () => {
     const html =
       '<p>Before<script>"</p><p>SECRET"</script> after <code>Vec&lt;T&gt;</code> &#955;.</p>';
