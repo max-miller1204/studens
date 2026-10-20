@@ -1,3 +1,4 @@
+import { recordActivity } from "./activity-evidence.ts";
 import { driveDisputeProbe } from "./dispute-probe.ts";
 import { readTeacherState } from "../src/service-state.ts";
 import {
@@ -177,6 +178,7 @@ async function main(): Promise<void> {
     child.on("close", resolve);
   });
   let timer: NodeJS.Timeout | undefined;
+  let finishActivity: (() => Promise<void>) | undefined;
   try {
     const code = await Promise.race([
       exited,
@@ -194,10 +196,23 @@ async function main(): Promise<void> {
     const status = await serviceStatus();
     if (!status.running) throw new Error("Service stopped with initiating host.");
     const base = status.url;
+    finishActivity = await recordActivity(base!, artifacts);
     log(`initiating host exited; service remains at ${base}`);
     await playwright(browser, root, "open", `${base}/c/${CLASSROOM}/${LESSON}`);
     browserOpen = true;
-    await driveRealNextLesson(browser, root, base!, harness, artifacts, harness === "pi");
+    await driveRealNextLesson(browser, root, base!, harness, artifacts, harness === "pi", {
+      async beforeRestart() {
+        await finishActivity?.();
+        finishActivity = undefined;
+      },
+      async afterRestart() {
+        finishActivity = await recordActivity(
+          base!,
+          artifacts,
+          "activity-events-after-publication-restart",
+        );
+      },
+    });
     await playwrightCode(
       browser,
       root,
@@ -585,6 +600,12 @@ async function main(): Promise<void> {
       if (fs.existsSync(serviceLog))
         fs.copyFileSync(serviceLog, path.join(artifacts, "service.log"));
     }
+    let activityError: unknown;
+    try {
+      await finishActivity?.();
+    } catch (error) {
+      activityError = error;
+    }
     clearTimeout(timer);
     child.kill();
     if ((await serviceStatus()).running) {
@@ -594,6 +615,7 @@ async function main(): Promise<void> {
     if (browserOpen) await playwright(browser, root, "close");
     fs.rmSync(root, { recursive: true, force: true });
     restoreModel();
+    if (activityError) throw activityError;
   }
 }
 await main();

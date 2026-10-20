@@ -12,12 +12,35 @@ export async function playwright(session: string, cwd: string, ...args: string[]
     args[0] === "open"
       ? [...args, `--config=${path.join(assetsDir(), "playwright-headless.json")}`]
       : args;
-  const { stdout } = await exec("playwright-cli", [`-s=${session}`, "--raw", ...command], {
-    cwd,
-    // A run-code command can drive a complete regression, with many bounded browser actions.
-    timeout: args[0] === "run-code" ? 180_000 : 60_000,
-    maxBuffer: 4 * 1024 * 1024,
-  });
+  let stdout: string;
+  try {
+    ({ stdout } = await exec("playwright-cli", [`-s=${session}`, "--raw", ...command], {
+      cwd,
+      // A run-code command can drive a complete regression, with many bounded browser actions.
+      timeout: args[0] === "run-code" ? 180_000 : 60_000,
+      maxBuffer: 4 * 1024 * 1024,
+    }));
+  } catch (error) {
+    const failure = error as Error & {
+      stdout?: string;
+      modalSnapshot?: string;
+      modalTabs?: string;
+      diagnosticError?: string;
+    };
+    if (failure.stdout?.includes("does not handle the modal state")) {
+      try {
+        failure.modalSnapshot = (
+          await exec("playwright-cli", [`-s=${session}`, "snapshot"], { cwd, timeout: 15_000 })
+        ).stdout;
+        failure.modalTabs = (
+          await exec("playwright-cli", [`-s=${session}`, "tab-list"], { cwd, timeout: 15_000 })
+        ).stdout;
+      } catch (diagnostic) {
+        failure.diagnosticError = String(diagnostic);
+      }
+    }
+    throw error;
+  }
   if (stdout.includes("### Error")) throw new Error(stdout);
   return stdout.trim();
 }

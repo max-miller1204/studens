@@ -4,6 +4,7 @@ import { verifyCriteriaBrowser } from "./e2e-criteria-browser.ts";
 import { verifySettingsBrowser } from "./e2e-settings-browser.ts";
 import { verifyReviewControls } from "./e2e-review-controls.ts";
 import { verifyDailyReview } from "./e2e-daily-review.ts";
+import { verifyActivityBrowser } from "./e2e-activity-browser.ts";
 import { verifyReviewCards } from "./e2e-review-cards.ts";
 import { verifyReteachBrowser } from "./e2e-reteach-browser.ts";
 import { verifyNextLessonBrowser } from "./e2e-next-lesson-browser.ts";
@@ -405,3 +406,4 @@ await verifyDailyReview(artifacts ? path.join(artifacts, "daily-review") : null)
 await verifyPracticeBrowser(artifacts ? path.join(artifacts, "practice") : null);
 
 await verifyFadedBrowser(artifacts ? path.join(artifacts, "faded") : null);
+await verifyActivityBrowser(artifacts ? path.join(artifacts, "activity") : null);

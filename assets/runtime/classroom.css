@@ -2292,3 +2292,43 @@ figure:has(> .cl-diagram) figcaption {
   flex-wrap: wrap;
   gap: 0.65rem;
 }
+/* The same persistent classroom status on shell, lesson, and review pages. */
+.cl-header {
+  flex-wrap: wrap;
+}
+.cl-teacher-activity {
+  box-sizing: border-box;
+  flex: 0 0 100%;
+  padding: 0.45rem 0;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+body > .cl-teacher-activity {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  padding: 0.6rem 1rem;
+  background: var(--cl-bg);
+}
+.cl-teacher-activity p {
+  margin: 0;
+}
+.cl-teacher-activity summary {
+  cursor: pointer;
+}
+.cl-teacher-activity ul {
+  margin: 0.5rem 0 0;
+  padding-left: 1.25rem;
+  max-height: 35vh;
+  overflow: auto;
+}
+.cl-teacher-activity li + li {
+  margin-top: 0.65rem;
+}
+.cl-teacher-activity .cl-button {
+  margin-top: 0.25rem;
+}
+.cl-teacher-activity[data-state="failed"] > p:first-child {
+  color: var(--cl-danger);
+}

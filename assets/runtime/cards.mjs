@@ -22,6 +22,12 @@ export function createCards({ config, contentRoot, drafts }) {
     }
   }
   const minimised = loadMinimised();
+  window.addEventListener("hashchange", () => {
+    const id = window.location.hash.slice("#cl-question-".length);
+    if (!window.location.hash.startsWith("#cl-question-") || !cards.has(id)) return;
+    openCard(id);
+    cards.get(id).panel.scrollIntoView({ block: "start" });
+  });
   function renderCard(annotation, mark) {
     const existing = cards.get(annotation.id);
     const marks = document.querySelectorAll(`mark[data-annotation-id="${annotation.id}"]`);
@@ -46,14 +52,18 @@ export function createCards({ config, contentRoot, drafts }) {
     cards.set(annotation.id, { annotation, panel, badge, mark: anchorMark });
 
     // A freshly asked question opens; a restored one respects the saved state.
-    if (minimised.has(annotation.id)) minimiseCard(annotation.id);
+    if (minimised.has(annotation.id) && window.location.hash !== `#cl-question-${annotation.id}`)
+      minimiseCard(annotation.id);
     else openCard(annotation.id);
+    if (window.location.hash === `#cl-question-${annotation.id}`)
+      panel.scrollIntoView({ block: "start" });
   }
 
   function createPanel(annotationId, mark) {
     const panel = document.createElement("div");
     panel.className = "cl-card-panel cl-card-inline";
     panel.dataset.annotationId = annotationId;
+    panel.id = `cl-question-${annotationId}`;
     panel.hidden = true;
     panel.innerHTML = `
     <div class="cl-card-head">
