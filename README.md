@@ -10,7 +10,7 @@ question, get answers in a saved thread, and submit quizzes for feedback.
 **Pi**
 
 ```sh
-pi install git:github.com/max-miller1204/studens@v0.11.13
+pi install git:github.com/max-miller1204/studens@v0.11.14
 ```
 
 **Claude Code**
