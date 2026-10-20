@@ -93,6 +93,7 @@ export function createLearnerMarks({ config, contentRoot }) {
       announce("Saved marks refreshed. Unsaved drafts are kept.");
       rebase.hidden = !(pending?.action === "edit" && marks.some((m) => m.id === pending.id));
     } catch (err) {
+      announce("Saved marks could not be refreshed.");
       message(`${err.message} Select Refresh saved marks to try again.`);
     } finally {
       busy = false;
@@ -114,6 +115,7 @@ export function createLearnerMarks({ config, contentRoot }) {
       render();
       announce("Mark saved.");
     } catch (err) {
+      announce("Mark was not saved.");
       message(`${err.message} Your draft is kept. Select ${save.textContent} to retry.`);
       remember();
     } finally {
@@ -223,6 +225,7 @@ export function createLearnerMarks({ config, contentRoot }) {
             render();
             announce("Mark deleted.");
           } catch (err) {
+            announce("Mark was not deleted.");
             message(`${err.message} Select Delete mark to retry.`);
           } finally {
             busy = false;

@@ -52,10 +52,12 @@ are explicit steps to reconcile a kept draft. Corrupt/unsupported state must sho
 a specific read error while retaining visible marks. Keyboard selection extension
 and `Alt+M`, then Tab/Enter, choose an action without teacher work.
 
-The fixture resolves repeated words using canonical context, preserves exact quotes
+The fixture resolves repeated words and overlapping quote occurrences using canonical context, preserves exact quotes
 across reflow/markup edits, and displays missing or ambiguous passages without
 choosing another location. It checks private routes and excludes mark UI from the
-canonical text index and answer snapshots. Before adjacent Ask, classroom file hashes
+canonical text index and answer snapshots. Expected-answer panels also remain outside
+selection actions and indexing, while authored quiz prompts stay selectable. Before
+adjacent Ask, classroom file hashes
 (except the private marks file) and the controlled service request list must be
 unchanged. Actual Ask/follow-up controls then save two ordered answers through the
 persistent service fixture. A neighboring machine assessment grades once, leaves the

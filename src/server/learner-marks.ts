@@ -4,6 +4,8 @@ import { MarkError, editLearnerMarks, readLearnerMarks } from "../store/learner-
 import { readLesson } from "../store.ts";
 import { reviewSessions } from "../review-session.ts";
 import { learnerMarksFile } from "../paths.ts";
+import { readPublicState } from "../public-state-errors.ts";
+import { stateReadError } from "../state-errors.ts";
 
 /** Learner-owned data never touches question hooks, grading, or service requests. */
 export async function handleLearnerMarks(
@@ -17,7 +19,11 @@ export async function handleLearnerMarks(
   if (!params) return sendJson(res, { error: "A valid classroom and lesson are required." }, 400);
   try {
     learnerMarksFile(params.classroom, params.lesson); // Guard ancestors before lesson discovery.
-    if (!readLesson(params.classroom, params.lesson))
+    if (
+      !readPublicState("learner marks lesson metadata", () =>
+        readLesson(params.classroom, params.lesson),
+      )
+    )
       return sendJson(res, { error: "Unknown lesson." }, 404);
     if (
       reviewSessions(params.classroom).some(
@@ -26,7 +32,11 @@ export async function handleLearnerMarks(
     )
       return sendJson(res, { error: "This review is not ready." }, 409);
     if (req.method === "GET")
-      return sendJson(res, { marks: readLearnerMarks(params.classroom, params.lesson) });
+      return sendJson(res, {
+        marks: readPublicState("learner marks (.learner-marks.json)", () =>
+          readLearnerMarks(params.classroom, params.lesson),
+        ),
+      });
     let body: unknown;
     try {
       body = await readJsonBody(req, 32 * 1024);
@@ -42,7 +52,12 @@ export async function handleLearnerMarks(
   } catch (error) {
     sendJson(
       res,
-      { error: (error as Error).message },
+      {
+        error:
+          error instanceof MarkError
+            ? error.message
+            : stateReadError("learner marks save (.learner-marks.json)", error).message,
+      },
       error instanceof MarkError ? error.status : 500,
     );
   }

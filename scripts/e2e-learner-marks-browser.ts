@@ -212,7 +212,7 @@ export async function verifyLearnerMarksBrowser(artifacts: string | null): Promi
     fs.writeFileSync(file, '{"version":99,"marks":[]}');
     result.readFailure = await code(`
       await page.locator('.cl-learner-marks summary').click();await page.getByRole('button',{name:'Refresh saved marks',exact:true}).click();
-      await page.locator('[data-mark-error]').filter({hasText:'version'}).waitFor();
+      await page.locator('[data-mark-error]').filter({hasText:'learner marks'}).waitFor();
       if(await page.locator('[data-mark-id]').count()!==2)throw Error('Failed read cleared marks');return {specificError:true,visibleMarksKept:true};
     `);
     fs.writeFileSync(file, durable);
@@ -304,13 +304,18 @@ export async function verifyLearnerMarksBrowser(artifacts: string | null): Promi
       if(await page.locator('form.cl-quiz .cl-learner-marks,form.cl-quiz [data-mark-note]').count())throw Error('Note UI nested in assessment');
       await page.reload();await page.locator('form.cl-quiz[data-state="graded"]').waitFor();
       if(await page.getByLabel('Margin note',{exact:true}).inputValue()!=='Unsent private margin draft')throw Error('Reload lost note draft');
+      const expected=page.locator('.cl-expected-value').first();await expected.waitFor();
+      await (${highlightText.toString()})(page,'.cl-expected-value',await expected.innerText());
+      await page.waitForTimeout(50);if(await page.locator('.cl-selection-actions').isVisible())throw Error('Expected-answer runtime text offered passage actions');
+      const excluded=await page.evaluate(async()=>{const {buildTextIndex}=await import('/static/lesson-dom.mjs');return buildTextIndex(document.body).segments.every(s=>!s.node.parentElement.closest('.cl-expected,.cl-learner-marks'));});
+      if(!excluded)throw Error('Expected answer/note UI entered canonical index');
       // Negative probe: the ordinary saved-answer snapshot must still notice a real answer mutation.
       const snapshot=()=>page.locator('form.cl-quiz').evaluate(f=>[...f.querySelectorAll('input:checked')].filter(el=>el.closest('.cl-q')&&!el.closest('.cl-q-verdict,.cl-card-panel,.cl-learner-marks')).map(el=>el.value));
       const saved=await snapshot();await page.locator('input[value="new"]').evaluate(el=>el.checked=false);
       if(JSON.stringify(await snapshot())===JSON.stringify(saved))throw Error('Snapshot concealed saved-answer mutation');
       await page.reload();await page.locator('form.cl-quiz[data-state="graded"]').waitFor();
       if(!await page.locator('input[value="new"]').isChecked())throw Error('Durable answer mutated');
-      return {graded:true,marginDraftUnlocked:true,negativeMutationDetected:true};
+      return {graded:true,marginDraftUnlocked:true,negativeMutationDetected:true,expectedUIExcluded:true};
     `);
     const submission = store.listSubmissions("rust", "001-ownership")[0];
     assert.equal(submission.answers.length, 1);
@@ -409,11 +414,27 @@ export async function verifyLearnerMarksBrowser(artifacts: string | null): Promi
       readLearnerMarks("rust", "001-ownership").find((m) => m.id === repeatedMark.id)?.anchor,
       a,
     );
+    f.write(
+      "rust/001-ownership/lesson.html",
+      shell(
+        "<h1>Edited lesson</h1>" +
+          duplicate +
+          duplicate +
+          "<p data-overlap-quote>ha <span data-overlap-choice>ha ha</span></p>",
+      ),
+    );
+    await code(
+      `await page.reload();await page.waitForFunction(()=>document.querySelectorAll('[data-mark-id]').length===5);await page.getByRole('button',{name:'Discard draft',exact:true}).click();return true;`,
+    );
+    await select("[data-overlap-choice]", "ha ha", "Bookmark");
+    result.overlappingQuote = await code(
+      `await page.waitForFunction(()=>document.querySelectorAll('[data-mark-id]').length===6);const matches=await page.evaluate(()=>[...CSS.highlights.get('cl-learner-bookmark')].map(r=>({text:r.toString(),selectedOccurrence:!!r.startContainer.parentElement.closest('[data-overlap-choice]')})));if(matches.length!==1||!matches[0].selectedOccurrence)throw Error('Overlapping occurrence moved mark to the earlier phrase');return {matches};`,
+    );
     result.modelCalls = turns.length;
     result.zeroTeacherUntilAdjacentAsk = true;
     result.marks = readLearnerMarks("rust", "001-ownership");
     result.teacher = readTeacherState("rust");
-    result.sourceFreeze = "5cb7dce13aef01364d3f5b5ffe5a8f4d93075927 plus this working diff";
+    result.sourceFreeze = "67092d07d143050caa6648de5a8280164ce05f96 plus this working diff";
     if (artifacts)
       fs.writeFileSync(path.join(artifacts, "result.json"), JSON.stringify(result, null, 2));
     console.log(

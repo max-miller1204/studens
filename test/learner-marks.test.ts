@@ -129,6 +129,15 @@ describe("private learner marks", () => {
 });
 
 describe("learner text quote resolution", () => {
+  it("considers overlapping quote occurrences without moving a mark to the earlier phrase", () => {
+    const text = "ha ha ha";
+    expect(resolveSelector(text, createSelector(text, 3, 8))).toMatchObject({
+      status: "resolved",
+      start: 3,
+      end: 8,
+      exact: true,
+    });
+  });
   it("uses canonical context to distinguish repeats, survives surrounding edits, exposes ties and missing quotes", () => {
     const text = "Drop the value. Move the value. Borrow the value.";
     const start = text.indexOf("the value", text.indexOf("Move"));

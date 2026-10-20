@@ -47,14 +47,14 @@ function countOccurrences(haystack, needle) {
   return count;
 }
 
-/** All non-overlapping start offsets of `needle` in `haystack`. */
-function allIndexesOf(haystack, needle) {
+/** Quote starts; question anchors retain their historical non-overlapping policy. */
+function allIndexesOf(haystack, needle, overlapping = false) {
   const out = [];
   if (!needle) return out;
   let idx = haystack.indexOf(needle);
   while (idx !== -1) {
     out.push(idx);
-    idx = haystack.indexOf(needle, idx + needle.length);
+    idx = haystack.indexOf(needle, idx + (overlapping ? 1 : needle.length));
   }
   return out;
 }
@@ -145,7 +145,7 @@ export function findSelector(text, selector) {
  * Uses the same exact quotes and context scoring as question anchors; no fuzzy text.
  */
 export function resolveSelector(text, selector) {
-  const candidates = allIndexesOf(text, selector.exact);
+  const candidates = allIndexesOf(text, selector.exact, true);
   if (!candidates.length) return { status: "missing" };
   const scores = candidates.map((start) => contextScore(text, start, selector));
   const best = scores.reduce((highest, score) => Math.max(highest, score), -1);
