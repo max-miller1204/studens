@@ -2,10 +2,15 @@ import { isStoredReview } from "../paths.ts";
 import type { ReviewOwner, ReviewSession } from "../review-session.ts";
 import type * as store from "../store.ts";
 
+import type { LessonRequest } from "../next-lesson.ts";
+
 export interface ServerHooks {
   teacherSettings?(classroom: string): unknown;
   setTeacherModel?(classroom: string, model: unknown, revision: unknown): void;
   applyConnectionSettings?(): Promise<void>;
+  lessonOwner?(classroom: string): LessonRequest["owner"];
+  onNextLesson?(request: LessonRequest): void;
+  onNextLessonRetry?(request: LessonRequest): void;
   delivery?: "push" | "wait" | "service";
   canAccept?(classroom: string): void;
   teacherState?(classroom: string, lesson: string): unknown;

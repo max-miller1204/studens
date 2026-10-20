@@ -2,6 +2,16 @@ import { validateAnswerCriteria } from "./criteria.ts";
 import { dailyReviews, groupSession } from "./store/daily-review.ts";
 import { modelSelection } from "./teacher-models.ts";
 import { reteachOffers, reteachPrompt } from "./reteach.ts";
+import {
+  lessonRequests,
+  requireLessonOwner,
+  updateLessonRequest,
+  saveLessonDocument,
+  completeLessonRequest,
+  nextLessonPrompt,
+  prepareLessonRetry,
+} from "./next-lesson.ts";
+import type { LessonRequest } from "./next-lesson.ts";
 /** Run one request at a time for each classroom. Persist plans before writes. */
 import {
   discoverRefills,
@@ -74,6 +84,13 @@ export class TeacherService {
 
   attach(classroom: string, backend?: Backend): void {
     if (!store.readClassroom(classroom)) throw new Error(`No such classroom: ${classroom}`);
+    const legacyLesson = lessonRequests(classroom).find(
+      (r) => r.owner === "pi" && r.delivery !== "service" && r.status !== "done",
+    );
+    if (legacyLesson)
+      throw new Error(
+        `Classroom ${classroom} has unfinished legacy Pi lesson request ${legacyLesson.id}. Reopen the previous Pi package, explicitly retry and finish that request, then stop its server before retrying open_classroom. Saved plans and history have not been changed.`,
+      );
     if (piResumes(classroom).some((r) => r.status === "running" && piOwnerAlive(r)))
       throw new Error(
         "A live Pi session owns this classroom's resume request. Finish it and explicitly stop the previous Pi server, then retry open_classroom.",
@@ -120,14 +137,16 @@ export class TeacherService {
       );
     }
     if (!this.states.has(classroom)) {
+      this.states.set(classroom, state);
       for (const r of state.requests)
         if (r.status === "running") {
           r.status = "failed";
           r.error = "Service stopped during teacher work. Retry this request.";
+          if (r.kind === "lesson")
+            updateLessonRequest(this.lessonRequest(r), { status: "failed", error: r.error });
           if (r.kind === "review") updateReview(this.reviewSession(r), "failed", r.error);
           if (r.kind === "refill") updateRefill(this.refillRequest(r), "failed", r.error);
         }
-      this.states.set(classroom, state);
     }
     saveTeacherState(classroom, state);
     this.recover(classroom);
@@ -140,6 +159,17 @@ export class TeacherService {
     server.setHooks({
       delivery: "service",
       applyConnectionSettings,
+      lessonOwner: (classroom) => {
+        const state = this.states.get(classroom);
+        if (!state) throw new Error("No teacher owns this classroom. Call open_classroom first.");
+        return state.identity.backend;
+      },
+      onNextLesson: (r) => this.nextLesson(r),
+      onNextLessonRetry: (r) => {
+        if (this.states.get(r.classroom)?.requests.some((x) => x.id === `lesson:${r.id}`))
+          this.retry(r.classroom, `lesson:${r.id}`);
+        else this.nextLesson(updateLessonRequest(r, { status: "queued" }));
+      },
       reviewOwner: "service",
       onAsk: (a) => this.question(a),
       onFollowUp: (a, f) => this.followUp(a, f),
@@ -255,6 +285,33 @@ export class TeacherService {
       saveTeacherState(session.classroom, state);
     }
   }
+  nextLesson(request: LessonRequest): void {
+    const state = this.states.get(request.classroom);
+    if (!state) throw new Error("No teacher owns this classroom. Call open_classroom first.");
+    requireLessonOwner(request, state.identity.backend);
+    if (request.owner === "pi" && request.delivery !== "service")
+      throw new Error("This legacy Pi lesson request must finish in its previous Pi package.");
+    this.enqueue({
+      id: `lesson:${request.id}`,
+      classroom: request.classroom,
+      lesson: request.lesson,
+      kind: "lesson",
+      target: request.id,
+      prompt: nextLessonPrompt(request, "service"),
+    });
+    if (request.status === "failed") {
+      const mirror = state.requests.find((r) => r.id === `lesson:${request.id}`)!;
+      mirror.status = "failed";
+      mirror.error = request.error;
+      saveTeacherState(request.classroom, state);
+    }
+  }
+  private lessonRequest(r: TeacherRequest): LessonRequest {
+    const request = lessonRequests(r.classroom).find((x) => x.id === r.target);
+    if (!request) throw new Error("The lesson request no longer exists.");
+    requireLessonOwner(request, this.states.get(r.classroom)!.identity.backend);
+    return request;
+  }
   private refillRequest(request: TeacherRequest): RefillRequest {
     const saved = refillRequests(request.classroom).find(
       (r) => r.id === request.target && r.owner === "service",
@@ -285,6 +342,12 @@ export class TeacherService {
     }
   }
   private recover(classroom: string): void {
+    for (const request of lessonRequests(classroom))
+      if (
+        request.owner === this.states.get(classroom)!.identity.backend &&
+        request.status !== "done"
+      )
+        this.nextLesson(request);
     for (const session of reviewSessions(classroom)) {
       if (session.owner !== "service" || session.status === "done") continue;
       this.review(session);
@@ -451,8 +514,36 @@ export class TeacherService {
         delete r.plan;
       }
     }
-    if (r.kind !== "review" && r.plan && r.planValidated !== true && !(r.applied ?? 0))
+    if (r.kind === "lesson") {
+      let request = this.lessonRequest(r);
+      // Older decoder failures saved raw output only in the teacher state.
+      // Preserve it in the authoring attempt before an explicit retry replaces it.
+      if (request.modelOutput === undefined && r.modelOutput !== undefined)
+        request = updateLessonRequest(request, { modelOutput: r.modelOutput });
+      const failedPage = request.pageCheckFailed;
+      prepareLessonRetry(request);
+      if (failedPage) {
+        delete r.plan;
+        r.planValidated = false;
+      }
+    }
+    if (
+      r.kind !== "review" &&
+      !(r.kind === "lesson" && this.lessonRequest(r).document) &&
+      r.plan &&
+      r.planValidated !== true &&
+      !(r.applied ?? 0)
+    )
       delete r.plan;
+    if (r.kind === "lesson") {
+      const request = this.lessonRequest(r);
+      if (request.document) {
+        r.status = "planned";
+      }
+      updateLessonRequest(request, { status: "queued", error: undefined });
+    }
+    if (!r.plan && r.kind === "lesson")
+      r.prompt = nextLessonPrompt({ ...this.lessonRequest(r), error: r.error }, "service");
     if (!r.plan && r.error)
       r.prompt += `\n\nPrevious teacher plan error: ${r.error}\nCorrect it in the new plan.`;
     const refill = r.kind === "refill" ? refreshRefill(this.refillRequest(r)) : null;
@@ -546,6 +637,13 @@ export class TeacherService {
   }
   private contract(r: TeacherRequest): PlanContract {
     switch (r.kind) {
+      case "lesson":
+        return {
+          operations: ["publish_lesson"],
+          required: true,
+          messageRequired: true,
+          research: true,
+        };
       case "quiz":
         return { operations: [GRADE_ANSWERS], required: true, messageRequired: true };
       case "ask":
@@ -569,6 +667,7 @@ export class TeacherService {
     }
   }
   private prompt(r: TeacherRequest, state: TeacherState): string {
+    if (r.kind === "lesson") return r.prompt;
     if (r.kind === "review") return r.prompt;
     if (r.kind === "refill")
       return `${r.prompt}\n\nTool definition: ${JSON.stringify(REFILL_TOOL)}`;
@@ -664,6 +763,8 @@ export class TeacherService {
           r.status = "running";
           r.requestedModel = state.identity.requestedModel ?? null;
           delete r.resolvedModel;
+          if (r.kind === "lesson")
+            updateLessonRequest(this.lessonRequest(r), { status: "running", error: undefined });
           if (r.kind === "review") updateReview(this.reviewSession(r), "running");
           if (r.kind === "refill") {
             r.prompt = refreshRefill(this.refillRequest(r)).prompt;
@@ -688,6 +789,8 @@ export class TeacherService {
               (value) => {
                 r.modelOutput = value;
                 saveTeacherState(classroom, state);
+                if (r.kind === "lesson")
+                  updateLessonRequest(this.lessonRequest(r), { modelOutput: value });
               },
               (model) => {
                 r.resolvedModel = model;
@@ -707,6 +810,8 @@ export class TeacherService {
           r.status = "planned";
           saveTeacherState(classroom, state);
         }
+        if (r.kind === "lesson")
+          updateLessonRequest(this.lessonRequest(r), { status: "running", error: undefined });
         await this.apply(r, state);
         r.finishedAt = Date.now();
         r.status = "done";
@@ -720,6 +825,8 @@ export class TeacherService {
         r.status = "failed";
         r.finishedAt = Date.now();
         r.error = `${state.identity.backend} model ${r.requestedModel ?? "configured default"} ${r.kind} request ${r.id} in ${classroom}/${r.lesson}: ${err instanceof Error ? err.message : String(err)}`;
+        if (r.kind === "lesson")
+          updateLessonRequest(this.lessonRequest(r), { status: "failed", error: r.error });
         if (r.kind === "review") updateReview(this.reviewSession(r), "failed", r.error);
         if (r.kind === "refill") updateRefill(this.refillRequest(r), "failed", r.error);
         console.error(`[teacher] ${r.error}`);
@@ -752,6 +859,27 @@ export class TeacherService {
   }
   private async apply(r: TeacherRequest, state: TeacherState): Promise<void> {
     const plan = r.plan!;
+    if (r.kind === "lesson") {
+      updateLessonRequest(this.lessonRequest(r), { modelOutput: r.modelOutput ?? plan });
+      if (
+        plan.calls.length !== 1 ||
+        plan.calls[0].name !== "publish_lesson" ||
+        plan.learning_record.trim() ||
+        plan.notes_markdown.trim() ||
+        !plan.message.trim()
+      )
+        throw new Error(
+          "Lesson authoring requires exactly one publish_lesson call and no evidence writes.",
+        );
+      const request = saveLessonDocument(
+        this.lessonRequest(r),
+        JSON.parse(plan.calls[0].arguments_json),
+      );
+      r.planValidated = true;
+      saveTeacherState(r.classroom, state);
+      await completeLessonRequest(request);
+      return;
+    }
     if (r.kind === "refill") {
       const request = this.refillRequest(r);
       if (

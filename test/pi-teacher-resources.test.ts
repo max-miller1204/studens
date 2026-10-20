@@ -7,8 +7,9 @@ import {
   DefaultResourceLoader,
   SettingsManager,
   ModelRuntime,
+  SessionManager,
 } from "@earendil-works/pi-coding-agent";
-import { piTeacherResources } from "../src/pi-teacher.ts";
+import { piTeacherResources, piTeacherTools } from "../src/pi-teacher.ts";
 import { makeFixture } from "./helpers.ts";
 
 it("isolates configured global/project packages and resources without losing Pi model settings", async () => {
@@ -105,28 +106,44 @@ it("isolates configured global/project packages and resources without losing Pi 
       authPath: auth,
       modelsPath: path.join(agentDir, "models.json"),
     });
-    ({ session } = await createAgentSession({
-      cwd,
-      agentDir,
-      modelRuntime: runtime,
-      model: runtime.getModel("openai-codex", "gpt-6-luna")!,
-      thinkingLevel: "low",
-      settingsManager: resources.settings,
-      resourceLoader: resources.loader,
-      tools: ["submit_teacher_plan"],
-      customTools: [
-        {
-          name: "submit_teacher_plan",
-          label: "Submit plan",
-          description: "Record structured output",
-          parameters: { type: "object", properties: {} } as any,
-          async execute() {
-            throw new Error("No model/tool inference in this loading contract");
-          },
-        },
-      ],
-    }));
-    expect(session.getActiveToolNames()).toEqual(["submit_teacher_plan"]);
+    const manager = SessionManager.create(cwd, path.join(f.root, "sessions"));
+    fs.mkdirSync(path.dirname(manager.getSessionFile()!), { recursive: true });
+    fs.writeFileSync(manager.getSessionFile()!, JSON.stringify(manager.getHeader()) + "\n");
+    const originalSession = fs.readFileSync(manager.getSessionFile()!);
+    // Explicit authoring, disposal/error cleanup, and ordinary reopen share one session.
+    for (const research of [true, false]) {
+      const loadout = piTeacherTools({ type: "object", properties: {} }, research);
+      ({ session } = await createAgentSession({
+        cwd,
+        agentDir,
+        modelRuntime: runtime,
+        model: runtime.getModel("openai-codex", "gpt-6-luna")!,
+        thinkingLevel: "low",
+        settingsManager: resources.settings,
+        resourceLoader: resources.loader,
+        sessionManager: SessionManager.open(
+          manager.getSessionFile()!,
+          path.dirname(manager.getSessionFile()!),
+          cwd,
+        ),
+        tools: loadout.tools,
+        customTools: loadout.customTools,
+      }));
+      expect(session.getActiveToolNames()).toEqual(
+        research ? ["submit_teacher_plan", "read_lesson_source"] : ["submit_teacher_plan"],
+      );
+      expect(session.sessionId).toBe(manager.getSessionId());
+      session.dispose();
+    }
+    const savedSession = fs.readFileSync(manager.getSessionFile()!);
+    expect(savedSession.subarray(0, originalSession.length)).toEqual(originalSession);
+    const entries = savedSession
+      .toString()
+      .trim()
+      .split("\n")
+      .map((line) => JSON.parse(line));
+    expect(entries.some((entry) => entry.type === "message")).toBe(false);
+    if (!session) throw new Error("SDK scope construction did not run");
     expect(session.model?.provider).toBe("openai-codex");
     expect(session.model?.id).toBe("gpt-6-luna");
     expect(session.thinkingLevel).toBe("low");
@@ -140,4 +157,45 @@ it("isolates configured global/project packages and resources without losing Pi 
     vi.unstubAllEnvs();
     f.cleanup();
   }
+});
+
+it("retains a research refusal and cannot accept a plan or implicitly retry in that request", async () => {
+  const scoped = piTeacherTools({ type: "object", properties: {} }, true);
+  const source = scoped.customTools.find((tool) => tool.name === "read_lesson_source")!;
+  const plan = scoped.customTools.find((tool) => tool.name === "submit_teacher_plan")!;
+  const call = (tool: typeof source, args: unknown) =>
+    tool.execute("owned-probe", args, undefined, undefined, {} as any);
+  await expect(call(source, { url: "http://127.0.0.1/private" })).rejects.toThrow(
+    "private network",
+  );
+  await expect(call(plan, {})).rejects.toThrow("Pi lesson research failed");
+  await expect(call(source, { url: "https://example.com" })).rejects.toThrow(
+    "Pi lesson research failed",
+  );
+  expect(() => scoped.result()).toThrow("Retry explicitly");
+  const ordinary = piTeacherTools({ type: "object", properties: {} });
+  expect(ordinary.tools).toEqual(["submit_teacher_plan"]);
+});
+
+it("refuses plan output after the owning request or current SDK tool is interrupted", async () => {
+  const owner = new AbortController();
+  const scoped = piTeacherTools({ type: "object", properties: {} }, true, owner.signal);
+  const plan = scoped.customTools.find((tool) => tool.name === "submit_teacher_plan")!;
+  await plan.execute("plan", {}, undefined, undefined, {} as any);
+  owner.abort();
+  expect(() => scoped.result()).toThrow("interrupted");
+  const tool = new AbortController();
+  tool.abort();
+  const next = piTeacherTools({ type: "object", properties: {} }, true);
+  const reader = next.customTools.find((entry) => entry.name === "read_lesson_source")!;
+  await expect(
+    reader.execute(
+      "source",
+      { url: "http://127.0.0.1/private" },
+      tool.signal,
+      undefined,
+      {} as any,
+    ),
+  ).rejects.toThrow("interrupted");
+  expect(() => next.result()).toThrow("interrupted");
 });

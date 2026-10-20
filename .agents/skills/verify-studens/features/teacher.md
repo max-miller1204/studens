@@ -83,4 +83,4 @@ The service reply fixture reports no help. The drives require the actual reply a
 
 ## Gotchas
 
-Fixture teachers do not prove model responses. All three hosts use a dedicated persistent teacher session. The initiating Pi session context is intentionally separate. Legacy Pi bridge fixtures cover historical state, not a second production delivery path. Starting a new lesson still requires the initiating host. Private quiz keys must remain unavailable over HTTP.
+Fixture teachers do not prove model responses. All three hosts use a dedicated persistent teacher session. The initiating Pi session context is intentionally separate. Legacy Pi bridge fixtures cover historical state, not a second production delivery path. New lessons start from the classroom page through the same persistent teacher; see [Next lesson](next-lesson.md). Private quiz keys must remain unavailable over HTTP.
