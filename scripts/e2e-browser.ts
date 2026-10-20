@@ -1,5 +1,6 @@
 import { verifyStepperPublication } from "./e2e-stepper-publication.ts";
 import { verifyDisputesBrowser } from "./e2e-disputes-browser.ts";
+import { verifyExpectedAnswers } from "./e2e-expected-answers.ts";
 import { verifyReviewWorkload } from "./e2e-review-workload.ts";
 import { verifyCriteriaBrowser } from "./e2e-criteria-browser.ts";
 import { verifyCodeBrowser } from "./e2e-code-browser.ts";
@@ -406,6 +407,9 @@ await verifyReviewCards(artifacts ? path.join(artifacts, "review-cards") : null)
 await verifyReteachBrowser(artifacts ? path.join(artifacts, "reteach") : null);
 
 await verifyDisputesBrowser(artifacts ? path.join(artifacts, "disputes") : null);
+await verifyExpectedAnswers(
+  artifacts ? path.join(artifacts, "expected-answers") : "/tmp/studens-expected-answers-browser",
+);
 await verifyCriteriaBrowser(artifacts ? path.join(artifacts, "criteria") : null);
 await verifyCodeBrowser(artifacts ? path.join(artifacts, "code") : null);
 await verifyCodeReview(artifacts ? path.join(artifacts, "code-review") : null);

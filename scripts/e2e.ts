@@ -90,8 +90,10 @@ function seedClassroom(root: string): void {
     JSON.stringify({
       "check-1": {
         q1: {
-          pointsPossible: 1,
-          criteria: "One point for option a: the value is dropped. Zero points for b.",
+          expected: "a",
+          points: 1,
+          full: "One point for option a: the value is dropped.",
+          partial: "Zero points for b.",
         },
       },
     }),
@@ -295,6 +297,18 @@ async function main(): Promise<void> {
     if (graded.quizzes[0].grade.questions[0].correct !== false)
       throw new Error("Wrong answer was not marked incorrect.");
     const gradedTask = retrievalTask(graded, "quiz", LESSON);
+    const expectedUrl = `${base}/api/quiz/expected?${new URLSearchParams({ classroom: CLASSROOM, lesson: LESSON, quizId: "check-1", submissionId: graded.quizzes[0].submission.id })}`;
+    const expectedBefore = await (await fetch(expectedUrl)).json();
+    if (
+      expectedBefore.questions.q1.status !== "waiting" ||
+      expectedBefore.questions.q1.expected !== undefined
+    )
+      throw new Error("Expected answer escaped before the corrective reply.");
+    if (artifacts)
+      fs.writeFileSync(
+        path.join(artifacts, "expected-before.json"),
+        JSON.stringify(expectedBefore, null, 2),
+      );
     await playwrightCode(
       browser,
       root,
@@ -321,6 +335,22 @@ async function main(): Promise<void> {
     if (!retrieval || retrieval.key !== `${LESSON}/check-1/q1` || retrieval.assistance !== "none")
       throw new Error(
         "The successful panel reply has no linked retrieval evidence with reported assistance.",
+      );
+    const expectedAfter = await (await fetch(expectedUrl)).json();
+    if (
+      expectedAfter.questions.q1.status !== "available" ||
+      expectedAfter.questions.q1.expected !== "a"
+    )
+      throw new Error("The exact saved corrective reply did not release its expected answer.");
+    await playwrightCode(
+      browser,
+      root,
+      `async page=>{await page.locator('.cl-expected[data-status="available"]').waitFor();if(!(await page.locator('.cl-expected-value').textContent()).includes('The value is dropped'))throw new Error('Expected answer label unreadable');return true;}`,
+    );
+    if (artifacts)
+      fs.writeFileSync(
+        path.join(artifacts, "expected-after.json"),
+        JSON.stringify(expectedAfter, null, 2),
       );
     const learningRecord = fs.readFileSync(
       path.join(root, CLASSROOM, "learning-records", retrieval.learningRecord),

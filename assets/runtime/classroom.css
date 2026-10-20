@@ -2419,3 +2419,28 @@ body > .cl-teacher-activity {
 .cl-teacher-activity[data-state="failed"] > p:first-child {
   color: var(--cl-danger);
 }
+
+.cl-expected {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--cl-border);
+  border-radius: 8px;
+  font: 0.875rem/1.6 var(--cl-sans);
+  overflow-wrap: anywhere;
+}
+.cl-expected > :first-child {
+  margin-top: 0;
+}
+.cl-expected > :last-child {
+  margin-bottom: 0;
+}
+.cl-expected-value {
+  white-space: pre-wrap;
+}
+.cl-expected pre {
+  overflow-x: auto;
+}
+.cl-expected button {
+  display: block;
+  margin-top: 0.75rem;
+}
