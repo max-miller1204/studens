@@ -46,6 +46,9 @@ Upgrading from pi-teach? Remove the old plugin before installing Studens; see th
 
 Read, ask questions, and reply to the teacher on the lesson page. Quizzes save your
 answers and feedback. The classroom page offers spaced reviews and folders.
+Choose **Export** for an Anki deck, printable classroom, or portable Markdown.
+Exports contain saved public material; expected answers stay excluded unless you
+select answers already unlocked under the original grading rules.
 Claude Code and Codex teachers run in a persistent local service.
 
 All three hosts save material in `~/.pi/agent/classrooms/`.
