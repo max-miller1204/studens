@@ -8,7 +8,7 @@ import { initMath, swapMathForSource } from "./math.mjs";
  * highlight never anchors to it. The questions themselves can be highlighted.
  */
 const QUIZ_RUNTIME_UI =
-  "[data-cl-grade], .cl-practice-feedback, .cl-q-verdict, .cl-quiz-footer, .cl-answer-report, .cl-order-controls";
+  ".cl-faded-runtime, [data-cl-grade], .cl-practice-feedback, .cl-q-verdict, .cl-quiz-footer, .cl-answer-report, .cl-order-controls";
 
 /** Our own UI, never lesson text: a highlight must not anchor into it. */
 export const RUNTIME_UI = `script, style, noscript, .cl-header, .cl-card-panel, .cl-ask-pill, .cl-badge-marker, .cl-term-pop, .cl-contract-error, .cl-diagram, .cl-math, .cl-teacher, .cl-teacher-notice, ${QUIZ_RUNTIME_UI}`;

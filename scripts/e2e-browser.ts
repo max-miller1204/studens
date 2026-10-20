@@ -7,6 +7,7 @@ import { verifyDailyReview } from "./e2e-daily-review.ts";
 import { verifyReviewCards } from "./e2e-review-cards.ts";
 import { verifyReteachBrowser } from "./e2e-reteach-browser.ts";
 import { verifyPracticeBrowser } from "./e2e-practice-browser.ts";
+import { verifyFadedBrowser } from "./e2e-faded-browser.ts";
 import { verifyClosedBrowser } from "./e2e-closed-browser.ts";
 import { verifyFoldersBrowser } from "./e2e-folders-browser.ts";
 import { verifyCourseMapBrowser } from "./e2e-course-map-browser.ts";
@@ -400,3 +401,5 @@ await verifySettingsBrowser(artifacts ? path.join(artifacts, "settings") : null)
 
 await verifyDailyReview(artifacts ? path.join(artifacts, "daily-review") : null);
 await verifyPracticeBrowser(artifacts ? path.join(artifacts, "practice") : null);
+
+await verifyFadedBrowser(artifacts ? path.join(artifacts, "faded") : null);

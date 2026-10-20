@@ -6,6 +6,7 @@ The learner submits typed answers and reads grades on the lesson page.
 
 - Submit and restore all nine question types.
 - Check inline ungraded practice locally, revise an answer, and start fresh on reload.
+- Study a faded worked example, attempt one more step per new case, and compare reasoning locally.
 - Grade closed answers immediately without a teacher turn. Keep saved machine allocations through recovery.
 - Preserve drafts and optional assistance reports.
 - Lock a graded quiz. Display partial credit and saved criterion allocations.
@@ -72,6 +73,36 @@ practice HTTP writes, saved drafts, submissions, grades, review items, or teache
 calls. A neighboring graded check still submits and scores normally, preserving its
 private predeclared criterion and code-owned allocation. Public practice
 feedback never reads the private graded rubric, and its static route stays blocked.
+
+For a procedural teaching block, the `.cl-faded` widget starts with all worked steps
+and principle questions. Write one explanation, select `Try the next case`, then
+attempt the omitted steps. `Check my work` checks declared public term/numeric
+keys; open reasoning requires `Compare with solution`, which discloses assistance
+without claiming correctness. `Hand over one more step` removes one more worked
+step on a different case. The last case begins with every step omitted. Wrong exact
+answers can continue after feedback; finishing is practice, never a grade.
+
+The browser suite drives the copyable `assets/templates/faded.html` contract through
+real lesson startup, including two instances after a real closed pretest releases
+teaching. Inspect `faded/result.json`: all classroom file hashes stay unchanged during
+widget actions, no HTTP writes or teacher turns occur, and only the pretest and
+neighboring assessment have submissions/grades. It checks right/wrong term/numeric
+feedback, open comparison, finite number parsing and separately labeled exact units,
+keyboard focus, light/dark at 1280px and 390px, reduced motion, reset/revisit,
+reload/navigation, visible malformed JSON/version errors, and authored text safety.
+Editing a compared answer clears its verdict and retains assistance. Revisit/reset
+clear responses and retain exposure warnings during the page visit; reload returns
+to study, with no restored answers or credit. The neighboring private key remains
+immutable and its static route stays blocked.
+
+For a focused drive, run
+`node --input-type=module -e 'import {verifyFadedBrowser} from "./scripts/e2e-faded-browser.ts"; await verifyFadedBrowser("/tmp/studens-faded")'`.
+The packaged page checker and authoring harness use `checkFaded` to attempt and
+compare each omitted step, progress through all cases, and reset, while checking
+for HTTP writes. Those arbitrary reasoning responses prove controls, not correctness
+or learning efficacy. Public practice solutions must use cases distinct from every
+graded question. Exact terms normalize only case and whitespace; use authored
+alternatives or comparison for mathematically equivalent expressions.
 
 For an authored lesson, run `node scripts/check-lesson.ts <classroom> <lesson>`
 with its classrooms root in `PI_CLASSROOMS_DIR`. The command preflights saved

@@ -1,0 +1,202 @@
+<!--
+  Reusable faded worked example, version 1. Copy this section into teaching inside
+  the data-cl-after-pretest gate, outside every form. Each data-faded-id is unique.
+  Keep the canonical lesson shell; the runtime is injected by the server.
+
+  Declare 2–6 ordered steps: title and a principle-focused self-explanation question.
+  Declare N+1 rounds: a worked case followed by N distinct cases. Round r hands the
+  last r steps to the learner. Include all N prompt/solution/response entries in
+  each case. Change the values/situation for each round and the graded assessment.
+  Version, title, steps and rounds are required. Unknown fields are errors.
+
+  Every string is plain text, never HTML or executable code. Escape < as \u003c in
+  JSON scripts (especially </script>); encode with toScriptJson when serializing.
+  Solutions, expected values and feedback are PUBLIC practice content. Never copy
+  private graded questions/keys into this widget, even inside an invisible script.
+
+  response contracts:
+    {"type":"compare"}: open reasoning; honest comparison, never automatic correctness.
+    {"type":"term","expected":"text" or ["alternative",...],"correct":"why","incorrect":"why"}:
+      exact match ignoring case, surrounding whitespace, and repeated whitespace.
+      Punctuation and algebraic rearrangements are not normalized. List alternatives
+      or choose compare for open reasoning and equivalent mathematical expressions.
+    {"type":"numeric","expected":{"value":5,"tolerance":0.1,"unit":"m"},
+     "correct":"why","incorrect":"why"}: finite decimal/scientific number;
+      optional nonnegative absolute tolerance (default 0), optional exact trimmed unit.
+      The runtime supplies a separately labeled unit input if unit is declared.
+      Units are not converted; numeric strings containing units are rejected.
+
+  Study asks for one explanation in the learner's words. Next hands over one more
+  step. Learners must attempt every omitted step and check it or compare with its
+  solution before continuing. Wrong exact answers may continue after feedback; this
+  is teaching practice, not a grade. Compare marks assistance and never asserts an
+  open answer is correct. The final case begins with all solutions omitted.
+  Revisit/reset clear answers and keep exposure warnings for this page visit.
+  Reload/navigation starts at study, with no restored responses. No storage, draft,
+  submission, teacher request, learning record, score, mastery or delay credit.
+  Completing a case never establishes independent retrieval. Confidence/self-rating
+  and assessment evidence contracts are separate. No private plan/key entries for
+  this widget. A human retention study is still needed to establish learning benefit.
+-->
+<section class="cl-faded" data-faded-id="balance">
+  <h2>From an example to your own work</h2>
+  <p>Study the reasoning, then take over one more step on a different equation.</p>
+  <script type="application/json" data-cl-faded>
+    {
+      "version": 1,
+      "title": "Balance an equation",
+      "steps": [
+        {
+          "title": "Undo the constant",
+          "principle": "Why must the same operation act on both sides?"
+        },
+        {
+          "title": "Undo the coefficient",
+          "principle": "Why divide every term on both sides?"
+        },
+        {
+          "title": "Check in the original equation",
+          "principle": "Why check the original rather than a rearranged equation?"
+        }
+      ],
+      "rounds": [
+        {
+          "situation": "Solve 3x + 6 = 21.",
+          "steps": [
+            {
+              "prompt": "Write the equation after removing the constant.",
+              "solution": "Subtract 6 from both sides: 3x = 15. Equal changes preserve equality.",
+              "response": {
+                "type": "term",
+                "expected": ["3x = 15", "3x=15"],
+                "correct": "Both sides lost 6, so equality is preserved.",
+                "incorrect": "Apply subtraction to both sides, including the right side."
+              }
+            },
+            {
+              "prompt": "Find x.",
+              "solution": "Divide both sides by 3: x = 5.",
+              "response": {
+                "type": "numeric",
+                "expected": {
+                  "value": 5
+                },
+                "correct": "Dividing both sides by 3 isolates x.",
+                "incorrect": "Undo multiplication with division on both sides."
+              }
+            },
+            {
+              "prompt": "Explain how the original equation checks your result.",
+              "solution": "3 \u00d7 5 + 6 = 21. Substitution gives the original right side.",
+              "response": {
+                "type": "compare"
+              }
+            }
+          ]
+        },
+        {
+          "situation": "Solve 4x + 8 = 32.",
+          "steps": [
+            {
+              "prompt": "Write the equation after removing the constant.",
+              "solution": "Subtract 8 from both sides: 4x = 24.",
+              "response": {
+                "type": "term",
+                "expected": ["4x = 24", "4x=24"],
+                "correct": "Subtracting 8 preserves equality.",
+                "incorrect": "Subtract the constant from both sides."
+              }
+            },
+            {
+              "prompt": "Find x.",
+              "solution": "Divide both sides by 4: x = 6.",
+              "response": {
+                "type": "numeric",
+                "expected": {
+                  "value": 6
+                },
+                "correct": "The coefficient is undone on both sides.",
+                "incorrect": "Undo the coefficient with division."
+              }
+            },
+            {
+              "prompt": "Explain how the original equation checks your result.",
+              "solution": "4 \u00d7 6 + 8 = 32. The substitution satisfies the original equation.",
+              "response": {
+                "type": "compare"
+              }
+            }
+          ]
+        },
+        {
+          "situation": "Solve 5x + 10 = 45.",
+          "steps": [
+            {
+              "prompt": "Write the equation after removing the constant.",
+              "solution": "Subtract 10 from both sides: 5x = 35.",
+              "response": {
+                "type": "term",
+                "expected": ["5x = 35", "5x=35"],
+                "correct": "Both sides were reduced by 10.",
+                "incorrect": "The right side must change too."
+              }
+            },
+            {
+              "prompt": "Find x.",
+              "solution": "Divide both sides by 5: x = 7.",
+              "response": {
+                "type": "numeric",
+                "expected": {
+                  "value": 7
+                },
+                "correct": "Dividing both sides by 5 isolates x.",
+                "incorrect": "Divide the remaining total by the coefficient."
+              }
+            },
+            {
+              "prompt": "Explain how the original equation checks your result.",
+              "solution": "5 \u00d7 7 + 10 = 45. Substitution confirms equality.",
+              "response": {
+                "type": "compare"
+              }
+            }
+          ]
+        },
+        {
+          "situation": "Solve 6x + 12 = 60.",
+          "steps": [
+            {
+              "prompt": "Write the equation after removing the constant.",
+              "solution": "Subtract 12 from both sides: 6x = 48.",
+              "response": {
+                "type": "term",
+                "expected": ["6x = 48", "6x=48"],
+                "correct": "The same subtraction preserved equality.",
+                "incorrect": "Apply the same operation to the two sides."
+              }
+            },
+            {
+              "prompt": "Find x.",
+              "solution": "Divide both sides by 6: x = 8.",
+              "response": {
+                "type": "numeric",
+                "expected": {
+                  "value": 8
+                },
+                "correct": "Dividing both sides isolates x.",
+                "incorrect": "Undo the coefficient on both sides."
+              }
+            },
+            {
+              "prompt": "Explain how the original equation checks your result.",
+              "solution": "6 \u00d7 8 + 12 = 60. Substitution satisfies the original equation.",
+              "response": {
+                "type": "compare"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  </script>
+</section>
