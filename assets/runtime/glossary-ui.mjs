@@ -165,6 +165,7 @@ export function createGlossary({ config, contentRoot }) {
       const link = document.createElement("a");
       link.href = entry.origin.url;
       link.textContent = entry.origin.title;
+      link.addEventListener("click", () => closeTermPopover(false));
       source.appendChild(link);
     } else {
       const note = document.createElement("p");

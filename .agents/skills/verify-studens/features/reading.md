@@ -113,3 +113,8 @@ section was edited keeps its original hash and shows a specific missing-section 
 with explicit Retry and lesson-start links; it never guesses a replacement. Inspect
 `stale-held-source-hashes.json` and `stale-source-retry-hashes.json` alongside actual
 viewport bounding boxes. Published full-page captures reset scroll to the top.
+
+Following a glossary source closes its dialog, including a source in the current
+lesson. Retained native output checks must assert the dialog closes before reload
+and focus reaches the actual teaching section; reloading alone can hide this bug.
+The original same-lesson failure and unchanged classroom hashes remain in the packet.

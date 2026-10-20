@@ -107,7 +107,7 @@ export async function verifyLessonSources(artifacts: string | null): Promise<voi
       await page.locator('#ownership').waitFor();await page.reload();await page.waitForFunction(()=>document.activeElement?.id==='ownership');const targetBox=await page.locator('#ownership').boundingBox();const headerBox=await page.locator('.cl-header').boundingBox();if(targetBox.y<headerBox.y+headerBox.height-1)throw new Error('Teaching source is obscured by sticky header.');
       await page.goto(source);await page.locator('.cl-term').first().click();await page.getByRole('button',{name:'Close definition',exact:true}).click();
       if(!await page.locator('.cl-term').first().evaluate(e=>e===document.activeElement))throw new Error('Close lost term focus.');
-      captures.push({size,width,height,theme,shell,box,canonicalSource:true,recallFirst:true,escapeFocus:true,closeFocus:true,persistedAfterReload:true});
+      captures.push({size,width,height,theme,shell,box,targetBox,headerBox,canonicalSource:true,recallFirst:true,escapeFocus:true,closeFocus:true,persistedAfterReload:true});
     }
     if(errors.length||writes.length)throw new Error(JSON.stringify({errors,writes}));return {backend:${JSON.stringify(backend)},captures,errors,writes};
    }`,
@@ -341,6 +341,11 @@ export async function verifyLessonSources(artifacts: string | null): Promise<voi
       session,
       out,
       `async page=>{await page.reload();await page.locator('#teach-borrow').waitFor();await page.goto(${JSON.stringify(base + "/c/course/003-predictions")});await page.getByRole('navigation',{name:'Lesson prerequisites',exact:true}).getByRole('link',{name:'Borrowing',exact:true}).click();await page.waitForURL(${JSON.stringify(base + "/c/course/002-borrow#teach-borrow")});await page.waitForFunction(()=>document.activeElement?.id==='teach-borrow');const t=await page.locator('#teach-borrow').boundingBox(),h=await page.locator('.cl-header').boundingBox();if(t.y<h.y+h.height-1)throw Error('Prerequisite heading obscured');return {releasedPersistence:true,existingTeachingMapping:true};}`,
+    );
+    await playwrightCode(
+      session,
+      out,
+      `async page=>{await page.goto(${JSON.stringify(base + "/search?q=Borrowing")});await page.locator('.cl-search-results a[href*="type=glossary"]').click();await page.getByRole('heading',{name:'Glossary term',exact:true}).waitFor();await page.getByRole('link',{name:'Borrowing',exact:true}).click();await page.waitForURL(${JSON.stringify(base + "/c/course/002-borrow#teach-borrow")});await page.waitForFunction(()=>document.activeElement?.id==='teach-borrow');return {secondTermReleasedSourceClicked:true};}`,
     );
     readOnly("released-navigation", before);
     fs.writeFileSync(

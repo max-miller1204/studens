@@ -118,12 +118,6 @@ function buildHeader() {
   document.body.prepend(header);
 }
 
-/**
- * The element whose text can be highlighted.
- *
- * Lessons are model-authored, so we cannot rely on a particular wrapper existing.
- * Prefer an explicit opt-in, then the usual semantic containers, then <body>.
- */
 /** Put an explicitly declared teaching destination below the actual sticky header. */
 function alignTeachingSource() {
   let id;
@@ -202,6 +196,12 @@ function buildLessonLinks() {
   else document.body.prepend(nav);
 }
 
+/**
+ * The element whose text can be highlighted.
+ *
+ * Lessons are model-authored, so we cannot rely on a particular wrapper existing.
+ * Prefer an explicit opt-in, then the usual semantic containers, then <body>.
+ */
 function resolveContentRoot() {
   return (
     document.querySelector("[data-cl-content]") ||
