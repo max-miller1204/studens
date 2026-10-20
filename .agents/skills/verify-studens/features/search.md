@@ -1,0 +1,30 @@
+# Search across classrooms
+
+Find public lesson passages, question threads, glossary terms, and learning records across classrooms, then open the exact source.
+
+## Sub-features
+
+- Literal Unicode and code-punctuation queries; escaped snippets and highlighted matches.
+- Four source types, deterministic ordering, counts, and explicit pagination.
+- Canonical passage anchors, question-card links, accepted glossary term views, and record passages.
+- Honest context for orphaned questions and unavailable edited/deleted sources.
+- Private file exclusion, pretest/publication gates, read-only projection, and specific source errors with explicit retry.
+
+## How to get to it (user POV)
+
+1. Open Classrooms and select Search across classrooms.
+2. Enter a word or phrase and select Search.
+3. Select a result to read its passage, card, term, or learning record.
+4. Use Back to return to the saved query.
+
+## Driving it with playwright-cli
+
+The browser suite invokes `scripts/e2e-search-browser.ts` through `npm run verify -- browser --artifacts /tmp/studens-search`.
+
+Use the shared launch and doctor instructions. Search uses a labelled searchbox and a Search button. `.cl-search-results h2 a` opens each exact source; native `#cl-search-…` anchors identify canonical source text, while `#cl-question-…` identifies a saved card. Inspect the search folder's `result.json`, `*-hashes.json`, destinations and desktop/mobile light/dark screenshots.
+
+The harness checks all four domains in two classrooms, keyboard entry and Back/query preservation, literal Unicode/code punctuation, safe snippets, empty/no-results, private exact queries, malformed glossary/error/explicit retry, symlink/traversal guards, changed repeated passages, deleted cards and unavailable sources. Search-only reads must leave classroom hashes unchanged and make no teacher calls or write requests. It also submits a real pretest through a fixture grading boundary and follows the released search passage, then exercises ordinary Ask and graded-quiz persistence.
+
+## Gotchas
+
+Fixture teacher and grade callbacks prove browser, HTTP and stored-state behavior, not model answers. No search index is persisted. A malformed source fails the whole query with an explicit retry; no partial index or automatic retry hides it. A changed duplicate count invalidates its previous passage anchors so a stale result cannot jump to another occurrence. Query text is preserved, including a private-canary string supplied by the tester; it must produce no private hit or private metadata.

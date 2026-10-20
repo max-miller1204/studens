@@ -1,3 +1,4 @@
+import { searchPassages } from "./search-passages.ts";
 /**
  * pages.ts — the shell pages: landing (all classrooms), classroom (its lessons and
  * documents), and the markdown document view.
@@ -69,6 +70,7 @@ export function shell(options: ShellOptions): string {
 ${options.body}
 </main>
 <script type="module" src="/static/shell.js"></script>
+<script type="module" src="/static/search-source.mjs"></script>
 </body>
 </html>`;
 }
@@ -99,6 +101,7 @@ export function landingPage(
   </div>
   <p class="cl-lede">${folder ? "Keep related classrooms together." : "Pick up where you left off, or start something new with <code>/teach</code>."}</p>
 </div>
+<p class="cl-search-entry"><a href="/search">Search across classrooms</a></p>
 ${!folder ? `<section class="cl-daily-summary" aria-label="Daily review" data-cl-daily><h2>${Object.values(dueByClassroom).reduce((sum, count) => sum + count, 0)} due across classrooms</h2><p data-daily-workload>One shared daily allowance bounds new selections across all classrooms, topics, and early reviews. Deferred work stays due.</p><button type="button" class="cl-button" data-daily-action disabled>Start daily review</button><p class="cl-progress-note" role="status" aria-live="polite" data-daily-status>Checking daily review…</p><a href="/reviews/daily">Daily review history</a></section>` : ""}
 ${!folder && folders.length ? `<section aria-label="Folders"><h2 class="cl-section-title">Folders</h2><ul class="cl-grid cl-folder-grid">${folders.map((f) => `<li class="cl-card"><a class="cl-card-link" href="/?folder=${encodeURIComponent(f.id)}"><span class="cl-card-emoji" aria-hidden="true">📁</span><span class="cl-card-body"><span class="cl-card-title">${escapeHtml(f.name)}</span><span class="cl-card-meta">${plural(classrooms.filter((c) => f.classrooms.includes(c.name)).length, "classroom")}</span></span></a></li>`).join("\n")}</ul></section>` : ""}
 <section aria-label="${folder ? "Classrooms in folder" : "Unfiled classrooms"}">
@@ -571,7 +574,7 @@ export function documentPage(
   return shell({
     title: `${prettyFileName(fileName)} — ${classroom.title}`,
     breadcrumb: `${classroomCrumbs(classroom)}${parentCrumb}${sep}<span class="cl-crumb cl-crumb-current">${escapeHtml(prettyFileName(fileName))}</span>`,
-    body: `<article class="cl-doc">\n${fileName === "MISSION.md" ? renderMission(markdown) : renderMarkdown(markdown)}\n</article>`,
+    body: `<article class="cl-doc">\n${fileName === "MISSION.md" ? renderMission(markdown) : parent?.href === `/doc/${encodeURIComponent(classroom.name)}/learning-records` ? searchPassages(renderMarkdown(markdown)).html : renderMarkdown(markdown)}\n</article>`,
   });
 }
 

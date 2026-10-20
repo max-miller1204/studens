@@ -2419,3 +2419,62 @@ body > .cl-teacher-activity {
 .cl-teacher-activity[data-state="failed"] > p:first-child {
   color: var(--cl-danger);
 }
+
+/* Cross-classroom search uses ordinary public source navigation. */
+.cl-search {
+  max-width: 52rem;
+  margin-inline: auto;
+}
+.cl-search-form {
+  margin-block: 1.5rem;
+}
+.cl-search-form label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+.cl-search-form > div {
+  display: flex;
+  gap: 0.5rem;
+}
+.cl-search-form input {
+  min-width: 0;
+  flex: 1;
+  font: inherit;
+  padding: 0.65rem;
+  border: 1px solid var(--cl-border);
+  border-radius: 0.4rem;
+  background: var(--cl-bg);
+  color: inherit;
+}
+.cl-search-results {
+  padding-left: 1.5rem;
+}
+.cl-search-results li {
+  padding-block: 1rem;
+  border-bottom: 1px solid var(--cl-border);
+  overflow-wrap: anywhere;
+}
+.cl-search-results h2 {
+  font-size: 1.1rem;
+  margin-block: 0.3rem;
+}
+.cl-search-source {
+  font-size: 0.85rem;
+  opacity: 0.75;
+  margin: 0;
+}
+.cl-search-anchor {
+  scroll-margin-top: 7rem;
+}
+.cl-search-anchor:target + * {
+  outline: 2px solid currentColor;
+}
+.cl-search-notice {
+  border: 1px solid currentColor;
+  padding: 1rem;
+}
+.cl-search-results mark {
+  color: inherit;
+  background: #e8bf4855;
+}
