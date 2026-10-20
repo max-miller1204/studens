@@ -96,10 +96,13 @@ For Pi structured-return lifecycle changes, run
 These use the installed SDK session, tool wrapper, validator and agent loop with a
 controlled provider stream. Require one provider request for one successful final
 return, including ordinary, typed, lesson, refill, grading and dispute schemas.
-Research may request another response before the final return; the next ordinary
-request must remove research tools while reopening the same session. Same-batch
-duplicate plans, invalid raw arguments, source errors, external cancellation and
-the production timeout must still fail. Raw arguments must save before validation.
+Research-only batches must continue. One or several successful source reads and
+the final plan in the same assistant batch must complete without another provider
+request. The next ordinary request must remove research tools while reopening the
+same session. Same-batch duplicate plans, invalid raw arguments, unknown tools,
+research after a plan, source errors, external cancellation and the production
+timeout must still fail. Probe interruption during mixed-batch research and after
+its plan was recorded. Raw arguments must save before validation.
 The SDK termination hint applies only when every result in a batch requests it;
 it must never skip other calls already generated in that batch.
 
@@ -113,7 +116,8 @@ the lesson or create a replacement learner request. Compare the original session
 prefix, appended assistant/tool messages, durable request and answer count, and
 assessment files after reload. Inspect matching before/after screenshots. This
 scoped retry supplements the real Pi target; preserve that target's failures and
-uncovered paths separately.
+uncovered paths separately. Bind native evidence to its actual source hash; a later
+completion repair needs separate coverage rather than inheriting its verdict.
 
 The service reply fixture reports no help. The drives require the actual reply and reported assistance in a saved retrieval check. They require a linked learning record and keep immediate correction outside retained evidence. Inspect `stored-teacher-state.json` and the retained `classroom/` files.
 

@@ -215,6 +215,64 @@ it("rejects two plans already in the same assistant batch", async () => {
   expect(raw).toEqual([ordinary, ordinary]);
 });
 
+const source = (id = "source"): ToolCall => ({
+  type: "toolCall",
+  id,
+  name: "read_lesson_source",
+  arguments: { url: "https://example.com" },
+});
+it.each([1, 2])(
+  "completes %i research calls and a final plan in the same assistant batch without continuation",
+  async (sources) => {
+    batches = [[...Array.from({ length: sources }, (_, i) => source("source-" + i)), plan()]];
+    await expect(run(schema, undefined, true)).resolves.toEqual(ordinary);
+    expect(readLessonSource).toHaveBeenCalledTimes(sources);
+    expect(raw).toEqual([ordinary]);
+    expect(requests).toBe(1);
+  },
+);
+
+it.each(["duplicate", "invalid", "unknown", "research-after"])(
+  "rejects a mixed batch containing %s without accepting its first plan",
+  async (kind) => {
+    const invalid = { private_invalid: "retained" };
+    batches = [
+      [
+        source(),
+        plan(kind === "invalid" ? invalid : ordinary),
+        ...(kind === "duplicate"
+          ? [plan(ordinary, "duplicate")]
+          : kind === "unknown"
+            ? [
+                {
+                  type: "toolCall" as const,
+                  id: "unknown",
+                  name: "unregistered_tool",
+                  arguments: {},
+                },
+              ]
+            : kind === "research-after"
+              ? [source("late-source")]
+              : []),
+      ],
+    ];
+    await expect(run(schema, undefined, true)).rejects.toThrow(
+      kind === "duplicate"
+        ? "more than one teacher plan"
+        : kind === "invalid"
+          ? "Validation failed"
+          : kind === "unknown"
+            ? "unregistered_tool not found"
+            : "Pi already submitted its plan",
+    );
+    expect(readLessonSource).toHaveBeenCalledOnce();
+    expect(raw).toEqual(
+      kind === "duplicate" ? [ordinary, ordinary] : [kind === "invalid" ? invalid : ordinary],
+    );
+    expect(abortedRequests.slice(1).every(Boolean)).toBe(true);
+  },
+);
+
 it("saves invalid raw arguments before native validation and never continues", async () => {
   batches = [[plan({ private_invalid: "retained" })]];
   await expect(run()).rejects.toThrow("Validation failed");
@@ -240,19 +298,44 @@ it("cannot hide a research error behind a later valid plan in the batch", async 
   expect(raw).toEqual([]);
 });
 
-it.each(["cancel", "timeout"])(
-  "rejects %s even after a successful return was recorded",
-  async (kind) => {
+it.each([
+  { kind: "cancel", mixed: false },
+  { kind: "timeout", mixed: false },
+  { kind: "cancel", mixed: true },
+  { kind: "timeout", mixed: true },
+])(
+  "rejects $kind even after a successful return was recorded (mixed batch: $mixed)",
+  async ({ kind, mixed }) => {
     const owner = new AbortController();
     if (kind === "timeout") vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
     onRecorded = () => {
       if (kind === "cancel") owner.abort(new Error("Specific external cancellation"));
       else vi.advanceTimersByTime(180_000);
     };
-    await expect(run(schema, owner.signal)).rejects.toThrow(
+    if (mixed) batches = [[source(), plan()]];
+    await expect(run(schema, owner.signal, mixed)).rejects.toThrow(
       kind === "cancel" ? "Specific external cancellation" : "timed out after 180 seconds",
     );
     expect(raw).toEqual([ordinary]);
     expect(requests).toBe(1);
+  },
+);
+
+it.each(["cancel", "timeout"])(
+  "rejects %s during research before a same-batch final plan",
+  async (kind) => {
+    const owner = new AbortController();
+    if (kind === "timeout") vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    vi.mocked(readLessonSource).mockImplementation(async () => {
+      if (kind === "cancel") owner.abort(new Error("Specific research cancellation"));
+      else vi.advanceTimersByTime(180_000);
+      return "Late research must not permit the plan";
+    });
+    batches = [[source(), plan()]];
+    await expect(run(schema, owner.signal, true)).rejects.toThrow(
+      kind === "cancel" ? "Specific research cancellation" : "timed out after 180 seconds",
+    );
+    expect(raw).toEqual([]);
+    expect(abortedRequests.slice(1).every(Boolean)).toBe(true);
   },
 );

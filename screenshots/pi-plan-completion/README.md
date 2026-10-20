@@ -7,6 +7,11 @@ teacher answer in the same conversation. The after state deliberately retains th
 separate interrupted third request as failed. No new learner reply or lesson was
 created. There is no layout change.
 
+These native captures used commit `e059a2005189809d7a20587f3066556e8cdd20f4`
+(the initial successful-plan termination fix). The later same-batch research and
+plan repair has controlled installed-SDK coverage; these captures are retained
+evidence of the earlier source epoch and do not establish its native behavior.
+
 `provenance.json` records the native prefix and application checks. The original
 whole-target failures remain retained privately. This scoped retry proves protocol
 completion and one durable answer; it does not establish teaching quality or human

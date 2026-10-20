@@ -80,6 +80,7 @@ export function piTeacherTools(
   let output: unknown;
   let count = 0;
   let sources = 0;
+  let batchHasPlan = false;
   let failure: Error | undefined;
   const requireLive = (toolSignal?: AbortSignal) => {
     if (ownerSignal?.aborted || toolSignal?.aborted)
@@ -136,7 +137,13 @@ export function piTeacherTools(
               : (ownerSignal ?? toolSignal);
           const text = await readLessonSource(args, researchSignal);
           requireLive(toolSignal);
-          return { content: [{ type: "text", text }], details: {} };
+          return {
+            content: [{ type: "text", text }],
+            details: {},
+            // The SDK stops only if every result in the batch requests it.
+            // Research alone must continue; a mixed batch ends after its plan.
+            terminate: batchHasPlan,
+          };
         } catch (error) {
           failure ??= new Error(
             `Pi lesson research failed: ${error instanceof Error ? error.message : String(error)} Retry explicitly.`,
@@ -148,6 +155,9 @@ export function piTeacherTools(
   return {
     tools: customTools.map((tool) => tool.name),
     customTools,
+    beginBatch(toolNames: string[]) {
+      batchHasPlan = toolNames.includes("submit_teacher_plan");
+    },
     fail(error: Error) {
       failure ??= error;
     },
@@ -177,6 +187,10 @@ export function observePiTeacherRequest(
     void session.abort();
   };
   return session.subscribe((event) => {
+    if (event.type === "message_end" && event.message.role === "assistant")
+      loadout.beginBatch(
+        event.message.content.filter((part) => part.type === "toolCall").map((part) => part.name),
+      );
     if (event.type === "tool_execution_start" && event.toolName === "submit_teacher_plan") {
       try {
         // Persist the actual arguments before the SDK's own schema validation.

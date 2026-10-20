@@ -32,6 +32,11 @@
     "before.png": "57d6ba49eacd9be3fd7e7fb52e3e020b7e3b067e70f47f130d05bdf790b0f4fa",
     "after.png": "6ada6949b6fa96fc49bc0b1c05b7dbbcca3fb05926ea29bb5c5fcb097515f82f"
   },
-  "controlledSdk": "Exact main base: ordinary/typed need 2 responses, research/final need 3; repair: 1/1/2; same-batch duplicates and invalid/research/cancel/timeout remain failed",
-  "originalTypedPrefix": "329562 bytes SHA256 eb6ad104a8e1a59c89f7f3186cbef1788dd83922ef138f2acb87ff81f632b099 preserved; this retry uses the separate canonical lifecycle failure, not the typed request"
+  "controlledSdk": "Main base ordinary/typed: 2 responses; repaired: 1. Separate research/final: 3 -> 2. Initial fix same-assistant research+plan: 2 responses (FAIL); batch-aware hint repair: 1. One/two reads, duplicate/invalid/unknown/research-after, cancellation/timeout during research and after plan are covered.",
+  "originalTypedPrefix": "329562 bytes SHA256 eb6ad104a8e1a59c89f7f3186cbef1788dd83922ef138f2acb87ff81f632b099 preserved; this retry uses the separate canonical lifecycle failure, not the typed request",
+  "nativeEvidenceSourceEpoch": {
+    "head": "e059a2005189809d7a20587f3066556e8cdd20f4",
+    "productionSha256": "c1de05abd33a5410e47282db4222f6a1ed40d14d87341f9a8fd41c43acced7ae",
+    "limit": "Native screenshots/retry prove the initial successful-plan termination change only. The later same-assistant research+plan repair is controlled-SDK verified; no further native call was made."
+  }
 }
