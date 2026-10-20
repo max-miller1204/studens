@@ -1,6 +1,6 @@
 # Classroom search evidence
 
-Matched landing captures use accepted main `67092d0`, 1280×900 desktop and 390×844 mobile, both themes, and the same two classroom cards. Original dispatch-base `5cb7dce` captures remain in `original-base/`. Images were captured with the repository's headless Playwright harness and inspected.
+Matched landing captures use accepted main `f2c7237`, 1280×900 desktop and 390×844 mobile, both themes, and the same two classroom cards. Fresh exact-f2 captures are byte-identical to the preserved `67092d0` before images. Original dispatch-base `5cb7dce` captures remain in `original-base/`. Images were captured with the repository's headless Playwright harness and inspected.
 
 `results-*` shows all four public domains in both classrooms. `error.png` shows a safe malformed-source error and explicit retry; `edited-passage.png` shows honest unavailable-passage navigation. `browser-result.json` records exact result links, privacy probes, zero search writes, pretest release, Ask and graded-quiz observations. `owner-fixtures.json` records independent Pi/Claude/Codex fixture routes with unchanged classroom hashes and zero teacher turns. These fixtures do not prove model behavior.
 

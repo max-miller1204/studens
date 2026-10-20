@@ -1,6 +1,6 @@
 {
   "originalBase": "5cb7dce13aef01364d3f5b5ffe5a8f4d93075927",
-  "reviewBase": "67092d07d143050caa6648de5a8280164ce05f96",
+  "reviewBase": "f2c723712e0bb8079c425b198843aceff9139c53",
   "afterCaptureSource": "2bb31a5bb0c4f836b986a52010f9000546a1e915",
   "afterSourceLimit": "Maintained inert parse5 extraction adds standard HTML tree/entity semantics. Fresh parser captures still match all six committed landing/result images byte-for-byte. The optional-tag image additionally shows named-entity text. Final full gate uses a frozen clean head.",
   "runtime": "Node 24.22.0",
@@ -69,5 +69,13 @@
     "rawAfter": "/tmp/studens-search30/legacy-stale-after",
     "inspection": "Before has no notice/Search link; after shows the honest notice and Search navigation while keeping the edited lesson readable.",
     "runtimeSHA256": "971ac8cc99e75cae7d54449f2ab7fac13211977aff383b4bef3ac20a558c8814"
+  },
+  "previousReviewBase": "67092d07d143050caa6648de5a8280164ce05f96",
+  "acceptedBaseCapture": {
+    "source": "f2c723712e0bb8079c425b198843aceff9139c53",
+    "version": "0.11.9 inherited by ordinary merge",
+    "rawRun": "/tmp/studens-search30/before-f2",
+    "comparison": "/tmp/studens-search30/accepted-f2-media-comparison.json",
+    "note": "All four fresh exact-f2 captures match the preserved670/original5cb before images byte-for-byte. Those original captures and refs remain retained."
   }
 }
