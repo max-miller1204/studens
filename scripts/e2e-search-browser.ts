@@ -38,7 +38,7 @@ export async function verifySearchBrowser(artifacts: string | null): Promise<voi
     orphan = randomUUID();
   const content = lessonHtml(
     "Ownership",
-    `<p data-search-prose>Borrow checker uses café λ and <code>Vec&lt;T&gt;</code>.</p><p>Borrow checker repeated.</p><p>Borrow checker repeated.</p><p>Literal &lt;img src=x onerror=alert(1)&gt; remains text.</p><p data-adjacent>Every value has one owner.</p><form class="cl-quiz" data-quiz-id="search-check" data-title="Search adjacent"><ol class="cl-questions"><li class="cl-q" data-question-id="q1" data-type="short"><p class="cl-q-prompt">Explain ownership.</p><textarea></textarea></li></ol></form>`,
+    `<p data-search-prose>Borrow checker uses café λ and <code>Vec&lt;T&gt;</code>.</p><p>Borrow checker repeated.</p><p>Borrow checker repeated.</p><p>Literal &lt;img src=x onerror=alert(1)&gt; remains text.</p><p data-adjacent>Every value has one owner.</p><p data-search-math>A move costs \\(O(1)\\), and \\(n\\) moves cost \\(O(n)\\).</p><form class="cl-quiz" data-quiz-id="search-check" data-title="Search adjacent"><ol class="cl-questions"><li class="cl-q" data-question-id="q1" data-type="short"><p class="cl-q-prompt">Explain ownership.</p><textarea></textarea></li></ol></form>`,
   );
   f.write("rust/001-ownership/lesson.html", content);
   f.write(
@@ -47,7 +47,7 @@ export async function verifySearchBrowser(artifacts: string | null): Promise<voi
   );
   f.write(
     "rust/GLOSSARY.md",
-    "**Borrow checker**:\nValidates café λ references.\n\n**&lt;img src=x onerror=alert(1)&gt;**:\nA literal markup example.\n",
+    "**Borrow checker**:\nValidates café λ references.\n\n**<img src=x onerror=alert(1)>**:\nA literal markup example.\n",
   );
   f.write(
     "rust/learning-records/0001-borrow.md",
@@ -145,7 +145,7 @@ export async function verifySearchBrowser(artifacts: string | null): Promise<voi
       session,
       out,
       `async page=>{
-  const errors=[],writes=[];page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>{if(!['GET','HEAD'].includes(r.method()))writes.push(r.url());});
+  const errors=[],writes=[],dialogs=[];page.on('dialog',d=>dialogs.push(d.message()));page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>{if(!['GET','HEAD'].includes(r.method()))writes.push(r.url());});
   const shots=[];for(const [size,width,height]of [['desktop',1280,900],['mobile',390,844]])for(const theme of ['light','dark']){await page.setViewportSize({width,height});await page.evaluate(t=>localStorage.setItem('pi-classroom-theme',t),theme);await page.goto(${JSON.stringify(base)});await page.screenshot({path:${JSON.stringify(out)}+'/landing-'+size+'-'+theme+'.png',fullPage:true});shots.push({screen:'landing',size,theme});}
   await page.getByRole('link',{name:'Search across classrooms',exact:true}).focus();await page.keyboard.press('Enter');
   await page.getByRole('status').filter({hasText:'Enter a word'}).waitFor();
@@ -159,16 +159,17 @@ export async function verifySearchBrowser(artifacts: string | null): Promise<voi
   for(let i=0;i<links.length;i++){
    await page.goto(resultURL);const link=page.locator('.cl-search-results h2 a').nth(i);await link.click();
    if(links[i].kind.includes('Question thread'))await page.locator('[id="'+new URL(links[i].url).hash.slice(1)+'"]').filter({hasText:links[i].title}).waitFor({state:'visible'});
-   else {const hash=new URL(links[i].url).hash.slice(1);await page.locator('[id="'+hash+'"]').waitFor({state:'attached'});if(!await page.locator('[id="'+hash+'"]').evaluate(e=>e.parentElement.textContent.toLowerCase().includes('borrow checker')))throw new Error('Wrong passage destination');}
+   else {const hash=new URL(links[i].url).hash.slice(1);await page.locator('[id="'+hash+'"]').waitFor({state:'attached'});if(!await page.locator('[id="'+hash+'"]').evaluate(e=>(e.classList.contains('cl-search-anchor')?e.parentElement:e).textContent.toLowerCase().includes('borrow checker')))throw new Error('Wrong passage destination');}
    await page.screenshot({path:${JSON.stringify(out)}+'/destination-'+i+'.png',fullPage:true});await page.goBack();if(await page.getByRole('searchbox').inputValue()!=='Borrow checker')throw new Error('Back lost query');
   }
   await search('café');if(!await page.locator('.cl-search-results mark').count())throw new Error('Unicode match missing');
   await search('Vec<T>');if(await page.locator('.cl-search-results li').count()!==2)throw new Error('Code punctuation failed');
-  await search('<img src=x onerror=alert(1)>');if(await page.locator('.cl-search-results img').count())throw new Error('Unsafe snippet markup');
+  await search('<img src=x onerror=alert(1)>');if(await page.locator('.cl-search-results img').count())throw new Error('Unsafe snippet markup');await page.locator('.cl-search-results li').filter({has:page.locator('.cl-search-source',{hasText:'Glossary term'})}).locator('h2 a').click();if(await page.locator('article img').count())throw new Error('Unsafe term source');await page.goBack();
+  await search('O(n)');await page.locator('.cl-search-results h2 a').click();await page.locator('[data-search-math] .cl-math > math').nth(2).waitFor();if(await page.locator('[data-search-math]').getAttribute('id')!==new URL(page.url()).hash.slice(1))throw new Error('Wrong math passage');await page.screenshot({path:${JSON.stringify(out)}+'/destination-math.png',fullPage:true});await page.goBack();
   await search('NO_RESULTS_SEARCH');await page.getByRole('status').filter({hasText:'No results'}).waitFor();await page.screenshot({path:${JSON.stringify(out)}+'/no-results.png',fullPage:true});
   await search('PRIVATE_SEARCH_CANARY');await page.getByRole('status').filter({hasText:'No results'}).waitFor();if((await page.locator('.cl-search-results').count()))throw new Error('Private hit');
   await page.goto(${JSON.stringify(base + "/search?q=")});await page.getByRole('status').filter({hasText:'Enter a word'}).waitFor();
-  if(errors.length||writes.length)throw new Error(JSON.stringify({errors,writes}));return {links,shots,errors,writes,keyboard:true,backQuery:true,unicode:true,code:true,xss:true,privateExactQuery:true};
+  if(errors.length||writes.length||dialogs.length)throw new Error(JSON.stringify({errors,writes,dialogs}));return {links,shots,errors,writes,dialogs,math:true,keyboard:true,backQuery:true,unicode:true,code:true,xss:true,privateExactQuery:true};
  }`,
     );
     readonly(before, "public");

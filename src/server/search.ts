@@ -1,3 +1,4 @@
+import { StateReadError } from "../state-errors.ts";
 import type * as http from "node:http";
 import { escapeHtml } from "../markdown.ts";
 import { shell } from "../pages.ts";
@@ -7,7 +8,7 @@ import { searchPassages } from "../search-passages.ts";
 import { sendHtml, sendNotFound } from "./http.ts";
 
 function form(query: string): string {
-  return `<form action="/search" method="get" role="search" class="cl-search-form"><label for="cl-search-query">Search across classrooms</label><div><input id="cl-search-query" name="q" type="search" value="${escapeHtml(query)}" maxlength="200" placeholder="A phrase, term, or question" required><button class="cl-button" type="submit">Search</button></div></form>`;
+  return `<form action="/search" method="get" role="search" class="cl-search-form"><label for="cl-search-query">Search across classrooms</label><div><input id="cl-search-query" name="q" type="search" value="${escapeHtml(query)}" maxlength="200" placeholder="A phrase, term, or question"><button class="cl-button" type="submit">Search</button></div></form>`;
 }
 function snippet(text: string, query: string): string {
   const index = text.toLowerCase().indexOf(query.toLowerCase()),
@@ -74,7 +75,7 @@ export function handleSearch(res: http.ServerResponse, url: URL): void {
       shell({
         title: "Cannot load search",
         breadcrumb: '<a class="cl-crumb" href="/">Classrooms</a>',
-        body: `<div class="cl-search"><h1>Cannot load search</h1>${form(query)}<p role="alert">${escapeHtml((error as Error).message)}</p><p>Correct the saved source, then retry. No partial results are shown.</p><a class="cl-button" href="${escapeHtml(url.pathname + url.search)}">Retry search</a></div>`,
+        body: `<div class="cl-search"><h1>Cannot load search</h1>${form(query)}<p role="alert">${escapeHtml(error instanceof StateReadError ? error.message : "Cannot search public sources: unreadable or malformed content. Correct the source, then retry explicitly.")}</p><p>Correct the saved source, then retry. No partial results are shown.</p><a class="cl-button" href="${escapeHtml(url.pathname + url.search)}">Retry search</a></div>`,
       }),
       500,
     );

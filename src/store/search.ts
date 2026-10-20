@@ -9,6 +9,8 @@ import {
   privateStatePath,
 } from "../paths.ts";
 import { parseGlossary } from "../glossary.ts";
+import type { GlossaryTerm } from "../glossary.ts";
+import { PublicStateError, readPublicState } from "../public-state-errors.ts";
 import { renderMarkdown, escapeHtml } from "../markdown.ts";
 import { searchPassages } from "../search-passages.ts";
 import { stageLesson } from "../pretest.ts";
@@ -16,6 +18,8 @@ import { lessonRequests } from "./lesson-requests.ts";
 import { reviewSessions } from "../review-session.ts";
 import { latestQuizStates } from "./quiz-history.ts";
 import { resolveLessonHtml, titleFromSlug } from "./classrooms.ts";
+import { validateLessonContractVersions } from "../lesson-contracts.ts";
+import type { LessonMeta } from "./classrooms.ts";
 import type { Annotation } from "./annotations.ts";
 
 export type SearchKind = "Lesson" | "Question thread" | "Glossary term" | "Learning record";
@@ -38,7 +42,7 @@ export interface SearchResponse {
 export const SEARCH_PAGE_SIZE = 40;
 
 function failure(relative: string, detail: string): never {
-  throw new Error(`Cannot search ${relative}: ${detail}.`);
+  throw new PublicStateError(`Cannot search ${relative}: ${detail}.`);
 }
 function read(relative: string, optional = false): string | null {
   try {
@@ -173,29 +177,48 @@ function publicPassages(html: string, file: string) {
     return failure(file, "malformed public content");
   }
 }
+function publicMarkdown(text: string, file: string): string {
+  try {
+    return renderMarkdown(text);
+  } catch {
+    return failure(file, "cannot render public Markdown");
+  }
+}
+function publicGlossary(text: string, file: string) {
+  try {
+    return parseGlossary(text);
+  } catch {
+    return failure(file, "cannot parse glossary entries");
+  }
+}
+function glossaryEntry(term: GlossaryTerm, file: string): string {
+  const definition = publicPassages(term.definitionHtml, file)
+    .map((p) => p.text)
+    .join(" ");
+  return `<p><strong>${escapeHtml(term.term)}</strong>: ${escapeHtml(definition)}</p>`;
+}
 function projection(): SearchResult[] {
   const results: SearchResult[] = [];
   for (const classroom of directories("")) {
     const cm = `${classroom}/classroom.json`,
       classTitle = title(object(cm), titleFromSlug(classroom), cm);
-    let unpublished: Set<string>;
-    let publishedReviews: string[];
-    try {
-      privateStatePath(`${classroom}/.lesson-requests.json`);
-      privateStatePath(`${classroom}/.reviews.json`);
-      const reviews = reviewSessions(classroom);
-      publishedReviews = reviews
-        .filter((r) => r.status === "done" && isStoredReview(r.lesson))
-        .map((r) => r.lesson)
-        .sort();
-      unpublished = new Set(
-        [...lessonRequests(classroom), ...reviews]
-          .filter((r) => r.status !== "done")
-          .map((r) => r.lesson),
-      );
-    } catch {
-      return failure(classroom, "invalid lesson or review publication state");
-    }
+    const requests = readPublicState(
+      `search publication state ${classroom}/.lesson-requests.json`,
+      () => {
+        privateStatePath(`${classroom}/.lesson-requests.json`);
+        return lessonRequests(classroom);
+      },
+    );
+    const reviews = readPublicState(`search publication state ${classroom}/.reviews.json`, () =>
+      reviewSessions(classroom),
+    );
+    const publishedReviews = reviews
+      .filter((r) => r.status === "done" && isStoredReview(r.lesson))
+      .map((r) => r.lesson)
+      .sort();
+    const unpublished = new Set(
+      [...requests, ...reviews].filter((r) => r.status !== "done").map((r) => r.lesson),
+    );
     const reserved = new Set(["reference", "assets", "learning-records", "notes", "quiz"]);
     for (const lesson of [...directories(classroom), ...publishedReviews]) {
       if (reserved.has(lesson) || unpublished.has(lesson)) continue;
@@ -203,6 +226,11 @@ function projection(): SearchResult[] {
         meta = object(`${relative}/lesson.json`);
       if (meta?.kind !== undefined && meta.kind !== "lesson" && meta.kind !== "review")
         failure(`${relative}/lesson.json`, "unknown page kind");
+      try {
+        validateLessonContractVersions(meta as LessonMeta | null, classroom, lesson);
+      } catch {
+        failure(`${relative}/lesson.json`, "unsupported lesson contract version");
+      }
       const htmlFile = resolveLessonHtml(privateStatePath(relative));
       if (!htmlFile) continue;
       const file = path.relative(classroomsRoot(), htmlFile),
@@ -232,49 +260,47 @@ function projection(): SearchResult[] {
             )
           )
             failure(`${relative}/annotations.json`, "invalid question thread turn");
-          const text = turns
-            .map((t) =>
-              [
-                t.question,
-                ...publicPassages(
-                  renderMarkdown(t.answerMarkdown ?? ""),
-                  `${relative}/annotations.json`,
-                ).map((p) => p.text),
-              ].join(" "),
-            )
-            .join(" ");
+          const text =
+            a.selection +
+            " " +
+            turns
+              .map((t) =>
+                [
+                  t.question,
+                  ...publicPassages(
+                    publicMarkdown(t.answerMarkdown ?? "", `${relative}/annotations.json`),
+                    `${relative}/annotations.json`,
+                  ).map((p) => p.text),
+                ].join(" "),
+              )
+              .join(" ");
           results.push({
             kind: "Question thread",
             classroom: classTitle,
             title: a.question,
             text,
             url: `${url}#cl-question-${a.id}`,
-            context: passages.some((p) => p.text.includes(a.anchor.exact))
-              ? undefined
-              : "Saved question card; its original passage may have changed or been removed.",
+            context:
+              passages.filter((p) => p.text.includes(a.anchor.exact)).length === 1
+                ? undefined
+                : "Saved question card; its original passage may be changed, missing, or repeated.",
           });
         }
     }
     const glossaryFile = `${classroom}/GLOSSARY.md`,
       glossaryText = read(glossaryFile, true);
     if (glossaryText !== null) {
-      const glossary = parseGlossary(glossaryText);
+      const glossary = publicGlossary(glossaryText, glossaryFile);
       if (glossary.errors.length)
         failure(
           glossaryFile,
           `invalid glossary format (${glossary.errors.length} errors; correct the term entries)`,
         );
       for (const term of glossary.terms) {
-        const text = publicPassages(
-          `<p><strong>${escapeHtml(term.term)}</strong>: ${escapeHtml(term.definition)}</p>`,
-          glossaryFile,
-        )
+        const text = publicPassages(glossaryEntry(term, glossaryFile), glossaryFile)
           .map((p) => p.text)
           .join(" ");
-        const anchor = publicPassages(
-          `<p><strong>${escapeHtml(term.term)}</strong>: ${escapeHtml(term.definition)}</p>`,
-          glossaryFile,
-        )[0];
+        const anchor = publicPassages(glossaryEntry(term, glossaryFile), glossaryFile)[0];
         results.push({
           kind: "Glossary term",
           classroom: classTitle,
@@ -304,7 +330,7 @@ function projection(): SearchResult[] {
     for (const file of files) {
       const relative = `${recordDir}/${file}`,
         md = read(relative)!;
-      for (const p of publicPassages(renderMarkdown(md), relative))
+      for (const p of publicPassages(publicMarkdown(md, relative), relative))
         results.push({
           kind: "Learning record",
           classroom: classTitle,
@@ -318,7 +344,8 @@ function projection(): SearchResult[] {
 }
 export function searchClassrooms(raw: string, page = 1): SearchResponse {
   const query = raw.trim().normalize("NFC");
-  if (query.length > 200) throw new Error("Search query must be 200 characters or fewer.");
+  if (query.length > 200)
+    throw new PublicStateError("Search query must be 200 characters or fewer.");
   const counts: Record<SearchKind, number> = {
     Lesson: 0,
     "Question thread": 0,
@@ -348,10 +375,8 @@ export function searchGlossarySource(classroom: string, term: string): string | 
   const file = `${classroom}/GLOSSARY.md`,
     text = read(file, true);
   if (text === null) return null;
-  const glossary = parseGlossary(text);
+  const glossary = publicGlossary(text, file);
   if (glossary.errors.length) failure(file, "invalid glossary format");
   const entry = glossary.terms.find((t) => t.term === term);
-  return entry
-    ? `<p><strong>${escapeHtml(entry.term)}</strong>: ${escapeHtml(entry.definition)}</p>`
-    : null;
+  return entry ? glossaryEntry(entry, file) : null;
 }

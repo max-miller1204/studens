@@ -2464,7 +2464,8 @@ body > .cl-teacher-activity {
   opacity: 0.75;
   margin: 0;
 }
-.cl-search-anchor {
+.cl-search-anchor,
+[id^="cl-search-"] {
   scroll-margin-top: 7rem;
 }
 .cl-search-anchor:target + * {

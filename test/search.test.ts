@@ -177,6 +177,33 @@ describe("public classroom search", () => {
     expect(() => searchClassrooms("PRIVATE_CANARY")).toThrow(/symlink/);
     expect(searchGlossarySource("../rust", "Borrow checker")).toBeNull();
   });
+  it("uses accepted rendered glossary content without indexing Markdown link attributes or scripts", () => {
+    f.write(
+      "rust/GLOSSARY.md",
+      "**Safe term**:\nA [public label](https://example.com/ATTRIBUTE_CANARY) <script>SCRIPT_CANARY</script> café.\n",
+    );
+    expect(searchClassrooms("ATTRIBUTE_CANARY").total).toBe(0);
+    expect(searchClassrooms("SCRIPT_CANARY").total).toBe(0);
+    expect(searchClassrooms("public label").counts["Glossary term"]).toBe(1);
+    expect(searchGlossarySource("rust", "Safe term")).not.toContain("<script>");
+  });
+  it("refuses unsupported public lesson contract versions", () => {
+    publicSources();
+    for (const contract of [
+      "instructionalContract",
+      "assessmentContract",
+      "criterionContract",
+      "reviewVariantContract",
+    ]) {
+      f.write(
+        "rust/001-ownership/lesson.json",
+        JSON.stringify({ title: "Ownership", [contract]: 99 }),
+      );
+      expect(() => searchClassrooms("Borrow checker")).toThrow(
+        "unsupported lesson contract version",
+      );
+    }
+  });
   it("keeps empty queries empty, literal punctuation, deterministic complete pagination", () => {
     publicSources();
     expect(searchClassrooms("   ").total).toBe(0);
@@ -209,6 +236,24 @@ describe("inert canonical source anchors", () => {
       "After code.",
       "Visible title attributes.",
     ]);
+  });
+  it("invalidates repeated-text links after same-count context changes", () => {
+    const a = searchPassages(
+      "<p>First context.</p><p>Repeat.</p><p>Other context.</p><p>Repeat.</p>",
+    );
+    const b = searchPassages(
+      "<p>Other context.</p><p>Repeat.</p><p>First context.</p><p>Repeat.</p>",
+    );
+    expect(
+      a.passages
+        .filter((p) => p.text === "Repeat.")
+        .some((p) => b.passages.some((q) => q.id === p.id)),
+    ).toBe(false);
+  });
+  it("places anchors on existing text blocks without changing their children", () => {
+    const result = searchPassages("<p data-math-prose>A move costs \\(O(1)\\) time.</p>");
+    expect(result.html).toContain('data-math-prose id="cl-search-');
+    expect(result.html).not.toContain("<span");
   });
   it("is idempotent and keeps unique passage identity after unrelated source edits", () => {
     const a = searchPassages("<p>Unique.</p><p>Other.</p>");

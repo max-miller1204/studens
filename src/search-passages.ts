@@ -76,16 +76,18 @@ export function searchPassages(html: string): { html: string; passages: SearchPa
     /<span id="cl-search-[a-f0-9]{24}-[0-9]+" class="cl-search-anchor" aria-hidden="true"><\/span>/g,
     "",
   );
+  html = html.replace(/ id="cl-search-[a-f0-9]{24}-[0-9]+"/g, "");
   interface Node {
     tag: string;
     start: number;
     skip: boolean;
     text: string;
     block: boolean;
+    attributeAt?: number;
   }
   const root: Node = { tag: "@root", start: 0, skip: false, text: "", block: true };
   const stack: Node[] = [root],
-    found: Array<{ start: number; text: string }> = [];
+    found: Array<{ start: number; text: string; attribute: boolean }> = [];
   const tokens = new RegExp(
     `<!--[\\s\\S]*?-->|<script\\b${TAG_ATTRIBUTES}>[\\s\\S]*?<\\/script\\s*>|<style\\b${TAG_ATTRIBUTES}>[\\s\\S]*?<\\/style\\s*>|<![^>]*>|<\\/?([a-z][\\w:-]*)\\b${TAG_ATTRIBUTES}>`,
     "gi",
@@ -93,7 +95,14 @@ export function searchPassages(html: string): { html: string; passages: SearchPa
   let cursor = 0;
   const flush = (node: Node) => {
     const text = canonicalText(node.text);
-    if (text && !node.skip) found.push({ start: node.start, text });
+    if (text && !node.skip) {
+      found.push({
+        start: node.attributeAt ?? node.start,
+        text,
+        attribute: node.attributeAt !== undefined,
+      });
+      node.attributeAt = undefined;
+    }
     node.text = "";
   };
   const add = (text: string, offset: number) => {
@@ -116,7 +125,7 @@ export function searchPassages(html: string): { html: string; passages: SearchPa
       const skip =
         stack.some((n) => n.skip) ||
         EXCLUDED.has(tag) ||
-        RUNTIME.test(attrs.get("class") ?? "") ||
+        RUNTIME.test(decodeHtmlAttribute(attrs.get("class") ?? "")) ||
         /(?:\s)(?:hidden|data-cl-grade|data-cl-pretest-pending)(?=\s|=|\/?>)/i.test(
           token[0].replace(/"[^"]*"|'[^']*'/g, '""'),
         ) ||
@@ -125,7 +134,14 @@ export function searchPassages(html: string): { html: string; passages: SearchPa
       if (block && !skip) flush([...stack].reverse().find((n) => n.block)!);
       if (tag === "br") add(" ", cursor);
       if (!VOID.has(tag) && !token[0].endsWith("/>"))
-        stack.push({ tag, start: cursor, skip, text: "", block });
+        stack.push({
+          tag,
+          start: cursor,
+          skip,
+          text: "",
+          block,
+          attributeAt: block && !attrs.has("id") ? cursor - 1 : undefined,
+        });
     }
   }
   add(html.slice(cursor), cursor);
@@ -134,13 +150,21 @@ export function searchPassages(html: string): { html: string; passages: SearchPa
   const occurrences = new Map<string, number>();
   const totals = new Map<string, number>();
   for (const p of found) totals.set(p.text, (totals.get(p.text) ?? 0) + 1);
+  const sourceIdentity = createHash("sha256")
+    .update(found.map((p) => p.text).join("\0"))
+    .digest("hex");
   const passages = found
     .sort((a, b) => a.start - b.start)
     .map((p) => {
       const count = occurrences.get(p.text) ?? 0;
       occurrences.set(p.text, count + 1);
       const id = `cl-search-${createHash("sha256")
-        .update(p.text + "\0" + totals.get(p.text))
+        .update(
+          p.text +
+            "\0" +
+            totals.get(p.text) +
+            ((totals.get(p.text) ?? 0) > 1 ? "\0" + sourceIdentity : ""),
+        )
         .digest("hex")
         .slice(0, 24)}-${count}`;
       return { ...p, id };
@@ -149,7 +173,9 @@ export function searchPassages(html: string): { html: string; passages: SearchPa
   for (const p of [...passages].reverse())
     output =
       output.slice(0, p.start) +
-      `<span id="${p.id}" class="cl-search-anchor" aria-hidden="true"></span>` +
+      (p.attribute
+        ? ` id="${p.id}"`
+        : `<span id="${p.id}" class="cl-search-anchor" aria-hidden="true"></span>`) +
       output.slice(p.start);
   return { html: output, passages: passages.map(({ id, text }) => ({ id, text })) };
 }

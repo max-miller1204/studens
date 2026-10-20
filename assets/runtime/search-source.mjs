@@ -7,7 +7,7 @@ function resolve() {
   const target = document.getElementById(location.hash.slice(1));
   if (target) {
     target.scrollIntoView({ block: "center" });
-    const passage = card ? target : target.parentElement;
+    const passage = target.classList.contains("cl-search-anchor") ? target.parentElement : target;
     passage.tabIndex = -1;
     passage.focus({ preventScroll: true });
     return;
