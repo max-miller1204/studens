@@ -652,7 +652,11 @@ export function classroomTools(host: ToolHost): ClassroomTool[] {
             `Edit: ${htmlPath}`,
             url ? `URL: ${url}` : host.browseHint,
             "",
-            authoringSteps(mode, htmlPath, host.checkPage),
+            authoringSteps(mode, {
+              mode: "filesystem",
+              lessonPath: htmlPath,
+              checkPage: host.checkPage,
+            }),
           ].join("\n"),
           { classroom: params.classroom, lesson: slug, path: htmlPath, url },
         );
