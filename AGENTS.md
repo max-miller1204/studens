@@ -1,7 +1,7 @@
 ## Rules
 
 - Keep the package self-contained. There is no build step.
-- Keep Pi's server in its live session. Keep the Claude Code and Codex service persistent.
+- Keep Pi, Claude Code, and Codex on the shared persistent service. Keep each classroom's dedicated teacher context separate from initiating sessions.
 - Keep teacher requests sequential and durable. Save plans before writes. Do not grade twice after recovery.
 - Show specific errors. Require an explicit retry. Do not add fallbacks.
 - Keep HTTP on loopback. Tailnet links are automatic while Tailscale is connected, tailnet-only, and can be disabled in config. Preserve unrelated Tailscale routes. Never enable Funnel.

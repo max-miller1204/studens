@@ -6,7 +6,7 @@ import { packageRoot } from "../src/paths.ts";
 
 const root = packageRoot();
 const usage =
-  "Usage: npm run verify -- [local|checks|browser|pi|claude|codex|settings <claude|codex>|authoring <claude|codex>|feedback <claude|codex>|quality <claude|codex>|refill <claude|codex>|phone|doctor [browser|pi|claude|codex]] [--artifacts <directory>]";
+  "Usage: npm run verify -- [local|checks|browser|pi|claude|codex|settings <claude|codex>|authoring <claude|codex>|feedback <claude|codex>|quality <claude|codex>|refill <claude|codex>|phone [pi]|doctor [browser|pi|claude|codex]] [--artifacts <directory>]";
 const args = process.argv.slice(2);
 const artifactFlag = args.indexOf("--artifacts");
 let requestedArtifacts: string | undefined;
@@ -32,6 +32,8 @@ const targets = [
 if (!targets.includes(target) || args.length > 2) throw new Error(usage);
 if (evaluations.includes(target)) {
   if (host !== "claude" && host !== "codex") throw new Error(usage);
+} else if (target === "phone") {
+  if (host && host !== "pi") throw new Error(usage);
 } else if (target === "doctor") {
   if (host && !["browser", "pi", "claude", "codex"].includes(host)) throw new Error(usage);
 } else if (host) throw new Error(usage);
@@ -40,8 +42,8 @@ const artifacts = requestedArtifacts ?? fs.mkdtempSync(path.join(os.tmpdir(), "s
 
 function doctor(surface: string): void {
   const [major, minor] = process.versions.node.split(".").map(Number);
-  if (major < 22 || (major === 22 && minor < 18))
-    throw new Error("Node 22.18 or later is required.");
+  if (major < 22 || (major === 22 && minor < 19))
+    throw new Error("Node 22.19 or later is required.");
   if (!fs.existsSync(path.join(root, "node_modules/typescript")))
     throw new Error("Dependencies are missing. Run npm ci.");
   if (surface === "checks") return;
@@ -112,7 +114,15 @@ try {
       "browser",
     );
   if (["pi", "phone"].includes(target))
-    await run(process.execPath, [`scripts/e2e-${target}.ts`, path.join(artifacts, target)], target);
+    await run(
+      process.execPath,
+      [
+        `scripts/e2e-${target}.ts`,
+        path.join(artifacts, target),
+        ...(target === "phone" && host ? [host] : []),
+      ],
+      target,
+    );
   if (["claude", "codex"].includes(target))
     await run(process.execPath, ["scripts/e2e.ts", target, path.join(artifacts, target)], target);
   if (evaluations.includes(target))

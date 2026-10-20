@@ -401,14 +401,14 @@ describe("saved legacy review hosts", () => {
       runs++;
       return reviewPlan();
     });
-    restored.restore();
+    expect(() => restored.restore()).toThrow("unfinished legacy Pi work");
     restored.connect();
     await restored.idle();
     expect(runs).toBe(0);
     const base = await server.start(0);
     const response = await post(base, "review/retry", { classroom: "rust", id: session.id });
     expect(response.status).toBe(409);
-    expect((await response.json()).error).toContain("belongs to pi");
+    expect((await response.json()).error).toContain("No teacher owns this classroom");
     expect(currentReview("rust")?.status).toBe("failed");
     expect(currentReview("rust")?.error).toBe("Pi was stopped.");
     await restored.stop();

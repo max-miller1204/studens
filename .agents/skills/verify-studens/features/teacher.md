@@ -14,7 +14,7 @@ The learner receives follow-up questions and answers them in the lesson's teache
 - Show specific failures and require an explicit retry.
 - Regenerate a plan rejected before writes. Keep valid plans for recovery.
 - Request a new grade plan after an explicit retry of a rejected score.
-- Keep the persistent service available after MCP exit.
+- Keep the persistent service available after Pi or MCP exit.
 
 ## How to get to it (user POV)
 
@@ -30,7 +30,7 @@ The learner receives follow-up questions and answers them in the lesson's teache
 
 Run `npm run verify -- browser --artifacts /tmp/studens-teacher`.
 
-The Pi fixture checks `.cl-teacher` follows the quiz, a prose-only grading run fails, and an explicit retry permits grading. It checks the panel reply reaches the correct prompt and all three conversation messages survive reload.
+The legacy Pi bridge fixture checks `.cl-teacher` follows the quiz, a prose-only grading run fails, and an explicit retry permits grading. It checks the panel reply reaches the correct prompt and all three conversation messages survive reload.
 
 It also receives replies while reading before and after the quiz. The notice must point down or up toward the teacher, update when scrolling past the panel, and dismiss when clicked as the teacher comes into view. Inspect `pi-panel/teacher-notice-below.png`, `pi-panel/teacher-notice-above.png`, and `pi-panel/pi-panel.json`.
 
@@ -40,10 +40,47 @@ The service fixture also submits a quiz whose teacher supplies a forbidden total
 
 The resume fixtures use a saved review with an empty panel or an unanswered saved reply. They check the explicit handoff, panel link, reply recovery, message order, reload, and unchanged assessment and evidence files for Pi, Claude, and Codex. Repeated handoffs must reuse the request. Inspect `resume/`. The real Pi and service host drives also resume a historical 67% review from initiating chat. They check the saved grade and teacher identity.
 
+The actual Pi target uses the same learner drive and dedicated service queue as Claude and Codex, including daily classroom groups. Its additional lifecycle drive closes the initiating Pi while teacher work runs, submits from two browser tabs, reconnects from a fresh Pi, rejects an unavailable model, and uses explicit retry after changing settings. It saves a real valid Pi grade plan while an owned scratch grade directory denies writes, restarts the service, retries the saved plan, then restarts again. Require one saved grade, unchanged plan and conversation bytes, no new inference, the exact Pi model, and low thinking. Explicit `/classroom stop` followed by Pi shutdown must produce no extension errors. Inspect `pi/lifecycle/`, including `lifecycle.json`, the original saved plan, private session transcript, and screenshots.
+
+For launcher or production dependency changes, inspect `.github/workflows/ci.yml`
+and run `npm ci`, `npm run verify`, and `npm run audit`. Audit is a separate CI
+gate; it first checks actual installed production package versions against the
+lock, then runs `npm audit --omit=dev --audit-level=moderate`. Preserve failures.
+Require both checks: a published dependency shrinkwrap can install vulnerable
+files even when an edited root lock passes audit. Do not accept that mismatch.
+
+Use a clean exact-commit archive
+without `node_modules`, retaining `docs/ATTRIBUTION.md`. Run `node mcp/launch.mjs`
+with a scratch classrooms root, an unused loopback service port, and tailnet links
+disabled. Send MCP `initialize` (client name `codex`) and `tools/list`. These are
+lazy discovery; use `classroom_service` action `start` before checking HTTP ownership.
+Require the real `npm ci --omit=dev --ignore-scripts` bootstrap, only JSON-RPC on
+stdout, and the installed Pi SDK's `createAgentSession` export loading from that
+archive. Run `npm run audit` inside that production-only archive too; verify its
+actual SDK, undici, and brace-expansion manifests, rather than trusting edited
+lock metadata. Development-only packages must be absent. Stop through the management
+tool and remove owned scratch roots. No model turn or account edit is needed.
+Record actual Node separately from the declared minimum, now 22.19.0.
+Record the initiating Pi CLI separately from the dedicated SDK: `npm run verify -- pi`
+uses the checkout's local CLI on npm's PATH. The patched dependency path is proven
+with CLI/SDK 1.0.1, undici 8.10.2 and brace-expansion 5.0.12. Earlier 0.83.0 receipts
+are historical. When changing the SDK, continue a copied saved session through an
+actual Pi classroom command and browser reply; require the same session, preserved
+old transcript bytes and completed requests, unchanged grade files, visible reload,
+and owned cleanup. Disable cache warming as well as retries and compaction.
+
+For Pi SDK resource/configuration changes, run
+`npx vitest run test/pi-teacher-resources.test.ts`. This actual-SDK loading contract
+configures global and project package/resource sentinels. Positive controls intercept
+the SDK installer before execution; dedicated loading must make zero install attempts,
+load no external resources, expose only the plan tool, retain model/thinking settings,
+and preserve configuration/auth bytes. It uses no model turn or real account and
+keeps package resolution enabled, so offline mode cannot hide a discovery failure.
+
 For a changed real Pi path, run `npm run verify -- pi`. For shared service or prompt changes, run `npm run verify -- claude`, then `npm run verify -- codex`. Add `--artifacts <directory>` to retain host evidence. These drives ask a question, submit a wrong answer, and reply in the panel. They check that the quiz score remains unchanged.
 
 The service reply fixture reports no help. The drives require the actual reply and reported assistance in a saved retrieval check. They require a linked learning record and keep immediate correction outside retained evidence. Inspect `stored-teacher-state.json` and the retained `classroom/` files.
 
 ## Gotchas
 
-Fixture teachers do not prove model responses. Claude and Codex use a persistent teacher session. Pi uses the live agent bridge. Starting a new lesson still requires the initiating host. Private quiz keys must remain unavailable over HTTP.
+Fixture teachers do not prove model responses. All three hosts use a dedicated persistent teacher session. The initiating Pi session context is intentionally separate. Legacy Pi bridge fixtures cover historical state, not a second production delivery path. Starting a new lesson still requires the initiating host. Private quiz keys must remain unavailable over HTTP.

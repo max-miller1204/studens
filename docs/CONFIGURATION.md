@@ -12,22 +12,25 @@ Optional, at `~/.pi/agent/classroom.json`:
 }
 ```
 
-| Key               | Default   | Meaning                                                                                   |
-| ----------------- | --------- | ----------------------------------------------------------------------------------------- |
-| `port`            | ephemeral | Fixed port. An occupied or invalid port causes an error.                                  |
-| `tailscale`       | `true`    | Use tailnet links while Tailscale is connected. `PI_CLASSROOM_TAILSCALE=0` overrides.     |
-| `tailscalePort`   | `8443`    | HTTPS port for the Claude Code and Codex tailnet route. An occupied port causes an error. |
-| `piTailscalePort` | `8444`    | HTTPS port for Pi's tailnet route. An occupied port causes an error.                      |
+| Key               | Default | Meaning                                                                                                |
+| ----------------- | ------- | ------------------------------------------------------------------------------------------------------ |
+| `port`            | `43123` | Fixed port. An occupied or invalid port causes an error.                                               |
+| `tailscale`       | `true`  | Use tailnet links while Tailscale is connected. `PI_CLASSROOM_TAILSCALE=0` overrides.                  |
+| `tailscalePort`   | `8443`  | HTTPS port for the shared persistent service tailnet route. An occupied port causes an error.          |
+| `piTailscalePort` | `8444`  | Legacy live-session Pi route port; retained for old-package cleanup. An occupied port causes an error. |
 
 Claude Code and Codex read the same file. `/classroom`, `/teach`, and `open_classroom`
 return a link. They never open a browser. See [phone and remote links](USAGE.md#phone-and-remote-links). Lesson checks run in a separate headless
 session. The scaffold instructions name the packaged headless config.
 Set `PI_CLASSROOM_CONFIG` to read the settings from another file.
 
-For Pi, use a configured fixed port to keep URLs stable across session restarts. Only one
-session can use that port at a time. With no port configured, each session uses an
-ephemeral port. Claude Code and Codex use service port `43123` by default.
-A configured `port` also applies to the service. `PI_CLASSROOM_SERVICE_PORT` takes priority over that file. See the [service guide](USAGE.md#claude-code-and-codex).
+All three hosts use the persistent service port `43123` by default. A configured
+`port` applies to the shared service. `PI_CLASSROOM_SERVICE_PORT` takes priority over
+that file. The stable private socket and `.pi-teach-service` ownership identity are
+unchanged. An occupied port fails explicitly; no alternate port is selected.
+Pi's SDK reads `PI_CODING_AGENT_DIR` (default `~/.pi/agent`) for account credentials,
+`models.json`, and model/thinking settings. Service startup captures its environment;
+stop and restart explicitly after changing that environment.
 Get the current URL from `open_classroom` or `/classroom`.
 
 ## Storage
@@ -121,8 +124,17 @@ Open a classroom and select **Settings** beside Review history. Connection setti
 
 Pace, depth, and tone are optional single-line preferences, at most 200 characters each. They are stored as `- Pace:`, `- Depth:`, and `- Tone:` bullets inside `NOTES.md`’s `## Preferences` section. Other preferences, the notes index, and other classrooms are preserved. Missing notes start from the canonical notes template. A stale page must reload before saving over a newer edit.
 
-Claude Code and Codex classrooms also offer **Teacher model**. **Use tool’s configured default** reads the installed tool’s effective configuration for the next request, including when a previous request selected another model. The dropdown is discovered from the installed host: Codex uses paginated `model/list` and its configured model; Claude uses its initialization catalog and effective settings. **Custom model ID…** supports configured/provider IDs that are absent from the picker. Discovery does not guarantee account access. The Claude discovery protocol was verified with Claude Code 2.1.303; unsupported host protocols report an error and require explicit action.
+All persistent classrooms offer **Teacher model**. **Use tool’s configured default** reads the installed tool’s effective configuration for the next request, including when a previous request selected another model. The dropdown is discovered from the installed host: Codex uses paginated `model/list` and its configured model; Claude uses its initialization catalog and effective settings. **Custom model ID…** supports configured/provider IDs that are absent from the picker. Discovery does not guarantee account access. The Claude discovery protocol was verified with Claude Code 2.1.303; unsupported host protocols report an error and require explicit action.
 
 Selections are private to the classroom’s `.teacher.json`, survive service restarts, and never edit global CLI configuration. Claude receives `--model`; Codex receives the model on thread start/resume and turn start. **Last answering model** comes from Claude’s assistant messages or the completed Codex turn’s resolved thread model, independently of the requested/default setting. A reported reroute or unexpected resolution fails the request before its plan is applied.
 
-A setting change applies between teacher requests and keeps the existing conversation. Running work finishes with its original setting; saved plans recover without another model request or grade. A model error names the selection and stays visible until explicit request retry. Choosing another setting alone does not retry the request. Pi continues to use its live session’s model; change that model in Pi.
+A setting change applies between teacher requests and keeps the existing conversation. Running work finishes with its original setting; saved plans recover without another model request or grade. A model error names the selection and stays visible until explicit request retry. Choosing another setting alone does not retry the request. Pi selects an exact `provider/model` ID through its SDK catalog and records the
+successful SDK selection separately as **Last Pi SDK model selection**. Pi SDK
+0.83.0 initializes its assistant model from the selected catalog entry; its
+OpenAI Codex response handlers do not independently replace that value with a
+provider-resolved response model. This label reports the exact SDK selection,
+not independent evidence of upstream routing. The service rejects SDK fallback
+messages or a different SDK selection; provider-side rerouting remains unverified.
+Its dedicated session is saved privately under
+`.pi-teach-service/pi-sessions/`; include it in whole-data backups. A missing or
+unsafe session file is an explicit recovery error, never a new conversation.

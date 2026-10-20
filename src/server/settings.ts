@@ -1,3 +1,4 @@
+import type { Backend } from "../teacher.ts";
 import type * as http from "node:http";
 import {
   connectionSettings,
@@ -26,11 +27,11 @@ export async function handleSettings(
     if (models) {
       if (req.method !== "GET") return sendJson(res, { error: "Use GET to load models." }, 405);
       const teacher = hooks?.teacherSettings?.(classroom) as {
-        identity: { backend: "claude" | "codex" };
+        identity: { backend: Backend };
       } | null;
       if (!teacher)
         throw new Error(
-          "Model selection requires a persistent Claude or Codex teacher. Pi uses its live session's model.",
+          "Model selection requires an attached persistent teacher. Open this classroom from your agent first.",
         );
       return sendJson(res, await teacherModels(teacher.identity.backend, classroomDir(classroom)));
     }
@@ -70,7 +71,8 @@ export async function handleSettings(
       } else if (input.section === "preferences")
         saveLearnerPreferences(classroom, values, input.revision);
       else if (input.section === "model") {
-        if (!hooks?.setTeacherModel) throw new Error("Choose the model in your live Pi session.");
+        if (!hooks?.setTeacherModel)
+          throw new Error("Open this classroom from your agent to attach its persistent teacher.");
         if (Object.keys(values).length !== 1 || !("requestedModel" in values))
           throw new Error("Supply only requestedModel.");
         hooks.setTeacherModel(classroom, values.requestedModel, input.revision);

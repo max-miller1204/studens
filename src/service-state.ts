@@ -53,7 +53,7 @@ export function readTeacherState(classroom: string): TeacherState | null {
     const state = JSON.parse(fs.readFileSync(file(classroom), "utf8")) as TeacherState;
     if (
       state.version !== 1 ||
-      !["codex", "claude"].includes(state.identity.backend) ||
+      !["codex", "claude", "pi"].includes(state.identity.backend) ||
       !Array.isArray(state.requests) ||
       state.requests.some(
         (request) => request.planVersion !== undefined && request.planVersion !== 2,

@@ -5,7 +5,7 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 
-export type Harness = "claude" | "codex";
+export type Harness = "claude" | "codex" | "pi";
 
 export const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -19,7 +19,7 @@ export const TEST_MODELS = {
 export const CLAUDE_PREFIX = "mcp__plugin_studens_classroom__";
 
 export function parseHarness(value: string | undefined, usage: string): Harness {
-  if (value !== "claude" && value !== "codex") throw new Error(usage);
+  if (value !== "claude" && value !== "codex" && value !== "pi") throw new Error(usage);
   return value;
 }
 
@@ -73,12 +73,37 @@ export function codexHome(): string {
 /** Pin child sessions, service teachers, and evaluators. Restore the test process on cleanup. */
 export function useTestModel(harness: Harness): () => void {
   const home = harness === "codex" ? codexHome() : null;
+  let piHome: string | undefined;
+  if (harness === "pi") {
+    piHome = fs.mkdtempSync(path.join(os.tmpdir(), "studens-e2e-pi-agent-"));
+    const original = process.env.PI_CODING_AGENT_DIR ?? path.join(os.homedir(), ".pi/agent");
+    for (const file of ["auth.json", "models.json", "models-store.json"]) {
+      const source = path.join(original, file);
+      if (fs.existsSync(source)) {
+        fs.copyFileSync(source, path.join(piHome, file));
+        fs.chmodSync(path.join(piHome, file), 0o600);
+      }
+    }
+    fs.writeFileSync(
+      path.join(piHome, "settings.json"),
+      JSON.stringify({
+        defaultProvider: TEST_MODELS.pi.provider,
+        defaultModel: TEST_MODELS.pi.model,
+        defaultThinkingLevel: TEST_MODELS.pi.effort,
+        retry: { enabled: false },
+        compaction: { enabled: false },
+      }),
+      { mode: 0o600 },
+    );
+  }
   const pinned: NodeJS.ProcessEnv = home
     ? { CODEX_HOME: home }
-    : {
-        ANTHROPIC_MODEL: TEST_MODELS.claude.model,
-        CLAUDE_CODE_EFFORT_LEVEL: TEST_MODELS.claude.effort,
-      };
+    : piHome
+      ? { PI_CODING_AGENT_DIR: piHome }
+      : {
+          ANTHROPIC_MODEL: TEST_MODELS.claude.model,
+          CLAUDE_CODE_EFFORT_LEVEL: TEST_MODELS.claude.effort,
+        };
   const previous = Object.fromEntries(Object.keys(pinned).map((key) => [key, process.env[key]]));
   Object.assign(process.env, pinned);
   console.log(
@@ -90,6 +115,7 @@ export function useTestModel(harness: Harness): () => void {
       else process.env[key] = value;
     }
     if (home) fs.rmSync(home, { recursive: true, force: true });
+    if (piHome) fs.rmSync(piHome, { recursive: true, force: true });
   };
 }
 
@@ -103,6 +129,31 @@ export function harnessCommand(
   tools: string[],
   extraTools: string[] = ["Read"],
 ): [string, string[]] {
+  if (harness === "pi")
+    return [
+      "pi",
+      [
+        "--print",
+        "--mode",
+        "json",
+        "--provider",
+        TEST_MODELS.pi.provider,
+        "--model",
+        TEST_MODELS.pi.model,
+        "--thinking",
+        TEST_MODELS.pi.effort,
+        "--no-session",
+        "--no-extensions",
+        "--no-skills",
+        "--no-context-files",
+        "--no-prompt-templates",
+        "--no-themes",
+        "--offline",
+        "--extension",
+        path.join(ROOT, "index.ts"),
+        prompt,
+      ],
+    ];
   if (harness === "claude") {
     return [
       "claude",
@@ -150,9 +201,11 @@ export function harnessCommand(
  */
 export function toolCalls(harness: Harness, events: string): string[] {
   const pattern =
-    harness === "claude"
-      ? new RegExp(`"name":"${CLAUDE_PREFIX}([a-z_]+)"`, "g")
-      : /"server":"classroom","tool":"([a-z_]+)"[^\n]*?"status":"in_progress"/g;
+    harness === "pi"
+      ? /"toolName":"([a-z_]+)"/g
+      : harness === "claude"
+        ? new RegExp(`"name":"${CLAUDE_PREFIX}([a-z_]+)"`, "g")
+        : /"server":"classroom","tool":"([a-z_]+)"[^\n]*?"status":"in_progress"/g;
   return [...events.matchAll(pattern)].map((match) => match[1]!);
 }
 

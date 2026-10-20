@@ -144,8 +144,8 @@ For service or shared prompt changes, select the real Claude and Codex drives fr
 the project skill. Each opens a prepared closed review, submits a miss, checks its
 immediate grade, receives a real corrective question, and replies in the same panel.
 Inspect `stored-review.json`, `stored-refills.json`, and the host review screenshot. Select the Pi drive
-for bridge changes and inspect `stored-review.json`, `pi-review.png`, and
-`pi-review-correction.png`. Service hosts also capture `<host>-review-correction.png`. Each real host uses
+for Pi client or teacher changes and inspect `stored-review.json`, `pi-review.png`, and
+`pi-review-correction.png`. All service hosts capture `<host>-review-correction.png`. Each real host uses
 `Flag bad question` and `Send reply`, receives a teacher response, reloads the saved
 report, and preserves quiz grading. Inspect `stored-question-report.json` and
 `<host>-question-report.png`.

@@ -13,6 +13,23 @@ state. Use [verify-studens](../.agents/skills/verify-studens/SKILL.md) to select
 additional checks for changed host behavior. Run `claude plugin validate .` after
 manifest changes. Run this checkout with `pi -e .` or `claude --plugin-dir .`.
 
+Production dependency and launcher changes also require `npm run audit`, an existing
+CI gate beyond default verification. It first compares installed production package
+versions with the lock, then audits that production tree. A root lock edit alone is
+insufficient: a dependency's published shrinkwrap can install different files.
+
+The dedicated Pi teacher uses SDK 1.0.1 and its pinned Pi release cohort. This is the
+first upstream release that both patches brace-expansion and removes the published
+shrinkwrap; older releases blocked consumer overrides. See the
+[Pi 1.0.1 release](https://github.com/earendil-works/pi/releases/tag/v1.0.1),
+[undici 8.10.2 security release](https://github.com/nodejs/undici/releases/tag/v8.10.2),
+and [brace-expansion advisory](https://github.com/juliangruber/brace-expansion/security/advisories/GHSA-q2hr-2g5m-vwhr).
+The lock contains undici 8.10.2 and brace-expansion 5.0.12. Node remains 22.19+.
+Cache warming, automatic retries, and compaction are disabled for dedicated teacher
+turns. The initiating Pi CLI is a separate installation; fresh migration checks use
+the checkout's local CLI 1.0.1 through npm's PATH. Earlier CLI/SDK 0.83.0 receipts describe their original source, not this
+patched dependency boundary. Saved version 3 Pi conversations remain readable.
+
 ## Release versions
 
 ```sh
@@ -61,7 +78,11 @@ npm run verify -- codex --artifacts /tmp/studens-codex
 Browser harnesses use the installed `playwright-cli` in headless mode. Real hosts
 need signed-in model accounts and use the fixed models in the verification skill.
 Checks use scratch classrooms; Codex also uses a temporary home with a copy of
-`auth.json`. Cleanup removes owned sessions and scratch data and preserves reports.
+`auth.json`. Pi uses a private temporary account/configuration copy with the same
+provider catalog and fixed verification model; its dedicated SDK teacher has a
+separate persisted session. The Pi target also checks initiating exit during work,
+reconnect, FIFO, explicit retry, and saved-plan restart without a second grade.
+Cleanup removes owned sessions and scratch data and preserves reports.
 Never stop the learner's shared service by port or process name.
 
 Keep tests for contracts, boundary failures, recovery, request order, and private

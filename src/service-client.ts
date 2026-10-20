@@ -80,6 +80,11 @@ export async function ensureService(): Promise<any> {
       version: string;
     }
   ).version;
+  const legacyRoute = path.join(classroomsRoot(), ".pi-teach-pi", "phone.json");
+  if (fs.existsSync(legacyRoute))
+    throw new Error(
+      `A legacy Pi tailnet route is still recorded at ${legacyRoute}. Stop that server explicitly with the previous Pi package before retrying. No route or saved data was replaced.`,
+    );
   const status = await serviceStatus();
   if (status.running) {
     if (

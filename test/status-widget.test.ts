@@ -1,4 +1,4 @@
-import { describe, it, expect, afterEach, beforeEach } from "vitest";
+import { describe, it, expect, afterEach, beforeEach, vi } from "vitest";
 
 import * as server from "../src/server.ts";
 import {
@@ -28,9 +28,12 @@ function stubHost(theme?: WidgetHost["theme"]): WidgetHost & { calls: Call[] } {
   };
 }
 
+const status = vi.hoisted(() => ({ running: false, port: 0 }));
+vi.mock("../src/service-client.ts", () => ({ serviceStatus: async () => status }));
 let fixture: Fixture;
 
 beforeEach(() => {
+  status.running = false;
   fixture = makeFixture();
   seedClassroom(fixture);
 });
@@ -45,11 +48,13 @@ describe("the widget's lifecycle", () => {
   it("appears with the live port once the server is up, and clears when it stops", async () => {
     const host = stubHost();
 
-    attachStatusWidget(host);
+    await attachStatusWidget(host);
     expect(host.calls).toEqual([{ key: WIDGET_KEY, content: undefined, placement: "belowEditor" }]);
 
     await server.start();
-    refreshStatusWidget();
+    status.running = true;
+    status.port = server.getPort()!;
+    await refreshStatusWidget();
     const shown = host.calls.at(-1)!;
     expect(shown.key).toBe(WIDGET_KEY);
     // The port is read from the server, so it stays current after a restart.
@@ -57,27 +62,26 @@ describe("the widget's lifecycle", () => {
     expect(shown.content![0]).toContain(String(server.getPort()));
 
     await server.close();
-    refreshStatusWidget();
+    status.running = false;
+    await refreshStatusWidget();
     expect(host.calls.at(-1)!.content).toBeUndefined();
   });
 
-  it("clears the widget on shutdown and then stays quiet", () => {
+  it("clears the widget on shutdown and then stays quiet", async () => {
     const host = stubHost();
-    attachStatusWidget(host);
+    await attachStatusWidget(host);
     detachStatusWidget();
 
     expect(host.calls.at(-1)).toEqual({ key: WIDGET_KEY, content: undefined });
 
     const after = host.calls.length;
-    refreshStatusWidget();
+    await refreshStatusWidget();
     expect(host.calls).toHaveLength(after);
   });
 
-  it("does nothing at all when the session has no UI", () => {
-    expect(() => {
-      attachStatusWidget(null);
-      refreshStatusWidget();
-    }).not.toThrow();
+  it("does nothing at all when the session has no UI", async () => {
+    await expect(attachStatusWidget(null)).resolves.toBeUndefined();
+    await expect(refreshStatusWidget()).resolves.toBeUndefined();
   });
 
   it("survives a UI that does not support widgets", async () => {
@@ -87,7 +91,7 @@ describe("the widget's lifecycle", () => {
       },
     };
 
-    attachStatusWidget(host);
+    await attachStatusWidget(host);
     await server.start();
     expect(() => refreshStatusWidget()).not.toThrow();
     expect(server.isRunning()).toBe(true);
