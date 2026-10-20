@@ -1,0 +1,506 @@
+{
+  "base": "38938d77d4d104939fc1bc81d237cb3b856bf1c6",
+  "runtimeHead": "2b7a1e847fd3a4d8dea022814f6448f03c722077",
+  "version": "0.11.7 inherited main; no release allocation",
+  "scope": "PR70 issue3; cumulative source-bound mechanical evidence, no uninterrupted final all-host or teaching-quality claim",
+  "modelSelection": "Actual Pi SDK1.0.1 openai-codex/gpt-6-luna low selection only, no independent upstream provider attestation. Fixture images prove no model behavior.",
+  "historicalFailures": "Original authoring/evaluator findings and full Pi/Claude failures retained. Later valid output never repairs earlier invalid output by inference.",
+  "images": [
+    {
+      "file": "screenshots/next-lesson-persistent/initial-base/dark-desktop-classroom.png",
+      "sha256": "a5e6841ea0b7d5544d119d4f6a8ea642a6a9935ea15f7a904596bd7e37bbfa99",
+      "source": "924e2eff601c45608fe379d12a40febca14d7729",
+      "fixture": true,
+      "note": "1280x900 desktop /375x812 mobile, both themes; injected specific teacher failure, no model inference.",
+      "inspection": "Prior integration inspected full set; recovery reinspected representative classroom/teacher pair."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/initial-base/dark-desktop-settings.png",
+      "sha256": "5ea5eb243c00c80b33f3fc02b9492a49ce650a27aa70aaf99c6f8dfb03ea6be4",
+      "source": "924e2eff601c45608fe379d12a40febca14d7729",
+      "fixture": true,
+      "note": "1280x900 desktop /375x812 mobile, both themes; injected specific teacher failure, no model inference.",
+      "inspection": "Prior integration inspected full set; recovery reinspected representative classroom/teacher pair."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/initial-base/dark-desktop-teacher.png",
+      "sha256": "7b5cf8dce446a9251f456722caf386635251a1ccb2bc7ca7b6fa45e18c165671",
+      "source": "924e2eff601c45608fe379d12a40febca14d7729",
+      "fixture": true,
+      "note": "1280x900 desktop /375x812 mobile, both themes; injected specific teacher failure, no model inference.",
+      "inspection": "Prior integration inspected full set; recovery reinspected representative classroom/teacher pair."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/initial-base/dark-mobile-classroom.png",
+      "sha256": "81fb2d076e995fed3ef46b688a9d856f01ff34e550ce167e24e4e9997aa44d84",
+      "source": "924e2eff601c45608fe379d12a40febca14d7729",
+      "fixture": true,
+      "note": "1280x900 desktop /375x812 mobile, both themes; injected specific teacher failure, no model inference.",
+      "inspection": "Prior integration inspected full set; recovery reinspected representative classroom/teacher pair."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/initial-base/dark-mobile-settings.png",
+      "sha256": "1814ff2a19bb6b0bcdd4463be18e35345efa97d651b8b4d721c51185d9958105",
+      "source": "924e2eff601c45608fe379d12a40febca14d7729",
+      "fixture": true,
+      "note": "1280x900 desktop /375x812 mobile, both themes; injected specific teacher failure, no model inference.",
+      "inspection": "Prior integration inspected full set; recovery reinspected representative classroom/teacher pair."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/initial-base/dark-mobile-teacher.png",
+      "sha256": "b052f87e9eab64f8b19da7d92815c70685cb048bdac2dc7401caf46a506deaae",
+      "source": "924e2eff601c45608fe379d12a40febca14d7729",
+      "fixture": true,
+      "note": "1280x900 desktop /375x812 mobile, both themes; injected specific teacher failure, no model inference.",
+      "inspection": "Prior integration inspected full set; recovery reinspected representative classroom/teacher pair."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/initial-base/light-desktop-classroom.png",
+      "sha256": "999ed72c2e0efed6df562d51a5da4ac255d787662b5e552b48cb3e212d546844",
+      "source": "924e2eff601c45608fe379d12a40febca14d7729",
+      "fixture": true,
+      "note": "1280x900 desktop /375x812 mobile, both themes; injected specific teacher failure, no model inference.",
+      "inspection": "Prior integration inspected full set; recovery reinspected representative classroom/teacher pair."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/initial-base/light-desktop-settings.png",
+      "sha256": "81a04cc5a246de540e75d68f9727ad31ea88de42c87837dc90f7f5e6ae8265cb",
+      "source": "924e2eff601c45608fe379d12a40febca14d7729",
+      "fixture": true,
+      "note": "1280x900 desktop /375x812 mobile, both themes; injected specific teacher failure, no model inference.",
+      "inspection": "Prior integration inspected full set; recovery reinspected representative classroom/teacher pair."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/initial-base/light-desktop-teacher.png",
+      "sha256": "f56706c9cad0905c70a8293760e9426e5dc7d9419f269714cc5e449e978e5189",
+      "source": "924e2eff601c45608fe379d12a40febca14d7729",
+      "fixture": true,
+      "note": "1280x900 desktop /375x812 mobile, both themes; injected specific teacher failure, no model inference.",
+      "inspection": "Prior integration inspected full set; recovery reinspected representative classroom/teacher pair."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/initial-base/light-mobile-classroom.png",
+      "sha256": "4c1c0d99bef842918d57bf6fd7a969176e386af72d031eac8fb68229ca1ae275",
+      "source": "924e2eff601c45608fe379d12a40febca14d7729",
+      "fixture": true,
+      "note": "1280x900 desktop /375x812 mobile, both themes; injected specific teacher failure, no model inference.",
+      "inspection": "Prior integration inspected full set; recovery reinspected representative classroom/teacher pair."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/initial-base/light-mobile-settings.png",
+      "sha256": "c8e862e9c6d6a1eb0775a1f8385e8061284d56bd08911df572fa8b27b9262717",
+      "source": "924e2eff601c45608fe379d12a40febca14d7729",
+      "fixture": true,
+      "note": "1280x900 desktop /375x812 mobile, both themes; injected specific teacher failure, no model inference.",
+      "inspection": "Prior integration inspected full set; recovery reinspected representative classroom/teacher pair."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/initial-base/light-mobile-teacher.png",
+      "sha256": "331b9477f81ce8b02f9a113672d57f66e2022a8353321f33717f028375d72bfc",
+      "source": "924e2eff601c45608fe379d12a40febca14d7729",
+      "fixture": true,
+      "note": "1280x900 desktop /375x812 mobile, both themes; injected specific teacher failure, no model inference.",
+      "inspection": "Prior integration inspected full set; recovery reinspected representative classroom/teacher pair."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/initial-after/dark-desktop-classroom.png",
+      "sha256": "7877e4050c56d2d429b2aaa0c8bba74d570e6adab351a6f2122e70ffa2732a10",
+      "source": "combined before57702ec; UI bytes unchanged through4da334e",
+      "fixture": true,
+      "note": "1280x900 desktop /375x812 mobile, both themes; injected specific teacher failure, no model inference.",
+      "inspection": "Prior integration inspected full set; recovery reinspected representative classroom/teacher pair."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/initial-after/dark-desktop-settings.png",
+      "sha256": "3be5d64824f69a844b0cfce71b7109c310ab5d52a3e95865f0f25a772db1a41e",
+      "source": "combined before57702ec; UI bytes unchanged through4da334e",
+      "fixture": true,
+      "note": "1280x900 desktop /375x812 mobile, both themes; injected specific teacher failure, no model inference.",
+      "inspection": "Prior integration inspected full set; recovery reinspected representative classroom/teacher pair."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/initial-after/dark-desktop-teacher.png",
+      "sha256": "73312601e64444a1b3b2fb315d75d9f3e3dc0f10f804572a41b7fb9db28730bf",
+      "source": "combined before57702ec; UI bytes unchanged through4da334e",
+      "fixture": true,
+      "note": "1280x900 desktop /375x812 mobile, both themes; injected specific teacher failure, no model inference.",
+      "inspection": "Prior integration inspected full set; recovery reinspected representative classroom/teacher pair."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/initial-after/dark-mobile-classroom.png",
+      "sha256": "83e4048c2b4f6f8ff2a398789a4e52c97c5dfe871887b69a8e9c5d01bd483b76",
+      "source": "combined before57702ec; UI bytes unchanged through4da334e",
+      "fixture": true,
+      "note": "1280x900 desktop /375x812 mobile, both themes; injected specific teacher failure, no model inference.",
+      "inspection": "Prior integration inspected full set; recovery reinspected representative classroom/teacher pair."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/initial-after/dark-mobile-settings.png",
+      "sha256": "1e4551f644259f36dbd5e58ba3cda54a979aecc35c451c2dcc50188c2bbd5950",
+      "source": "combined before57702ec; UI bytes unchanged through4da334e",
+      "fixture": true,
+      "note": "1280x900 desktop /375x812 mobile, both themes; injected specific teacher failure, no model inference.",
+      "inspection": "Prior integration inspected full set; recovery reinspected representative classroom/teacher pair."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/initial-after/dark-mobile-teacher.png",
+      "sha256": "426db50c43f7372e39fdf5776971926fc933500a930dcb50b05e9dfee90a48a0",
+      "source": "combined before57702ec; UI bytes unchanged through4da334e",
+      "fixture": true,
+      "note": "1280x900 desktop /375x812 mobile, both themes; injected specific teacher failure, no model inference.",
+      "inspection": "Prior integration inspected full set; recovery reinspected representative classroom/teacher pair."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/initial-after/light-desktop-classroom.png",
+      "sha256": "ffdc6c74ea07d26df74f074cc9517151a5498c4f4b7f7e06e14a8ecf36099330",
+      "source": "combined before57702ec; UI bytes unchanged through4da334e",
+      "fixture": true,
+      "note": "1280x900 desktop /375x812 mobile, both themes; injected specific teacher failure, no model inference.",
+      "inspection": "Prior integration inspected full set; recovery reinspected representative classroom/teacher pair."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/initial-after/light-desktop-settings.png",
+      "sha256": "4ee26b45e2276dd8519bf4b1d54adc4f01ab5e6b1502530566d37683a01dc1e7",
+      "source": "combined before57702ec; UI bytes unchanged through4da334e",
+      "fixture": true,
+      "note": "1280x900 desktop /375x812 mobile, both themes; injected specific teacher failure, no model inference.",
+      "inspection": "Prior integration inspected full set; recovery reinspected representative classroom/teacher pair."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/initial-after/light-desktop-teacher.png",
+      "sha256": "7ac1bb7ef1dd5b2e2b412f03e9ca1492a0c9622f20d2b56b393663cc5563558a",
+      "source": "combined before57702ec; UI bytes unchanged through4da334e",
+      "fixture": true,
+      "note": "1280x900 desktop /375x812 mobile, both themes; injected specific teacher failure, no model inference.",
+      "inspection": "Prior integration inspected full set; recovery reinspected representative classroom/teacher pair."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/initial-after/light-mobile-classroom.png",
+      "sha256": "430dd2e472aeebc415620da01a97bf081d6073e417f79914e346f84ef551eb22",
+      "source": "combined before57702ec; UI bytes unchanged through4da334e",
+      "fixture": true,
+      "note": "1280x900 desktop /375x812 mobile, both themes; injected specific teacher failure, no model inference.",
+      "inspection": "Prior integration inspected full set; recovery reinspected representative classroom/teacher pair."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/initial-after/light-mobile-settings.png",
+      "sha256": "403fc85cf0c5e932f4fccbeb92f73fac0bae0f5822094dbb9e53d9c80535b737",
+      "source": "combined before57702ec; UI bytes unchanged through4da334e",
+      "fixture": true,
+      "note": "1280x900 desktop /375x812 mobile, both themes; injected specific teacher failure, no model inference.",
+      "inspection": "Prior integration inspected full set; recovery reinspected representative classroom/teacher pair."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/initial-after/light-mobile-teacher.png",
+      "sha256": "6d1b911620c7b526a7809ee9e58ec41f12883a8935c470c4fa49d1ad96a2f092",
+      "source": "combined before57702ec; UI bytes unchanged through4da334e",
+      "fixture": true,
+      "note": "1280x900 desktop /375x812 mobile, both themes; injected specific teacher failure, no model inference.",
+      "inspection": "Prior integration inspected full set; recovery reinspected representative classroom/teacher pair."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/base389/dark-desktop-classroom.png",
+      "sha256": "2e5f8a5ebf632e9d7b771e9f7c2a36e277718d5c2def1b65170852d50ff98278",
+      "source": "38938d77d4d104939fc1bc81d237cb3b856bf1c6",
+      "fixture": true,
+      "note": "Fresh matched classroom/settings/teacher error;1280x900/375x812,both themes. Model failure injected, no provider inference.",
+      "inspection": "Recovery round inspected all24 originals; controls visible, wrapped errors, no observed page overflow. Dark settings red error text has lower contrast than body, unchanged from base."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/base389/dark-desktop-settings.png",
+      "sha256": "f5d4a01422dba79e3af4d258300a33ac3228656f481ae3bdf457fa2d00faa3e2",
+      "source": "38938d77d4d104939fc1bc81d237cb3b856bf1c6",
+      "fixture": true,
+      "note": "Fresh matched classroom/settings/teacher error;1280x900/375x812,both themes. Model failure injected, no provider inference.",
+      "inspection": "Recovery round inspected all24 originals; controls visible, wrapped errors, no observed page overflow. Dark settings red error text has lower contrast than body, unchanged from base."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/base389/dark-desktop-teacher.png",
+      "sha256": "52ae5f3304761c0c7011ec47a60b311565fc365f14249291465fb525621b4450",
+      "source": "38938d77d4d104939fc1bc81d237cb3b856bf1c6",
+      "fixture": true,
+      "note": "Fresh matched classroom/settings/teacher error;1280x900/375x812,both themes. Model failure injected, no provider inference.",
+      "inspection": "Recovery round inspected all24 originals; controls visible, wrapped errors, no observed page overflow. Dark settings red error text has lower contrast than body, unchanged from base."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/base389/dark-mobile-classroom.png",
+      "sha256": "ff18b2c30a77c91bfa3f309ecf2bc945d357fa3e807e8fb833ecf7e57ecf10f1",
+      "source": "38938d77d4d104939fc1bc81d237cb3b856bf1c6",
+      "fixture": true,
+      "note": "Fresh matched classroom/settings/teacher error;1280x900/375x812,both themes. Model failure injected, no provider inference.",
+      "inspection": "Recovery round inspected all24 originals; controls visible, wrapped errors, no observed page overflow. Dark settings red error text has lower contrast than body, unchanged from base."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/base389/dark-mobile-settings.png",
+      "sha256": "6c04331f6c662c81584af2d10eb0a3642a63a04092759ea71214a1c7c9573842",
+      "source": "38938d77d4d104939fc1bc81d237cb3b856bf1c6",
+      "fixture": true,
+      "note": "Fresh matched classroom/settings/teacher error;1280x900/375x812,both themes. Model failure injected, no provider inference.",
+      "inspection": "Recovery round inspected all24 originals; controls visible, wrapped errors, no observed page overflow. Dark settings red error text has lower contrast than body, unchanged from base."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/base389/dark-mobile-teacher.png",
+      "sha256": "2335722878d0f36d441524cb3831350115ffb030fabab5fdbda661ba805836bd",
+      "source": "38938d77d4d104939fc1bc81d237cb3b856bf1c6",
+      "fixture": true,
+      "note": "Fresh matched classroom/settings/teacher error;1280x900/375x812,both themes. Model failure injected, no provider inference.",
+      "inspection": "Recovery round inspected all24 originals; controls visible, wrapped errors, no observed page overflow. Dark settings red error text has lower contrast than body, unchanged from base."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/base389/light-desktop-classroom.png",
+      "sha256": "e59645c24ef0dae85a4ce24540c4cfdceb2c867fa9951a95d517570de0e7e792",
+      "source": "38938d77d4d104939fc1bc81d237cb3b856bf1c6",
+      "fixture": true,
+      "note": "Fresh matched classroom/settings/teacher error;1280x900/375x812,both themes. Model failure injected, no provider inference.",
+      "inspection": "Recovery round inspected all24 originals; controls visible, wrapped errors, no observed page overflow. Dark settings red error text has lower contrast than body, unchanged from base."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/base389/light-desktop-settings.png",
+      "sha256": "d141b2095cbade2affa56e6a83106681f1f9c0e99a6e4e2360f1d6bc59074f4d",
+      "source": "38938d77d4d104939fc1bc81d237cb3b856bf1c6",
+      "fixture": true,
+      "note": "Fresh matched classroom/settings/teacher error;1280x900/375x812,both themes. Model failure injected, no provider inference.",
+      "inspection": "Recovery round inspected all24 originals; controls visible, wrapped errors, no observed page overflow. Dark settings red error text has lower contrast than body, unchanged from base."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/base389/light-desktop-teacher.png",
+      "sha256": "9404ead16ba4f043f52770e9e90989008323d1f2f3fc84f0b601a0baaeaa6791",
+      "source": "38938d77d4d104939fc1bc81d237cb3b856bf1c6",
+      "fixture": true,
+      "note": "Fresh matched classroom/settings/teacher error;1280x900/375x812,both themes. Model failure injected, no provider inference.",
+      "inspection": "Recovery round inspected all24 originals; controls visible, wrapped errors, no observed page overflow. Dark settings red error text has lower contrast than body, unchanged from base."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/base389/light-mobile-classroom.png",
+      "sha256": "d12a89f71ffab90eb0c3ba1c5f7da65cc23a68609b0e8b421f80ace6ef5d7f5a",
+      "source": "38938d77d4d104939fc1bc81d237cb3b856bf1c6",
+      "fixture": true,
+      "note": "Fresh matched classroom/settings/teacher error;1280x900/375x812,both themes. Model failure injected, no provider inference.",
+      "inspection": "Recovery round inspected all24 originals; controls visible, wrapped errors, no observed page overflow. Dark settings red error text has lower contrast than body, unchanged from base."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/base389/light-mobile-settings.png",
+      "sha256": "6f009baf9063ccfdcdd1d50047920716590b8edd7aa30d7301bd79ef89f7fffb",
+      "source": "38938d77d4d104939fc1bc81d237cb3b856bf1c6",
+      "fixture": true,
+      "note": "Fresh matched classroom/settings/teacher error;1280x900/375x812,both themes. Model failure injected, no provider inference.",
+      "inspection": "Recovery round inspected all24 originals; controls visible, wrapped errors, no observed page overflow. Dark settings red error text has lower contrast than body, unchanged from base."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/base389/light-mobile-teacher.png",
+      "sha256": "796568cd3de6763b11df3d354f36541ef6f4b81432c06b5b5e563be4c3387333",
+      "source": "38938d77d4d104939fc1bc81d237cb3b856bf1c6",
+      "fixture": true,
+      "note": "Fresh matched classroom/settings/teacher error;1280x900/375x812,both themes. Model failure injected, no provider inference.",
+      "inspection": "Recovery round inspected all24 originals; controls visible, wrapped errors, no observed page overflow. Dark settings red error text has lower contrast than body, unchanged from base."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/after04/dark-desktop-classroom.png",
+      "sha256": "3359536b33c9774a26a8cfe69158fdb2fd4a5b7c8632190747df2149611e9f40",
+      "source": "04bb833e807fb04c5abe9ee700d7c42f06c81b8c; UI bytes identical in2b7a1e8",
+      "fixture": true,
+      "note": "Fresh matched classroom/settings/teacher error;1280x900/375x812,both themes. Model failure injected, no provider inference.",
+      "inspection": "Recovery round inspected all24 originals; controls visible, wrapped errors, no observed page overflow. Dark settings red error text has lower contrast than body, unchanged from base."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/after04/dark-desktop-settings.png",
+      "sha256": "61cf6e912de15a44d6e8967a1d310d16dcfb0ba15f99ab3d489fb00b053eca5e",
+      "source": "04bb833e807fb04c5abe9ee700d7c42f06c81b8c; UI bytes identical in2b7a1e8",
+      "fixture": true,
+      "note": "Fresh matched classroom/settings/teacher error;1280x900/375x812,both themes. Model failure injected, no provider inference.",
+      "inspection": "Recovery round inspected all24 originals; controls visible, wrapped errors, no observed page overflow. Dark settings red error text has lower contrast than body, unchanged from base."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/after04/dark-desktop-teacher.png",
+      "sha256": "113657fa56b6e725d5b7333c36775fd0918f29e96b217e7739edd26a9e174a9a",
+      "source": "04bb833e807fb04c5abe9ee700d7c42f06c81b8c; UI bytes identical in2b7a1e8",
+      "fixture": true,
+      "note": "Fresh matched classroom/settings/teacher error;1280x900/375x812,both themes. Model failure injected, no provider inference.",
+      "inspection": "Recovery round inspected all24 originals; controls visible, wrapped errors, no observed page overflow. Dark settings red error text has lower contrast than body, unchanged from base."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/after04/dark-mobile-classroom.png",
+      "sha256": "3ef9f67fd0fb97d4723a8c6642df015b52484bce7d86cc5ad0d52b85a1adde18",
+      "source": "04bb833e807fb04c5abe9ee700d7c42f06c81b8c; UI bytes identical in2b7a1e8",
+      "fixture": true,
+      "note": "Fresh matched classroom/settings/teacher error;1280x900/375x812,both themes. Model failure injected, no provider inference.",
+      "inspection": "Recovery round inspected all24 originals; controls visible, wrapped errors, no observed page overflow. Dark settings red error text has lower contrast than body, unchanged from base."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/after04/dark-mobile-settings.png",
+      "sha256": "9e39b12734fcee91bb04c0ce5b0532f12f55b496fe23532ec7f9a6b063e02e85",
+      "source": "04bb833e807fb04c5abe9ee700d7c42f06c81b8c; UI bytes identical in2b7a1e8",
+      "fixture": true,
+      "note": "Fresh matched classroom/settings/teacher error;1280x900/375x812,both themes. Model failure injected, no provider inference.",
+      "inspection": "Recovery round inspected all24 originals; controls visible, wrapped errors, no observed page overflow. Dark settings red error text has lower contrast than body, unchanged from base."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/after04/dark-mobile-teacher.png",
+      "sha256": "b089895d3c8dc7e596bc4c7e789c4c657dba9b16b05d03801be6b426e79b43b0",
+      "source": "04bb833e807fb04c5abe9ee700d7c42f06c81b8c; UI bytes identical in2b7a1e8",
+      "fixture": true,
+      "note": "Fresh matched classroom/settings/teacher error;1280x900/375x812,both themes. Model failure injected, no provider inference.",
+      "inspection": "Recovery round inspected all24 originals; controls visible, wrapped errors, no observed page overflow. Dark settings red error text has lower contrast than body, unchanged from base."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/after04/light-desktop-classroom.png",
+      "sha256": "b3b59db907afb5c7491795e9f7ce4a8f3348127bb63222603358fd3501fb43d6",
+      "source": "04bb833e807fb04c5abe9ee700d7c42f06c81b8c; UI bytes identical in2b7a1e8",
+      "fixture": true,
+      "note": "Fresh matched classroom/settings/teacher error;1280x900/375x812,both themes. Model failure injected, no provider inference.",
+      "inspection": "Recovery round inspected all24 originals; controls visible, wrapped errors, no observed page overflow. Dark settings red error text has lower contrast than body, unchanged from base."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/after04/light-desktop-settings.png",
+      "sha256": "9f8b8d8194bcddab362bc6ba6ae56e582ca440b26e8721bb779037f2d458ec65",
+      "source": "04bb833e807fb04c5abe9ee700d7c42f06c81b8c; UI bytes identical in2b7a1e8",
+      "fixture": true,
+      "note": "Fresh matched classroom/settings/teacher error;1280x900/375x812,both themes. Model failure injected, no provider inference.",
+      "inspection": "Recovery round inspected all24 originals; controls visible, wrapped errors, no observed page overflow. Dark settings red error text has lower contrast than body, unchanged from base."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/after04/light-desktop-teacher.png",
+      "sha256": "3d2ce295df4b34f6c2212cee6b51defd75bcc1cd31c338d310fa77d3e1fcc1e8",
+      "source": "04bb833e807fb04c5abe9ee700d7c42f06c81b8c; UI bytes identical in2b7a1e8",
+      "fixture": true,
+      "note": "Fresh matched classroom/settings/teacher error;1280x900/375x812,both themes. Model failure injected, no provider inference.",
+      "inspection": "Recovery round inspected all24 originals; controls visible, wrapped errors, no observed page overflow. Dark settings red error text has lower contrast than body, unchanged from base."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/after04/light-mobile-classroom.png",
+      "sha256": "ba242ede06065fe32796fe74ea6dd1185bc448ccb078b32d4f238b8a4601ab5b",
+      "source": "04bb833e807fb04c5abe9ee700d7c42f06c81b8c; UI bytes identical in2b7a1e8",
+      "fixture": true,
+      "note": "Fresh matched classroom/settings/teacher error;1280x900/375x812,both themes. Model failure injected, no provider inference.",
+      "inspection": "Recovery round inspected all24 originals; controls visible, wrapped errors, no observed page overflow. Dark settings red error text has lower contrast than body, unchanged from base."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/after04/light-mobile-settings.png",
+      "sha256": "26ebd0ebcd88be78b7202219c041e88d079f5b79cc9e9df5cacfe86250b495de",
+      "source": "04bb833e807fb04c5abe9ee700d7c42f06c81b8c; UI bytes identical in2b7a1e8",
+      "fixture": true,
+      "note": "Fresh matched classroom/settings/teacher error;1280x900/375x812,both themes. Model failure injected, no provider inference.",
+      "inspection": "Recovery round inspected all24 originals; controls visible, wrapped errors, no observed page overflow. Dark settings red error text has lower contrast than body, unchanged from base."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/after04/light-mobile-teacher.png",
+      "sha256": "0d42c9d6422d4500392257e86924089e5e42ee752c8902e1f924baafd8bf1203",
+      "source": "04bb833e807fb04c5abe9ee700d7c42f06c81b8c; UI bytes identical in2b7a1e8",
+      "fixture": true,
+      "note": "Fresh matched classroom/settings/teacher error;1280x900/375x812,both themes. Model failure injected, no provider inference.",
+      "inspection": "Recovery round inspected all24 originals; controls visible, wrapped errors, no observed page overflow. Dark settings red error text has lower contrast than body, unchanged from base."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/persistent-pi/next-lesson-failed.png",
+      "sha256": "3f3845d6af4174651afdd90011fd6dfd8033b6480fc43bd95c8904d42e3332ba",
+      "source": "4da334e2b0e5e2bfc002737981ff90f090cc9b98",
+      "fixture": false,
+      "note": "Actual persistent Pi research/authoring/recovery. Initial native missing lesson_html is a retained FAIL; explicit retry yields new valid output. Full drive later FAIL at re-teach. Older checker receipt then HTML-only; complete private input check is a later retained-output fixture proof.",
+      "inspection": "Recovery round inspected original."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/persistent-pi/pi-next-lesson-running.png",
+      "sha256": "87c39626111a77ec4288cbf4cfbbd5b45ddacc85e9763b55a9a5eda91f400505",
+      "source": "4da334e2b0e5e2bfc002737981ff90f090cc9b98",
+      "fixture": false,
+      "note": "Actual persistent Pi research/authoring/recovery. Initial native missing lesson_html is a retained FAIL; explicit retry yields new valid output. Full drive later FAIL at re-teach. Older checker receipt then HTML-only; complete private input check is a later retained-output fixture proof.",
+      "inspection": "Recovery round inspected original."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/persistent-pi/pi-publication-failed-desktop.png",
+      "sha256": "700dd50724bf992112ab8b3111e8c90778a351715fdd39395c6071098e9ec373",
+      "source": "4da334e2b0e5e2bfc002737981ff90f090cc9b98",
+      "fixture": false,
+      "note": "Actual persistent Pi research/authoring/recovery. Initial native missing lesson_html is a retained FAIL; explicit retry yields new valid output. Full drive later FAIL at re-teach. Older checker receipt then HTML-only; complete private input check is a later retained-output fixture proof.",
+      "inspection": "Recovery round inspected original."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/persistent-pi/pi-publication-failed-mobile.png",
+      "sha256": "c1171c011d94ba8f5d8869f8ade20e3f4baa095503c088a589601219ddfc7b17",
+      "source": "4da334e2b0e5e2bfc002737981ff90f090cc9b98",
+      "fixture": false,
+      "note": "Actual persistent Pi research/authoring/recovery. Initial native missing lesson_html is a retained FAIL; explicit retry yields new valid output. Full drive later FAIL at re-teach. Older checker receipt then HTML-only; complete private input check is a later retained-output fixture proof.",
+      "inspection": "Recovery round inspected original."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/persistent-pi/pi-next-lesson-desktop.png",
+      "sha256": "63682b88726350993d5716df67e0cec62941cd4268d27de263f18150470ffd03",
+      "source": "4da334e2b0e5e2bfc002737981ff90f090cc9b98",
+      "fixture": false,
+      "note": "Actual persistent Pi research/authoring/recovery. Initial native missing lesson_html is a retained FAIL; explicit retry yields new valid output. Full drive later FAIL at re-teach. Older checker receipt then HTML-only; complete private input check is a later retained-output fixture proof.",
+      "inspection": "Recovery round inspected original."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/persistent-pi/pi-next-lesson-mobile.png",
+      "sha256": "2f7f60aee753cd6e4e5ce1aeae051969402139d3d7e1e71d40b2246b001b9ce3",
+      "source": "4da334e2b0e5e2bfc002737981ff90f090cc9b98",
+      "fixture": false,
+      "note": "Actual persistent Pi research/authoring/recovery. Initial native missing lesson_html is a retained FAIL; explicit retry yields new valid output. Full drive later FAIL at re-teach. Older checker receipt then HTML-only; complete private input check is a later retained-output fixture proof.",
+      "inspection": "Recovery round inspected original."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/same-conversation/failed-desktop.png",
+      "sha256": "ba590758a3f15c7dd6ac822c6e7db488243ad4954a61651b10e30959de5c4c0c",
+      "source": "04bb833e807fb04c5abe9ee700d7c42f06c81b8c",
+      "fixture": false,
+      "note": "Same original failed chat; one explicit retry after schema-derived input clarification. Recovered image still shows separately interrupted background refill; it was later explicitly retried once successfully. Assisted answer does not unpause or establish retention.",
+      "inspection": "Recovery round inspected original."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/same-conversation/failed-mobile.png",
+      "sha256": "fa36a5166865600ad9ca11e1532c5bc325da177e4c0f37b8909dbaf4221cff9d",
+      "source": "04bb833e807fb04c5abe9ee700d7c42f06c81b8c",
+      "fixture": false,
+      "note": "Same original failed chat; one explicit retry after schema-derived input clarification. Recovered image still shows separately interrupted background refill; it was later explicitly retried once successfully. Assisted answer does not unpause or establish retention.",
+      "inspection": "Recovery round inspected original."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/same-conversation/recovered-desktop.png",
+      "sha256": "16332106331ef09da17d8077a4859eb0e397a6844bf0963acc3f5af804424e04",
+      "source": "04bb833e807fb04c5abe9ee700d7c42f06c81b8c",
+      "fixture": false,
+      "note": "Same original failed chat; one explicit retry after schema-derived input clarification. Recovered image still shows separately interrupted background refill; it was later explicitly retried once successfully. Assisted answer does not unpause or establish retention.",
+      "inspection": "Recovery round inspected original."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/same-conversation/recovered-mobile.png",
+      "sha256": "052db64534cc919593ba34f8f626338c4c7dbc648ec86a7fc6c7462108835b21",
+      "source": "04bb833e807fb04c5abe9ee700d7c42f06c81b8c",
+      "fixture": false,
+      "note": "Same original failed chat; one explicit retry after schema-derived input clarification. Recovered image still shows separately interrupted background refill; it was later explicitly retried once successfully. Assisted answer does not unpause or establish retention.",
+      "inspection": "Recovery round inspected original."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/same-conversation/criteria-desktop.png",
+      "sha256": "51f7de2b162e0305b26374b4968edfc3c7c2f739d7cbd0b84d91774cf49e0cac",
+      "source": "04bb833e807fb04c5abe9ee700d7c42f06c81b8c",
+      "fixture": false,
+      "note": "Previously unreached actual same-conversation criterion:2/2+0/2=2/4,one grade,locked reload. Subsequent background refill running at teardown; completion not claimed.",
+      "inspection": "Recovery round inspected original."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/same-conversation/criteria-mobile.png",
+      "sha256": "a11d9e3d2bd2ddaad9f774c2d9abeb3071a8d737509108e4ccb942cce93358ef",
+      "source": "04bb833e807fb04c5abe9ee700d7c42f06c81b8c",
+      "fixture": false,
+      "note": "Previously unreached actual same-conversation criterion:2/2+0/2=2/4,one grade,locked reload. Subsequent background refill running at teardown; completion not claimed.",
+      "inspection": "Recovery round inspected original."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/lifecycle/pi-unavailable.png",
+      "sha256": "fd48733d13bf19a4edba077a6a25260e11d3e71fc7baaf7b916ebcbf251896bb",
+      "source": "04bb833e807fb04c5abe9ee700d7c42f06c81b8c",
+      "fixture": false,
+      "note": "Actual isolated Pi lifecycle: specific model error/explicit retry, saved valid grade plan/EACCES/restart/retry exactly once without inference.",
+      "inspection": "Recovery round inspected original."
+    },
+    {
+      "file": "screenshots/next-lesson-persistent/lifecycle/pi-recovered-grade.png",
+      "sha256": "412b35318eb7324716bc158fcc782e451c7a5a734a8a3cfe02348bebd8a54cf7",
+      "source": "04bb833e807fb04c5abe9ee700d7c42f06c81b8c",
+      "fixture": false,
+      "note": "Actual isolated Pi lifecycle: specific model error/explicit retry, saved valid grade plan/EACCES/restart/retry exactly once without inference.",
+      "inspection": "Recovery round inspected original."
+    }
+  ]
+}
