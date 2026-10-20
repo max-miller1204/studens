@@ -142,6 +142,7 @@ export function createSubmission(
     attempt,
     submittedAt,
     rubricDigest,
+    answerSourceDigest: page ? createHash("sha256").update(html).digest("hex") : undefined,
     assessmentContract: readLesson(input.classroom, input.lesson)?.assessmentContract,
     instructionalContract: readLesson(input.classroom, input.lesson)?.instructionalContract,
   };
@@ -161,6 +162,7 @@ export function publicSubmission(submission: QuizSubmission): QuizSubmission {
     teachingPlan: privatePlan,
     deterministicGrades: privateGrades,
     earlyReviewKeys: privateEarlyTiming,
+    answerSourceDigest: privateAnswerSource,
     ...publicFields
   } = submission;
   return {
