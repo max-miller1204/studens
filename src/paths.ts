@@ -1,3 +1,4 @@
+import { StateReadError } from "./state-errors.ts";
 /**
  * paths.ts — canonical on-disk locations for classrooms, plus the slug validation
  * and traversal guards every HTTP route depends on.
@@ -209,7 +210,7 @@ export function privateStatePath(relative: string): string {
     current = path.join(current, segment);
     try {
       if (fs.lstatSync(current).isSymbolicLink())
-        throw new Error(`Private state path cannot be a symlink: ${current}.`);
+        throw new StateReadError(`Private state path cannot be a symlink: ${current}.`);
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
     }

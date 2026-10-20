@@ -675,17 +675,25 @@ export class TeacherService {
     state.identity = identity;
     for (const lesson of store.listLessons(classroom)) this.publish(classroom, lesson.name);
   }
-  publicState(classroom: string, lesson: string): unknown {
+  publicState(classroom: string, lesson?: string): unknown {
     const state = this.states.get(classroom);
     if (!state) return null;
     return {
-      reteach: reteachOffers(classroom, lesson),
-      disputes: publicDisputes(state.requests, lesson),
+      reteach: lesson === undefined ? [] : reteachOffers(classroom, lesson),
+      disputes: lesson === undefined ? [] : publicDisputes(state.requests, lesson),
       identity: { ...state.identity, persistent: true },
       requests: state.requests
-        .filter((r) => r.lesson === lesson)
-        .map((r) => ({ id: r.id, kind: r.kind, status: r.status, error: r.error })),
-      messages: this.messages(classroom, lesson, state).map(withHtml),
+        .filter((r) => lesson === undefined || r.lesson === lesson)
+        .map((r) => ({
+          id: r.id,
+          lesson: r.lesson,
+          target: r.target,
+          at: r.at,
+          kind: r.kind,
+          status: r.status,
+          error: r.error,
+        })),
+      messages: lesson === undefined ? [] : this.messages(classroom, lesson, state).map(withHtml),
     };
   }
   private publish(classroom: string, lesson: string): void {
@@ -905,6 +913,7 @@ export class TeacherService {
           r.planValidated = false;
           r.status = "planned";
           saveTeacherState(classroom, state);
+          this.publish(classroom, r.lesson);
         }
         if (r.kind === "lesson")
           updateLessonRequest(this.lessonRequest(r), { status: "running", error: undefined });

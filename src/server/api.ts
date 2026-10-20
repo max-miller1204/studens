@@ -1,4 +1,5 @@
 import type * as http from "node:http";
+import { handleActivity } from "./activity.ts";
 import { handleAsk, handleDeleteAnnotation, handleFollowUp } from "./annotations.ts";
 import { handleEvents } from "./events.ts";
 import { handleFolders } from "./folders.ts";
@@ -27,6 +28,7 @@ export async function handleApi(
     return handleNextLesson(req, res, route, url);
   if (["daily-review", "daily-review/continue", "daily-review/retry"].includes(route))
     return handleDailyReview(req, res, route, url);
+  if (route === "activity" && req.method === "GET") return handleActivity(res, url);
   if (route === "folders") return handleFolders(req, res);
   if (
     ((route === "review" || route === "review/items") && req.method === "GET") ||

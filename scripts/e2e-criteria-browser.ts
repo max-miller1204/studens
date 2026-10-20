@@ -253,7 +253,7 @@ export async function verifyCriteriaBrowser(artifacts: string | null): Promise<v
       await page.locator('form.cl-quiz textarea').fill('The squared errors sum to 5. Therefore the mean squared error is 5.');
       await page.getByRole('button',{name:'Submit for grading',exact:true}).click();
       await page.getByRole('button',{name:'Retry request',exact:true}).waitFor();
-      await page.getByText('allocate every declared criterion exactly once.',{exact:false}).waitFor();
+      await page.locator('.cl-teacher-requests').getByText('allocate every declared criterion exactly once.',{exact:false}).waitFor();
       await page.setViewportSize({width:1280,height:900});${shot("teacher-error-desktop")}
       await page.setViewportSize({width:375,height:812});${shot("teacher-error-mobile")}
       await page.reload();await page.getByRole('button',{name:'Retry request',exact:true}).waitFor(); return true;

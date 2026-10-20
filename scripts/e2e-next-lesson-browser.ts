@@ -187,7 +187,7 @@ export async function verifyNextLessonBrowser(artifacts: string | null): Promise
       await playwrightCode(
         session,
         fixture.root,
-        `async page=>{await page.getByRole('button',{name:'Retry lesson',exact:true}).click();await page.waitForURL('**/${saved.lesson}',{timeout:120000});await page.waitForFunction(()=>document.querySelector('form.cl-quiz')?.dataset.state==='fresh');await page.screenshot({path:${JSON.stringify(path.join(evidence, "opened.png"))},fullPage:true});await page.reload();return {quizzes:await page.locator('form.cl-quiz').count()};}`,
+        `async page=>{await page.locator('.cl-teacher-activity').getByRole('button',{name:/^Retry activity:/}).click();await page.waitForURL('**/${saved.lesson}',{timeout:120000});await page.waitForFunction(()=>document.querySelector('form.cl-quiz')?.dataset.state==='fresh');await page.screenshot({path:${JSON.stringify(path.join(evidence, "opened.png"))},fullPage:true});await page.reload();return {quizzes:await page.locator('form.cl-quiz').count()};}`,
       );
       assert.equal(runs, 1);
       assert.equal(lessonRequests("rust").at(-1)!.status, "done");
