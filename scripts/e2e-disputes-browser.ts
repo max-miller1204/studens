@@ -120,7 +120,7 @@ export async function verifyDisputesBrowser(artifacts: string | null) {
     await teacher.idle();
     const failed = readTeacherState("rust")!;
     save("failed-request", failed);
-    const navigation = await playwrightCode(
+    const navigation = await playwrightCode<{ id: string }>(
       session,
       f.root,
       `async page=>{
