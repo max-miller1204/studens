@@ -29,6 +29,7 @@ if (nodeMajor < 22 || (nodeMajor === 22 && nodeMinor < 19) || !process.features.
 function hasRuntimeDependencies() {
   try {
     import.meta.resolve("marked");
+    import.meta.resolve("parse5");
     import.meta.resolve("@earendil-works/pi-coding-agent");
     return true;
   } catch {

@@ -11,6 +11,7 @@ Start with the shared [launch and doctor instructions](../SKILL.md). Each browse
 | Next lesson          | [next-lesson.md](next-lesson.md)   | Classroom page, optional topic, durable authoring, publication retry                                                         |
 | Start a review       | [review.md](review.md)             | Daily landing/groups/history, classroom progress, size/topic/early controls, retirement, question reports, publication retry |
 | Classroom settings   | [settings.md](settings.md)         | Classroom Settings, preferences, port, tailnet links, requested and answering model                                          |
+| Export classroom     | [export.md](export.md)             | Classroom Export, Anki/Markdown downloads, printable contents/PDF, explicit eligible answers, read-only and privacy gates    |
 | Course map           | [course-map.md](course-map.md)     | Classroom Course map, mission, upcoming objectives, explicit connections, lesson navigation, load retry                      |
 | Teacher conversation | [teacher.md](teacher.md)           | Classroom activity, shared persistent panels, explicit retry, Pi/MCP reconnect                                               |
 
