@@ -1,3 +1,4 @@
+import { verifyStepperPublication } from "./e2e-stepper-publication.ts";
 import { verifyDisputesBrowser } from "./e2e-disputes-browser.ts";
 import { verifyReviewWorkload } from "./e2e-review-workload.ts";
 import { verifyCriteriaBrowser } from "./e2e-criteria-browser.ts";
@@ -8,6 +9,7 @@ import { verifyReviewCards } from "./e2e-review-cards.ts";
 import { verifyReteachBrowser } from "./e2e-reteach-browser.ts";
 import { verifyNextLessonBrowser } from "./e2e-next-lesson-browser.ts";
 import { verifyPracticeBrowser } from "./e2e-practice-browser.ts";
+import { verifyStepperBrowser } from "./e2e-stepper-browser.ts";
 import { verifyFadedBrowser } from "./e2e-faded-browser.ts";
 import { verifyClosedBrowser } from "./e2e-closed-browser.ts";
 import { verifyFoldersBrowser } from "./e2e-folders-browser.ts";
@@ -405,3 +407,7 @@ await verifyDailyReview(artifacts ? path.join(artifacts, "daily-review") : null)
 await verifyPracticeBrowser(artifacts ? path.join(artifacts, "practice") : null);
 
 await verifyFadedBrowser(artifacts ? path.join(artifacts, "faded") : null);
+
+await verifyStepperBrowser(artifacts ? path.join(artifacts, "stepper") : null);
+
+await verifyStepperPublication(artifacts ? path.join(artifacts, "stepper-publication") : null);

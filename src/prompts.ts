@@ -123,6 +123,8 @@ export function authoringSteps(
       ? [
           "For a suitable multi-step procedure, use the reusable .cl-faded widget below, outside every form and inside the pretest gate. It hands over one more step on each new case. Its public solutions and keys must never answer a graded question; use different cases/values. Do not map this local practice into the private assessment plan/key. Exact term/numeric checks and honest open comparison create no saved work or learning evidence. Other valid local lesson interactions remain supported.",
           fs.readFileSync(path.join(templatesDir(), "faded.html"), "utf8"),
+          "For causal processes, state machines, pipelines or algorithms, use the reusable .cl-stepper contract below when step inspection helps. Keep it inside the pretest gate and outside forms. Label authored traces honestly; only prefix-sum computes state from learner input. Public teaching uses different cases/values from graded checks and private variants. This local widget creates no learning evidence. Copy only the suitable example and adapt its causal states; do not force unrelated domains into a lesson.",
+          fs.readFileSync(path.join(templatesDir(), "stepper.html"), "utf8"),
         ]
       : []),
     `Write a private teaching plan in ${path.join(path.dirname(lessonPath), "quiz", "plan.json")}. Read docs/TEACHING-PLAN.md for its contract. Map every question to its objective, mental task, and support. Map each gated prequestion to the element id of teaching that addresses it. Do not put strategy labels or expected answers in public metadata. lesson_health and submission check structural alignment. Metadata does not prove question quality.`,

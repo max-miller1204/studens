@@ -70,6 +70,19 @@ Widget publication and the later host criterion/dispute gates have separate
 observations: a publication receipt does not turn a later failed host gate into PASS.
 Keep any first-output rejection and explicit retry alongside the successful receipt.
 
+For directed computed-stepper publication, use `STUDENS_VERIFY_STEPPER=1` with a
+real Pi, Claude or Codex target (for example,
+`STUDENS_VERIFY_STEPPER=1 npm run verify -- pi --artifacts /tmp/studens-stepper-pi`).
+This selects a prefix-sum topic; it is mutually exclusive with the faded option.
+Inspect `stepper-authoring.json`: zero initial and one released widget, all four
+publication hashes, and unchanged learner state. The disposable checker steps
+through the original authored frames and recomputes changed input. Read the actual
+saved HTML, rubric and native trace separately: successful publication verifies
+structure and controls, not arithmetic truth of an authored private key, research
+execution or human learning. Keep directed adoption separate from autonomous
+widgets in the repeated authoring reports. Later full-host gates retain their own
+verdicts even when the widget publication succeeds.
+
 ## Gotchas
 
 Pi, Claude and Codex keep the persistent service and their dedicated teacher
