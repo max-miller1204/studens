@@ -1,3 +1,4 @@
+import { lessonRequests } from "./lesson-requests.ts";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { validateLessonContractVersions } from "../lesson-contracts.ts";
@@ -26,6 +27,8 @@ export function listLessons(classroom: string): Lesson[] {
 
 export function readLesson(classroom: string, lesson: string): Lesson | null {
   if (!isValidSlug(classroom) || !isValidSlug(lesson)) return null;
+  if (lessonRequests(classroom).some((r) => r.lesson === lesson && r.status !== "done"))
+    return null;
   const dir = lessonDir(classroom, lesson);
   const htmlPath = resolveLessonHtml(dir);
   if (!htmlPath) return null;

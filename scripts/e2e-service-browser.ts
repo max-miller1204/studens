@@ -41,6 +41,7 @@ readline.createInterface({input:process.stdin}).on('line', line => {
  const m = JSON.parse(line);
  if (!m.id) return;
  if (m.method === 'initialize') send({id:m.id,result:{}});
+ else if (m.method === 'mcpServerStatus/list') send({id:m.id,result:{data:[],nextCursor:null}});
  else if (m.method === 'config/read') send({id:m.id,result:{config:{model:'fixture-model'}}});
  else if (m.method === 'model/list') send({id:m.id,result:{data:[{id:'fixture-model',model:'fixture-model',displayName:'Fixture model',isDefault:true}],nextCursor:null}});
  else if (m.method === 'thread/start' || m.method === 'thread/resume') send({id:m.id,result:{model:m.params.model,thread:{id:m.params.threadId || 'browser-teacher-session'}}});

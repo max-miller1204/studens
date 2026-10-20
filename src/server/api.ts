@@ -5,6 +5,7 @@ import { handleFolders } from "./folders.ts";
 import { sendJson } from "./http.ts";
 import { handleDraft, handleGlossary, handleReflect, handleState } from "./learner-state.ts";
 import { handleQuizDispute, handleQuizSubmit } from "./quizzes.ts";
+import { handleNextLesson } from "./next-lesson.ts";
 import { handleDailyReview } from "./daily-review.ts";
 import { handleReview } from "./review.ts";
 import { handleSettings } from "./settings.ts";
@@ -19,6 +20,11 @@ export async function handleApi(
   const route = rest.join("/");
   if (route === "settings" || route === "settings/models")
     return handleSettings(req, res, url, route === "settings/models");
+  if (
+    (route === "lesson" && req.method === "GET") ||
+    ((route === "lesson" || route === "lesson/retry") && req.method === "POST")
+  )
+    return handleNextLesson(req, res, route, url);
   if (["daily-review", "daily-review/continue", "daily-review/retry"].includes(route))
     return handleDailyReview(req, res, route, url);
   if (route === "folders") return handleFolders(req, res);

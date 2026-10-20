@@ -37,7 +37,7 @@ loader flags. Account/provider/model/thinking settings are retained; global and
 project configuration files remain unchanged.
 Initiating Pi chat context, extensions, skills, and project context files are not
 inherited. The dedicated teacher receives saved classroom context and each durable
-request instead. Initiating chat remains the entry point for lesson authoring.
+request instead. Initiating chat can author lessons directly. Explicit browser Next lesson requests use the same dedicated persistent teacher conversation.
 
 Codex dedicated turns use a read-only sandbox with shell and research disabled.
 Explicitly disable every configured MCP server, apps and plugin discovery. Disable
@@ -178,6 +178,30 @@ source notation to grading. Answers and feedback render Markdown server-side.
   Validate keys, rubric, controls, and plan before publication. Hide unfinished
   reviews from lists, routes, and submissions. Repeated clicks reuse work; published
   reviews open across hosts. Saved service plans resume without another model turn.
+- **Explicit next lessons are private until checked.** The classroom control saves
+  an owner-bound request in `.lesson-requests.json`. Its optional topic and status
+  survive reload. Service authoring shares the classroom request queue and teacher
+  identity for Pi, Claude, and Codex. Pi SDK authoring advertises only its typed
+  output tool and bounded public source reader, with no external resources or
+  native file/shell tools. Each SDK turn reconstructs its tools when reopening the
+  same private session; ordinary requests expose only the plan tool. A research
+  failure requires explicit retry. Owning-request and current SDK tool cancellation
+  stop research before DNS or sockets, interrupt active transfers, and prevent
+  following redirects or accepting late output. Classroom resources are supplied through path
+  guards. Private service-delivery markers distinguish new Pi authoring from legacy
+  live-session requests, which must finish in their previous package. Only explicit
+  authoring enables web research. Dedicated Codex processes disable
+  installed plugins, connected apps, execution and other unrelated tools, disable
+  configured MCP servers, and require an empty per-thread MCP inventory before
+  inference. An empty configuration map alone does not remove plugin tools.
+  Provider lesson responses carry HTML, rubric entries, objective mappings and private
+  variants as typed data. Code serializes both private JSON files and the canonical
+  saved publication call; models never encode nested JSON strings. New lesson
+  publication declares criterionContract1 and checks the fixed criteria on every
+  visible question and private review variant. Save and validate complete output before
+  publication, run `scripts/check-lesson.ts` in disposable state, then expose the
+  lesson. Recover checked output without a model turn; retain rejected output and
+  require explicit retry. Never create learner submissions during checking.
 - **Daily review keeps classroom boundaries.** The private root `.daily-reviews.json`
   saves every classroom selection and document before the first publication. Each
   group reuses a normal classroom review and its original objective keys. Group

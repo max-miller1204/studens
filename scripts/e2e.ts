@@ -8,6 +8,7 @@ import {
 import { dailyReviews } from "../src/store/daily-review.ts";
 import { driveCriterionProbe } from "./criterion-probe.ts";
 import { seedReteach, driveReteach } from "./e2e-reteach-browser.ts";
+import { driveRealNextLesson } from "./next-lesson-actions.ts";
 /** Real host and dedicated teacher evaluation. All material is a temporary fixture. */
 import {
   closedReviewActions,
@@ -196,6 +197,12 @@ async function main(): Promise<void> {
     log(`initiating host exited; service remains at ${base}`);
     await playwright(browser, root, "open", `${base}/c/${CLASSROOM}/${LESSON}`);
     browserOpen = true;
+    await driveRealNextLesson(browser, root, base!, harness, artifacts, harness === "pi");
+    await playwrightCode(
+      browser,
+      root,
+      `async page=>{await page.goto(${JSON.stringify(base)}+"/c/${CLASSROOM}/${LESSON}"); return true;}`,
+    );
     const question = await playwrightCode<any>(
       browser,
       root,
@@ -308,7 +315,7 @@ async function main(): Promise<void> {
     const lessons = fs
       .readdirSync(path.join(root, CLASSROOM))
       .filter((f) => fs.existsSync(path.join(root, CLASSROOM, f, "lesson.html")));
-    if (lessons.length !== 1) throw new Error("Teacher advanced without agreement.");
+    if (lessons.length !== 2) throw new Error("Teacher advanced without agreement.");
     if ((await fetch(`${base}/c/rust/001-ownership/quiz/key.json`)).status !== 404)
       throw new Error("Rubric is public.");
     if (artifacts)

@@ -4,17 +4,31 @@ import { JsonObjectStream } from "./json-object-stream.ts";
 import { claudeModels } from "./teacher-models.ts";
 import type { ModelCatalog, ModelChoice } from "./teacher-models.ts";
 import { TeacherDeadline } from "./teacher-deadline.ts";
+import { LESSON_OUTPUT_SCHEMA, lessonModelPlan } from "./lesson-output.ts";
 
 /** Process-wide discovery precedes per-thread settings; keep apps and plugins off at both boundaries. */
+export const CODEX_TEACHER_DISABLED_FEATURES = [
+  "apps",
+  "plugins",
+  "remote_plugin",
+  "skill_mcp_dependency_install",
+  "shell_tool",
+  "unified_exec",
+  "multi_agent",
+  "browser_use",
+  "in_app_browser",
+  "computer_use",
+  "image_generation",
+  "view_image",
+] as const;
 export const CODEX_TEACHER_ARGS = [
   "app-server",
   "--stdio",
-  "--disable",
-  "apps",
-  "--disable",
-  "plugins",
+  ...CODEX_TEACHER_DISABLED_FEATURES.flatMap((name) => ["--disable", name]),
 ];
-export const CODEX_TEACHER_FEATURES = { shell_tool: false, plugins: false, apps: false };
+export const CODEX_TEACHER_FEATURES = Object.fromEntries(
+  CODEX_TEACHER_DISABLED_FEATURES.map((name) => [name, false]),
+);
 
 export type Backend = "codex" | "claude" | "pi";
 export interface TeacherIdentity {
@@ -50,6 +64,7 @@ export const PLAN_SCHEMA = {
               "grade_quiz_answers",
               "record_retrieval_check",
               "publish_review",
+              "publish_lesson",
               "resolve_grade_dispute",
             ],
           },
@@ -80,10 +95,13 @@ export interface PlanContract {
   required?: boolean;
   messageRequired?: boolean;
   notesAllowed?: boolean;
+  research?: boolean;
 }
 
 /** Limit structured output to operations permitted by the current request. */
 export function planSchema(contract: PlanContract) {
+  if (contract.operations.length === 1 && contract.operations[0] === "publish_lesson")
+    return LESSON_OUTPUT_SCHEMA;
   const calls = PLAN_SCHEMA.properties.calls;
   return {
     ...PLAN_SCHEMA,
@@ -173,14 +191,21 @@ export const runTeacher: RunTeacher = async (
 ) => {
   const raw = await runStructured(
     identity,
-    prompt,
+    contract.operations.includes("save_review_variants")
+      ? prompt +
+          "\n\nCurrent response format: canonical service plan and save_review_variants tool arguments. The earlier explicit-lesson response schema applies only to publish_lesson. Here rubric.expected uses canonical private keys directly: a string option id for choice, id arrays for multi/order/locate, a value/tolerance/unit object for numeric, or keyed objects for match/cloze. Never use lesson-transport wrappers such as kind/value or entries around an expected answer. Follow this request's tool definitions and inline canonical contract."
+      : prompt,
     cwd,
     saveIdentity,
     planSchema(contract),
     signal,
     saveActiveModel,
+    contract.research,
+    saveModelOutput,
   );
   saveModelOutput?.(raw);
+  if (contract.operations.length === 1 && contract.operations[0] === "publish_lesson")
+    return lessonModelPlan(raw);
   return parseModelPlan(raw);
 };
 
@@ -193,14 +218,36 @@ export async function runStructured(
   schema: Record<string, unknown>,
   signal?: AbortSignal,
   saveActiveModel?: (model: string) => void,
+  research = false,
+  saveModelOutput?: (value: unknown) => void,
 ): Promise<unknown> {
   if (identity.backend === "pi") {
     const { runPi } = await import("./pi-teacher.ts");
-    return runPi(identity, prompt, cwd, saveIdentity, schema, signal, saveActiveModel);
+    return runPi(
+      identity,
+      prompt,
+      cwd,
+      saveIdentity,
+      schema,
+      signal,
+      saveActiveModel,
+      research,
+      saveModelOutput,
+    );
   }
   return identity.backend === "codex"
-    ? runCodex(identity, prompt, cwd, saveIdentity, schema, signal, saveActiveModel)
-    : runClaude(identity, prompt, cwd, saveIdentity, schema, signal, saveActiveModel);
+    ? runCodex(
+        identity,
+        prompt,
+        cwd,
+        saveIdentity,
+        schema,
+        signal,
+        saveActiveModel,
+        false,
+        research,
+      )
+    : runClaude(identity, prompt, cwd, saveIdentity, schema, signal, saveActiveModel, research);
 }
 
 async function runClaude(
@@ -211,6 +258,7 @@ async function runClaude(
   schema: Record<string, unknown>,
   signal?: AbortSignal,
   saveActiveModel?: (model: string) => void,
+  research = false,
 ): Promise<unknown> {
   const catalog = await claudeModels(cwd);
   const model = identity.requestedModel ?? catalog.configuredModel;
@@ -225,13 +273,14 @@ async function runClaude(
     "--json-schema",
     JSON.stringify(schema),
     "--tools",
-    "",
+    research ? "WebSearch,WebFetch" : "",
     "--strict-mcp-config",
     "--mcp-config",
     '{"mcpServers":{}}',
     "--permission-mode",
     "dontAsk",
   ];
+  if (research) args.push("--allowedTools", "WebSearch", "WebFetch");
   if (identity.sessionId) args.push("--resume", identity.sessionId);
   const child = spawn("claude", args, { cwd, stdio: ["pipe", "pipe", "pipe"], signal });
   let stdout = "",
@@ -300,7 +349,11 @@ async function runCodex(
   signal?: AbortSignal,
   saveActiveModel?: (model: string) => void,
   catalogOnly = false,
+  research = false,
 ): Promise<unknown> {
+  // Dedicated teachers return plans. Installed plugins and connected apps can
+  // bypass the filesystem sandbox, so an empty mcp_servers override is insufficient.
+
   const child = spawn("codex", CODEX_TEACHER_ARGS, {
     cwd,
     stdio: ["pipe", "pipe", "pipe"],
@@ -371,6 +424,19 @@ async function runCodex(
       if (m.method === "turn/started" && m.params.turn.id === turnId) {
         deadline.enter(`running turn ${turnId} in thread ${threadId}`);
       } else if (m.params.turnId === turnId && turnId !== undefined) {
+        if (
+          (m.method === "item/started" || m.method === "item/completed") &&
+          (["mcpToolCall", "commandExecution", "fileChange"].includes(m.params.item?.type) ||
+            (m.params.item?.type === "webSearch" && !research))
+        ) {
+          fail(
+            new Error(
+              `Codex dedicated teacher attempted forbidden ${m.params.item.type}. Retry only after correcting its tool scope.`,
+            ),
+          );
+          child.kill();
+          return;
+        }
         if (
           /^item\/(agentMessage\/delta|reasoning\/(textDelta|summaryTextDelta))$/.test(m.method) &&
           typeof m.params.delta === "string" &&
@@ -447,19 +513,24 @@ async function runCodex(
       if (catalogOnly) return { models, configuredModel };
       model ??= configuredModel;
     }
+    const configuredServers = settings.config?.mcp_servers;
+    if (
+      configuredServers !== undefined &&
+      configuredServers !== null &&
+      (typeof configuredServers !== "object" || Array.isArray(configuredServers))
+    )
+      throw new Error("Codex returned an invalid MCP server configuration.");
     const config = {
       model,
       cwd,
       approvalPolicy: "never",
       sandbox: "read-only",
-      // Empty maps merge with inherited configuration. Disable each configured server
-      // and plugin discovery so the dedicated teacher has no direct grade/tool escape.
       config: {
         mcp_servers: Object.fromEntries(
-          Object.keys(settings.config?.mcp_servers ?? {}).map((name) => [name, { enabled: false }]),
+          Object.keys(configuredServers ?? {}).map((name) => [name, { enabled: false }]),
         ),
-        web_search: "disabled",
         features: CODEX_TEACHER_FEATURES,
+        web_search: research ? "live" : "disabled",
       },
     };
     const result = identity.sessionId
@@ -470,6 +541,31 @@ async function runCodex(
       throw new Error(
         `Codex selected model ${model} resolved to ${result.model ?? "unknown"}. Choose a model and retry explicitly.`,
       );
+    let inventoryCursor: string | null = null;
+    const inventoryCursors = new Set<string>();
+    do {
+      const page = await request("mcpServerStatus/list", {
+        threadId: result.thread.id,
+        detail: "full",
+        cursor: inventoryCursor,
+      });
+      if (
+        !Array.isArray(page.data) ||
+        !(
+          page.nextCursor === null ||
+          (typeof page.nextCursor === "string" && page.nextCursor.length > 0)
+        )
+      )
+        throw new Error("Codex returned an invalid dedicated-teacher MCP inventory.");
+      if (page.data.length)
+        throw new Error(
+          `Codex dedicated teacher still exposes MCP servers: ${page.data.map((server: any) => server.name).join(", ")}. No model turn was started.`,
+        );
+      inventoryCursor = page.nextCursor;
+      if (inventoryCursor && inventoryCursors.has(inventoryCursor))
+        throw new Error("Codex MCP inventory repeated a pagination cursor.");
+      if (inventoryCursor) inventoryCursors.add(inventoryCursor);
+    } while (inventoryCursor);
     await request("turn/start", {
       threadId: result.thread.id,
       model,
