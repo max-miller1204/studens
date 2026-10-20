@@ -77,7 +77,7 @@ never the working directory or files outside the package.
 | Disk state API and feature storage              | `store.ts`, `store/`                                                       |
 | Shared tools and host prompts                   | `tools.ts`, `prompts.ts`                                                   |
 | MCP dispatch and control transport              | `mcp.ts`, `mcp-stdio.ts`, `service-client.ts`, `service-main.ts`           |
-| Durable requests and plans                      | `service-state.ts`, `teacher-service.ts`                                   |
+| Durable requests, plans, format upgrade         | `service-state.ts`, `teacher-service.ts`, `migrate.ts`                     |
 | Model adapters, deadlines, grade decoding       | `teacher.ts`, `pi-teacher.ts`, `teacher-deadline.ts`, `teacher-grading.ts` |
 | Daily classroom groups                          | `server/daily-review.ts`, `store/daily-review.ts`                          |
 | Resume and review publication                   | `teacher-resume.ts`, `review-session.ts`                                   |
@@ -128,19 +128,23 @@ points. See [code exercises](CODE-EXERCISES.md) for the authoring and isolation 
 
 ## State invariants
 
+- **Saved formats upgrade once.** `migrate.ts` runs under the service lock before any
+  classroom read. It backs up each changed file to `.migrations/<version>/`, writes
+  teacher state first and `.studens-format.json` last, and never grades, answers, or
+  authors. Unfinished live-session Pi work or a legacy Pi route stops startup with a
+  specific error and no changes. Read only current formats elsewhere; add a format
+  version and a migration step instead of a compatibility branch.
 - **Requests are sequential and durable per classroom.** Save each plan before writes.
   Save raw model output before decoding. Recovery completes saved calls and skips
   already saved grades. Interrupted calls show specific errors and require retry.
   Storage failures retain validated plans; rejected allocations require a new plan.
 - **Plans are restricted by request type.** Service teachers return per-question
   allocations through `grade_quiz_answers`; the service computes the score and
-  validates identities, rubric weights, correctness, and arithmetic. Version 2 plans
-  use this format. Older saved plans retain their original score validation.
+  validates identities, rubric weights, correctness, and arithmetic.
   Resume requests permit a teacher message only. Only chat/reflection allow gap notes.
 - **Pi uses the service FIFO.** Initiating chat turns cannot answer queued browser
   work. The dedicated Pi session returns exactly one structured plan; prose cannot
-  substitute for a grading operation. The old bridge remains only in historical
-  regression fixtures and shared answer/grade persistence helpers.
+  substitute for a grading operation.
 - **Conversations stay on the lesson page.** Cards hold the original answer and ordered
   follow-ups. Answer the oldest pending turn. Post quiz retrieval questions and learner
   replies in the teacher panel. Resume the exact latest graded submission without
@@ -209,8 +213,7 @@ points. See [code exercises](CODE-EXERCISES.md) for the authoring and isolation 
   failure requires explicit retry. Owning-request and current SDK tool cancellation
   stop research before DNS or sockets, interrupt active transfers, and prevent
   following redirects or accepting late output. Classroom resources are supplied through path
-  guards. Private service-delivery markers distinguish new Pi authoring from legacy
-  live-session requests, which must finish in their previous package. Only explicit
+  guards. Only explicit
   authoring enables web research. Dedicated Codex processes disable
   installed plugins, connected apps, execution and other unrelated tools, disable
   configured MCP servers, and require an empty per-thread MCP inventory before
@@ -259,8 +262,7 @@ points. See [code exercises](CODE-EXERCISES.md) for the authoring and isolation 
 ## HTTP and browser boundaries
 
 Bind HTTP to loopback. Connected Tailscale links use owned, tailnet-only Serve routes;
-respect config, preserve unrelated routes, and never enable Funnel. All hosts use the service-owned route. Legacy Pi route ownership remains
-discoverable for explicit cleanup; never take over a live legacy route. Route errors do not select another port or backend.
+respect config, preserve unrelated routes, and never enable Funnel. All hosts use the service-owned route. Never take over a live legacy route. Route errors do not select another port or backend.
 
 Every static route uses the guards in `paths.ts`, including symlink checks.
 Never serve `quiz/`, private plans, teacher state, or recovery files. Media routes

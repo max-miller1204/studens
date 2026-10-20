@@ -64,9 +64,9 @@ initiating-session extensions or interactive tools.
 
 Before upgrading from Pi's live-session delivery, finish or explicitly retry its
 pending review (including unpublished daily groups), refill, and resume work with the previous package, then stop that
-server, including idle legacy servers without pending request records. The new
-service rejects recorded unfinished legacy ownership and preserves those
-files. It never deletes a plan or takes over a live owner. Keep the previous package
+server, including idle legacy servers without pending request records. On first
+start the service upgrades saved classrooms once. It refuses recorded unfinished
+legacy ownership without changing any file, and never takes over a live owner. Keep the previous package
 and a complete data backup available if recovery is needed. Remove its tailnet route
 with that package's explicit stop before opening the persistent service. Older
 packages cannot read the new Pi teacher identity; rollback requires the matching

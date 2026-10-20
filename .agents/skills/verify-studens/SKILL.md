@@ -1,6 +1,6 @@
 ---
 name: verify-studens
-description: Verify studens lessons in the browser and select Pi, Claude Code, Codex, or authoring checks for changes to the runtime, bridge, service, MCP, and teaching contracts.
+description: Verify studens lessons in the browser and select Pi, Claude Code, Codex, or authoring checks for changes to the runtime, service, MCP, and teaching contracts.
 ---
 
 # Verify studens

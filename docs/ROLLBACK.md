@@ -23,6 +23,25 @@ external configuration too. Keep backups outside all served directories, accessi
 only to the owner. Verify that a disposable copy opens with the recorded code
 before allowing deployment writes. A code checkpoint alone is insufficient.
 
+## One-time format upgrade
+
+On first start, the service upgrades the root once before it reads any classroom.
+It folds live-session Pi panel history into `.teacher.json`, turns failed Pi
+passage answers and unapplied earlier-format grading plans into failed requests
+that need an explicit retry, and drops fields only the old bridge read. It copies
+each file it changes to `.migrations/1/` under the root, then writes
+`.studens-format.json` last. An interrupted upgrade repeats safely.
+
+It changes nothing and stops with a specific error while unfinished live-session
+Pi work or a legacy Pi tailnet route remains. Finish or explicitly retry that work
+with the previous package and stop its server first. A root that records a newer
+format refuses to start rather than guess.
+
+The `.migrations/1/` copies are a record, not a rollback. Restore the complete
+pre-deployment backup below instead of copying them back over a newer root.
+
+## Returning to the previous release
+
 To return to the previous published release:
 
 1. Stop all service and live Pi owners again. Do not serve the newer data with older

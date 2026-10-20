@@ -17,7 +17,7 @@
 ## Skills
 
 - Use [triage-studens](.agents/skills/triage-studens/SKILL.md) to triage repository issues or maintain the GitHub project's Now / Next / Backlog workflow.
-- Use [verify-studens](.agents/skills/verify-studens/SKILL.md) for browser, bridge, service, MCP, and authoring changes. It defines checks by change scope.
+- Use [verify-studens](.agents/skills/verify-studens/SKILL.md) for browser, service, MCP, and authoring changes. It defines checks by change scope.
 - Keep tests for contracts, data recovery, request order, and private file access. Use live browser checks for UI behavior. Avoid tests for fixed wording or layout details.
 - Run `npm run verify` after changes. Run `claude plugin validate .` after plugin manifest changes.
 - Use [docs/EVALUATION.md](docs/EVALUATION.md) for teaching quality and human learning evaluations.
