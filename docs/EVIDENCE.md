@@ -134,11 +134,30 @@ regrades and linked chat checks grant no extra slots. Classroom teachers and pla
 remain separate even though their new selections consume a shared root budget.
 
 Due counts include deferred and reserved items; pausing and retirement keep their
-existing exclusions. The daily landing shows root totals and classroom Progress shows
+existing exclusions. The daily landing shows root totals and the classroom memory map shows
 local due slots against the shared allowance. Due dates stay separate from
 new-selection slots, reserved/used slots, deferred work and the next UTC workload
 window. That window is the earliest budget reset, not a guaranteed review date.
 A prepared private variant is still required; a slot does not promise a usable variant.
+
+The classroom memory map projects the same saved replay, without scheduling or
+inference on reads. Per-objective strength describes observed evidence, with latest
+answer context and credit separate from estimated stability/difficulty. Incomplete
+answer gaps remain open through assisted or unknown success and close on a full
+independent answer; immediate correction is still not delayed retention. Historical
+question evidence retains its original lesson, quiz and question identity. Grade
+revisions use the original answer and first feedback boundary. The displayed reason
+is the scheduler's saved replay reason, not an explanation invented by a model.
+
+Its fourteen-date forecast counts current saved due dates once in UTC calendar days.
+Today includes the entire overdue backlog and later-today due times; subsequent
+dates show only newly due items. Paused and retired items are excluded. Reserved
+and deferred due items remain visible as due; today's actual root-wide allowance,
+used/reserved slots, local available slots and deferred count are shown separately.
+No future completions, repeat reviews, future allowances or shared-root allocations
+are predicted. The next due time is a saved scheduling estimate, not an allocated
+review appointment or measured forgetting. Reading, expanding and navigating write
+no canonical state and create no evidence.
 
 For the all-topic daily picker, make one queue per classroom and per saved objective
 group/objective/historical lesson topic. Order classroom and topic queues by their

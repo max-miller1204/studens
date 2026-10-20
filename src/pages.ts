@@ -8,12 +8,12 @@
 
 import { escapeHtml, renderMarkdown } from "./markdown.ts";
 import { lessonUrl } from "./paths.ts";
+import { memoryMapItems, memoryMapSection } from "./memory-map.ts";
 import { missionSummary, renderMission } from "./mission-map.ts";
 import {
   DEFAULT_REVIEW_SIZE,
   MAX_REVIEW_SIZE,
   reviewTopic,
-  relativeDay,
   type ReviewItem,
   type ReviewSummary,
 } from "./review.ts";
@@ -258,7 +258,7 @@ export function reviewHistoryPage(
             .join("")}</ol>`
         : emptyState(
             "No reviews yet",
-            "Start a review from classroom Progress when an item is due.",
+            "Start a review from the classroom memory map when an item is due.",
           )
     }`,
   });
@@ -267,44 +267,15 @@ export function reviewHistoryPage(
 /**
  * The learner's progress: what is due, what evidence is retained, and what they have built.
  *
- * Only shown once there is something to show. A new classroom has no progress yet,
- * and four zeros would only be noise.
+ * A new classroom explains how saved evidence begins.
  */
 function progressSection(data: ClassroomPageData): string {
-  const { review, glossaryTerms, now } = data.progress;
-  const records = data.learningRecords.length;
+  const { review, now } = data.progress;
   const work = data.progress.workload;
-  if (review.total === 0 && !review.retired && glossaryTerms === 0 && records === 0) return "";
 
-  const stat = (value: string, label: string, tone = "") =>
-    `<div class="cl-stat"${tone ? ` data-tone="${tone}"` : ""}><span class="cl-stat-value">${value}</span><span class="cl-stat-label">${escapeHtml(label)}</span></div>`;
-
-  const stats = [
-    stat(String(review.retired ?? 0), "retired items"),
-    stat(String(review.due), "due for review", review.due > 0 ? "due" : ""),
-    stat(`${review.retained}/${review.total}`, "items with retained evidence"),
-    stat(String(review.transferNeeded), "need transfer evidence"),
-    stat(String(review.unknown), "have unknown context"),
-    stat(String(glossaryTerms), glossaryTerms === 1 ? "glossary term" : "glossary terms"),
-    stat(String(records), records === 1 ? "learning record" : "learning records"),
-  ];
-
-  const percent = review.total > 0 ? Math.round((review.retained / review.total) * 100) : 0;
-  const note =
-    review.due > 0
-      ? "Start a review of due items before the next lesson."
-      : review.nextDueAt !== null
-        ? `Nothing is due. The next review is due ${relativeDay(review.nextDueAt, now)}.`
-        : "";
-
-  return `<section class="cl-section cl-progress" aria-label="Progress">
-  <h2 class="cl-section-title">Progress</h2>
-  <div class="cl-stats">
-    ${stats.join("\n    ")}
-  </div>
-  ${review.total > 0 ? `<div class="cl-meter" role="meter" aria-label="Items with retained evidence" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${percent}"><span style="width: ${percent}%"></span></div>` : ""}
-  <p class="cl-progress-note">Retained evidence needs independent answers after a delay. Application skills also need transfer. Old records with missing context stay unknown.</p>
-  ${note ? `<p class="cl-progress-note">${escapeHtml(note)}</p>` : ""}
+  return `<section class="cl-section cl-progress" aria-label="Memory map">
+  <h2 class="cl-section-title">Memory map</h2>
+  ${memoryMapSection(data.classroom.name, data.progress.items ?? [], now)}
   ${work ? `<p class="cl-progress-note" data-review-workload>${work.eligible} due slots available in this classroom today · ${work.used} reserved or used across all classrooms of today's ${work.allowance}-item allowance (daily cap ${work.cap}, all classrooms, UTC). ${work.deferred} due items deferred to later workload windows; they remain due. Next workload window: ${escapeHtml(new Date(work.nextWindowAt).toISOString())}. Prepared questions are required. Continue unfinished saved reviews. This limit changes workload, never grades or memory evidence.</p>` : ""}
   ${(data.progress.reteach ?? []).map((item) => `<p class="cl-progress-note">Review paused after repeated misses: ${escapeHtml(item.prompt)} <a href="/c/${escapeHtml(data.classroom.name)}/${escapeHtml(item.lesson)}#cl-reteach">Open short re-teach</a></p>`).join("")}
   ${
@@ -341,7 +312,8 @@ function progressSection(data: ClassroomPageData): string {
   </div>`
       : ""
   }
-${(data.progress.items ?? []).length ? `<details class="cl-review-items"><summary>Manage review items</summary><p>Retired items leave active review counts and future selections. Saved answers, grades, and published reviews stay available.</p>${(data.progress.items ?? []).map((item) => `<div class="cl-review-item" data-review-item="${escapeHtml(item.key)}" data-revision="${item.controlRevision ?? 0}" data-retired="${item.retiredAt !== undefined}"><a href="${lessonUrl(data.classroom.name, item.lesson)}">${escapeHtml(item.objective?.statement ?? item.prompt)}</a><span>${item.retiredAt === undefined ? "Active" : "Retired"} · ${item.attempts} saved exposures</span><span>Due: ${escapeHtml(new Date(item.dueAt).toISOString())}. ${escapeHtml(item.scheduleReason)}</span><button class="cl-button" type="button" data-review-retire>${item.retiredAt === undefined ? "Retire item" : "Restore item"}</button><p role="status" data-review-item-status></p></div>`).join("")}</details>` : ""}
+${memoryMapItems(data.classroom.name, data.progress.items ?? [], now)}
+${(data.progress.items ?? []).length ? `<details class="cl-review-items"><summary>Manage review items</summary><p>Retired items leave active review counts and future selections. Saved answers, grades, and published reviews stay available.</p>${(data.progress.items ?? []).map((item) => `<div class="cl-review-item" data-review-item="${escapeHtml(item.key)}" data-revision="${item.controlRevision ?? 0}" data-retired="${item.retiredAt !== undefined}"><a href="${lessonUrl(data.classroom.name, item.lesson)}">${escapeHtml(item.objective?.statement ?? item.prompt)}</a><span>${item.retiredAt === undefined ? "Active" : "Retired"} · ${item.attempts} saved exposures</span><button class="cl-button" type="button" data-review-retire>${item.retiredAt === undefined ? "Retire item" : "Restore item"}</button><p role="status" data-review-item-status></p></div>`).join("")}</details>` : ""}
 </section>`;
 }
 

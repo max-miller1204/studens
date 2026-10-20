@@ -246,7 +246,7 @@ export function planReview(
     throw new Error(
       next === null
         ? items.some((item) => item.needsReteach)
-          ? "Repeatedly missed items are paused from review. Open a short re-teach from classroom Progress."
+          ? "Repeatedly missed items are paused from review. Open a short re-teach from the classroom memory map."
           : "No graded questions are due for review."
         : `The next review is due ${relativeDay(next, at)}.`,
     );
