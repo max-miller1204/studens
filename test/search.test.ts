@@ -310,6 +310,17 @@ describe("public classroom search", () => {
   });
 });
 describe("inert canonical source anchors", () => {
+  it("preserves anchor-like literal prose, script strings and control values", () => {
+    const id = "cl-search-0123456789abcdef01234567-0";
+    const prose = `Keep literal id="${id}" in the explanation.`;
+    const script = `<script>window.widgetText = ' id="${id}"';</script>`;
+    const control = `<textarea> id="${id}"</textarea>`;
+    const source = `<p>${prose}</p>${script}${control}`;
+    const result = searchPassages(source);
+    expect(result.passages.map((p) => p.text)).toEqual([prose]);
+    expect(result.html).toContain(script + control);
+    expect(searchPassages(result.html)).toEqual(result);
+  });
   it("matches visible HTML5 named entities without double decoding literal markup", () => {
     const source =
       "<p>Entity caf&eacute; &alpha; &copy; &NotEqualTilde; &amp;lt;script&amp;gt;</p>";

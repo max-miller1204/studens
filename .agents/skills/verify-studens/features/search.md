@@ -33,4 +33,6 @@ Fixture teacher and grade callbacks prove browser, HTTP and stored-state behavio
 
 Extraction uses parse5 as an inert HTML tree parser, never a DOM or code runner. Authored HTML is preserved; parser locations only insert anchors, while canonical visible text defines identity. Parser/bootstrap dependency changes also require the clean production-launcher recipe in [teacher.md](teacher.md), actual installed versions and production audit.
 
+Anchor cleanup must touch only parsed generated elements and ID attributes. Literal anchor-like text in prose, authored script strings, and control values must survive decoration and repeated decoration unchanged; the source-preservation contract covers this boundary.
+
 `npx vitest run test/launch-runtime.test.ts test/search.test.ts` includes a partial-install launcher regression: the parser is missing while other runtime packages exist, then bootstrap must load its export without caching missing package metadata. Its installer/package fixtures are unit contracts; they do not replace the real production-launcher gate.

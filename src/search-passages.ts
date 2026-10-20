@@ -78,24 +78,57 @@ export function canonicalText(text: string): string {
  * Source indices are used only to insert inert anchors back into the original HTML.
  */
 export function searchPassages(html: string): { html: string; passages: SearchPassage[] } {
-  html = html.replace(
-    /<span id="cl-search-[a-f0-9]{24}-[0-9]+" class="cl-search-anchor" aria-hidden="true"><\/span>/g,
-    "",
-  );
-  html = html.replace(/ id="cl-search-[a-f0-9]{24}-[0-9]+"/g, "");
   interface Segment {
     start: number;
     text: string;
     attributeAt?: number;
   }
   const found: Array<{ start: number; text: string; attribute: boolean }> = [];
-  const document = parse(html, {
-    sourceCodeLocationInfo: true,
-    scriptingEnabled: true,
-    onParseError(error: ParserError) {
-      if (MALFORMED_TOKEN.test(error.code)) throw new Error("Malformed content tag or attribute.");
-    },
-  });
+  const parseSource = () =>
+    parse(html, {
+      sourceCodeLocationInfo: true,
+      scriptingEnabled: true,
+      onParseError(error: ParserError) {
+        if (MALFORMED_TOKEN.test(error.code))
+          throw new Error("Malformed content tag or attribute.");
+      },
+    });
+  let document = parseSource();
+  const removals: Array<{ startOffset: number; endOffset: number }> = [];
+  // Only actual generated elements/attributes belong to decoration. Matching
+  // bytes inside authored prose, scripts and controls must remain untouched.
+  const undecorate = (node: DefaultTreeAdapterTypes.Node): void => {
+    if ("tagName" in node) {
+      const attrs = new Map(node.attrs.map((a) => [a.name, a.value]));
+      const location = node.sourceCodeLocation;
+      if (/^cl-search-[a-f0-9]{24}-[0-9]+$/.test(attrs.get("id") ?? "")) {
+        if (
+          node.tagName === "span" &&
+          attrs.get("class") === "cl-search-anchor" &&
+          attrs.get("aria-hidden") === "true" &&
+          !node.childNodes.length &&
+          location?.endTag
+        ) {
+          removals.push(location);
+          return;
+        }
+        const id = location?.attrs?.id;
+        if (id) {
+          let startOffset = id.startOffset;
+          if (html[startOffset - 1] === " ") startOffset--;
+          removals.push({ startOffset, endOffset: id.endOffset });
+        }
+      }
+      if ("content" in node) undecorate(node.content as DefaultTreeAdapterTypes.DocumentFragment);
+    }
+    if ("childNodes" in node) for (const child of node.childNodes) undecorate(child);
+  };
+  undecorate(document);
+  if (removals.length) {
+    for (const r of removals.sort((a, b) => b.startOffset - a.startOffset))
+      html = html.slice(0, r.startOffset) + html.slice(r.endOffset);
+    document = parseSource();
+  }
   const flush = (segment: Segment) => {
     const text = canonicalText(segment.text);
     if (text)
