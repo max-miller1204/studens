@@ -28,6 +28,20 @@ const svgProof = `async page=>{
  if(!media.complete||media.width<=0||media.height<=0)throw new Error('Referenced SVG did not render');
  return {inline,media,expectedMediaLabel:${JSON.stringify(mediaSvgLabel)}};
 }`;
+/** Public labels stay ordered, formatted and inside their quantity item in every reader. */
+const quantityReadingProbe = `async page => page.evaluate(() => {
+ const labels = ['Size','Unit','Count café λ','Measure 日本語','Reason why'];
+ const prompt = [...document.querySelectorAll('p')].find(p => p.textContent.trim() === 'Describe the sample quantity?');
+ const question = prompt?.closest('li');
+ if(!question || question.nextElementSibling?.textContent.trim() !== 'Keep the next quantity separate?') throw new Error('Quantity question lost ownership');
+ const blocks = [...question.children].filter(n => ['P','DIV'].includes(n.tagName));
+ if(JSON.stringify(blocks.map(n => n.textContent.trim())) !== JSON.stringify(['Describe the sample quantity?',...labels])) throw new Error('Generic labels joined or escaped their question');
+ if(question.querySelector('em')?.textContent !== 'café λ' || question.querySelector('strong')?.textContent !== 'why') throw new Error('Generic label formatting changed');
+ const boxes = blocks.slice(1).map(n => {const range=document.createRange();range.selectNodeContents(n);const r=range.getBoundingClientRect();return {text:n.textContent,x:r.x,y:r.y,width:r.width,height:r.height};});
+ for(let i=0;i<boxes.length;i++){const b=boxes[i];if(b.width<=0 || b.height<=0 || (i && b.y < boxes[i-1].y+boxes[i-1].height))throw new Error('Generic label glyphs join or overlap');}
+ if(question.querySelector('input,select,textarea,label,[for],[onclick]')) throw new Error('Portable quantity retained controls or source attributes');
+ return {labels,boxes,question:question.textContent};
+})`;
 const sha = (bytes: string | Buffer) => createHash("sha256").update(bytes).digest("hex");
 function hashes(root: string): Record<string, string> {
   return Object.fromEntries(
@@ -95,18 +109,22 @@ export async function verifyClassroomExportBrowser(artifacts: string | null): Pr
     const popupWait=page.waitForEvent('popup');await page.getByRole('button',{name:'Open printable classroom',exact:true}).click();const print=await popupWait;await print.waitForLoadState('networkidle');await print.getByRole('heading',{name:'Contents',exact:true}).waitFor();
     if(await print.locator('form,button,input,textarea,iframe').count())throw new Error('Print retained controls');
     const html=await print.content();if(/PRIVATE_|GATED_|UNLOCKED_EXPECTED|studens-course-map/.test(html))throw new Error('Print privacy leak');
-    if(classroom==='rust') {await print.locator('.mermaid svg').waitFor();await (${svgProof})(print);if(await print.locator('math').count()<2)throw new Error('Print lost math');await print.locator('nav a').first().click();if(!print.url().includes('#part-'))throw new Error('Print bookmark failed');}
+    if(classroom==='rust') {await print.locator('.mermaid svg').waitFor();await (${svgProof})(print);await (${quantityReadingProbe})(print);if(await print.locator('math').count()<2)throw new Error('Print lost math');await print.locator('nav a').first().click();if(!print.url().includes('#part-'))throw new Error('Print bookmark failed');}
     await print.emulateMedia({media:'print'});await print.pdf({path:${JSON.stringify(out)}+'/'+classroom+'.pdf',format:'A4',printBackground:true,outline:true});await print.screenshot({path:${JSON.stringify(out)}+'/'+classroom+'-print.png',fullPage:true});await print.close();
    }
    await page.goto(${JSON.stringify(base + "/c/rust")});await page.getByRole('checkbox',{name:'Include answers already unlocked in Studens',exact:true}).check();
    for(const [label,ext] of [['Download Markdown','md'],['Download Anki deck','apkg']]){const pending=page.waitForEvent('download');await page.getByRole('button',{name:label,exact:true}).click();const d=await pending;await d.saveAs(${JSON.stringify(out)}+'/rust-answers.'+ext);}
+   const answerPopup=page.waitForEvent('popup');await page.getByRole('button',{name:'Open printable classroom',exact:true}).click();const answerPrint=await answerPopup;await answerPrint.waitForLoadState('networkidle');await (${quantityReadingProbe})(answerPrint);await answerPrint.pdf({path:${JSON.stringify(out)}+'/rust-answers.pdf',format:'A4',printBackground:true});await answerPrint.close();
    await page.reload();if(await page.getByRole('checkbox',{name:'Include answers already unlocked in Studens',exact:true}).isChecked())throw new Error('Consent persisted after reload');
    if(errors.length)throw new Error(JSON.stringify(errors));return {downloads,errors,print:true,bookmarks:true,answersOffAfterReload:true};
   }`,
     );
-    for (const name of ["rust", "empty"]) {
+    for (const name of ["rust", "rust-answers", "empty"]) {
       const md = fs.readFileSync(path.join(out, name + ".md"), "utf8");
-      if (/PRIVATE_|GATED_|UNLOCKED(?:\\_)?EXPECTED|studens-course-map/.test(md))
+      if (
+        /PRIVATE_|GATED_|studens-course-map/.test(md) ||
+        (name !== "rust-answers" && /UNLOCKED(?:\\_)?EXPECTED/.test(md))
+      )
         throw new Error("Markdown privacy leak");
       fs.writeFileSync(
         path.join(out, name + "-markdown-render.html"),
@@ -119,7 +137,7 @@ export async function verifyClassroomExportBrowser(artifacts: string | null): Pr
     const rendered = await playwrightCode(
       session,
       out,
-      `async page=>{const results=[];for(const name of ['rust','empty']){await page.goto('file://'+${JSON.stringify(out)}+'/'+name+'-markdown-render.html');if(name==='rust'){await page.getByText('Saved learner note with Unicode 日本語.',{exact:true}).waitFor();await page.getByText('console.log(text < "z");',{exact:false}).waitFor();if(await page.locator('img').count()!==2)throw new Error('Markdown lost media');if(await page.locator('math').count()<2)throw new Error('Markdown lost formulas');await (${svgProof})(page);}await page.screenshot({path:${JSON.stringify(out)}+'/'+name+'-markdown-render.png',fullPage:true});results.push({name,math:await page.locator('math').count(),images:await page.locator('img').count()});}return results;}`,
+      `async page=>{const results=[];for(const name of ['rust','rust-answers','empty']){await page.goto('file://'+${JSON.stringify(out)}+'/'+name+'-markdown-render.html');if(name!=='empty'){await page.getByText('Saved learner note with Unicode 日本語.',{exact:true}).waitFor();await page.getByText('console.log(text < "z");',{exact:false}).waitFor();if(await page.locator('img').count()!==2)throw new Error('Markdown lost media');if(await page.locator('math').count()<2)throw new Error('Markdown lost formulas');await (${svgProof})(page);await (${quantityReadingProbe})(page);await page.setViewportSize({width:1000,height:800});await page.getByText('Describe the sample quantity?',{exact:true}).scrollIntoViewIfNeeded();await page.screenshot({path:${JSON.stringify(out)}+'/'+name+'-generic-markdown.png'});}await page.screenshot({path:${JSON.stringify(out)}+'/'+name+'-markdown-render.png',fullPage:true});results.push({name,math:await page.locator('math').count(),images:await page.locator('img').count()});}return results;}`,
     );
     const ownerChecks = [];
     let projectionHash: string | undefined;
@@ -316,7 +334,7 @@ export async function verifyImportedCardBrowser(out: string): Promise<void> {
       session,
       out,
       String.raw`async page=>{
-   await page.locator('.mermaid svg').waitFor();if(await page.locator('math').count()!==2)throw new Error('Imported card lost math');await page.getByText('console.log(text < "z");',{exact:false}).waitFor();const svg=await (${svgProof})(page);const image=await page.locator('img[alt="Public pixel"]').evaluate(n=>({complete:n.complete,width:n.naturalWidth}));if(!image.complete||image.width!==1)throw new Error('Imported public media did not render');const source=await page.getByRole('link',{name:/http:\/\/127/}).last().getAttribute('href');if(!/127\.0\.0\.1:\d+/.test(source))throw new Error('Source link lost port');await page.screenshot({path:${JSON.stringify(path.join(out, "imported-card.png"))},fullPage:true});await page.setViewportSize({width:1000,height:800});await page.getByRole('heading',{name:'Saved labelled diagrams',exact:true}).scrollIntoViewIfNeeded();await page.screenshot({path:${JSON.stringify(path.join(out, "imported-svg.png"))},fullPage:false});return {svg,diagrams:await page.locator('.mermaid svg').count(),math:await page.locator('math').count(),image,source,scope:'Actual official imported card.answer HTML rendered in Chromium; no desktop Anki UI.'};
+   await page.locator('.mermaid svg').waitFor();if(await page.locator('math').count()!==2)throw new Error('Imported card lost math');await page.getByText('console.log(text < "z");',{exact:false}).waitFor();const svg=await (${svgProof})(page);const quantity=await (${quantityReadingProbe})(page);const image=await page.locator('img[alt="Public pixel"]').evaluate(n=>({complete:n.complete,width:n.naturalWidth}));if(!image.complete||image.width!==1)throw new Error('Imported public media did not render');const source=await page.getByRole('link',{name:/http:\/\/127/}).last().getAttribute('href');if(!/127\.0\.0\.1:\d+/.test(source))throw new Error('Source link lost port');await page.screenshot({path:${JSON.stringify(path.join(out, "imported-card.png"))},fullPage:true});await page.setViewportSize({width:1000,height:800});await page.getByRole('heading',{name:'Saved labelled diagrams',exact:true}).scrollIntoViewIfNeeded();await page.screenshot({path:${JSON.stringify(path.join(out, "imported-svg.png"))},fullPage:false});await page.getByText('Describe the sample quantity?',{exact:true}).scrollIntoViewIfNeeded();await page.screenshot({path:${JSON.stringify(path.join(out, "imported-generic.png"))}});await page.goto(${JSON.stringify(`http://127.0.0.1:${port}/answers.html`)});await page.locator('.mermaid svg').waitFor();const answerQuantity=await (${quantityReadingProbe})(page);await page.getByText('Describe the sample quantity?',{exact:true}).scrollIntoViewIfNeeded();await page.screenshot({path:${JSON.stringify(path.join(out, "imported-generic-answers.png"))}});return {svg,quantity,answerQuantity,diagrams:await page.locator('.mermaid svg').count(),math:await page.locator('math').count(),image,source,scope:'Actual official imported card.answer HTML rendered in Chromium; no desktop Anki UI.'};
   }`,
     );
     fs.writeFileSync(path.join(out, "card-browser-report.json"), JSON.stringify(report, null, 2));

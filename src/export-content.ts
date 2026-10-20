@@ -42,10 +42,22 @@ export function nodeText(node: ContentNode): string {
 }
 export type ResourceLink = (value: string, media: boolean) => string | null;
 export function safeContent(source: string, link: ResourceLink): string {
-  const hasOption = (n: ContentNode): boolean =>
-    (n.tag === "input" &&
-      ["radio", "checkbox"].includes(n.attrs.get("type")?.toLowerCase() ?? "")) ||
-    n.children.some(hasOption);
+  const tree = contentTree(source);
+  const controls = new Set(["input", "select", "textarea"]);
+  const publicNode = (n: ContentNode) =>
+    !n.attrs.has("hidden") && n.attrs.get("aria-hidden") !== "true";
+  const isControl = (n: ContentNode) =>
+    controls.has(n.tag) && n.attrs.get("type")?.toLowerCase() !== "hidden";
+  const targets = new Map<string, ContentNode>();
+  const collect = (n: ContentNode): void => {
+    if (!publicNode(n)) return;
+    const id = n.attrs.get("id");
+    if (id && !targets.has(id)) targets.set(id, n);
+    if (!dropped.has(n.tag)) n.children.forEach(collect);
+  };
+  collect(tree);
+  const hasControl = (n: ContentNode): boolean =>
+    publicNode(n) && (isControl(n) || (!dropped.has(n.tag) && n.children.some(hasControl)));
   const render = (n: ContentNode, literal = false): string => {
     if (n.kind === "text") return literal ? escapeHtml(n.text) : mathText(n.text);
     if (n.attrs.has("hidden") || n.attrs.get("aria-hidden") === "true") return "";
@@ -64,8 +76,10 @@ export function safeContent(source: string, link: ResourceLink): string {
     if (n.attrs.has("data-cl-stepper") || classes.includes("cl-stepper"))
       return `<p><em>Interactive widget omitted. Open the source lesson to use its controls.</em></p>`;
     if (n.tag === "svg") return staticSvg(n);
-    // Dropping controls must not join neighboring public option labels.
-    if (n.tag === "label" && hasOption(n)) return `<div>${children()}</div>`;
+    // Preserve the reading boundary when a label's inline or associated control is omitted.
+    const target = targets.get(n.attrs.get("for") ?? "");
+    if (n.tag === "label" && (hasControl(n) || (target && isControl(target))))
+      return `<div>${children()}</div>`;
     if (!allowed.has(n.tag)) return children();
     if (n.tag === "a") {
       const href = link(n.attrs.get("href") ?? "", false);
@@ -83,7 +97,7 @@ export function safeContent(source: string, link: ResourceLink): string {
     const language = n.tag === "code" ? classes.find((c) => /^language-[\w-]+$/.test(c)) : null;
     return `<${n.tag}${language ? ` class="${language}"` : ""}>${children()}${voids.has(n.tag) ? "" : `</${n.tag}>`}`;
   };
-  return render(contentTree(source));
+  return render(tree);
 }
 export function portableMarkdown(source: string): string {
   const tree = contentTree(source);
