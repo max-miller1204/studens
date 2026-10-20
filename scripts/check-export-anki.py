@@ -27,7 +27,7 @@ for filename, projection in [('rust.apkg', 'projection.json'), ('rust-answers.ap
         assert not re.search('PRIVATE_|GATED_|studens-course-map', serialized)
         if filename == 'rust.apkg':
             assert 'UNLOCKED_EXPECTED' not in serialized
-            for value in ['日本語', 'café', 'const text', 'console.log(text &lt;', 'flowchart LR', 'public reply', 'Actual saved evidence', 'First saved item', 'Second saved item']:
+            for value in ['日本語', 'café', 'const text', 'console.log(text &lt;', 'flowchart LR', 'public reply', 'Actual saved evidence', 'First saved item', 'Second saved item', 'Inline label — λ', '日本語 café']:
                 assert value in serialized, ('missing saved content', value)
         if filename == 'rust-answers.apkg':
             assert 'UNLOCKED_EXPECTED' in serialized and 'new owner' in serialized
@@ -38,6 +38,11 @@ for filename, projection in [('rust.apkg', 'projection.json'), ('rust-answers.ap
             assert actual == z.read(key)
             media_hashes[name] = hashlib.sha256(actual).hexdigest()
         assert len(public['media']) + 1 == len(media)
+        if filename != 'empty.apkg':
+            svg_media = [z.read(key).decode() for key, name in media.items() if name.endswith('.svg')]
+            assert len(svg_media) == 1
+            assert 'Referenced label — λ' in svg_media[0] and '日本語 café' in svg_media[0]
+            assert not re.search('PRIVATE_|foreignObject|onload|https://invalid', svg_media[0])
         original_ids = (c.find_notes(''), c.find_cards(''))
         c.import_anki_package(req)
         assert (c.find_notes(''), c.find_cards('')) == original_ids

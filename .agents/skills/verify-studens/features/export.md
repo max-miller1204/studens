@@ -7,6 +7,7 @@ The learner takes saved public classroom material into Anki, print, or Markdown.
 - Download a real `.apkg` deck and portable Markdown; open a printable classroom.
 - Keep public documents, notes, learning records, released lessons, glossary and question threads.
 - Preserve Unicode, code line breaks, formulas, Mermaid source and referenced public media.
+- Keep inline and referenced static SVG labels, nested positioned text spans and exact Unicode; omit hidden and active SVG content.
 - Exclude private keys/plans/variants/drafts/teacher/recovery files and unreleased teaching.
 - Include only already-unlocked expected answers after explicit, off-by-default selection.
 - Keep checked canonical source links and reject private routes across aliases.
@@ -53,6 +54,11 @@ GUID/card identities, classroom deck ownership, and zero review history. Reimpor
 must not duplicate notes; newer source updates existing identities, unrelated notes
 survive, local newer edits remain, and removing a source does not delete Anki notes.
 The card browser check renders the actual imported `card.answer()` HTML and media.
+The rich fixture includes inline and referenced SVG labels with nested positioned
+`tspan` text. Print, rendered Markdown and the imported card must show both labels;
+inspect `imported-svg.png` for the focused card view. Checks require nonzero glyph
+geometry and loaded SVG media, exact imported label/media bytes, and absent hidden,
+script, event, foreign-object and external-reference canaries.
 
 HTTP contract tests additionally cover checked tailnet canonical sources in all
 three formats, local sources when disabled, alias media/private links, untrusted

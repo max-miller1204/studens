@@ -6,6 +6,7 @@ import { Marked } from "marked";
 import temml from "../assets/runtime/vendor/temml/temml.mjs";
 
 export interface ContentNode {
+  kind: "text" | "element" | "root";
   tag: string;
   text: string;
   attrs: Map<string, string>;
@@ -28,7 +29,8 @@ const allowed = new Set(
 /** Use HTML5 parsing so entities, omitted end tags, raw text and tables match the browser. */
 export function contentTree(source: string): ContentNode {
   const convert = (node: DefaultTreeAdapterMap["node"]): ContentNode => ({
-    tag: "tagName" in node ? node.tagName : node.nodeName === "#text" ? "text" : "root",
+    kind: node.nodeName === "#text" ? "text" : "tagName" in node ? "element" : "root",
+    tag: "tagName" in node ? node.tagName : node.nodeName,
     text: "value" in node ? node.value : "",
     attrs: new Map("attrs" in node ? node.attrs.map((a) => [a.name, a.value]) : []),
     children: "childNodes" in node ? node.childNodes.map(convert) : [],
@@ -36,12 +38,12 @@ export function contentTree(source: string): ContentNode {
   return convert(parse(source));
 }
 export function nodeText(node: ContentNode): string {
-  return node.tag === "text" ? node.text : node.children.map(nodeText).join("");
+  return node.kind === "text" ? node.text : node.children.map(nodeText).join("");
 }
 export type ResourceLink = (value: string, media: boolean) => string | null;
 export function safeContent(source: string, link: ResourceLink): string {
   const render = (n: ContentNode, literal = false): string => {
-    if (n.tag === "text") return literal ? escapeHtml(n.text) : mathText(n.text);
+    if (n.kind === "text") return literal ? escapeHtml(n.text) : mathText(n.text);
     if (n.attrs.has("hidden") || n.attrs.get("aria-hidden") === "true") return "";
     if (n.attrs.get("class") === "cl-export-math" && n.attrs.has("data-tex"))
       return mathText(n.attrs.get("data-tex")!);
@@ -82,7 +84,7 @@ export function portableMarkdown(source: string): string {
   const escape = (s: string) => s.replace(/([\\`*_{}\[\]<>#+.!|~=\-])/g, "\\$1");
   const render = (n: ContentNode, depth = 0): string => {
     const body = () => n.children.map((c) => render(c, depth)).join("");
-    if (n.tag === "text") return escape(n.text);
+    if (n.kind === "text") return escape(n.text);
     if (n.attrs.get("class") === "cl-export-math") {
       const tex = n.attrs.get("data-tex") ?? "";
       if (/[<>]/.test(tex)) {
@@ -160,7 +162,7 @@ export function portableMarkdown(source: string): string {
   };
   // Inert table HTML preserves spans and multiline cells without inventing a lossy table.
   const sourceTable = (n: ContentNode): string =>
-    n.tag === "text"
+    n.kind === "text"
       ? escapeHtml(n.text)
       : `<${n.tag}>${n.children.map(sourceTable).join("")}</${n.tag}>`;
   return render(tree).trim() + "\n";
@@ -226,13 +228,14 @@ const svgTags = new Set(
   ),
 );
 const svgAttrs = new Set(
-  "viewBox width height x y x1 x2 y1 y2 cx cy r rx ry d points fill stroke stroke-width stroke-linecap stroke-linejoin opacity fill-opacity stroke-opacity transform text-anchor font-size font-family id marker-start marker-mid marker-end refX refY markerWidth markerHeight orient offset stop-color stop-opacity xmlns href".split(
+  "viewBox width height x y dx dy rotate textLength lengthAdjust x1 x2 y1 y2 cx cy r rx ry d points fill stroke stroke-width stroke-linecap stroke-linejoin opacity fill-opacity stroke-opacity transform text-anchor font-size font-family id marker-start marker-mid marker-end refX refY markerWidth markerHeight orient offset stop-color stop-opacity xmlns href".split(
     " ",
   ),
 );
 /** Static SVG primitives only; discard scripts, foreignObject, styles and external references. */
 export function staticSvg(node: ContentNode): string {
-  if (node.tag === "text") return escapeHtml(node.text);
+  if (node.kind === "text") return escapeHtml(node.text);
+  if (node.attrs.has("hidden") || node.attrs.get("aria-hidden") === "true") return "";
   if (!svgTags.has(node.tag.toLowerCase())) return "";
   const attrs = [...node.attrs]
     .filter(
@@ -282,8 +285,13 @@ export function expectedReading(
   const question = questions[0],
     nodes = descendants(question),
     classes = (n: ContentNode, c: string) => (n.attrs.get("class") ?? "").split(/\s+/).includes(c);
-  const visibleText = (n: ContentNode): string =>
-    dropped.has(n.tag) ? "" : n.tag === "text" ? n.text : n.children.map(visibleText).join("");
+  const visibleText = (n: ContentNode): string => {
+    if (n.kind === "text") return n.text;
+    if (dropped.has(n.tag) || n.attrs.has("hidden") || n.attrs.get("aria-hidden") === "true")
+      return "";
+    if (n.tag === "svg") return nodeText(contentTree(staticSvg(n)));
+    return n.children.map(visibleText).join("");
+  };
   const label = (list: string, attribute: string, id: string): string => {
     const matches =
       list === "option"

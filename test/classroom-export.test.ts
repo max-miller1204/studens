@@ -2,10 +2,23 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { afterEach, beforeEach, expect, it } from "vitest";
 import { makeFixture } from "./helpers.ts";
-import { seedExport } from "./export-fixture.ts";
+import {
+  seedExport,
+  exportSvg,
+  inlineSvgLabel,
+  mediaSvgLabel,
+  nestedSvgLabel,
+} from "./export-fixture.ts";
 import { projectClassroom, exportMarkdown, exportPrint } from "../src/classroom-export.ts";
 import { exportAnki } from "../src/export-anki.ts";
-import { portableMarkdown, safeContent, expectedReading } from "../src/export-content.ts";
+import {
+  portableMarkdown,
+  safeContent,
+  expectedReading,
+  contentTree,
+  nodeText,
+  svgMedia,
+} from "../src/export-content.ts";
 import * as server from "../src/server.ts";
 let f: ReturnType<typeof makeFixture>;
 beforeEach(() => {
@@ -43,7 +56,7 @@ it("exports saved public content and media without private or unreleased bytes o
   ]) {
     expect(md).toContain(text);
   }
-  expect(data.media).toHaveLength(1);
+  expect(data.media).toHaveLength(2);
   expect(md).toContain("data:image/png;base64,");
   expect(md).toContain("\\(x^2\\)");
   expect(html).toContain("<math");
@@ -83,7 +96,7 @@ it("guards public symlinks, media traversal, and classroom ancestors", () => {
     '<img src="media/leak.png" alt="blocked"><img src="media/../quiz/key.png" alt="blocked"><img src="/c/rust/001-ownership/media/%2e%2e/quiz/key.png" alt="blocked">',
   );
   publicOnly(JSON.stringify(projectClassroom("rust")));
-  expect(projectClassroom("rust")!.media).toHaveLength(1);
+  expect(projectClassroom("rust")!.media).toHaveLength(2);
   fs.symlinkSync(
     path.join(f.root, "rust/001-ownership/quiz/key.json"),
     path.join(f.root, "rust/notes/leak.md"),
@@ -160,6 +173,7 @@ it("preserves HTML5 entities, static SVG, tables and exact code line breaks", ()
   expect(html).toContain("© — é");
   expect(html).toContain('viewBox="0 0 20 20"');
   expect(html).toContain('<rect width="10" height="10" fill="red"></rect>');
+  expect(html).toContain('<text x="0" y="15">λ</text>');
   expect(html).not.toContain("PRIVATE_");
   expect(
     safeContent(
@@ -238,12 +252,12 @@ it("uses checked canonical source links in every format while guarding loopback 
     expect(bytes).not.toMatch(/PRIVATE_|GATED_|untrusted-host|untrusted-forward|quiz\/key.json/);
   }
   const data = projectClassroom("rust", false, canonical, [base])!;
-  expect(data.media).toHaveLength(1);
+  expect(data.media).toHaveLength(2);
   expect(
     data.parts
       .find((p) => p.identity === "001-ownership/lesson.html")!
       .html.match(/studens-media:/g)?.length,
-  ).toBe(4);
+  ).toBe(5);
   server.setLinkBase(null);
   for (const format of ["markdown", "print", "anki"]) {
     const r = await fetch(base + `/api/export?classroom=rust&format=${format}`),
@@ -272,4 +286,45 @@ it("keeps Markdown metadata and formula text inert in ordinary Markdown renderer
     safeContent("<p>$\\text{&lt;script&gt;alert(1)&lt;/script&gt;}$</p>", () => null),
   );
   expect(formula).toContain("```math");
+});
+
+it("preserves SVG text elements and nested positioned Unicode across every portable converter", () => {
+  const svg = exportSvg(inlineSvgLabel);
+  const safe = safeContent(svg, () => null);
+  for (const output of [safe, portableMarkdown(safe), svgMedia(svg)]) {
+    expect(output).toContain(`<text x="20" y="35" font-size="22" fill="black">${inlineSvgLabel}`);
+    expect(output).toContain(
+      `<tspan x="20" y="70"><tspan dx="8" dy="0">${nestedSvgLabel}</tspan></tspan>`,
+    );
+    expect(output).not.toMatch(/PRIVATE_|foreignObject|script|onload|https:\/\/invalid/);
+  }
+  expect(nodeText(contentTree(safe))).toBe(
+    "Saved labelled diagram" + inlineSvgLabel + nestedSvgLabel,
+  );
+  // A public document containing only a text-bearing SVG must not be dropped as empty.
+  f.write("rust/reference/only-svg.html", `<svg><text>${inlineSvgLabel}</text></svg>`);
+  const data = projectClassroom("rust")!;
+  expect(data.parts.find((p) => p.identity === "reference/only-svg.html")?.html).toContain(
+    inlineSvgLabel,
+  );
+  const media = data.media.find((m) => m.type === "image/svg+xml")!;
+  expect(media.bytes.toString()).toContain(mediaSvgLabel);
+  for (const output of [exportPrint(data), exportMarkdown(data), exportAnki(data).toString()]) {
+    expect(output).toContain(inlineSvgLabel);
+    publicOnly(output);
+  }
+  expect(() => svgMedia("<p>no svg</p>")).toThrow("Public SVG media has no SVG document");
+});
+it("reads original SVG question and answer labels without hidden or active SVG content", () => {
+  const html = `<form data-quiz-id="quiz"><li class="cl-q" data-question-id="q"><p class="cl-q-prompt"><svg><text>Choose λ<tspan> 日本語</tspan></text><text hidden>PRIVATE_PROMPT</text></svg></p><label><input value="a"><svg><text>Owner<tspan> café</tspan></text><g aria-hidden="true"><text>PRIVATE_LABEL</text></g><foreignObject><p>PRIVATE_FOREIGN</p></foreignObject><script>PRIVATE_SCRIPT</script></svg></label></li></form>`;
+  expect(
+    expectedReading(html, "quiz", "q", {
+      status: "available",
+      type: "choice",
+      expected: "a",
+      full: "Saved",
+      partial: "Saved",
+      points: 1,
+    }),
+  ).toEqual({ prompt: "Choose λ 日本語", expected: "Owner café" });
 });

@@ -10,6 +10,12 @@ export const pixel = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jx1kAAAAASUVORK5CYII=",
   "base64",
 );
+/** Static SVG labels exercise element/text identity, nested spans and positioned Unicode. */
+export const inlineSvgLabel = "Inline label — λ";
+export const mediaSvgLabel = "Referenced label — λ";
+export const nestedSvgLabel = "日本語 café";
+export const exportSvg = (label: string) =>
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 100"><title>Saved labelled diagram</title><rect x="1" y="1" width="558" height="98" fill="white" stroke="black"/><text x="20" y="35" font-size="22" fill="black">${label}<tspan x="20" y="70"><tspan dx="8" dy="0">${nestedSvgLabel}</tspan></tspan></text><text hidden x="0" y="90">PRIVATE_HIDDEN_SVG</text><g aria-hidden="true"><text>PRIVATE_ARIA_SVG</text></g><script>PRIVATE_SVG_SCRIPT</script><foreignObject><p>PRIVATE_FOREIGN_SVG</p></foreignObject><use href="https://invalid.example/active.svg#x" onload="PRIVATE_SVG_EVENT"/></svg>`;
 export function seedExport(f: Fixture): store.QuizSubmission {
   seedClassroom(f, { title: "Café — λ classroom" });
   f.write("empty/classroom.json", JSON.stringify({ title: "Empty classroom" }));
@@ -33,7 +39,7 @@ export function seedExport(f: Fixture): store.QuizSubmission {
   );
   const body = String.raw`<h1>Ownership café λ</h1><h2>Move and release</h2><p>Saved public prose with \(x^2\) and $y+1$.</p><ul><li>First saved item<li>Second saved item</ul><pre><code class="language-js">const text = &quot;café&quot;;
 console.log(text &lt; &quot;z&quot;);</code></pre><pre class="mermaid">flowchart LR
- A[Owner] --> B[Release]</pre><img src="media/pixel.png" alt="Public pixel"><p><a href="../assets/pixel.png">Public media</a> <a href="/c/rust/001-ownership/quiz/key.json">Private key link</a></p><script>PRIVATE_SCRIPT_CANARY</script><style>PRIVATE_STYLE_CANARY</style><iframe srcdoc="PRIVATE_IFRAME_CANARY"></iframe><template>PRIVATE_TEMPLATE_CANARY</template><div data-cl-stepper>PRIVATE_WIDGET_CONFIG</div><form class="cl-quiz" data-quiz-id="check" data-kind="check"><ol class="cl-questions"><li class="cl-q" data-question-id="q1" data-type="term"><p class="cl-q-prompt">Who releases the value?</p><input type="text"></li><li class="cl-q" data-question-id="q2" data-type="term"><p class="cl-q-prompt">A second question</p><input type="text"></li></ol></form>`;
+ A[Owner] --> B[Release]</pre><img src="media/pixel.png" alt="Public pixel"><h2>Saved labelled diagrams</h2>${exportSvg(inlineSvgLabel)}<img src="media/labelled.svg" alt="Referenced labelled diagram"><p><a href="../assets/pixel.png">Public media</a> <a href="/c/rust/001-ownership/quiz/key.json">Private key link</a></p><script>PRIVATE_SCRIPT_CANARY</script><style>PRIVATE_STYLE_CANARY</style><iframe srcdoc="PRIVATE_IFRAME_CANARY"></iframe><template>PRIVATE_TEMPLATE_CANARY</template><div data-cl-stepper>PRIVATE_WIDGET_CONFIG</div><form class="cl-quiz" data-quiz-id="check" data-kind="check"><ol class="cl-questions"><li class="cl-q" data-question-id="q1" data-type="term"><p class="cl-q-prompt">Who releases the value?</p><input type="text"></li><li class="cl-q" data-question-id="q2" data-type="term"><p class="cl-q-prompt">A second question</p><input type="text"></li></ol></form>`;
   f.write("rust/001-ownership/lesson.html", lessonHtml("Ownership café λ", body));
   const key = {
     check: {
@@ -60,6 +66,7 @@ console.log(text &lt; &quot;z&quot;);</code></pre><pre class="mermaid">flowchart
   f.write("rust/001-ownership/drafts.json", '{"private":"PRIVATE_DRAFT_CANARY"}');
   f.write("rust/001-ownership/teacher-messages.json", '{"private":"PRIVATE_SESSION_CANARY"}');
   f.write("rust/001-ownership/quiz/key.png", "PRIVATE_IMAGE_CANARY");
+  f.write("rust/001-ownership/media/labelled.svg", exportSvg(mediaSvgLabel));
   f.write("rust/001-ownership/media/pixel.png", "");
   fs.writeFileSync(path.join(f.root, "rust/001-ownership/media/pixel.png"), pixel);
   f.write("rust/assets/pixel.png", "");
