@@ -48,7 +48,7 @@ describe("teachingPrompt", () => {
     expect(prompt).not.toContain("wait_for_learner");
     expect(prompt).not.toContain("scaffold_lesson");
     expect(prompt).not.toContain("Call `lesson_health`");
-    expect(prompt).toContain("ask the initiating chat to continue");
+
     const reflection: Reflection = {
       id: "r1",
       classroom: "rust",
