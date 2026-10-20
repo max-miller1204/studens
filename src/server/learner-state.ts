@@ -6,26 +6,43 @@ import { reteachOffers } from "../reteach.ts";
 import { reviewSessions } from "../review-session.ts";
 import * as store from "../store.ts";
 import { hooks } from "./hooks.ts";
+import { readPublicState, publicStateError } from "../public-state-errors.ts";
 import { lessonParams, readJsonBody, sendJson } from "./http.ts";
 
 export function handleState(res: http.ServerResponse, url: URL): void {
   const params = lessonParams(url);
   if (!params) return sendJson(res, { error: "classroom and lesson are required" }, 400);
 
-  sendJson(res, {
-    annotations: store.listAnnotations(params.classroom, params.lesson),
-    quizzes: store.latestQuizStates(params.classroom, params.lesson).map((state) => ({
-      ...state,
-      submission: store.publicSubmission(state.submission),
-      history: store
-        .listGrades(params.classroom, params.lesson)
-        .filter((g) => g.submissionId === state.submission.id),
-    })),
-    reflections: store.latestReflections(params.classroom, params.lesson),
-    drafts: store.readDrafts(params.classroom, params.lesson),
-    reteach: reteachOffers(params.classroom, params.lesson),
-    teacher: hooks?.teacherState?.(params.classroom, params.lesson),
-  });
+  try {
+    sendJson(res, {
+      annotations: readPublicState("lesson annotations", () =>
+        store.listAnnotations(params.classroom, params.lesson),
+      ),
+      quizzes: readPublicState("lesson quiz attempts and grade history", () =>
+        store.latestQuizStates(params.classroom, params.lesson).map((state) => ({
+          ...state,
+          submission: store.publicSubmission(state.submission),
+          history: store
+            .listGrades(params.classroom, params.lesson)
+            .filter((g) => g.submissionId === state.submission.id),
+        })),
+      ),
+      reflections: readPublicState("lesson reflections", () =>
+        store.latestReflections(params.classroom, params.lesson),
+      ),
+      drafts: readPublicState("lesson drafts", () =>
+        store.readDrafts(params.classroom, params.lesson),
+      ),
+      reteach: readPublicState("lesson review evidence and controls", () =>
+        reteachOffers(params.classroom, params.lesson),
+      ),
+      teacher: readPublicState("lesson teacher state", () =>
+        hooks?.teacherState?.(params.classroom, params.lesson),
+      ),
+    });
+  } catch (error) {
+    sendJson(res, { error: publicStateError(error) }, 500);
+  }
 }
 
 export function handleGlossary(res: http.ServerResponse, url: URL): void {

@@ -235,6 +235,37 @@ or human learning. Contract tests cover fixed definitions, machine-override reje
 before/after-write recovery, repeated retry, original timestamps, early caps and
 retirement without another exposure or learning record.
 
+### Expected answers after grading
+
+`node scripts/e2e-expected-answers.ts /tmp/studens-expected-answers` drives the
+actual lesson shell through saved grading, a new corrective panel task, the learner's
+reply, and a validated retrieval check. Correct original answers show the expected
+answer, full/partial credit guidance and declared criteria. Original misses wait
+for an exact corrective check; disputes cannot bypass that wait. Graded pretests
+release without a corrective check. All ten supported response types render with
+readable option/item/pair/blank labels and numeric units/tolerance; code keys are
+explanations or source text and never execute.
+
+Inspect `initial.json`, `corrective-before.json`, `corrective-after.json`,
+`reload-probes.json`, `formats.json`, `result.json`, retained `classroom/`, and the
+matching desktop/mobile light/dark captures. The drive includes failed grading,
+reload without automatic retry, explicit Retry request, a restored original rubric
+with keyboard `Retry expected answer`, locked second-tab answers, malformed and
+neighboring HTTP targets, private static routes and ungraded sibling keys. Reads
+must preserve grades, checks and review events. Its teacher plans are fixtures.
+
+The real Pi/Claude/Codex host targets retain `expected-before.json` and
+`expected-after.json` around their actual corrective task and reply. Inspect the
+saved task for a new answerable example: neither punctuation nor a grade alone
+establishes a retrieval task. Legacy attempts without original source identity,
+ambiguous shared-objective checks, and unrelated replies must remain unavailable;
+changed/missing original sources show a specific error and require explicit retry.
+
+The drive holds the expected-answer response before panel arrival and compares the
+canonical text index afterward and after error retry. Expected panels stay outside
+anchors while authored question prose still supports mouse highlighting and the
+Ask control. Inspect `anchor-arrival.json` and `anchor-retry.json`.
+
 ## Gotchas
 
 The fixture grading tool proves page and storage behavior. It does not prove model grading quality. API attempts from older clients are checked separately from the learner's locked quiz controls. The `feedback claude` and `feedback codex` targets combine a saved closed answer with judgment questions. They require the model to omit the closed question and verify the final score from merged point allocations. The uncertain-answer explanation check reads only that question's visible feedback

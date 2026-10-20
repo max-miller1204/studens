@@ -165,6 +165,19 @@ points. See [code exercises](CODE-EXERCISES.md) for the authoring and isolation 
   retrieval checks, authoring changes or gap notes from a dispute. Publish only linked
   learner reasons, responses and existing grade feedback/history. Replaying uses the
   original attempt and first feedback, with no extra exposure or review completion.
+- **Expected answers are read-only and attempt-bound.** New attempts privately save
+  the lesson source digest alongside the rubric digest. The expected-answer endpoint
+  accepts only the current saved attempt and requires the original complete grade,
+  unchanged source, exact quiz/question type, and an allowlisted rubric projection.
+  Correct original answers and graded pretests are available immediately. Original
+  check/review misses require a completed validated corrective request, its actual
+  saved learner reply, the server-selected preceding teacher task chain back to this
+  exact attempt, and the matching saved retrieval check/record. An exact question
+  key can identify one miss; an objective shared by several misses is insufficient.
+  Historical replies without that provenance remain unavailable. Dispute revisions
+  do not bypass the original-miss gate. No read/reveal runs a teacher, writes evidence,
+  changes a grade, unlocks an editor or completes a daily review. Missing/changed
+  originals give specific errors and explicit retry, never a replacement key.
 - **Submission order is total.** Timestamps increase strictly per lesson. Attempts
   count submissions; regrades are revisions. Use `latestGrades()` consistently for
   scores, quiz state, health, and review. Refuse another attempt while one is ungraded.

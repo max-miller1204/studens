@@ -444,13 +444,18 @@ export class TeacherService {
     const state = this.states.get(classroom);
     if (!state) throw new Error("No classroom teacher. Call open_classroom first.");
     const key = `chat:${id}`;
+    const existingReply = state.messages.find((m) => m.id === key && m.role === "learner");
+    if (existingReply && (existingReply.lesson !== lesson || existingReply.text !== text))
+      throw new Error("This reply ID already belongs to a different saved panel reply.");
     if (!state.messages.some((m) => m.id === key)) {
+      const previous = this.messages(classroom, lesson, state).at(-1);
       state.messages.push({
         id: key,
         lesson,
         role: "learner",
         text,
         at: this.nextMessageAt(classroom, lesson, state),
+        ...(previous?.role === "teacher" ? { replyTo: previous.id } : {}),
       });
       saveTeacherState(classroom, state);
     }
