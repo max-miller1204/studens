@@ -8,6 +8,7 @@ import { verifyReteachBrowser } from "./e2e-reteach-browser.ts";
 import { verifyPracticeBrowser } from "./e2e-practice-browser.ts";
 import { verifyClosedBrowser } from "./e2e-closed-browser.ts";
 import { verifyFoldersBrowser } from "./e2e-folders-browser.ts";
+import { verifyCourseMapBrowser } from "./e2e-course-map-browser.ts";
 import { verifyResumeBrowser } from "./e2e-resume-browser.ts";
 import { verifyCardBrowser } from "./e2e-card-browser.ts";
 import { verifyReviewBrowser } from "./e2e-review-browser.ts";
@@ -371,6 +372,8 @@ try {
   );
   fixture.cleanup();
 }
+
+await verifyCourseMapBrowser(artifacts ? path.join(artifacts, "course-map") : null);
 
 await verifyPiPanelBrowser(artifacts ? path.join(artifacts, "pi-panel") : null);
 await verifyServiceBrowser(artifacts ? path.join(artifacts, "service") : null);
