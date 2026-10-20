@@ -114,7 +114,7 @@ export async function verifyDisputesBrowser(artifacts: string | null) {
       session,
       f.root,
       `async page=>{
-      await page.getByRole('button',{name:'Retry request',exact:true}).click();
+      await page.locator('.cl-teacher-activity').getByRole('button',{name:/^Retry activity:/}).click();
       await page.locator('.cl-q[data-question-id="mse"] .cl-dispute-response').waitFor();
       await page.reload(); await page.locator('.cl-q[data-question-id="mse"] .cl-dispute-response').waitFor();
       const second=page.context().pages().find(p=>p!==page);

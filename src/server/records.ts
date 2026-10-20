@@ -62,7 +62,8 @@ export function handleReference(res: http.ServerResponse, rest: string[]): void 
   // diagrams, and the math, but not the lesson runtime: there is no quiz to submit and
   // nothing to anchor questions to.
   const html = fs.readFileSync(file, "utf8");
-  const head = `<link rel="stylesheet" href="/static/classroom.css">
+  const head = `<script type="module">import{initTeacherActivity,pageClassroom}from"/static/teacher-activity.mjs";initTeacherActivity(pageClassroom());</script>
+<link rel="stylesheet" href="/static/classroom.css">
 <script>try{var t=localStorage.getItem("pi-classroom-theme");if(t==="dark"||t==="light")document.documentElement.setAttribute("data-theme",t);}catch(e){}</script>
 <script type="module">import{initLinks}from"/static/links.mjs";initLinks();</script>
 <script type="module">import{initDiagrams}from"/static/diagrams.mjs";initDiagrams(document.body);</script>

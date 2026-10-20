@@ -11,7 +11,7 @@ The learner receives follow-up questions and answers them in the lesson's teache
 - Recover a saved panel reply whose teacher request was lost.
 - Save replies and restore the conversation after reload.
 - Link a successful panel check to a learning record without changing the quiz grade.
-- Show specific failures and require an explicit retry.
+- Show classroom activity across pages, with item links, queued work, specific failures, and explicit retries.
 - Regenerate a plan rejected before writes. Keep valid plans for recovery.
 - Request a new grade plan after an explicit retry of a rejected score.
 - Keep the persistent service available after Pi or MCP exit.
@@ -102,6 +102,51 @@ Both must expose zero servers/tools. Preserve paginated raw catalogs, source has
 and the original rollout bytes. An empty MCP config, a mock transport assertion or
 a passing model turn alone does not prove this boundary. Apps and plugins must be
 disabled before process discovery as well as in thread settings.
+
+### Classroom activity
+
+Every classroom, lesson, review, history, document, reference, course-map, and settings page shows the
+same teacher activity view. Open `View teacher activity` for item links and all
+pending requests. Running work appears before queued work; failed requests retain
+their specific error and `Retry activity`. Completed work leaves the pending list.
+The root landing and daily pages show public item links labeled with their owning
+classroom. Next lesson distinguishes writing, checking, and publication from its
+saved state. A daily group's retry stays with the daily owner and its eligibility
+checks. Global retries refresh the matching owning controls.
+A lost or unreadable status connection requires `Retry activity status`.
+
+The default browser target includes `activity/`. Its fixture submits explanations
+on two lessons through their Save controls, follows classroom SSE, and verifies
+sequential running/queued transitions. It retains a failed request through reload,
+HTTP/service restart and keyboard navigation to its lesson panel, then presses
+`Retry activity` once and checks exactly one additional teacher turn. It also
+checks notes, reference, review history, learning records, course map, settings,
+root and daily history, an unrelated classroom, malformed request state, and
+375px/light/dark failure screens. A held response across disconnect and explicit
+reconnect must not restore stale work. Original question and follow-up failures
+survive reload, then each global retry adds one turn and preserves the original
+answer. Seven total fixture turns finish once. A corrupt private lesson-request
+file shows its file/category without quoting stored bytes. Reads leave it unchanged;
+restoring it does not recover status until the learner explicitly retries. Inspect `activity/result.json`, `failed-desktop.png`,
+`failed-mobile.png`, `disconnected-mobile.png`, and `done-mobile.png`.
+
+This fixture uses a controlled teacher at the production model boundary; real
+host targets remain necessary for changes to the bridge/service projections.
+The Next lesson, daily review, and dispute browser fixtures also use the global
+retry, retaining their original publication, eligibility, grade-history and
+ownership assertions. `activity-events*.json` in real-host evidence records public
+SSE-triggered projections. The publication-recovery drive explicitly closes and
+reopens its recorder around the owned service restart; it never reconnects or
+retries model work implicitly.
+
+`test/activity-privacy.test.ts` covers malformed lesson, daily, review, refill,
+teacher, annotation, lesson metadata and assessment-history JSON, nested private
+daily documents and wrapped causes. HTTP retains a class/file/category diagnostic;
+raw parser causes stay in private logs. Classroom/root SSE sends no private payload.
+
+Historical Pi card failures without a saved error or supported service retry say
+so and link to the original question. Recovery requires their previous package;
+this view never creates replacement legacy requests.
 
 ## Gotchas
 

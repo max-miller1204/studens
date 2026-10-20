@@ -1,3 +1,5 @@
+import { StateReadError, stateReadError } from "./state-errors.ts";
+import { invalidateActivity } from "./server/events.ts";
 /** Durable background work. Learner requests always run before queued refills. */
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -37,7 +39,7 @@ function file(classroom: string): string {
   for (const name of [root, target]) {
     try {
       if (fs.lstatSync(name).isSymbolicLink())
-        throw new Error(`Refill state cannot be a symlink: ${name}.`);
+        throw new StateReadError(`Refill state cannot be a symlink: ${name}.`);
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
     }
@@ -84,7 +86,7 @@ export function refillRequests(classroom: string): RefillRequest[] {
     return value.requests;
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === "ENOENT") return [];
-    throw error;
+    throw stateReadError(`review refill state ${classroom}/.review-refills.json`, error);
   }
 }
 export function updateRefill(
@@ -101,6 +103,7 @@ export function updateRefill(
   if (error) saved.error = error;
   else delete saved.error;
   atomicJson(file(request.classroom), { version: 1, requests });
+  invalidateActivity(request.classroom);
 }
 
 function prompt(request: RefillRequest, item: ReviewItem, pool: PreparedVariant[]): string {
@@ -257,6 +260,7 @@ export function saveRefillPlan(request: RefillRequest, value: unknown): void {
   saved.plan = variants;
   saved.status = "planned";
   atomicJson(file(request.classroom), { version: 1, requests });
+  invalidateActivity(request.classroom);
 }
 
 export function applyRefill(request: RefillRequest): void {
@@ -366,6 +370,7 @@ export function refreshRefill(request: RefillRequest): RefillRequest {
       : "";
   saved.prompt = prompt(saved, saved.input, pool) + errorNotice;
   atomicJson(file(request.classroom), { version: 1, requests });
+  invalidateActivity(request.classroom);
   return saved;
 }
 

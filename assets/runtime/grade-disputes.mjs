@@ -50,6 +50,7 @@ export function createGradeDisputes(config) {
         const item = document.createElement("div");
         item.className = "cl-dispute";
         item.dataset.disputeId = d.id;
+        item.id = `cl-dispute-${d.id}`;
         const title = document.createElement("p");
         const labels = {
           accepted: "Credit revised",

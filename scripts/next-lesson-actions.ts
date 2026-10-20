@@ -16,6 +16,7 @@ export async function driveRealNextLesson(
   host: string,
   artifacts: string | null,
   recoverPublication = false,
+  activity?: { beforeRestart(): Promise<void>; afterRestart(): Promise<void> },
 ): Promise<void> {
   const viewport = await playwrightCode<{ width: number; height: number }>(
     browser,
@@ -124,6 +125,7 @@ export async function driveRealNextLesson(
           request: turn.id,
         };
         const beforeService = await serviceStatus();
+        await activity?.beforeRestart();
         await control("/stop", {});
         const stoppedBy = Date.now() + 10_000;
         assert.ok(beforeService.pid, "Owned service PID is required for restart verification");
@@ -144,6 +146,7 @@ export async function driveRealNextLesson(
         await ensureService();
         const afterService = await serviceStatus();
         assert.equal(afterService.running, true);
+        await activity?.afterRestart();
         assert.notEqual(afterService.pid, beforeService.pid);
         assert.equal(afterService.packageRoot, beforeService.packageRoot);
         assert.equal(afterService.url, beforeService.url);

@@ -203,7 +203,7 @@ export async function verifyReviewCards(artifacts: string | null): Promise<void>
       if (host === "service") {
         await teacher.idle();
         await code(`
-          await page.getByText('Fixture corrective teacher unavailable.', {exact:false}).waitFor();
+          await page.locator('.cl-teacher-requests').getByText('Fixture corrective teacher unavailable.', {exact:false}).waitFor();
           ${shot("correction-failed")}
           await page.reload();
           await page.getByRole('button', {name:'Retry request',exact:true}).waitFor();

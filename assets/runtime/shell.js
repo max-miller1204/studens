@@ -2,6 +2,7 @@
 
 import { wireRetirement } from "./review-controls.mjs";
 import { initDailyReview } from "./daily-review.mjs";
+import { initTeacherActivity, pageClassroom } from "./teacher-activity.mjs";
 import { initLinks } from "./links.mjs";
 import { initTheme } from "./theme.mjs";
 
@@ -9,6 +10,7 @@ initTheme();
 initLinks();
 const dailyControl = document.querySelector("[data-cl-daily]");
 if (dailyControl) initDailyReview(dailyControl);
+initTeacherActivity(pageClassroom());
 
 const folderControl = document.querySelector("[data-cl-folders]");
 if (folderControl) initFolders(folderControl);
@@ -187,6 +189,12 @@ function initReview(control) {
       failed(error);
     } finally {
       busy = false;
+    }
+  });
+  window.addEventListener("cl-activity-retried", (event) => {
+    if (event.detail.classroom === classroom && event.detail.kind === "review") {
+      openWhenReady = true;
+      check();
     }
   });
   window.addEventListener("pagehide", () => {
@@ -407,6 +415,12 @@ function initNextLesson(control) {
       fail(error);
     } finally {
       busy = false;
+    }
+  });
+  window.addEventListener("cl-activity-retried", (event) => {
+    if (event.detail.classroom === classroom && event.detail.kind === "lesson") {
+      sessionStorage.setItem(key, event.detail.id);
+      check();
     }
   });
   window.addEventListener("pagehide", () => clearTimeout(timer));

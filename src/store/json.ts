@@ -1,3 +1,4 @@
+import { stateReadError } from "../state-errors.ts";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { isDir } from "../paths.ts";
@@ -14,7 +15,7 @@ export function readJson<T>(
     return value as T;
   } catch (err) {
     if (optional && (err as NodeJS.ErrnoException).code === "ENOENT") return null;
-    throw new Error(`Cannot read JSON state ${file}: ${(err as Error).message}`, { cause: err });
+    throw stateReadError(`JSON state ${file}`, err);
   }
 }
 
