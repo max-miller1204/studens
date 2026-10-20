@@ -69,8 +69,9 @@ description: Teach a topic or create challenging quizzes and tests in the classr
     consistent with those points.
 
 The dedicated teacher puts passage answers on the page. Retrieval questions and
-learner replies use the teacher panel. Pi keeps its live-session bridge and posts
-to the same panel. The learner needs the chat only to start a new lesson.
+learner replies use the teacher panel. All three hosts use the shared persistent
+service. With learner agreement, new lessons can start from **Next lesson** on the
+classroom page, optionally with a topic, or from the initiating chat.
 
 Confidence is optional. It informs feedback only. Record assistance honestly.
 Immediate correction is not delayed retention. Application objectives need transfer
