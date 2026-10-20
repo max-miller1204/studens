@@ -2198,3 +2198,97 @@ figure:has(> .cl-diagram) figcaption {
   color: var(--cl-text-muted);
   margin-bottom: 0;
 }
+
+/* Public worked-example practice is separate from graded forms. */
+.cl-faded-runtime {
+  margin: 1.5rem 0;
+  padding: clamp(1rem, 3vw, 1.5rem);
+  border: 1px solid var(--cl-border-strong);
+  border-radius: var(--cl-radius);
+  background: var(--cl-surface);
+  overflow-wrap: anywhere;
+}
+.cl-faded-runtime h3 {
+  margin-top: 0;
+}
+.cl-faded-progress,
+.cl-faded-step-kind {
+  font-family: var(--cl-sans);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--cl-accent);
+}
+.cl-faded-note {
+  font-size: 0.875rem;
+  color: var(--cl-text-muted);
+}
+.cl-faded-situation {
+  font-weight: 600;
+}
+.cl-faded-situation,
+.cl-faded-solution,
+.cl-faded-feedback {
+  white-space: pre-wrap;
+}
+.cl-faded-steps {
+  padding-left: 1.4rem;
+}
+.cl-faded-step {
+  padding: 0.8rem 0;
+  border-top: 1px solid var(--cl-border);
+}
+.cl-faded-step h4 {
+  margin: 0.25rem 0;
+}
+.cl-faded-step-kind {
+  margin: 0.25rem 0;
+}
+.cl-faded-principle {
+  color: var(--cl-text-muted);
+  font-style: italic;
+}
+.cl-faded-label {
+  display: block;
+  margin: 0.75rem 0;
+}
+.cl-faded-label textarea,
+.cl-faded-label input {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  margin-top: 0.5rem;
+  padding: 0.65rem;
+  border: 1px solid var(--cl-border-strong);
+  border-radius: var(--cl-radius-sm);
+  background: var(--cl-bg);
+  color: var(--cl-text);
+  font: inherit;
+  resize: vertical;
+}
+.cl-faded-runtime :focus-visible {
+  outline: 2px solid var(--cl-accent);
+  outline-offset: 3px;
+}
+.cl-faded-runtime button {
+  max-width: 100%;
+  white-space: normal;
+}
+.cl-faded-runtime button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.cl-faded-feedback,
+.cl-faded-status {
+  font-size: 0.9375rem;
+}
+.cl-faded-feedback[data-correct="true"] {
+  color: var(--cl-success);
+}
+.cl-faded-feedback[data-correct="false"] {
+  color: var(--cl-danger);
+}
+.cl-faded-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}

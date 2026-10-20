@@ -119,6 +119,12 @@ export function authoringSteps(
     "Authoring steps:",
     `1. Read the current quiz contract: ${contract}. Read it for each ${kind}. It can change between sessions.`,
     ...middle,
+    ...(kind === "lesson"
+      ? [
+          "For a suitable multi-step procedure, use the reusable .cl-faded widget below, outside every form and inside the pretest gate. It hands over one more step on each new case. Its public solutions and keys must never answer a graded question; use different cases/values. Do not map this local practice into the private assessment plan/key. Exact term/numeric checks and honest open comparison create no saved work or learning evidence. Other valid local lesson interactions remain supported.",
+          fs.readFileSync(path.join(templatesDir(), "faded.html"), "utf8"),
+        ]
+      : []),
     `Write a private teaching plan in ${path.join(path.dirname(lessonPath), "quiz", "plan.json")}. Read docs/TEACHING-PLAN.md for its contract. Map every question to its objective, mental task, and support. Map each gated prequestion to the element id of teaching that addresses it. Do not put strategy labels or expected answers in public metadata. lesson_health and submission check structural alignment. Metadata does not prove question quality.`,
     `5. Write the private rubric in ${rubric} before the learner submits. Key it by quiz id, then question id. Each entry needs expected, positive points, full, partial, and criteria: an array of {id, description, points} whose positive weights sum to the question points. Declare specific reasoning components before submission; exact questions need one all-or-zero criterion. Descriptions become visible only after grading. Include criteria on private variants too. Do not reuse one generic partial-credit rule for the whole test.`,
     ...(kind === "lesson" || kind === "quiz"
@@ -126,7 +132,7 @@ export function authoringSteps(
           "Prepare two or three private review variants for every check question in quiz/key.json and quiz/plan.json. Follow docs/TEACHING-PLAN.md (Private review variants). Each variant needs complete question controls, its own rubric, and independent retrieval of the original objective. Never put the pool or expected answers in public HTML.",
         ]
       : []),
-    "Keep expected answers out of learner HTML, comments, scripts, data attributes, and linked public files. A collapsed answer is still exposed. A teaching example must not solve a graded question with the same values.",
+    "Keep graded expected answers out of learner HTML, comments, scripts, data attributes, and linked public files. Public local-practice keys/solutions are a separate teaching contract and must use different cases. A collapsed answer is still exposed. A teaching example must not solve a graded question with the same values.",
     "Plan the skill, reasoning, and misconception each question tests in the private rubric. For reasoning and application objectives, include a new situation that requires transfer, method choice, diagnosis, or justification. Do not build a test from copied sentences or easy blanks. Solve every question against its rubric and inspect the whole assessment for answer cues before sharing it. A schedule, diagnosis, or solution supplied in one question must not solve another. Use distinct cases when questions test related skills.",
     "Accept equivalent valid solutions. For a constructed schedule or counterexample, solve at least two valid alternatives. Check that each earns full credit. Do not make credit depend on arbitrary thread names, step order, or wording when the question allows alternatives.",
     'Use a diagram when it helps explain a process, relationship, or state. Write Mermaid source in <pre class="mermaid">. The runtime draws it with the page theme; do not add a network script. For a quiz diagram, put it in .cl-q-stimulus. The grader receives its Mermaid source. Give the diagram an accessible name and a text description of the relationships. Choose data-type from the learner response, not from the diagram. Keep teaching diagrams behind the pretest gate. Keep solutions out of assessment diagrams. Check the drawing, labels, and arrows in the headless browser. Fix every diagram error before sharing.',

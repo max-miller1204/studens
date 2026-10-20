@@ -17,6 +17,10 @@ export async function driveRealNextLesson(
   artifacts: string | null,
   recoverPublication = false,
 ): Promise<void> {
+  const faded = process.env.STUDENS_VERIFY_FADED === "1";
+  const topic = faded
+    ? "Teach a short lesson on deciding whether two Rust borrows may coexist. Include one reusable .cl-faded widget with two ordered steps: identify the borrow kinds, then reason about their overlap. Declare three distinct fully specified code cases: worked, last-step completion, then all-step practice. The final case must require fresh work, not paraphrase the worked case. Use principle-focused self-explanation and compare responses for open reasoning. Use different code/values in the graded check and its private variants. Use the official Rust Book at https://doc.rust-lang.org/book/ch04-02-references-and-borrowing.html as the research source. Keep one objective, one prequestion, one later check, and two private review variants."
+    : "Teach a short lesson on shared borrowing in Rust: predict whether two immutable references may coexist. Use the official Rust Book at https://doc.rust-lang.org/book/ch04-02-references-and-borrowing.html as the research source. Keep one objective, one prequestion, one later check, and two private review variants for the check.";
   const viewport = await playwrightCode<{ width: number; height: number }>(
     browser,
     root,
@@ -44,7 +48,7 @@ export async function driveRealNextLesson(
     `async page=>{
     await page.goto(${JSON.stringify(base)}+'/c/rust');
     await page.getByRole('button',{name:'Next lesson',exact:true}).waitFor();
-    await page.getByLabel('What would you like to learn next?').fill('Teach a short lesson on shared borrowing in Rust: predict whether two immutable references may coexist. Use the official Rust Book at https://doc.rust-lang.org/book/ch04-02-references-and-borrowing.html as the research source. Keep one objective, one prequestion, one later check, and two private review variants for the check.');
+    await page.getByLabel('What would you like to learn next?').fill(${JSON.stringify(topic)});
     await page.getByRole('button',{name:'Next lesson',exact:true}).click();return true;
   }`,
   );
@@ -220,6 +224,31 @@ export async function driveRealNextLesson(
     createHash("sha256").update(JSON.stringify(saved!.document)).digest("hex"),
   );
   assert.equal(JSON.parse(saved!.pageCheck.report).learnerStateChanged, false);
+  if (faded) {
+    const receipt = JSON.parse(saved!.pageCheck.report);
+    assert.equal(receipt.initial.faded, 0, "Public widget must stay behind the pretest gate");
+    assert.ok(
+      receipt.released.faded >= 1,
+      "Directed actual teacher must author an exercised faded widget",
+    );
+    if (artifacts)
+      fs.writeFileSync(
+        path.join(artifacts, "faded-authoring.json"),
+        JSON.stringify(
+          {
+            adoption: "directed",
+            host,
+            topic,
+            lesson: saved!.lesson,
+            receipt,
+            humanLearningEvidence: false,
+            learnerStateChanged: false,
+          },
+          null,
+          2,
+        ),
+      );
+  }
   const checkedInputs = JSON.parse(saved!.pageCheck.report).preflight;
   assert.equal(checkedInputs.version, 1);
   assert.equal(Object.keys(checkedInputs.inputHashes).length, 4);
