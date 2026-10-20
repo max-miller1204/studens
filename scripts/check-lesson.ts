@@ -2,7 +2,6 @@
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
-import { createHash } from "node:crypto";
 import {
   classroomsRoot,
   classroomDir,
@@ -16,13 +15,14 @@ import * as server from "../src/server.ts";
 import * as store from "../src/store.ts";
 import { playwright, playwrightCode } from "./playwright.ts";
 import { checkPractice } from "./browser-actions.ts";
+import { preflightLessonInputs, readLessonInputs, sameLessonInputs } from "./lesson-inputs.ts";
 
 const [classroom, lesson] = process.argv.slice(2);
 if (!isValidSlug(classroom) || !isValidSlug(lesson))
   throw new Error("Usage: node scripts/check-lesson.ts <classroom> <lesson>");
 const source = classroomDir(classroom);
-const document = store.readLesson(classroom, lesson);
-if (!document) throw new Error("The lesson does not exist.");
+const inputs = readLessonInputs(classroom, lesson);
+preflightLessonInputs(inputs, classroom, lesson);
 const originalRoot = classroomsRoot();
 const root = fs.mkdtempSync(path.join(os.tmpdir(), "studens-page-check-"));
 const browser = `page-check-${process.pid}`;
@@ -30,7 +30,7 @@ let opened = false;
 try {
   const copy = path.join(root, classroom);
   fs.mkdirSync(path.join(copy, lesson), { recursive: true });
-  fs.copyFileSync(document.htmlPath, path.join(copy, lesson, "lesson.html"));
+  fs.writeFileSync(path.join(copy, lesson, "lesson.html"), inputs.html.bytes);
   for (const file of ["classroom.json", "GLOSSARY.md", "assets", "reference", `${lesson}/media`]) {
     const input = path.join(source, file);
     if (fs.existsSync(input)) fs.cpSync(input, path.join(copy, file), { recursive: true });
@@ -48,8 +48,8 @@ try {
   const url = `${base}/c/${classroom}/${lesson}`;
   const html = fs.readFileSync(path.join(lessonDir(classroom, lesson), "lesson.html"), "utf8");
   const staged = stageLesson(html, new Set());
-  await playwright(browser, root, "open", url);
   opened = true;
+  await playwright(browser, root, "open", url);
   const check = `async page => {
     const errors = [];
     page.on('pageerror', e => errors.push(e.message));
@@ -109,12 +109,19 @@ try {
     });
   }
   const released = await inspect();
+  await playwright(browser, root, "close");
+  opened = false;
+  await server.close();
+  _overrideClassroomsDir(originalRoot);
+  if (!sameLessonInputs(inputs, readLessonInputs(classroom, lesson)))
+    throw new Error("Lesson inputs changed during the check. Run an explicit check again.");
   console.log(
     JSON.stringify(
       {
         classroom,
         lesson,
-        htmlHash: createHash("sha256").update(html).digest("hex"),
+        htmlHash: inputs.hashes["lesson.html"],
+        preflight: { version: 1, htmlFile: inputs.htmlFile, inputHashes: inputs.hashes },
         initial,
         released,
         learnerStateChanged: false,

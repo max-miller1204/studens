@@ -270,12 +270,20 @@ export function isPlaywrightLaunch(command: string): boolean {
 }
 
 /** Recognize successful packaged checks from their execution receipts. */
-export function packagedPageChecks(
-  harness: Harness,
-  events: string,
-): Array<{ classroom: string; lesson: string; htmlHash: string }> {
+export interface PackagedPageCheck {
+  classroom: string;
+  lesson: string;
+  htmlHash: string;
+  preflight: {
+    version: 1;
+    htmlFile: string;
+    inputHashes: Record<string, string | null>;
+  };
+}
+
+export function packagedPageChecks(harness: Harness, events: string): PackagedPageCheck[] {
   const commands = new Map<string, string>();
-  const checks: Array<{ classroom: string; lesson: string; htmlHash: string }> = [];
+  const checks: PackagedPageCheck[] = [];
   // A receipt proves its own result: check-lesson prints one only after the checks
   // finish, with error counts and the checked HTML hash. Read every complete JSON
   // object in the output. Other output, such as a failed command chained after the
@@ -323,6 +331,15 @@ export function packagedPageChecks(
         typeof receipt.lesson === "string" &&
         typeof receipt.htmlHash === "string" &&
         /^[a-f0-9]{64}$/.test(receipt.htmlHash) &&
+        receipt.preflight?.version === 1 &&
+        typeof receipt.preflight.htmlFile === "string" &&
+        receipt.preflight.inputHashes?.["lesson.html"] === receipt.htmlHash &&
+        ["lesson.json", "quiz/key.json", "quiz/plan.json"].every(
+          (name) =>
+            receipt.preflight.inputHashes[name] === null ||
+            (typeof receipt.preflight.inputHashes[name] === "string" &&
+              /^[a-f0-9]{64}$/.test(receipt.preflight.inputHashes[name])),
+        ) &&
         receipt.learnerStateChanged === false &&
         [receipt.initial, receipt.released].every(
           (phase) => phase?.quizzes > 0 && phase.contractErrors === 0 && phase.pageErrors === 0,
@@ -332,6 +349,7 @@ export function packagedPageChecks(
           classroom: receipt.classroom,
           lesson: receipt.lesson,
           htmlHash: receipt.htmlHash,
+          preflight: receipt.preflight,
         });
     }
   }
