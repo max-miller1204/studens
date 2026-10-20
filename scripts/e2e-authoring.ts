@@ -68,6 +68,7 @@ import {
 } from "./harness.ts";
 import { checkPractice, selectLocateAnswer } from "./browser-actions.ts";
 import { checkFaded } from "./faded-browser-actions.ts";
+import { checkSteppers } from "./stepper-browser-actions.ts";
 import { playwright, playwrightCode } from "./playwright.ts";
 
 const AUTHORING_TIMEOUT_MS = 30 * 60_000;
@@ -250,6 +251,7 @@ interface LessonReport {
   reflections: number;
   inlineScripts: number;
   fadedWidgets: number;
+  stepperWidgets: number;
   localControls: Array<{ label: string; keyboard: boolean; changed: boolean }>;
   details: number;
   tables: number;
@@ -316,6 +318,7 @@ function inspectLesson(root: string, lesson: string, objective: string): LessonR
     reflections: count(body, /class="[^"]*\bcl-reflect\b/g),
     inlineScripts: count(body, /<script\b(?![^>]*type="application\/json")/g),
     fadedWidgets: 0,
+    stepperWidgets: 0,
     localControls: [],
     details: count(body, /<details\b/g),
     tables: count(body, /<table\b/g),
@@ -358,7 +361,7 @@ const SUBMIT_LESSON = `async page => {
       if (controls.get(i)?.keyboard) continue;
       const button = buttons.nth(i);
       const authored = await button.evaluate((b) =>
-        !b.closest('form, .cl-faded-runtime, .cl-header, .cl-card-inline, .cl-card-panel, .cl-ask-pill, .cl-badge-marker, .cl-term, .cl-term-pop, .cl-contract-error, .cl-teacher'));
+        !b.closest('form, .cl-stepper-runtime, .cl-faded-runtime, .cl-header, .cl-card-inline, .cl-card-panel, .cl-ask-pill, .cl-badge-marker, .cl-term, .cl-term-pop, .cl-contract-error, .cl-teacher'));
       if (!authored || !(await button.isVisible())) continue;
       const label = ((await button.getAttribute('aria-label')) || (await button.innerText())).trim();
       if (await button.isDisabled()) {
@@ -376,6 +379,7 @@ const SUBMIT_LESSON = `async page => {
   }
   await (${checkPractice.toString()})(page);
   const faded = await (${checkFaded.toString()})(page);
+  const steppers = await (${checkSteppers.toString()})(page);
   const submitted = [];
   for (const form of await page.locator('form.cl-quiz').all()) {
     if ((await form.getAttribute('data-state')) !== 'fresh') continue;
@@ -417,7 +421,7 @@ const SUBMIT_LESSON = `async page => {
     });
     submitted.push({ quizId: await form.getAttribute('data-quiz-id'), status: result.status(), body: result.status() === 201 ? null : await result.text(), saved });
   }
-  return { errors, contract, outline, controls: [...controls.values()], faded, submitted };
+  return { errors, contract, outline, controls: [...controls.values()], faded, steppers, submitted };
 }`;
 
 /** Reload a lesson and read each quiz's state, grade, and restored answers. */
@@ -646,11 +650,13 @@ async function main(): Promise<void> {
           outline: string[];
           controls: LessonReport["localControls"];
           faded: number;
+          steppers: number;
           submitted: Submitted[];
         }>(browser, root, SUBMIT_LESSON);
         report.outline = result.outline;
         report.localControls = result.controls;
         report.fadedWidgets = result.faded;
+        report.stepperWidgets = result.steppers;
         for (const error of result.errors) report.problems.push(`Page error: ${error}`);
         for (const error of result.contract) report.problems.push(`Contract error: ${error}`);
         for (const control of result.controls) {
@@ -760,6 +766,7 @@ async function main(): Promise<void> {
         lessonsWithPretest: reports.filter((r) => r.quizzes.some((q) => q.kind === "pretest"))
           .length,
         lessonsWithLocalControls: reports.filter((r) => r.localControls.length > 0).length,
+        lessonsWithStepperWidgets: reports.filter((r) => r.stepperWidgets > 0).length,
         lessonsWithFadedWidgets: reports.filter((r) => r.fadedWidgets > 0).length,
         lessonsWithReflection: reports.filter((r) => r.reflections > 0).length,
         lessonsWithDiagrams: reports.filter((r) => r.diagrams > 0).length,

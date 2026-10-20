@@ -17,6 +17,7 @@ import { playwright, playwrightCode } from "./playwright.ts";
 import { checkPractice } from "./browser-actions.ts";
 import { checkCodeControls } from "./code-browser-actions.ts";
 import { checkFaded } from "./faded-browser-actions.ts";
+import { checkSteppers } from "./stepper-browser-actions.ts";
 import { preflightLessonInputs, readLessonInputs, sameLessonInputs } from "./lesson-inputs.ts";
 
 const [classroom, lesson] = process.argv.slice(2);
@@ -65,11 +66,12 @@ try {
     const practice = await (${checkPractice.toString()})(page);
     const code = await (${checkCodeControls.toString()})(page);
     const faded = await (${checkFaded.toString()})(page);
+    const steppers = await (${checkSteppers.toString()})(page);
     const controls = [];
     const buttons = page.locator('main[data-cl-content] button').filter({hasNot:page.locator('[type=submit]')});
     for (let pass = 0; pass < 2; pass++) {
       for (const button of await buttons.all()) {
-        if(!await button.evaluate(b => !b.closest('form, .cl-faded-runtime, .cl-card-panel, .cl-header, .cl-teacher'))) continue;
+        if(!await button.evaluate(b => !b.closest('form, .cl-stepper-runtime, .cl-faded-runtime, .cl-card-panel, .cl-header, .cl-teacher'))) continue;
         if(!await button.isVisible() || await button.isDisabled()) continue;
         await button.focus();
         await page.keyboard.press('Enter');
@@ -84,7 +86,7 @@ try {
     }
     await page.waitForTimeout(250);
     if(errors.length) throw new Error(errors.join(' '));
-    return { quizzes:await page.locator('form.cl-quiz').count(), controls, practice, code, faded, contractErrors:0, pageErrors:0 };
+    return { quizzes:await page.locator('form.cl-quiz').count(), controls, practice, code, faded, steppers, contractErrors:0, pageErrors:0 };
   }`;
   async function inspect() {
     try {

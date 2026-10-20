@@ -7,7 +7,7 @@ import { lessonRequests } from "../src/next-lesson.ts";
 import * as store from "../src/store.ts";
 import { readTeacherState } from "../src/service-state.ts";
 import { control, ensureService, serviceStatus } from "../src/service-client.ts";
-import { ROOT, TEST_MODELS, until } from "./harness.ts";
+import { ROOT, TEST_MODELS, until, directedLessonMode } from "./harness.ts";
 import { playwrightCode } from "./playwright.ts";
 export const DIRECTED_CODE_SOURCE =
   "function sum(values) { return values.filter(Number.isFinite).reduce((total, value) => total + value, 0); }";
@@ -20,10 +20,10 @@ export async function driveRealNextLesson(
   recoverPublication = false,
   activity?: { beforeRestart(): Promise<void>; afterRestart(): Promise<void> },
 ): Promise<void> {
-  const codeMode = process.env.STUDENS_VERIFY_CODE_LESSON === "1";
-  const faded = process.env.STUDENS_VERIFY_FADED === "1";
-  if (codeMode && faded)
-    throw new Error("Select either STUDENS_VERIFY_CODE_LESSON or STUDENS_VERIFY_FADED.");
+  const mode = directedLessonMode();
+  const codeMode = mode === "code";
+  const faded = mode === "faded";
+  const stepper = mode === "stepper";
   const sourceFiles = [
     "src/lesson-output.ts",
     "src/next-lesson.ts",
@@ -64,9 +64,11 @@ export async function driveRealNextLesson(
   }
   const topic = codeMode
     ? 'Create a short JavaScript function assessment, explicitly skip the pretest and teaching gate together. One objective, one data-type="code" question, one normal check quiz. Ask the learner to implement function sum(values) returning the total of finite numbers, zero for an empty array. Use synchronous JavaScript only, entry sum, a labelled starter editor with a TODO instead of the solution, 3 public function-call tests including empty/mixed/negative inputs. Use private teacher judgment criteria for accumulating every input and the zero identity; accept loops or reduce. Add two private runnable code review variants with the same objective. No libraries, network, imports, host execution or hidden tests. Do not include any other quiz questions.'
-    : faded
-      ? "Teach a short lesson on deciding whether two Rust borrows may coexist. Include one reusable .cl-faded widget with two ordered steps: identify the borrow kinds, then reason about their overlap. Declare three distinct fully specified code cases: worked, last-step completion, then all-step practice. The final case must require fresh work, not paraphrase the worked case. Use principle-focused self-explanation and compare responses for open reasoning. Use different code/values in the graded check and its private variants. Use the official Rust Book at https://doc.rust-lang.org/book/ch04-02-references-and-borrowing.html as the research source. Keep one objective, one prequestion, one later check, and two private review variants."
-      : "Teach a short lesson on shared borrowing in Rust: predict whether two immutable references may coexist. Use the official Rust Book at https://doc.rust-lang.org/book/ch04-02-references-and-borrowing.html as the research source. Keep one objective, one prequestion, one later check, and two private review variants for the check.";
+    : stepper
+      ? "Teach a short lesson on accumulating a running total. Include exactly one reusable .cl-stepper widget using version 1, domain algorithm, mode prefix-sum and values [2,-3,8]. Put it in the pretest gate outside all forms. Explain why only the consumed prefix contributes. Use different values for one prequestion, one later check and two private review variants. Keep one objective. Use the official MDN Array reduce documentation at https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/reduce as the research source."
+      : faded
+        ? "Teach a short lesson on deciding whether two Rust borrows may coexist. Include one reusable .cl-faded widget with two ordered steps: identify the borrow kinds, then reason about their overlap. Declare three distinct fully specified code cases: worked, last-step completion, then all-step practice. The final case must require fresh work, not paraphrase the worked case. Use principle-focused self-explanation and compare responses for open reasoning. Use different code/values in the graded check and its private variants. Use the official Rust Book at https://doc.rust-lang.org/book/ch04-02-references-and-borrowing.html as the research source. Keep one objective, one prequestion, one later check, and two private review variants."
+        : "Teach a short lesson on shared borrowing in Rust: predict whether two immutable references may coexist. Use the official Rust Book at https://doc.rust-lang.org/book/ch04-02-references-and-borrowing.html as the research source. Keep one objective, one prequestion, one later check, and two private review variants for the check.";
   const viewport = await playwrightCode<{ width: number; height: number }>(
     browser,
     root,
@@ -282,6 +284,32 @@ export async function driveRealNextLesson(
     if (artifacts)
       fs.writeFileSync(
         path.join(artifacts, "faded-authoring.json"),
+        JSON.stringify(
+          {
+            adoption: "directed",
+            host,
+            topic,
+            lesson: saved!.lesson,
+            receipt,
+            humanLearningEvidence: false,
+            learnerStateChanged: false,
+          },
+          null,
+          2,
+        ),
+      );
+  }
+  if (stepper) {
+    const receipt = JSON.parse(saved!.pageCheck.report);
+    assert.equal(receipt.initial.steppers, 0, "Stepper must stay behind the pretest gate");
+    assert.equal(
+      receipt.released.steppers,
+      1,
+      "Directed actual teacher must publish one exercised stepper",
+    );
+    if (artifacts)
+      fs.writeFileSync(
+        path.join(artifacts, "stepper-authoring.json"),
         JSON.stringify(
           {
             adoption: "directed",
