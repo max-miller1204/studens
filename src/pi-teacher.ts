@@ -9,7 +9,7 @@ import {
   SessionManager,
   SettingsManager,
 } from "@earendil-works/pi-coding-agent";
-import type { ToolDefinition } from "@earendil-works/pi-coding-agent";
+import type { AgentSession, ToolDefinition } from "@earendil-works/pi-coding-agent";
 import { readLessonSource } from "./lesson-research.ts";
 import { privateStatePath, safeStaticFile } from "./paths.ts";
 import type { ModelCatalog } from "./teacher-models.ts";
@@ -146,14 +146,60 @@ export function piTeacherTools(
   return {
     tools: customTools.map((tool) => tool.name),
     customTools,
-    result() {
-      requireLive();
+    fail(error: Error) {
+      failure ??= error;
+    },
+    throwFailure() {
       if (failure) throw failure;
+    },
+    result() {
+      if (failure) throw failure;
+      requireLive();
       if (count !== 1 || output === undefined)
         throw new Error("Pi teacher returned no single structured plan. Retry explicitly.");
       return output;
     },
   };
+}
+
+/** Native validation and tool lookup can fail before a custom execute is called. */
+export function observePiTeacherRequest(
+  session: Pick<AgentSession, "subscribe" | "abort">,
+  loadout: ReturnType<typeof piTeacherTools>,
+  interrupt: () => void,
+  saveModelOutput?: (value: unknown) => void,
+) {
+  const fail = (error: Error) => {
+    loadout.fail(error);
+    interrupt();
+    void session.abort();
+  };
+  return session.subscribe((event) => {
+    if (event.type === "tool_execution_start" && event.toolName === "submit_teacher_plan") {
+      try {
+        // Persist the actual arguments before the SDK's own schema validation.
+        saveModelOutput?.(event.args);
+      } catch (error) {
+        fail(
+          new Error(
+            `Pi teacher could not save raw plan: ${error instanceof Error ? error.message : String(error)} Retry explicitly.`,
+          ),
+        );
+      }
+    }
+    if (event.type === "tool_execution_end" && event.isError) {
+      const result = event.result as { content?: { type: string; text?: string }[] };
+      const detail = result.content
+        ?.filter((part) => part.type === "text")
+        .map((part) => part.text ?? "")
+        .join("\n");
+      fail(
+        new Error(
+          `Pi teacher tool ${event.toolName} failed: ${detail || "native SDK tool failure"} Retry explicitly.`,
+        ),
+      );
+    }
+  });
 }
 
 export async function runPi(
@@ -165,6 +211,7 @@ export async function runPi(
   signal?: AbortSignal,
   active?: (model: string) => void,
   research = false,
+  saveModelOutput?: (value: unknown) => void,
 ): Promise<unknown> {
   const { runtime, settings, loader, configuredModel } = await configuration(cwd);
   const selected = identity.requestedModel ?? configuredModel;
@@ -220,14 +267,27 @@ export async function runPi(
     tools: loadout.tools,
     customTools: loadout.customTools,
   });
+  const unsubscribe = observePiTeacherRequest(
+    session,
+    loadout,
+    () => scope.abort(),
+    saveModelOutput,
+  );
   const abort = () => {
+    loadout.fail(
+      signal?.reason instanceof Error
+        ? signal.reason
+        : new Error("Pi teacher request was interrupted. Retry explicitly."),
+    );
+    scope.abort();
     void session.abort();
   };
   let timedOut = false;
   const timer = setTimeout(() => {
     timedOut = true;
-    scope.abort(new Error("Pi teacher request timed out."));
-    abort();
+    loadout.fail(new Error("Pi teacher timed out after 180 seconds. Retry explicitly."));
+    scope.abort();
+    void session.abort();
   }, 180_000);
   signal?.addEventListener("abort", abort, { once: true });
   try {
@@ -252,6 +312,7 @@ export async function runPi(
     await session.prompt(
       `${prompt}${research ? "\n\nFor public web research use read_lesson_source. Classroom resources are supplied above. Return the typed lesson data through submit_teacher_plan; it does not publish directly." : ""}\n\nReturn your complete structured result by calling submit_teacher_plan exactly once. Do not answer the learner outside that plan. End your turn after the tool accepts it.`,
     );
+    loadout.throwFailure();
     if (timedOut) throw new Error("Pi teacher timed out after 180 seconds. Retry explicitly.");
     if (signal?.aborted) throw new Error("Pi teacher request was interrupted. Retry explicitly.");
     const last = [...session.messages].reverse().find((m) => m.role === "assistant");
@@ -264,7 +325,11 @@ export async function runPi(
     // provider-resolved response model. Do not present it as that attestation.
     active?.(selected);
     return output;
+  } catch (error) {
+    loadout.throwFailure();
+    throw error;
   } finally {
+    unsubscribe();
     scope.abort(new Error("Pi teacher request ended."));
     clearTimeout(timer);
     signal?.removeEventListener("abort", abort);

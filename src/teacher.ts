@@ -176,6 +176,7 @@ export const runTeacher: RunTeacher = async (
     signal,
     saveActiveModel,
     contract.research,
+    saveModelOutput,
   );
   saveModelOutput?.(raw);
   if (contract.operations.length === 1 && contract.operations[0] === "publish_lesson")
@@ -193,10 +194,21 @@ export async function runStructured(
   signal?: AbortSignal,
   saveActiveModel?: (model: string) => void,
   research = false,
+  saveModelOutput?: (value: unknown) => void,
 ): Promise<unknown> {
   if (identity.backend === "pi") {
     const { runPi } = await import("./pi-teacher.ts");
-    return runPi(identity, prompt, cwd, saveIdentity, schema, signal, saveActiveModel, research);
+    return runPi(
+      identity,
+      prompt,
+      cwd,
+      saveIdentity,
+      schema,
+      signal,
+      saveActiveModel,
+      research,
+      saveModelOutput,
+    );
   }
   return identity.backend === "codex"
     ? runCodex(

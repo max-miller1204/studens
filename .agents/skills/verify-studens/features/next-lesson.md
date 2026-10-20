@@ -116,3 +116,10 @@ The service transport keeps string/list/numeric expected answers in canonical
 types; only dynamic mapping keys use entry rows. Later refills explicitly return
 to canonical tool arguments in the same teacher conversation. Strict private-key
 validation remains authoritative.
+
+The persistent Pi request must fail on the first native SDK tool error, including
+argument validation and unknown-tool errors before custom execution. The actual-SDK
+controlled-loop regression in `test/pi-teacher-native-errors.test.ts` checks that a
+later valid call cannot rescue the turn, raw plan arguments persist before native
+validation, and an explicit retry reopens the same conversation with the failed
+history intact. This is a fixture check with no provider inference.

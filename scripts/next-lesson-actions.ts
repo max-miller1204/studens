@@ -126,8 +126,20 @@ export async function driveRealNextLesson(
         const beforeService = await serviceStatus();
         await control("/stop", {});
         const stoppedBy = Date.now() + 10_000;
-        while ((await serviceStatus()).running && Date.now() < stoppedBy)
+        assert.ok(beforeService.pid, "Owned service PID is required for restart verification");
+        const alive = () => {
+          try {
+            process.kill(beforeService.pid!, 0);
+            return true;
+          } catch (error) {
+            if ((error as NodeJS.ErrnoException).code === "ESRCH") return false;
+            throw error;
+          }
+        };
+        // Do not query the control socket while the known owner is closing it.
+        while (alive() && Date.now() < stoppedBy)
           await new Promise((resolve) => setTimeout(resolve, 50));
+        assert.equal(alive(), false, "Owned service did not exit after explicit stop");
         assert.equal((await serviceStatus()).running, false);
         await ensureService();
         const afterService = await serviceStatus();
