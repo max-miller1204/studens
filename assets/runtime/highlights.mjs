@@ -267,8 +267,9 @@ export function createHighlights({ config, contentRoot, drafts, cards }) {
 
   async function onAskSubmit(event) {
     event.preventDefault();
+    const submit = composer.querySelector('button[type="submit"]');
     const question = composer.querySelector("[data-cl-question]").value.trim();
-    if (!question || !pendingRange) return;
+    if (!question || !pendingRange || submit.disabled) return;
 
     const selector = selectorFor(pendingRange);
     if (!selector) {
@@ -277,12 +278,10 @@ export function createHighlights({ config, contentRoot, drafts, cards }) {
     }
     const range = pendingRange.cloneRange();
     const quiz = quizRefFor(range);
-    await flushDraft("ask");
-    closeComposer();
-
-    const submit = composer.querySelector('button[type="submit"]');
     submit.disabled = true;
+    showDraftError(composer, "");
     try {
+      await flushDraft("ask");
       const response = await fetch("/api/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -295,16 +294,23 @@ export function createHighlights({ config, contentRoot, drafts, cards }) {
           quiz,
         }),
       });
-      if (!response.ok) throw new Error(await response.text());
       const annotation = await response.json();
+      if (!response.ok)
+        throw new Error(
+          typeof annotation.error === "string"
+            ? annotation.error
+            : `Question request failed (${response.status}).`,
+        );
+      closeComposer();
       const answered = cards.get(annotation.id);
       const mark = answered?.mark ?? wrapRange(range, annotation.id);
       // An answer event can arrive before the pending submission response.
       cards.renderCard(answered?.annotation ?? annotation, mark);
     } catch (err) {
       console.error("[classroom] ask failed", err);
-      alert(
-        "Could not reach your teacher. Is the session that started the classroom still running?",
+      showDraftError(
+        composer,
+        `${err.message} Your question is kept. Select Ask your teacher to send it again.`,
       );
     } finally {
       submit.disabled = false;

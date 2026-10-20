@@ -160,6 +160,9 @@ raw parser causes stay in private logs. Classroom/root SSE sends no private payl
 Historical Pi card failures without a saved error or supported service retry say
 so and link to the original question. Recovery requires their previous package;
 this view never creates replacement legacy requests.
+Requests rejected before acceptance have no queued activity to invent. Their specific
+error and retained question stay in the owning composer, with explicit resend;
+see [Read and ask](reading.md).
 
 ## Gotchas
 

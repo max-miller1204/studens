@@ -15,6 +15,7 @@ import { verifyFoldersBrowser } from "./e2e-folders-browser.ts";
 import { verifyCourseMapBrowser } from "./e2e-course-map-browser.ts";
 import { verifyResumeBrowser } from "./e2e-resume-browser.ts";
 import { verifyCardBrowser } from "./e2e-card-browser.ts";
+import { verifyQuestionErrorsBrowser } from "./e2e-question-errors-browser.ts";
 import { verifyReviewBrowser } from "./e2e-review-browser.ts";
 /** Check browser state against the real HTTP server and grading tool. */
 import { browserRegression } from "./browser-regression.mjs";
@@ -387,6 +388,7 @@ await verifyReviewBrowser(artifacts ? path.join(artifacts, "review") : null);
 if (artifacts) fs.mkdirSync(path.join(artifacts, "resume"), { recursive: true });
 await verifyResumeBrowser(artifacts ? path.join(artifacts, "resume") : null);
 await verifyCardBrowser(artifacts ? path.join(artifacts, "cards") : null);
+await verifyQuestionErrorsBrowser(artifacts ? path.join(artifacts, "question-errors") : null);
 
 await verifyFoldersBrowser(artifacts ? path.join(artifacts, "folders") : null);
 

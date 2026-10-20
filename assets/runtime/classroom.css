@@ -1048,7 +1048,7 @@ mark.cl-hl.cl-hl-pending {
 
 .cl-draft-error {
   margin: 0;
-  color: #b42318;
+  color: var(--cl-danger);
   font-size: 0.75rem;
 }
 

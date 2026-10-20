@@ -168,9 +168,10 @@ export function createCards({ config, contentRoot, drafts }) {
     const field = form.querySelector("[data-cl-followup]");
     const submit = form.querySelector('button[type="submit"]');
     const question = field.value.trim();
-    if (!question) return;
+    if (!question || submit.disabled) return;
 
     submit.disabled = true;
+    showDraftError(form, "");
     await flushDraft(`followup:${annotationId}`);
     try {
       const response = await fetch(
@@ -185,15 +186,27 @@ export function createCards({ config, contentRoot, drafts }) {
           }),
         },
       );
-      if (!response.ok) throw new Error(await response.text());
       const annotation = await response.json();
+      if (!response.ok)
+        throw new Error(
+          typeof annotation.error === "string"
+            ? annotation.error
+            : `Follow-up request failed (${response.status}).`,
+        );
       field.value = "";
-      renderCard(annotation, cards.get(annotationId)?.mark ?? null);
+      const current = cards.get(annotationId);
+      const incoming = annotation.followUps?.at(-1);
+      const saved = current?.annotation.followUps?.find((turn) => turn.id === incoming?.id);
+      // A saved answer (or a later turn) may arrive over SSE before this
+      // request's pending HTTP snapshot. Keep that newer conversation visible.
+      const newer =
+        saved &&
+        (saved.status !== "pending" ||
+          current.annotation.followUps.length > annotation.followUps.length);
+      renderCard(newer ? current.annotation : annotation, current?.mark ?? null);
     } catch (err) {
       console.error("[classroom] follow-up failed", err);
-      alert(
-        "Could not reach your teacher. Is the session that started the classroom still running?",
-      );
+      showDraftError(form, `${err.message} Your question is kept. Select Ask to send it again.`);
     } finally {
       submit.disabled = false;
     }
