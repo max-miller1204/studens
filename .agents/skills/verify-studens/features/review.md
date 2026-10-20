@@ -153,6 +153,17 @@ corrections. The service fixture fails a correction and checks explicit retry af
 reload. Invalid saved state shows its specific error and `Retry review state`.
 Inspect `review-cards/pi/` and `review-cards/service/`, including `result.json`.
 
+The card fixtures also require ordinary entry, fresh/finished reloads, saved-card
+links and keyboard next/previous navigation to retain the selected card without a
+teaching-source notice or stolen focus. A later-card URL cannot bypass an unanswered
+card. Navigation preserves every classroom file hash and adds no teacher turns;
+draft saving and the two explicit submissions are separate controlled writes.
+Inspect `*-hashes.json`, `result.json`'s `fragments`, and mobile light/dark captures.
+An unknown card fragment still shows the source error and retry link; returning to
+an existing card removes that notice. The focused command is
+`node --input-type=module -e 'import {verifyReviewCards} from "./scripts/e2e-review-cards.ts";await verifyReviewCards("/tmp/studens-review-cards")'`.
+Use the [lesson-source recipe](reading.md) for valid/stale teaching destinations.
+
 The daily fixtures additionally exercise the landing buttons, a second view, two
 unrelated subjects in separate classroom groups, mobile layouts, saved drafts,
 a partial publication conflict, explicit retry after reload, unchanged original

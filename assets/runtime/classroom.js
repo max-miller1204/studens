@@ -128,6 +128,12 @@ function alignTeachingSource() {
   }
   document.querySelector("[data-cl-source-notice]")?.remove();
   if (!/^[A-Za-z0-9_.-]{1,128}$/.test(id) || /^\.+$/.test(id) || id.startsWith("cl-")) return;
+  // Review selection uses quiz IDs as fragments, rather than teaching-section DOM IDs.
+  if (
+    config.reviewScreen &&
+    [...contentRoot.querySelectorAll("form.cl-quiz")].some((form) => form.dataset.quizId === id)
+  )
+    return;
   const target = document.getElementById(id);
   if (!target) {
     const notice = document.createElement("p");

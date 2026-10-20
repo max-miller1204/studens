@@ -1,6 +1,8 @@
 /** Exercise card order, instant grading, correction, history, and recovery through the UI. */
 import * as fs from "node:fs";
 import * as path from "node:path";
+import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { ClassroomBridge } from "../src/bridge.ts";
 import { lessonDir, lessonUrl } from "../src/paths.ts";
 import { completePreparedReview, currentReview, resumableReview } from "../src/review-session.ts";
@@ -17,6 +19,22 @@ import {
   writeGradedAttempt,
 } from "../test/helpers.ts";
 import { playwright, playwrightCode } from "./playwright.ts";
+
+function classroomHashes(root: string): Record<string, string> {
+  return Object.fromEntries(
+    fs
+      .readdirSync(root, { recursive: true, withFileTypes: true })
+      .filter((entry) => entry.isFile())
+      .map((entry) => {
+        const file = path.join(entry.parentPath, entry.name);
+        return [
+          path.relative(root, file),
+          createHash("sha256").update(fs.readFileSync(file)).digest("hex"),
+        ];
+      })
+      .sort(([a], [b]) => a.localeCompare(b)),
+  );
+}
 
 export async function verifyReviewCards(artifacts: string | null): Promise<void> {
   for (const host of ["pi", "service"] as const) {
@@ -116,6 +134,35 @@ export async function verifyReviewCards(artifacts: string | null): Promise<void>
     });
     const code = (body: string) =>
       playwrightCode(browser, fixture.root, `async page => { ${body}; return true; }`);
+    const fragments: unknown[] = [];
+    const checkFragment = async (label: string, quizId: string) => {
+      const result = await playwrightCode(
+        browser,
+        fixture.root,
+        `async page => {
+        await page.waitForFunction(() => document.body.dataset.clStateLoaded === 'true' && performance.getEntriesByType('resource').some(e => e.name.includes('/api/glossary?')));
+        await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+        const state = await page.evaluate(() => ({hash:location.hash,active:document.querySelector('[data-review-active="true"]')?.dataset.quizId,notice:!!document.querySelector('[data-cl-source-notice]'),noticeFocused:document.activeElement?.hasAttribute('data-cl-source-notice')}));
+        if(state.hash !== '#'+${JSON.stringify(quizId)} || state.active !== ${JSON.stringify(quizId)} || state.notice || state.noticeFocused) throw Error('Review fragment misclassified: '+JSON.stringify(state));
+        return state;
+      }`,
+      );
+      fragments.push({ label, result });
+    };
+    const readOnly = async (label: string, body: string, quizId: string) => {
+      const before = classroomHashes(path.join(fixture.root, "rust"));
+      const beforeTurns = turns;
+      await code(body);
+      await checkFragment(label, quizId);
+      const after = classroomHashes(path.join(fixture.root, "rust"));
+      assert.deepEqual(after, before, `${label} changed classroom files`);
+      assert.equal(turns, beforeTurns, `${label} called a teacher`);
+      if (evidence)
+        fs.writeFileSync(
+          path.join(evidence, `${label}-hashes.json`),
+          JSON.stringify({ before, after, turnsBefore: beforeTurns, turnsAfter: turns }, null, 2),
+        );
+    };
     const shot = (name: string) =>
       evidence
         ? `await page.evaluate(() => window.scrollTo(0, 0)); await page.screenshot({path:${JSON.stringify(path.join(evidence, `${name}.png`))},fullPage:true});`
@@ -134,6 +181,14 @@ export async function verifyReviewCards(artifacts: string | null): Promise<void>
         ${shot("first-card")}
       `);
       const review = currentReview("rust")!;
+      await checkFragment("first-entry", "review");
+      const reviewUrl = `${base}${lessonUrl("rust", review.lesson)}`;
+      await readOnly(
+        "fresh-reload",
+        `await page.goto(${JSON.stringify(reviewUrl)}); await page.locator('form[data-state="fresh"]:visible').waitFor(); await page.reload();
+        await page.goto(${JSON.stringify(reviewUrl + "#review-2")}); await page.reload();`,
+        "review",
+      );
       if (host === "service") {
         const draftFile = path.join(lessonDir("rust", review.lesson), "drafts.json");
         fs.writeFileSync(draftFile, "{invalid");
@@ -183,6 +238,7 @@ export async function verifyReviewCards(artifacts: string | null): Promise<void>
       `);
       if (turns || !resumableReview(currentReview("rust")!))
         throw new Error("Correct closed card used a model or completed the unfinished review.");
+      await checkFragment("first-feedback", "review");
       const duplicate = await post("review", "r1", review.items[0].key);
       if (duplicate.status !== 409 || !(await duplicate.text()).includes("already graded"))
         throw new Error("A repeated card created a second grade.");
@@ -197,9 +253,26 @@ export async function verifyReviewCards(artifacts: string | null): Promise<void>
         await page.setViewportSize({width:375,height:812});
         if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)) throw new Error('Cards overflow mobile.');
         ${shot("mobile-card")}
-        await page.locator('form.cl-quiz:visible button[type="submit"]').click();
-        await page.getByText('Review complete · 2 of 2 answered', {exact:true}).waitFor();
       `);
+      await checkFragment("second-draft", "review-2");
+      await readOnly(
+        "saved-card-navigation",
+        `
+        await page.getByRole('button', {name:'Previous question',exact:true}).click();
+        await page.getByText('Question 1 of 2 · 1 answered', {exact:true}).waitFor();
+        await page.getByRole('button', {name:'Next question',exact:true}).focus();
+        await page.keyboard.press('Enter');
+        await page.waitForFunction(() => document.activeElement?.classList.contains('cl-quiz-title'));
+        await page.goto(${JSON.stringify(reviewUrl + "#review-2")});
+        await page.locator('form.cl-quiz:visible input[value="old"]').waitFor();
+        if (!await page.locator('form.cl-quiz:visible input[value="old"]').isChecked()) throw Error('Direct saved card lost its draft');
+      `,
+        "review-2",
+      );
+      // This explicit submission is a controlled write, separate from navigation receipts.
+      await code(
+        `await page.locator('form.cl-quiz:visible button[type="submit"]').click(); await page.getByText('Review complete · 2 of 2 answered', {exact:true}).waitFor();`,
+      );
       if (host === "service") {
         await teacher.idle();
         await code(`
@@ -227,6 +300,45 @@ export async function verifyReviewCards(artifacts: string | null): Promise<void>
         if (await page.locator('.cl-lessons a[href*="/reviews/"]').count()) throw new Error('Review is in the lesson list.');
         await page.getByRole('link', {name:'Review history',exact:true}).waitFor();
       `);
+      if (host === "service") await teacher.idle();
+      await readOnly(
+        "completed-reload",
+        `
+        await page.goto(${JSON.stringify(reviewUrl)});
+        await page.getByText('Review complete · 2 of 2 answered', {exact:true}).waitFor();
+        await page.reload();
+      `,
+        "review-2",
+      );
+      await readOnly(
+        "completed-direct-first",
+        `await page.goto(${JSON.stringify(reviewUrl + "#review")}); await page.reload();`,
+        "review",
+      );
+      for (const theme of ["light", "dark"]) {
+        await readOnly(
+          `completed-mobile-${theme}`,
+          `await page.setViewportSize({width:390,height:844});
+          await page.evaluate(theme=>localStorage.setItem('pi-classroom-theme',theme), ${JSON.stringify(theme)});
+          await page.reload();
+          await page.getByText('Review complete · 2 of 2 answered', {exact:true}).waitFor();
+          if (await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth)) throw Error('Review overflows mobile');
+          ${shot(`completed-mobile-${theme}`)}`,
+          "review",
+        );
+      }
+      await readOnly(
+        "unknown-card",
+        `
+        await page.evaluate(() => {location.hash='review-999';});
+        await page.locator('[data-cl-source-notice]').waitFor();
+        if (!await page.locator('[data-cl-source-notice]').evaluate(e=>e===document.activeElement)) throw Error('Missing source lost focus');
+        await page.getByRole('link',{name:'Retry loading source section',exact:true}).waitFor();
+        await page.evaluate(() => {location.hash='review';});
+        await page.locator('[data-cl-source-notice]').waitFor({state:'detached'});
+      `,
+        "review",
+      );
       if (
         resumableReview(currentReview("rust")!) ||
         store.listSubmissions("rust", review.lesson).length !== 2 ||
@@ -277,6 +389,7 @@ export async function verifyReviewCards(artifacts: string | null): Promise<void>
               review,
               turns,
               corrections,
+              fragments,
               submissions: store.listSubmissions("rust", review.lesson),
               grades: store.listGrades("rust", review.lesson),
               storage: lessonDir("rust", review.lesson),

@@ -122,6 +122,10 @@ with explicit Retry and lesson-start links; it never guesses a replacement. Insp
 `stale-held-source-hashes.json` and `stale-source-retry-hashes.json` alongside actual
 viewport bounding boxes. Published full-page captures reset scroll to the top.
 
+Existing [review card fragments](review.md) belong to review navigation and must
+not produce a missing teaching-section notice. Question-card and search fragments
+retain their own `cl-` destinations; Saved marks revisit their anchored ranges.
+
 Following a glossary source closes its dialog, including a source in the current
 lesson. Retained native output checks must assert the dialog closes before reload
 and focus reaches the actual teaching section; reloading alone can hide this bug.
