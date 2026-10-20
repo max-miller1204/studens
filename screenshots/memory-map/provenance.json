@@ -1,370 +1,1051 @@
 {
-  "base": "67092d07d143050caa6648de5a8280164ce05f96",
-  "afterSource": {
-    "base": "67092d07d143050caa6648de5a8280164ce05f96",
-    "head": "269973315a22dd80358f30a601bbb4fb7cbf79ab",
-    "tree": "a5103b30671f23d6ba93542e1f60ed311551a0c0",
-    "range": "67092d07d143050caa6648de5a8280164ce05f96..269973315a22dd80358f30a601bbb4fb7cbf79ab",
-    "commitCount": 3,
-    "recordedAt": "2026-10-20T06:28:11.910008+00:00",
-    "gate": "/tmp/studens-issue26-20261020/verify-integrated",
-    "scope": "Change: memory map read projection and additive shared teacher input field; real pi/claude/codex gates required",
-    "files": {
-      ".agents/skills/verify-studens/features/README.md": "eaff9520372dffb62860cc06b41de637759c37bd81c6e720150221f1499304f0",
-      ".agents/skills/verify-studens/features/review.md": "1aef5dda5b125e6282be494f219c89868957115a612dfb2b7ba5c14802f862ae",
-      "assets/runtime/classroom.css": "787288f81b0307400ffe7743d98097303bab9871b85a5751ad16f500896d4de2",
-      "docs/EVIDENCE.md": "b2156444a3af05872d1eb8d170e8fd4f41397be1eece2198d099e1073e5cc61f",
-      "scripts/e2e-browser.ts": "a5962c280d0738e7929e277fb054c562442dfadb5ae7c35622787933f7df19e0",
-      "scripts/e2e-memory-map-browser.ts": "56937b8ddf7268c4d29f5c426af8361828369696716881428d426353902da8e7",
-      "src/memory-map.ts": "30962b255957dc02cf2938c18c8cc25966790a1b4065ba683b7b3b146ed353e0",
-      "src/pages.ts": "7ee1095e35b419fbc8b3428fd8c3ef9aa90936a864ff2908e12201abb1b547de",
-      "src/review-session.ts": "f4df0714ad4f71989d43a95e0e0881584979ffd1fdb77924fac4e2a118ba3bc8",
-      "src/review.ts": "8d403841f9ce18aaf1a99affa8a137bcc1b036b68d2ddcc24d32dc5d143ae0a3",
-      "src/server/course-map.ts": "811f58349975b9aa7ed98926f0404eca83f17776d1d2acb7f2bc58e9ef76a522",
-      "test/memory-map-fixture.ts": "0b8e815299fbcc653952aa192ac8ee3a3b87a0a4f50c7a67dfdc2888ff2de3cb",
-      "test/memory-map.test.ts": "7c4b705ac437153e28dd972b0c831297d8dd0fa29ae0325a57a01213555f18ab",
-      "test/server.test.ts": "960dafbb5348832e1468b6212a70f72d6d1503f6741d8042abc00a018e736af5"
+  "issue": 26,
+  "mode": "Change",
+  "acceptedBase": "bd7d21f5d6dd5bf097cfd3bbc8827675f987d339",
+  "frozenRuntime": "0d398dcca10e36764c7290d51e48afbf184985c7",
+  "runtimeParents": [
+    "bd7d21f5d6dd5bf097cfd3bbc8827675f987d339",
+    "2f565fd36b0477e89e405ff7bbead6a4bd28912d"
+  ],
+  "version": "0.11.11 inherited unchanged",
+  "capture": {
+    "fresh": true,
+    "fixedClock": "2026-10-20T12:00:00.000Z",
+    "desktop": [1280, 900],
+    "mobile": [390, 844],
+    "themes": ["light", "dark"],
+    "primaryState": "same saved Rust history, closed disclosures, scroll top",
+    "supplementalState": "explicit closed review correction plus expanded reason, long objective, empty classroom, malformed saved event/explicit retry",
+    "fixtureOnly": true,
+    "modelInference": false,
+    "pixelEditing": false,
+    "allTwelveInspectedDirectly": true,
+    "stickyHeaderStitchingArtifact": false,
+    "baseline": "git archive exact accepted base; only current memory fixture helper copied, no product edits",
+    "after": "current package, external driver retains product assertions and adds ownership receipt/scroll-top capture"
+  },
+  "images": {
+    "after-correction-mobile-dark.png": {
+      "sha256": "bcdb8a7d39485bb68d1637151700e0da44d94dc6dc3f6c4ddc5677f3786570fa",
+      "bytes": 519024,
+      "capturedAt": "2026-10-20T13:25:58.899139+00:00"
+    },
+    "after-desktop-dark.png": {
+      "sha256": "c8cdd7078f46bc4625012e3d6b7a3ee62d144b9413f937f8d875c1028fa84f05",
+      "bytes": 448215,
+      "capturedAt": "2026-10-20T13:25:53.764146+00:00"
+    },
+    "after-desktop-light.png": {
+      "sha256": "73e3df846e9744facf0d050abe2d0307578d37950b8baaf061b013a8c4977140",
+      "bytes": 438433,
+      "capturedAt": "2026-10-20T13:25:53.474146+00:00"
+    },
+    "after-mobile-dark.png": {
+      "sha256": "8f2ebc093d44d854a26162f1c02cc8e495dcf933ce4bcbfe83cef3c7ae1b681c",
+      "bytes": 452173,
+      "capturedAt": "2026-10-20T13:25:54.282145+00:00"
+    },
+    "after-mobile-light.png": {
+      "sha256": "d377baa7332c91a1f041af2f1fe905b54d13027f59dd244e5ea920b17295ab19",
+      "bytes": 441442,
+      "capturedAt": "2026-10-20T13:25:54.038146+00:00"
+    },
+    "before-desktop-dark.png": {
+      "sha256": "78ddfd5b2af5675e12297b4a264371d2ac3d37f5ef16225c4f08bfdf2aecce49",
+      "bytes": 187912,
+      "capturedAt": "2026-10-20T13:24:12.814291+00:00"
+    },
+    "before-desktop-light.png": {
+      "sha256": "d3ea24e7a5acd43551fd7fb699b2313f8824bbe003d9e9eea360dcf67e693ff1",
+      "bytes": 182823,
+      "capturedAt": "2026-10-20T13:24:12.645292+00:00"
+    },
+    "before-mobile-dark.png": {
+      "sha256": "8c9f963c8e31b377f5afa0cc78bdc9e73ab1f32f682c4d8b7b7fbf9452bc8813",
+      "bytes": 186036,
+      "capturedAt": "2026-10-20T13:24:13.109291+00:00"
+    },
+    "before-mobile-light.png": {
+      "sha256": "944ce19d2fc134efb761cb9bac2ba70520797250024d2a0b4e3e5ca42a169b25",
+      "bytes": 180337,
+      "capturedAt": "2026-10-20T13:24:12.984291+00:00"
+    },
+    "empty-mobile-dark.png": {
+      "sha256": "4ca1a430b5f051b38fa57820dbed98874a1c4b501e75a683cdf732c7fe41a035",
+      "bytes": 191556,
+      "capturedAt": "2026-10-20T13:25:54.761145+00:00"
+    },
+    "invalid-history-mobile-dark.png": {
+      "sha256": "7b674833171d632c91f87c8f021070b799a12c85fb9565468544072e4c620c17",
+      "bytes": 31335,
+      "capturedAt": "2026-10-20T13:26:00.850136+00:00"
+    },
+    "long-objective-mobile-light.png": {
+      "sha256": "d9a3c4f6f71f6329eeff2a43073ac7a0329f4f30671a4504610194b961a0f5b4",
+      "bytes": 249551,
+      "capturedAt": "2026-10-20T13:25:55.271144+00:00"
     }
   },
-  "scopeVerdict": "FAIL: required Pi and Codex native targets failed; successful UI/default scope does not cancel them.",
-  "actualNode": "v24.22.0",
-  "declaredNodeMinimum": "22.19.0",
-  "dependencyChanges": false,
-  "bootstrapChanges": false,
-  "productionFirstStartClaim": false,
-  "savedFixtureClockUTC": "2026-10-20T12:00:00.000Z",
-  "matchingReplay": {
-    "base": "67092d07d143050caa6648de5a8280164ce05f96",
-    "after": "269973315a22dd80358f30a601bbb4fb7cbf79ab",
-    "items": 8,
-    "everyOriginalReplayFieldEqual": true,
-    "addedFieldOnly": "gapOpen",
-    "scope": "Matching Rust history; baseline has Rust and empty classrooms, after also seeds unrelated many/long/future fixtures. Actual shown Rust allowance/cap/used/deferred equal. Baseline push hooks and after service-fixture hooks both show no pending teacher. Neither calls a model."
-  },
-  "mediaDriver": {
-    "baseDriver": "scripts/e2e-memory-map-browser.ts",
-    "derivedSHA256": "064c8b85df491866ce2f9d4d8393d5cb1ac6ad2f0079560dbfa6af1dd5efa6ff",
-    "changes": [
-      "Pi fixture owner only for media",
-      "Absolute imports into current frozen checkout",
-      "Scroll top before all screenshots"
+  "source": {
+    "acceptedRuntimePathsByteExact": 182,
+    "changedExistingRuntimePaths": [
+      "assets/runtime/classroom.css",
+      "src/pages.ts",
+      "src/review-session.ts",
+      "src/review.ts",
+      "src/server/course-map.ts"
     ],
-    "reason": "Integrated correction screenshot had sticky header within full-page image from prior scroll position; refresh media on frozen source without repeating default/model targets.",
-    "productSourceChanged": false
+    "metadataAndDependencyGraphExactBase": true,
+    "runtimeHashes": {
+      "assets/runtime/anchor.d.mts": "c67cda2479f7c2a0e83b5b3a55aa40fde5bcad959badf9f1310b2514e7062136",
+      "assets/runtime/anchor.mjs": "8b4ec2663b8e7d36a6a2a102374c879372785bb477c20be58290750081447f11",
+      "assets/runtime/cards.mjs": "359ded404eff8f985dd1cb406ffe4b7ac0fdd66d71d0846189e85636b298c02b",
+      "assets/runtime/classroom.css": "7439c0cddec48f7828c36aa022ada120372cc7bc71dda971ea9f228e6d3de395",
+      "assets/runtime/classroom.js": "ffdc5a7e01c63632609c436590c73780185963dedf5d1f2441aa3dbe1af45882",
+      "assets/runtime/closed.d.mts": "99fd541e68e0c7771a69844ede1302ad76f32f1325da3b64a4f3393fb0abba71",
+      "assets/runtime/closed.mjs": "01d95315420768408a59ee853ac5172b6632bbc86ff5df940e023ee767da7fbb",
+      "assets/runtime/code-ui.mjs": "dc99d60aed8b1e5aa33af58eb2575cdd137d247f6e1746a099401b2887f6fc95",
+      "assets/runtime/code-worker.mjs": "5813c1d76a65f116aa49663d7671fe61bf93da0a43f83d5e406eba44cff01868",
+      "assets/runtime/code.d.mts": "45ab3ce4dfdf9eca8e952d80b08e43ba3094396f90ba1ded511684e93f86d640",
+      "assets/runtime/code.mjs": "bd205d0566b64df01e8008a3436724914fe095cb750640ed6aa3fef5d687204f",
+      "assets/runtime/daily-review.mjs": "8cda37d249d0694a67e227cb4ab8d5fdb53e4482e29df091432a243a2ec5cdef",
+      "assets/runtime/diagrams.d.mts": "224e82866acac51e94399172db899fa50337fb4af3217cda7c7527c358c095a7",
+      "assets/runtime/diagrams.mjs": "7554ed3d1eb7aec318bd06d7ddfb31c0c6e78b132e5eb23c1588732fc97b31c5",
+      "assets/runtime/draft.d.mts": "f7ad171ab54c50bbb534bb3ac1013183b4284c6888e9de8af87eaab2b6be23b4",
+      "assets/runtime/draft.mjs": "b8918a4aca9471bc25cf28204493adbb0ca9915c8b84ea7d652f26a8506a68d1",
+      "assets/runtime/drafts.mjs": "4792d46444f6c88f63dbf3f540602110eb5c877fc5a6e489fd2cc4e438ea339c",
+      "assets/runtime/expected-answers.mjs": "56b1c9f6a53771c2f2bb3ae61d4e3743a29712b9a2f020fce6ca233b8aab00ab",
+      "assets/runtime/faded.d.mts": "ac1455e496939ec8f368d9357ddbe405d90ecc51578fa5919fe7c84d5e60355e",
+      "assets/runtime/faded.mjs": "3cd767f6155b42f6e3ddc71cf5f67fffb3e020f1e6a4bf91ee331f0d9c371f0e",
+      "assets/runtime/glossary-ui.mjs": "32a95762669619040bac820075b5b10f8d151e2d518eca7039beda9a98de3003",
+      "assets/runtime/glossary.d.mts": "2eab8eebaa9794a4b7a04671851c25244218d240e9add5b3f2ef08832d032df3",
+      "assets/runtime/glossary.mjs": "ed6646337179eb38cf1f8d79c3118459a3c43cd04399f9ed7ee009cdf086ebbd",
+      "assets/runtime/grade-disputes.mjs": "df08151b34d2439463c0b86a55101ff41ab2f7d53de3a7936bb98c3670956c16",
+      "assets/runtime/grade.d.mts": "6ea39c663e726531b520f1949cb41dbda876cf3b6f325f7c602b40bca33ff584",
+      "assets/runtime/grade.mjs": "2ad7e4c69d5ab347683762878eff05dc2adc728be4cfec86c67653d79ba9998e",
+      "assets/runtime/highlights.mjs": "2c0a2d3e9f3488f5a987131fa522612b3d175abc0f244fed7ddd13edde834208",
+      "assets/runtime/learner-marks.mjs": "9e74e64bb96819baa8e6e02263e881dd0621fb94adec35cc4c4239fa179c69ea",
+      "assets/runtime/lesson-dom.mjs": "28d099a47499b3f75448b5479565cf98313d1563d63cb91a1ceeab5f4f3d95b0",
+      "assets/runtime/links.d.mts": "c14500e76ec2e1dd2db7e693c2ed65032c3fc3a8faed58183250b926995ff8ea",
+      "assets/runtime/links.mjs": "08ee6574901d063cf97238c8f6d3fb2523748cca0ce982476aead9d7756d3e84",
+      "assets/runtime/math.d.mts": "613a7e9d567ba1e7e8c6a75cfaf71627e6f1116f9a275b46925466287912620d",
+      "assets/runtime/math.mjs": "89407bef4cbee6878adeb008a96dd0893daefe765d774f67ce4523a0d2085bb5",
+      "assets/runtime/practice.d.mts": "12c6e7286ed2aa9b1a92b69a00ad32ed3427dd5a03b32571c3e6896361842942",
+      "assets/runtime/practice.mjs": "b9ebba2aac1bcaf704d4aa128de0b19502ae39bd750ac32e4c280cbef3805cbd",
+      "assets/runtime/quiz-ui.mjs": "a26402b5d2d159100a6c2a76a61b03b545d186c8c46f231997be3658ac3702c2",
+      "assets/runtime/quiz.d.mts": "09bea30e829f87506ed781b02dc6fbbbacf6136242dcb0365dbcf2d0f057c7c2",
+      "assets/runtime/quiz.mjs": "ff9d7b86e0631995d41fd018e0640993efb65a9599b37a35c94848d4a4903751",
+      "assets/runtime/reflections.mjs": "e902bb93dd4a3918b6bac023300345a2ca2e2d114e69c289f40176d22038005b",
+      "assets/runtime/review-controls.mjs": "2eb2c0e21f44e612cadd46e2362ddac407f4d34f0b30e19cefa801f8bc8b2ebb",
+      "assets/runtime/review-screen.mjs": "d6b888fe2204bd9751347e72f03234112a9072592cdb7efe6b8862a5b80b81cb",
+      "assets/runtime/search-source.mjs": "971ac8cc99e75cae7d54449f2ab7fac13211977aff383b4bef3ac20a558c8814",
+      "assets/runtime/settings-error.d.mts": "ce69d0602447c76d5c703d1574afb711cd4edbc88e2a3758d2a19df16f321d3f",
+      "assets/runtime/settings-error.mjs": "a9ca988cf1cdc832ce978eecac8ce37bc90a61218d2a9b5b2cdaf2530b7265c8",
+      "assets/runtime/settings.mjs": "bee94624c73c13d8d5a9fe4fbd64373a815c49012a69a1084ee1472590dfe5b8",
+      "assets/runtime/shell.js": "4bed02b6f4ddcca56a0ce270a5c2ea98a709237701088b7304fbad7d06a42998",
+      "assets/runtime/stepper.d.mts": "c4b7ad5ba69bd2fddc0986aa099f017afce52416fe29835fd5217d02b5df8920",
+      "assets/runtime/stepper.mjs": "b70cbd188bb499ee6f7d2332d2812fd9ff03f6d7173bb08db30ac3f6984e25bf",
+      "assets/runtime/teacher-activity.mjs": "66338570b581978a41973a1228252695abd5db64253c553bc6299ef74f69f016",
+      "assets/runtime/teacher-panel.mjs": "48c91104faec9ea712b144b90ec110b35ff0157869877556a6a16ceb687e2e79",
+      "assets/runtime/theme.mjs": "4b845fb937bc85f16ebec8c8866b94e76831e05c82c282f44905c0b77c3b903e",
+      "assets/runtime/vendor/mermaid/LICENSE": "ec9fb67dcb25eccc416ed56e1aab819222c805a2a4bfe4cb19e7556bf2ffde80",
+      "assets/runtime/vendor/mermaid/VERSION": "a712c758275b460d18fa77a26ed3589689bb3f69dcc1ea99b913e32db92a5cd2",
+      "assets/runtime/vendor/mermaid/mermaid.min.js": "6484afc32872a3aa16cac9a76ba1816a1ed4cc870a6593cc2e17757750f518b2",
+      "assets/runtime/vendor/quickjs/README.md": "fef0be8923e7127a0dcf1d6425ae352ebddbdc4439b69bdd6bd79106862881da",
+      "assets/runtime/vendor/quickjs/VERSION": "e0ccf7913110f807adecc59be43ce6fb334f82a8a7f70f70fbbba34bf1eeaaf2",
+      "assets/runtime/vendor/quickjs/core/LICENSE": "3c6040aa318612a234cc951609b640c0c63d85ae5a98a9330d3116f1553a79db",
+      "assets/runtime/vendor/quickjs/core/README.md": "faeaa118e2cb9509f6ce05ffd397071d0c55a0a5ab0c1b7a1489577616354e1d",
+      "assets/runtime/vendor/quickjs/core/chunk-TAV5CUKK.mjs": "b423c720a9deef215b404e4ee212533bcef9de785a11f44aacf1ad8266ae6769",
+      "assets/runtime/vendor/quickjs/core/chunk-V2S4ZYJR.mjs": "fbf44a344aeaff0de89c9bbcb9a15037d8c9b66a532ee32f702b6ecbace0ae5d",
+      "assets/runtime/vendor/quickjs/core/index.mjs": "e8d69a97550f1a860f70e35b4b79d19da89390bd99454a9bbb5db36426bc78de",
+      "assets/runtime/vendor/quickjs/core/module-ES6BEMUI.mjs": "289a200ab91f855ed79f75147eb674b81cea7adf032f9344bd8b29ff5e7a7d43",
+      "assets/runtime/vendor/quickjs/core/module-asyncify-2EFITU5U.mjs": "c8cec04532f68af9aa436ad117defdc686d36a1670691d98cea9263345ba7b2b",
+      "assets/runtime/vendor/quickjs/ffi-types/LICENSE": "3c6040aa318612a234cc951609b640c0c63d85ae5a98a9330d3116f1553a79db",
+      "assets/runtime/vendor/quickjs/ffi-types/README.md": "808124bff16606acac21b74e72017c201200b370f62064dcd61baefbaa5470d6",
+      "assets/runtime/vendor/quickjs/ffi-types/index.mjs": "5b6ccfe50a0d0066411135c66964b0c15c05167f5324df2e8066493da807efbe",
+      "assets/runtime/vendor/quickjs/provenance.json": "2c6c07fb5806076ebfe55b45e0b44afb84a2ed6f9bfa5f5f1a1ca40e86e3ef34",
+      "assets/runtime/vendor/quickjs/variant/LICENSE": "446a69ae534aa8612d8b16d3bfc670c5a5050597dca3ce9820441a60d5d04fbb",
+      "assets/runtime/vendor/quickjs/variant/README.md": "88cd889414f28608308243945132237c98935903f93a4dfa9ba1f6944c749a1d",
+      "assets/runtime/vendor/quickjs/variant/chunk-FGV2HSCH.mjs": "6dd70060dcfcda101ba8d51cb4b341cc66fef2a58c07ea524b8ef508fd359e32",
+      "assets/runtime/vendor/quickjs/variant/emscripten-module.browser-XIKQQPVU.mjs": "49c171aa6ee9c782f40229c95cdfaeb282b6740dd8eea4cc8e655986276a766a",
+      "assets/runtime/vendor/quickjs/variant/emscripten-module.browser.mjs": "87a860137228c270aec26d601e5cc7756a30bb5620d3bea3c577ff490d766337",
+      "assets/runtime/vendor/quickjs/variant/ffi.mjs": "3678ed1b43d0751000dad1cda02dc2c7b558677bb2a9fac9c8f49d3b68f0c3a3",
+      "assets/runtime/vendor/quickjs/variant/index.mjs": "072f5a7f068718538805c1750871da9d90ef95aa7f7c9fc13cc1a1853081943d",
+      "assets/runtime/vendor/temml/LICENSE": "12b4e5592a12baaf50637881f2cb9d66667b26b8d51a73cd8f0d6bcefe176ab6",
+      "assets/runtime/vendor/temml/Temml-Local.css": "544f4e3fee4c36f4568e4f145fa626dc9573c5f4c96c523aadcc433c3989a239",
+      "assets/runtime/vendor/temml/Temml.woff2": "fc70501355ae6d38ff0b80f825af153557d5f2f474198d6b9b7dd2d3a291a0cc",
+      "assets/runtime/vendor/temml/VERSION": "065582655aacd6fc83ff742a5715c04bb4a57395bf3ee4559798fa42c2ce4589",
+      "assets/runtime/vendor/temml/temml.d.mts": "ca57c8d133b734b51a9b6728f92448e6de3992104879e31e50e9d23389e8526c",
+      "assets/runtime/vendor/temml/temml.mjs": "09e55a0c364d35b8ef66be49486b90884240a7e66c463a825e096faf27b0d59d",
+      "src/assistant-text.ts": "d9db06380fc45037f637c70ddb8445b53adcf347753c2149478bb76b43eaad0d",
+      "src/authoring-evaluation.ts": "094616a045066100af01aacde94d0833a321b33e46a03bf185cfa1e101405691",
+      "src/authoring-html.ts": "067172368b65a02e22aec11a5044a995bbf2625280d90e0b191c4e286580db5f",
+      "src/bridge.ts": "4ab7c8d600d6e50c4c3c9519ce56562ab71376cfc93277dcf490cf2690bbc237",
+      "src/classroom-export.ts": "68b1761ac6498242401c75c09bed246eab913db0a038b27a8333eb755d8077aa",
+      "src/closed-grading.ts": "040c152b83762e9eb9e8692fc39a8d5c1ea6a14ef8cfa1e7b69591a77621421a",
+      "src/code-questions.ts": "96c746201a0748d4909549e2d0ba02bab269036cd527a676739ca34d301151bd",
+      "src/commands.ts": "6a9b408b22f4e21e69c0fe34602f1837902165981cbe95cfaa8ae3f03639b464",
+      "src/config.ts": "a07092882161c58f21a0fba790ed2a05b76bb0cc8789687e64589bec5919afeb",
+      "src/criteria.ts": "d25269dcbea44f0da5bb312693c3868b357f2104b9224f592dc70020d3f8a3be",
+      "src/evidence.ts": "24c0327aeaaa56fe5c871ffe35d89c7d372fcad24bf40b33f390248f5e19e4d7",
+      "src/expected-answers.ts": "017fa86778f882da917da7d448ffdb7a15dcb3488b8908c20681d7e7b2bc0886",
+      "src/export-anki.ts": "b509100772417af55350f122148c35bade763ec1b15c342aff851ef769857570",
+      "src/export-content.ts": "541178178231c3375c8ee29c295cfd51cba8eaa1ccc341b92d6cd034a1a01397",
+      "src/glossary.ts": "1e70ca70b5b2a8269444c0abfc9d0f92d0b6b28dadfa46511202f292536ed294",
+      "src/grade-dispute.ts": "dbf9f7579e61b28cf28e77628b245906fc5a959d75b9e381f444358962ec553e",
+      "src/health.ts": "31993774d7f17e6c91f36a27d873cca4782088b4a1686694c0cd2a009351d252",
+      "src/json-object-stream.ts": "ad47191e49c453ff110dc2abcd910126b451829f4611c14b8ba2d6b80fe1d177",
+      "src/lesson-contracts.ts": "ca5577358a8e86fc1ce491b693599a3d503662ab536f16b83a6ec9b5c7a96cae",
+      "src/lesson-html.ts": "b73968e540c1a8d8e8ff2e235bfdff204f32124e51e4b2934eed7793fe9e3244",
+      "src/lesson-output.ts": "68d693db3b5d24aca02681d370f5529ef0db00baaf5b9ea253a066cb3e4206d1",
+      "src/lesson-research.ts": "46305125717468db40d18a61ba12f44143b0a79aa2d30344291fa9df0143ebe9",
+      "src/lesson-sources.ts": "c3d3117519cadc55d13cf7c006ff54ca72067c9e5c40b66a367be2c59f3f375a",
+      "src/markdown.ts": "5dc187f05f76259c4cd3ee0479cb46db1e01a2354d64c1b21e9775a3e73ed318",
+      "src/mcp-stdio.ts": "36676c5e776bee27b38b93297fe4185a80872a38a9de3351ea6b08e44aff27dd",
+      "src/mcp.ts": "c51cb61f56df4b4a0583a84747bf3a952d32148774fbcedefa51fb06cd6a501a",
+      "src/mission-map.ts": "2069247d080c6c9ae58687952450b9b0efbd0a178833753674849adf319c5687",
+      "src/next-lesson.ts": "8c459edd77a605a4015bb5d678f9b09f8781212beeed45972df7761d935a898e",
+      "src/pages.ts": "9a07e5c6745342b75e46859ef559ca6b72ef71f619ea823578effcc994469eb8",
+      "src/passage-answer.ts": "7e5c614245236e0c67be33d2056c744f38e54d6fffdb6ee4ccfbf97618072b7a",
+      "src/paths.ts": "46ce2d290b6c8837a22106080881c521b79a3a37ba88be458f792783be505fc5",
+      "src/phone-access.ts": "b6f23f9f8f55ad25c729f48a01502e9fa74f5ebe743ac08104dc8c3b6b10d9dd",
+      "src/pi-service-client.ts": "09fc4ae889c551e7f91a7077b2f309b0a67df371d35b24cd2c2a226cb5c05b02",
+      "src/pi-teacher.ts": "b430d4e6d16abb06d6122b3829c76ae6424a9bdeb956f168833cfc8e289a6610",
+      "src/pretest.ts": "23f8214659ce13d76947b18398c8ac59b952b7612d9d02b3bd25a784aabd8a54",
+      "src/prompts.ts": "2ca0536e6cd9285fa9bf4c976e53bef19b65e667026993fbffebe338ad361a32",
+      "src/public-state-errors.ts": "970b1fce4f947784af823c29df71e3f46d0bd996452ee3ce47bbea7942abcc7a",
+      "src/quiz-authoring.ts": "3a4667cec7468c4b684ebb33f6c95156532c366a30d1eb4ba7379d276f86d759",
+      "src/quiz-grading.ts": "f4624c034886ffa8517a79f1da1ccbe3df83c5b288f8b03cbfb75b8769503e86",
+      "src/quiz.ts": "5a29ea54fcdfa0320557b02bbdc9e9c5b4be898cbc84dc201abdd4f70245cd7c",
+      "src/reteach.ts": "2ae2c3c78bd2252bce85c2f8eafc2aecd08c255843f1eed050581d5f495e4fb9",
+      "src/review-lock.ts": "a33ed26b2c1a813e8bf10faefecff78712c941f89d634ba9a0477031da0446f5",
+      "src/review-memory.ts": "ddee69e1a3c60af885e00b68b705b0e1788c80e7bde0e3cc735b351e22065a6c",
+      "src/review-pool.ts": "d068002dce59650bddff52a7b4cd3672da5faef9c1de55b2969f605eeb48bf64",
+      "src/review-refill.ts": "76316955eada004fbae3f2ce02360e56707e196cad5590e466f4dd24b410adf6",
+      "src/review-session.ts": "f4df0714ad4f71989d43a95e0e0881584979ffd1fdb77924fac4e2a118ba3bc8",
+      "src/review-variants.ts": "8a03203bd2c4425b65f83f0b6a22f000e7fb68e0ad84526dca2108176941a65b",
+      "src/review-workload.ts": "1eab248d1ae0b09868c886f0b2cb51cd1bfb612312b9c1fddefd8977a0342f1c",
+      "src/review.ts": "8d403841f9ce18aaf1a99affa8a137bcc1b036b68d2ddcc24d32dc5d143ae0a3",
+      "src/rubric.ts": "c74017cf3e11d3ed6bb8b689041a185aac80f1f3ef464aea6845ca8ea9d344ae",
+      "src/search-passages.ts": "0826ec22cbbaacc302d20d95af81192f93b0c1f79a546ff17ec5cc43748b155e",
+      "src/server.ts": "cb41b508b5d077d600ceb9558c31b3b187d726e8af0bef349a875d38822358a6",
+      "src/server/activity.ts": "2f8e378aff631fd5031f9d7b204d2e2f9ccddd8cd0ce88063c6747eed207c86a",
+      "src/server/annotations.ts": "4bf34e648340663acaae1d24a512de70f75b2f1ebb6ad5e62b4f035569937b0d",
+      "src/server/api.ts": "3a54357d3a822fee57e3468f99723640cabeeeecfc5ff38176f24eb3f450ab93",
+      "src/server/classrooms.ts": "e3fe0035f2540472304455355382aaf6d5eb8e769a95c9457ef64ded542e0a3f",
+      "src/server/course-map.ts": "811f58349975b9aa7ed98926f0404eca83f17776d1d2acb7f2bc58e9ef76a522",
+      "src/server/daily-review.ts": "42222c32b6f7287c89c1e9c13cb52d600d2f9790e31b0dd10b05daeda31ac031",
+      "src/server/events.ts": "6c9dc9f59edf91befe201ecd3b6d0c8d5aac750cff868f6769c6bfcd0017c126",
+      "src/server/exports.ts": "58cf9446d42b8681c85a5ffdf4df2eb8584859a2c97a7ebd682d26546850188c",
+      "src/server/folders.ts": "4473379fcd1c445a5ae9f2b240cf7f1b79702abc4571ee511d99f1844174c3d9",
+      "src/server/hooks.ts": "8b6ef90c7f1cbe908a195bc9b78bee3391a4cb89d35a3add87fee8edba21f075",
+      "src/server/http.ts": "8ef1c163bc5e4c1081b7bbfd6bbc35ecfa704890a0f9a2af9cacbfae3d25d874",
+      "src/server/learner-marks.ts": "d81a5cb38d5546e6c29c0d5a16f33f3223e5de9f764eb1f189dd7dcbea5aef9a",
+      "src/server/learner-state.ts": "71202bba25305d8b16a2432dad5f145deafa9d4a81dfa9f0b6ab64c1c993b5cf",
+      "src/server/next-lesson.ts": "5a2d2c5fb3d001be1d49114b087acb287c577c49e1b103ae1e164dcf5784a845",
+      "src/server/quizzes.ts": "e2e8222d07df2fcb48aa2417f6e125229f584dcd9a6b5d731f342d76b6e5ec73",
+      "src/server/records.ts": "c059bd28b8ff042e8e5503a2aafc6fbf1ec853c6dc9dd1e93f5a07a07e635f4c",
+      "src/server/review.ts": "ded5162ed03887bfec73380ccb7373257ad1899abbe1050d21e86ea9ee492a7d",
+      "src/server/search.ts": "020fe94f82cb6b37bda82b436abaab29f555fa76ae670f7bb19d99439a6d64cb",
+      "src/server/settings.ts": "4398a80db5b4fd1992917c098343a8fa050798a42ff587f8bcc2d469803c7bd0",
+      "src/server/teacher.ts": "8e829e1caff39546d83281f5ae736aaf6a8dd29a5cebd4691e96df99b4004f5f",
+      "src/service-client.ts": "a01e55b0941ef82b9c4d6b7d6228dcc9133f4504ad49365e8e10c2bffbbd4119",
+      "src/service-main.ts": "a8ed785ea84ed3a4e98873d9a73a151c0309d0a9503ff83a9ef2151d3306a12d",
+      "src/service-state.ts": "59ed8ad50937180ec0722fb26ecb8ba4aaee00250d1b0abb2deac7a5c8261e8f",
+      "src/service-tools.ts": "0242c1c8c4be500294ed43e90b449c50758ef96fea7a3d06de460a653e88a596",
+      "src/settings.ts": "bc9278a9e189320b94e14845c76b47bad05b20d01b5793e3d9edc2e4f46bf83c",
+      "src/state-errors.ts": "bc98a2a101e834632e43e86ea39091937740b4b07b58650773bcc8f03345a2e0",
+      "src/status-widget.ts": "62cd1786c9f8589a9f2a949c341e4a4e72cb5588d8c6f1afaa893bd55be57652",
+      "src/store.ts": "d247681750a62c2d238aabf6e49a53260d12d87ae1fa91e641890e19a9607ba9",
+      "src/store/annotations.ts": "0f8782799cc776eac469bf4e63373eb436041bfbe2a13fb55b53a7dde81997a9",
+      "src/store/classrooms.ts": "48ecf8419c5b6e4ee6258aab56db5b866d822a39c9855ef2279dcc43865587d5",
+      "src/store/course-map.ts": "ccb851b50dec2f5660562dbacdc3866b1465da7dba883e952b59919343d5406b",
+      "src/store/daily-review.ts": "758f6f423433e1268d3a98dd8d3c0172a872c71524ac9f6b92e0f381354d57d9",
+      "src/store/drafts.ts": "d5f69f93814fe5a49e8f49d7262b1c6172587e7b02215bbd9e87b1358858650f",
+      "src/store/folders.ts": "b9761b7fbb4e88cb88b052b3f8f05bd498a6464fd9067475f6acaeb63db33b91",
+      "src/store/json.ts": "0dbfc1e9fa082ed63532b599be8753162ac735f663183eb698d59dfc112de6af",
+      "src/store/learner-marks.ts": "47bfcde94470c9ed56622e4088f7844990ea15b1b7bf76d47627ed80ae3d3aac",
+      "src/store/lesson-requests.ts": "7f0a6f29cbfebc15618aa8ae36f1be707932a53b36300a926ef16f1d2bab5bac",
+      "src/store/lesson-sources.ts": "9ed3b0ae535c5588dc9fa4a799427b736b6875f0a3760e236a9576798fcfe66b",
+      "src/store/lessons.ts": "9b1e230f6d423fb571c2b8fd603d85ca28f03c6ca50249da30f2b886a33f9b5f",
+      "src/store/panel.ts": "a6e6b710423cdd35a71055e070706f22e4bdb6d3b0ccef774577d5caeca0fb90",
+      "src/store/quiz-history.ts": "744e6e8332120f173a4d2968c5bf46f73cd52009f32e963ec68ad6d08f767b03",
+      "src/store/quizzes.ts": "8ff8394cd851439c489d4a9b197d1872a1c733d41b3c55c4c946771faba644ca",
+      "src/store/records.ts": "ba9358ee7c5a955b54cb8d9eb0f34f4094d837616e3243d5139e383d11589510",
+      "src/store/reflections.ts": "c51d09fdba05bd696d6dc93402aeac5fa48c0cab28f9c0c0a831298dcf9a42e4",
+      "src/store/review.ts": "cd306b96c652c1186fd4fe8e8cb5ecff833b6c19048dcac0c5faac3b52aeb9a9",
+      "src/store/search.ts": "d0939b538bf83aefff6f9409d3751aef067d6af2d981c98b9c6dcdce7ba4bc2f",
+      "src/tailnet-links.ts": "d99cdf61426d257b93fbef7d4016bb10a4a0f61882717b1a85d994449ee286dd",
+      "src/teacher-deadline.ts": "53151d66c5771c21d4166817c490ea108924681f1e55a735b00cbce437e201eb",
+      "src/teacher-grading.ts": "e180c9cf6942f6b9789aff92a11186ad62f9d4b3681608e8471c778594f2c35f",
+      "src/teacher-models.ts": "7f58291eccca633fc46a641baee03c4e59937ef69d3976dfe97656d36b63a233",
+      "src/teacher-resume.ts": "86b9e6ce4ba437676f4fc9f1059898dc666d15163439aef91aab0a21612d259f",
+      "src/teacher-service.ts": "f180595547f348493600069a8b97067658ecab97de56371163beae8ab8e97ba2",
+      "src/teacher.ts": "64945bf311f7b5a8187fb302aadb20ddd41b8ff2a373e128ef3e5688ebb49bf9",
+      "src/teaching-plan.ts": "06b38daa33c5144069ce6e081df2c0f9bd0beb916cbcc224ee811becfd546aec",
+      "src/tools.ts": "577457e940f0151cebb33ad753e8733de6c138733d89120ec0db322f788d5ade"
+    },
+    "fixtureSHA256": "0b8e815299fbcc653952aa192ac8ee3a3b87a0a4f50c7a67dfdc2888ff2de3cb",
+    "commandScriptHashes": {
+      "capture-baseline.ts": "fe5d3759dc07039fb5271e3e3e4df94fe997c49370b67694e3aee7393c5d55ff",
+      "capture-after-guarded.ts": "312ba45f9d2c85f82ac18de42fa2b1eee22a947bdafa7898967b2965c8d52698",
+      "run-isolated.py": "3337e35917058ae708163bd0c3c07b27d980db6230e112a7a744deea03a3a8d0",
+      "prepare-public-media.py": "785f443cd9e7e16d97a78e145b27383f3dd5c176925c344d64a9cb7767878e40",
+      "compare-base-replay.mjs": "d3eb83d44d2429d174333ed9d4fb3bcb690d1ac03bfa5d2f7cb9705ace554243",
+      "compare-boundaries.mjs": "e52b48106fc1a79ae7b9c5618afb0597ec62288ad6fdffe7285b8f3ab6700734",
+      "final-export-memory-projection.ts": "1c3f12272da6b09309711d0f83be7553ec464ca2cda32c29ca34e0e68b53ae04",
+      "prepare-proofs.py": "0fa06fa65f76ae9896fdd639398026761b19766c77035ce9cfd75ff52c2aaa0e",
+      "run-verify-corrected.py": "27c900d520a484c2daa626a0dcf7b7ea0ed261b749ffa201531a75cdecae18fc",
+      "marks-memory-export-interaction.ts": "b1e911c6ca52907465fd79d1db907bfeb1739e6393852c6efbd9ca991a85868c",
+      "capture-after-launch.mjs": "1547bfb045374fa1b1166ad53b9b154ea323c65de61a356ff3f893c5208af2f1"
+    }
   },
-  "inspection": "All twelve published PNG files visually inspected before commit. Full-page height reflects expanded per-objective evidence. Closed disclosures in paired captures; correction includes explicit accepted events and expanded reason.",
-  "defaultGate": {
-    "target": "local",
-    "verdict": "PASS",
-    "revision": "269973315a22dd80358f30a601bbb4fb7cbf79ab",
-    "changes": "",
-    "results": [
+  "coverageDecision": {
+    "at": "2026-10-20T13:03:42.624679+00:00",
+    "mode": "Change",
+    "issue": 26,
+    "source": "2f565fd36b0477e89e405ff7bbead6a4bd28912d",
+    "decision": "No additional native inference selected for final memory-map integration if boundaries remain unchanged",
+    "reason": "Own feature is a read-only projection plus additive gapOpen context. All21 actual historical chat/resume request bytes (7/host) reconstruct exactly. Current controlled typed passage assembly preserves8 memory items, context and strict canonical serialization. Accepted96 separately proved changed typed transport including actual Pi explicit failed-session Retry/follow-up. Accepted99 changes listener shutdown only.",
+    "requiredFinal": "After accepted31 release tip, new delegated round ordinarily integrates exact current main with2f, preserves source/metadata/ancestry, then fresh full default browser+minimum contracts, all3 owner fixtures/63-file read-only checks, marks/export/replay/forecast/private routes, audits/plugin/media/current CI and cleanup. Recheck actual inputs; stop/propose bounded new scope if feature input/behavior changes.",
+    "limits": [
+      "Historical whole Pi duplicate-plan FAIL persists; old Claude/Codex PASS belongs to historical source epoch.",
+      "Accepted96 changed passage prompt/schema; matching chat/resume does not establish current whole native PASS or identical Pi tool lifecycle.",
+      "One old quiz equally rejects changed rubric; rejection equality is not successful replay.",
+      "No native reroll or new authoring authorized by this feature decision; final released-install All audit still required."
+    ],
+    "boundaryReceipt": "/tmp/studens-issue26-round26-20261020/boundary-matrix.json",
+    "boundarySHA256": "436621375531311966638e247e5ba7202c297fc64c2e55d77e3f4a473ca11b6f"
+  },
+  "ownInputBoundary": {
+    "actualHistoricalChatResumeInputs": 21,
+    "perHost": 7,
+    "allReconstructedCurrentBytesExact": true,
+    "currentControlledTypedPassageItems": 8,
+    "gapOpenTrueAndFalse": true,
+    "strictCanonicalFields": ["annotation_id", "answer_markdown"],
+    "noNewModelInference": true,
+    "limits": "Historical native evidence is source-bound. Accepted96 changed typed passage transport; accepted97 changed Pi SDK termination. This does not establish a current whole-host PASS or identical Pi lifecycle. One equally rejected saved quiz is not a successful replay."
+  },
+  "replay": {
+    "base": "bd7d21f5d6dd5bf097cfd3bbc8827675f987d339",
+    "current": "0d398dcca10e36764c7290d51e48afbf184985c7",
+    "fixtures": "Exact copied retained d8 native histories, not new inference",
+    "receipts": [
       {
-        "command": ["npm", "run", "version:check"],
-        "exitCode": 0
+        "host": "pi",
+        "files": 65,
+        "events": 18,
+        "items": 8,
+        "clockPoints": 37,
+        "eventsEqual": true,
+        "allPriorReviewItemFieldsEqual": true,
+        "onlyAdditiveGapOpen": true,
+        "gradesAndRevisionsEqual": true,
+        "savedDatesAndDueFieldsEqual": true,
+        "workloadAndFourteenDatesEqual": true,
+        "readOnly": true,
+        "eventsSHA256": "2c6694e9326f0b09406ccbc2c6839132877a78f45de96754c03844f7a702d983",
+        "priorItemSHA256": "85c7b45ccb52c840735c106670e248b68718e32967a1cb1bfc229409b7303563",
+        "gradesSHA256": "c02c23b5b94b3c8abe7cbcece4ce83f3a9fd810507b37b9f00a1ee3fd50c9811"
       },
       {
-        "command": ["npm", "run", "format:check"],
-        "exitCode": 0
+        "host": "claude",
+        "files": 64,
+        "events": 17,
+        "items": 8,
+        "clockPoints": 35,
+        "eventsEqual": true,
+        "allPriorReviewItemFieldsEqual": true,
+        "onlyAdditiveGapOpen": true,
+        "gradesAndRevisionsEqual": true,
+        "savedDatesAndDueFieldsEqual": true,
+        "workloadAndFourteenDatesEqual": true,
+        "readOnly": true,
+        "eventsSHA256": "db2cdbdcb0b14f8173fec023824151b45ae70d46866c3149876f3fa235fb7dab",
+        "priorItemSHA256": "8a521094d49edeedeafbca06090043397ef9949a1bd768ac2df12e7f2dbdbaff",
+        "gradesSHA256": "81b9dcc6272fe7477da22bed4f9ea1a8f5219f3a78fb8ab8437806dc8832f25c"
       },
       {
-        "command": ["npm", "run", "check"],
-        "exitCode": 0
-      },
-      {
-        "command": ["npm", "run", "test"],
-        "exitCode": 0
-      },
-      {
-        "command": [
-          "/home/maxmiller/.local/share/mise/installs/node/24.22.0/bin/node",
-          "scripts/e2e-browser.ts",
-          "/tmp/studens-issue26-20261020/verify-integrated/browser"
-        ],
-        "exitCode": 0
+        "host": "codex",
+        "files": 65,
+        "events": 18,
+        "items": 8,
+        "clockPoints": 37,
+        "eventsEqual": true,
+        "allPriorReviewItemFieldsEqual": true,
+        "onlyAdditiveGapOpen": true,
+        "gradesAndRevisionsEqual": true,
+        "savedDatesAndDueFieldsEqual": true,
+        "workloadAndFourteenDatesEqual": true,
+        "readOnly": true,
+        "eventsSHA256": "15104b853beb8bb4eca78016b04a703f2ef1568ccd9ae44693a0363ffad10092",
+        "priorItemSHA256": "d98b8613cfcf011799af6e614f56384678f93ed9fdedfe3f558eeb40f521e9c5",
+        "gradesSHA256": "5568b430e828c4748702ac81c6c643ee76c4b969a5de7d53991faeb5f1dd50d8"
       }
     ]
   },
-  "nativeGates": {
-    "pi": {
-      "target": "pi",
-      "verdict": "FAIL",
-      "error": "Error: pi failed with exit code 1. See /tmp/studens-issue26-20261020/real-pi-integrated.",
-      "revision": "269973315a22dd80358f30a601bbb4fb7cbf79ab",
-      "changes": "",
-      "results": [
-        {
-          "command": [
-            "/home/maxmiller/.local/share/mise/installs/node/24.22.0/bin/node",
-            "scripts/e2e-pi.ts",
-            "/tmp/studens-issue26-20261020/real-pi-integrated/pi"
-          ],
-          "exitCode": 1
-        }
-      ]
-    },
-    "claude": {
-      "target": "claude",
+  "checks": {
+    "currentCompletedDefault": {
+      "target": "local",
       "verdict": "PASS",
-      "revision": "269973315a22dd80358f30a601bbb4fb7cbf79ab",
+      "revision": "0d398dcca10e36764c7290d51e48afbf184985c7",
       "changes": "",
       "results": [
         {
+          "command": ["npm", "run", "version:check"],
+          "exitCode": 0
+        },
+        {
+          "command": ["npm", "run", "format:check"],
+          "exitCode": 0
+        },
+        {
+          "command": ["npm", "run", "check"],
+          "exitCode": 0
+        },
+        {
+          "command": ["npm", "run", "test"],
+          "exitCode": 0
+        },
+        {
           "command": [
             "/home/maxmiller/.local/share/mise/installs/node/24.22.0/bin/node",
-            "scripts/e2e.ts",
-            "claude",
-            "/tmp/studens-issue26-20261020/real-claude-integrated/claude"
+            "scripts/e2e-browser.ts",
+            "/tmp/studens-issue26-final-bd7-20261020/verify-corrected/browser"
           ],
           "exitCode": 0
         }
       ]
     },
-    "codex": {
-      "target": "codex",
-      "verdict": "FAIL",
-      "error": "Error: codex failed with exit code 1. See /tmp/studens-issue26-recovery-20261020/real-codex.",
-      "revision": "269973315a22dd80358f30a601bbb4fb7cbf79ab",
-      "changes": "",
-      "results": [
+    "tests": 1305,
+    "testFiles": 90,
+    "commands": [
+      {
+        "command": ["node", "/tmp/studens-issue26-final-bd7-20261020/capture-after-launch.mjs"],
+        "exitCode": 0,
+        "start": "2026-10-20T13:25:51.484960+00:00",
+        "end": "2026-10-20T13:26:02.666216+00:00",
+        "head": "0d398dcca10e36764c7290d51e48afbf184985c7",
+        "cwd": "/home/maxmiller/.t3/worktrees/studens/t3-3d9e8caa",
+        "isolation": {
+          "PI_CLASSROOMS_DIR": "/tmp/studens-issue26-final-bd7-20261020/scratch-after-media/classrooms",
+          "PI_CLASSROOM_CONFIG": "/tmp/studens-issue26-final-bd7-20261020/scratch-after-media/config.json",
+          "PI_CLASSROOM_PORT": "0",
+          "PI_CLASSROOM_TAILSCALE": "0",
+          "NODE_ENV": "test"
+        }
+      },
+      {
+        "command": ["npm", "run", "audit"],
+        "exitCode": 0,
+        "start": "2026-10-20T13:23:32.222967+00:00",
+        "end": "2026-10-20T13:23:32.857346+00:00",
+        "head": "0d398dcca10e36764c7290d51e48afbf184985c7",
+        "cwd": "/home/maxmiller/.t3/worktrees/studens/t3-3d9e8caa",
+        "isolation": {
+          "PI_CLASSROOMS_DIR": "/tmp/studens-issue26-final-bd7-20261020/scratch-audit/classrooms",
+          "PI_CLASSROOM_CONFIG": "/tmp/studens-issue26-final-bd7-20261020/scratch-audit/config.json",
+          "PI_CLASSROOM_PORT": "0",
+          "PI_CLASSROOM_TAILSCALE": "0",
+          "NODE_ENV": "test"
+        }
+      },
+      {
+        "command": ["node", "/tmp/studens-issue26-final-bd7-20261020/compare-base-replay.mjs"],
+        "exitCode": 0,
+        "start": "2026-10-20T13:24:09.826826+00:00",
+        "end": "2026-10-20T13:24:11.495075+00:00",
+        "head": "0d398dcca10e36764c7290d51e48afbf184985c7",
+        "cwd": "/home/maxmiller/.t3/worktrees/studens/t3-3d9e8caa",
+        "isolation": {
+          "PI_CLASSROOMS_DIR": "/tmp/studens-issue26-final-bd7-20261020/scratch-base-replay/classrooms",
+          "PI_CLASSROOM_CONFIG": "/tmp/studens-issue26-final-bd7-20261020/scratch-base-replay/config.json",
+          "PI_CLASSROOM_PORT": "0",
+          "PI_CLASSROOM_TAILSCALE": "0",
+          "NODE_ENV": "test"
+        }
+      },
+      {
+        "command": ["node", "/tmp/studens-issue26-final-bd7-20261020/capture-baseline.ts"],
+        "exitCode": 0,
+        "start": "2026-10-20T13:24:10.991270+00:00",
+        "end": "2026-10-20T13:24:13.993836+00:00",
+        "head": "0d398dcca10e36764c7290d51e48afbf184985c7",
+        "cwd": "/home/maxmiller/.t3/worktrees/studens/t3-3d9e8caa",
+        "isolation": {
+          "PI_CLASSROOMS_DIR": "/tmp/studens-issue26-final-bd7-20261020/scratch-baseline-media/classrooms",
+          "PI_CLASSROOM_CONFIG": "/tmp/studens-issue26-final-bd7-20261020/scratch-baseline-media/config.json",
+          "PI_CLASSROOM_PORT": "0",
+          "PI_CLASSROOM_TAILSCALE": "0",
+          "NODE_ENV": "test"
+        }
+      },
+      {
+        "command": ["node", "/tmp/studens-issue26-final-bd7-20261020/compare-boundaries.mjs"],
+        "exitCode": 0,
+        "start": "2026-10-20T13:24:09.412779+00:00",
+        "end": "2026-10-20T13:24:10.967910+00:00",
+        "head": "0d398dcca10e36764c7290d51e48afbf184985c7",
+        "cwd": "/home/maxmiller/.t3/worktrees/studens/t3-3d9e8caa",
+        "isolation": {
+          "PI_CLASSROOMS_DIR": "/tmp/studens-issue26-final-bd7-20261020/scratch-boundary/classrooms",
+          "PI_CLASSROOM_CONFIG": "/tmp/studens-issue26-final-bd7-20261020/scratch-boundary/config.json",
+          "PI_CLASSROOM_PORT": "0",
+          "PI_CLASSROOM_TAILSCALE": "0",
+          "NODE_ENV": "test"
+        }
+      },
+      {
+        "command": ["npm", "audit", "--audit-level=moderate"],
+        "exitCode": 0,
+        "start": "2026-10-20T13:24:48.497047+00:00",
+        "end": "2026-10-20T13:24:49.093960+00:00",
+        "head": "0d398dcca10e36764c7290d51e48afbf184985c7",
+        "cwd": "/home/maxmiller/.t3/worktrees/studens/t3-3d9e8caa",
+        "isolation": {
+          "PI_CLASSROOMS_DIR": "/tmp/studens-issue26-final-bd7-20261020/scratch-full-audit/classrooms",
+          "PI_CLASSROOM_CONFIG": "/tmp/studens-issue26-final-bd7-20261020/scratch-full-audit/config.json",
+          "PI_CLASSROOM_PORT": "0",
+          "PI_CLASSROOM_TAILSCALE": "0",
+          "NODE_ENV": "test"
+        }
+      },
+      {
+        "command": [
+          "node",
+          "/tmp/studens-issue26-final-bd7-20261020/marks-memory-export-interaction.ts"
+        ],
+        "exitCode": 0,
+        "start": "2026-10-20T13:24:13.225623+00:00",
+        "end": "2026-10-20T13:24:13.519374+00:00",
+        "head": "0d398dcca10e36764c7290d51e48afbf184985c7",
+        "cwd": "/home/maxmiller/.t3/worktrees/studens/t3-3d9e8caa",
+        "isolation": {
+          "PI_CLASSROOMS_DIR": "/tmp/studens-issue26-final-bd7-20261020/scratch-marks-memory-export/classrooms",
+          "PI_CLASSROOM_CONFIG": "/tmp/studens-issue26-final-bd7-20261020/scratch-marks-memory-export/config.json",
+          "PI_CLASSROOM_PORT": "0",
+          "PI_CLASSROOM_TAILSCALE": "0",
+          "NODE_ENV": "test"
+        }
+      },
+      {
+        "command": [
+          "node",
+          "/tmp/studens-issue26-final-bd7-20261020/final-export-memory-projection.ts"
+        ],
+        "exitCode": 0,
+        "start": "2026-10-20T13:24:12.151307+00:00",
+        "end": "2026-10-20T13:24:13.161766+00:00",
+        "head": "0d398dcca10e36764c7290d51e48afbf184985c7",
+        "cwd": "/home/maxmiller/.t3/worktrees/studens/t3-3d9e8caa",
+        "isolation": {
+          "PI_CLASSROOMS_DIR": "/tmp/studens-issue26-final-bd7-20261020/scratch-memory-export/classrooms",
+          "PI_CLASSROOM_CONFIG": "/tmp/studens-issue26-final-bd7-20261020/scratch-memory-export/config.json",
+          "PI_CLASSROOM_PORT": "0",
+          "PI_CLASSROOM_TAILSCALE": "0",
+          "NODE_ENV": "test"
+        }
+      },
+      {
+        "command": [
+          "/tmp/studens-orchestration-20261019/min-node-22.19/node-v22.19.0-linux-x64/bin/node",
+          "node_modules/vitest/vitest.mjs",
+          "run",
+          "test/server-lifecycle.test.ts",
+          "test/mcp-stdio-lifecycle.test.ts",
+          "test/mcp.test.ts",
+          "test/passage-answer.test.ts",
+          "test/lesson-sources.test.ts",
+          "test/memory-map.test.ts",
+          "test/review.test.ts",
+          "test/review-timing.test.ts",
+          "test/review-workload.test.ts",
+          "test/review-session.test.ts",
+          "test/review-controls.test.ts",
+          "test/pi-teacher-envelope.test.ts",
+          "test/pi-teacher-completion.test.ts",
+          "test/teacher-service.test.ts",
+          "test/learner-marks.test.ts",
+          "test/classroom-export.test.ts",
+          "test/evidence.test.ts"
+        ],
+        "exitCode": 0,
+        "start": "2026-10-20T13:23:32.916352+00:00",
+        "end": "2026-10-20T13:23:38.610820+00:00",
+        "head": "0d398dcca10e36764c7290d51e48afbf184985c7",
+        "cwd": "/home/maxmiller/.t3/worktrees/studens/t3-3d9e8caa",
+        "isolation": {
+          "PI_CLASSROOMS_DIR": "/tmp/studens-issue26-final-bd7-20261020/scratch-minimum-contracts/classrooms",
+          "PI_CLASSROOM_CONFIG": "/tmp/studens-issue26-final-bd7-20261020/scratch-minimum-contracts/config.json",
+          "PI_CLASSROOM_PORT": "0",
+          "PI_CLASSROOM_TAILSCALE": "0",
+          "NODE_ENV": "test"
+        }
+      },
+      {
+        "command": ["npm", "ci"],
+        "exitCode": 0,
+        "start": "2026-10-20T13:23:13.213294+00:00",
+        "end": "2026-10-20T13:23:16.554430+00:00",
+        "head": "0d398dcca10e36764c7290d51e48afbf184985c7",
+        "cwd": "/home/maxmiller/.t3/worktrees/studens/t3-3d9e8caa",
+        "isolation": {
+          "PI_CLASSROOMS_DIR": "/tmp/studens-issue26-final-bd7-20261020/scratch-npm-ci/classrooms",
+          "PI_CLASSROOM_CONFIG": "/tmp/studens-issue26-final-bd7-20261020/scratch-npm-ci/config.json",
+          "PI_CLASSROOM_PORT": "0",
+          "PI_CLASSROOM_TAILSCALE": "0",
+          "NODE_ENV": "test"
+        }
+      },
+      {
+        "command": ["claude", "plugin", "validate", "."],
+        "exitCode": 0,
+        "start": "2026-10-20T13:23:34.118146+00:00",
+        "end": "2026-10-20T13:23:34.714476+00:00",
+        "head": "0d398dcca10e36764c7290d51e48afbf184985c7",
+        "cwd": "/home/maxmiller/.t3/worktrees/studens/t3-3d9e8caa",
+        "isolation": {
+          "PI_CLASSROOMS_DIR": "/tmp/studens-issue26-final-bd7-20261020/scratch-plugin/classrooms",
+          "PI_CLASSROOM_CONFIG": "/tmp/studens-issue26-final-bd7-20261020/scratch-plugin/config.json",
+          "PI_CLASSROOM_PORT": "0",
+          "PI_CLASSROOM_TAILSCALE": "0",
+          "NODE_ENV": "test"
+        }
+      },
+      {
+        "command": [
+          "npm",
+          "run",
+          "verify",
+          "--",
+          "--artifacts",
+          "/tmp/studens-issue26-final-bd7-20261020/verify"
+        ],
+        "exitCode": 1,
+        "start": "2026-10-20T13:23:31.064990+00:00",
+        "end": "2026-10-20T13:24:12.068673+00:00",
+        "head": "0d398dcca10e36764c7290d51e48afbf184985c7",
+        "cwd": "/home/maxmiller/.t3/worktrees/studens/t3-3d9e8caa",
+        "isolation": {
+          "PI_CLASSROOMS_DIR": "/tmp/studens-issue26-final-bd7-20261020/scratch-verify/classrooms",
+          "PI_CLASSROOM_CONFIG": "/tmp/studens-issue26-final-bd7-20261020/scratch-verify/config.json",
+          "PI_CLASSROOM_PORT": "0",
+          "PI_CLASSROOM_TAILSCALE": "0",
+          "NODE_ENV": "test"
+        }
+      },
+      {
+        "command": [
+          "npm",
+          "run",
+          "verify",
+          "--",
+          "--artifacts",
+          "/tmp/studens-issue26-final-bd7-20261020/verify-corrected"
+        ],
+        "exitCode": 0,
+        "start": "2026-10-20T13:24:47.362693+00:00",
+        "end": "2026-10-20T13:38:00.412046+00:00",
+        "head": "0d398dcca10e36764c7290d51e48afbf184985c7",
+        "cwd": "/home/maxmiller/.t3/worktrees/studens/t3-3d9e8caa",
+        "isolation": {
+          "PI_CLASSROOMS_DIR": "/tmp/studens-issue26-final-bd7-20261020/scratch-verify-corrected/classrooms",
+          "PI_CLASSROOM_CONFIG": "/tmp/studens-issue26-final-bd7-20261020/scratch-verify-corrected/config.json",
+          "PI_CLASSROOM_PORT": "0",
+          "PI_CLASSROOM_TAILSCALE": "0",
+          "NODE_ENV": "test"
+        }
+      }
+    ],
+    "unitEnvironmentCorrection": {
+      "failure": "verify/run.json: config default test saw externally injected PI_CLASSROOM_TAILSCALE=0",
+      "cause": "Runner environment contamination; no product change",
+      "correction": "Exact npm run test subprocess clears only PI_CLASSROOM_TAILSCALE; config/root/port still isolated. Browser retains PI_CLASSROOM_TAILSCALE=0. No assertions removed.",
+      "npmExecutable": "/home/maxmiller/.local/share/mise/installs/node/lts/bin/npm",
+      "retainedOriginal": "verify/ and verify.log"
+    },
+    "runtimeVersions": {
+      "runtimeNode": "v24.22.0",
+      "npm": "11.19.1",
+      "actualMinimumNode": "v22.19.0",
+      "installedProductionCount": 125,
+      "graphSHA256": "305a18cb041fa1cd294298321560feeee1f53d018dd42def8182930cec0b295f",
+      "sdkPath": "/home/maxmiller/.t3/worktrees/studens/t3-3d9e8caa/node_modules/@earendil-works/pi-coding-agent",
+      "vitest": "4.1.12",
+      "version": "0.11.11",
+      "metadataInherited": true,
+      "newProductionBootstrapSelected": false,
+      "bootstrapReason": "No dependency/bootstrap/routing input change from accepted base; current actual installed graph/audits and affected minimum contracts selected. Prior cold/partial source receipts remain historical."
+    },
+    "minimumContracts": "225 tests across17files on actual Node22.19.0; not full minimum suite",
+    "memoryBrowser": {
+      "source": "0d398dcca10e36764c7290d51e48afbf184985c7",
+      "owners": [
         {
-          "command": [
-            "/home/maxmiller/.local/share/mise/installs/node/24.22.0/bin/node",
-            "scripts/e2e.ts",
-            "codex",
-            "/tmp/studens-issue26-recovery-20261020/real-codex/codex"
+          "owner": "pi",
+          "fixtureOnly": true,
+          "canonicalFiles": 63,
+          "allHashesEqual": true,
+          "teacherTurns": 0,
+          "readWrites": 0,
+          "pageErrors": 0,
+          "gradeCount": 1,
+          "restartPreserved": true,
+          "malformedExplicitRetry": true,
+          "privateRoutes": [
+            {
+              "route": "/c/rust/001-ownership/quiz/plan.json",
+              "status": 404
+            },
+            {
+              "route": "/c/rust/.teacher.json",
+              "status": 404
+            },
+            {
+              "route": "/static/../quiz/plan.json",
+              "status": 404
+            }
           ],
-          "exitCode": 1
+          "keyboardWhy": true,
+          "keyboardTable": true,
+          "legacySource": true,
+          "fourteenDates": 14,
+          "linkedLearnerReplyTimestampPreserved": true,
+          "delayedSuccesses": 0,
+          "linkedDueUnchanged": true,
+          "correctionStrength": "Strength of evidence\nIndependent success \u00b7 more evidence needed",
+          "latestEvidence": "Last evidence\nOct 20, 2026 \u00b7 12:00 UTC\nIndependent recall \u00b7 at least 24 hours after practice \u00b7 100% credit",
+          "hashReceiptSHA256": "89095f2b80877fc3fe6dfe54bb1e45fb2dd960af6764836cfc5ea29096c274c3"
+        },
+        {
+          "owner": "claude",
+          "fixtureOnly": true,
+          "canonicalFiles": 63,
+          "allHashesEqual": true,
+          "teacherTurns": 0,
+          "readWrites": 0,
+          "pageErrors": 0,
+          "gradeCount": 1,
+          "restartPreserved": true,
+          "malformedExplicitRetry": true,
+          "privateRoutes": [
+            {
+              "route": "/c/rust/001-ownership/quiz/plan.json",
+              "status": 404
+            },
+            {
+              "route": "/c/rust/.teacher.json",
+              "status": 404
+            },
+            {
+              "route": "/static/../quiz/plan.json",
+              "status": 404
+            }
+          ],
+          "keyboardWhy": true,
+          "keyboardTable": true,
+          "legacySource": true,
+          "fourteenDates": 14,
+          "linkedLearnerReplyTimestampPreserved": true,
+          "delayedSuccesses": 0,
+          "linkedDueUnchanged": true,
+          "correctionStrength": "Strength of evidence\nIndependent success \u00b7 more evidence needed",
+          "latestEvidence": "Last evidence\nOct 20, 2026 \u00b7 12:00 UTC\nIndependent recall \u00b7 at least 24 hours after practice \u00b7 100% credit",
+          "hashReceiptSHA256": "f08c364658ed9a720b12ad3917bd6867e1f3a7e1ff52b203ed9d87d9138f2554"
+        },
+        {
+          "owner": "codex",
+          "fixtureOnly": true,
+          "canonicalFiles": 63,
+          "allHashesEqual": true,
+          "teacherTurns": 0,
+          "readWrites": 0,
+          "pageErrors": 0,
+          "gradeCount": 1,
+          "restartPreserved": true,
+          "malformedExplicitRetry": true,
+          "privateRoutes": [
+            {
+              "route": "/c/rust/001-ownership/quiz/plan.json",
+              "status": 404
+            },
+            {
+              "route": "/c/rust/.teacher.json",
+              "status": 404
+            },
+            {
+              "route": "/static/../quiz/plan.json",
+              "status": 404
+            }
+          ],
+          "keyboardWhy": true,
+          "keyboardTable": true,
+          "legacySource": true,
+          "fourteenDates": 14,
+          "linkedLearnerReplyTimestampPreserved": true,
+          "delayedSuccesses": 0,
+          "linkedDueUnchanged": true,
+          "correctionStrength": "Strength of evidence\nIndependent success \u00b7 more evidence needed",
+          "latestEvidence": "Last evidence\nOct 20, 2026 \u00b7 12:00 UTC\nIndependent recall \u00b7 at least 24 hours after practice \u00b7 100% credit",
+          "hashReceiptSHA256": "e94d931f08f1b2fd890ee11665d68afd9f2c9f25c55342a0940bc70356da008c"
+        }
+      ],
+      "primaryMediaComparison": [
+        {
+          "name": "after-desktop-light.png",
+          "dedicatedMediaEqualsFullSuite": true,
+          "sha256": "73e3df846e9744facf0d050abe2d0307578d37950b8baaf061b013a8c4977140"
+        },
+        {
+          "name": "after-desktop-dark.png",
+          "dedicatedMediaEqualsFullSuite": true,
+          "sha256": "c8cdd7078f46bc4625012e3d6b7a3ee62d144b9413f937f8d875c1028fa84f05"
+        },
+        {
+          "name": "after-mobile-light.png",
+          "dedicatedMediaEqualsFullSuite": true,
+          "sha256": "d377baa7332c91a1f041af2f1fe905b54d13027f59dd244e5ea920b17295ab19"
+        },
+        {
+          "name": "after-mobile-dark.png",
+          "dedicatedMediaEqualsFullSuite": true,
+          "sha256": "8f2ebc093d44d854a26162f1c02cc8e495dcf933ce4bcbfe83cef3c7ae1b681c"
+        }
+      ]
+    },
+    "marks": {
+      "fixtureOnly": true,
+      "teacherFixtureInvocations": 2,
+      "durableAskFollowupReload": {
+        "original": true,
+        "followUp": true,
+        "reload": true
+      },
+      "assessment": {
+        "graded": true,
+        "marginDraftUnlocked": true,
+        "negativeMutationDetected": true,
+        "expectedUIExcluded": true
+      },
+      "canonicalAnswerSnapshot": {
+        "before": {
+          "checked": ["checked"],
+          "text": ["text", "default", "textarea"],
+          "selects": ["select"]
+        },
+        "excluded": ["cl-q-verdict", "cl-card-panel", "cl-expected", "cl-learner-marks"],
+        "negativeMutationsDetected": [
+          ".cl-q > input[type=checkbox]",
+          ".cl-q > input[type=text]",
+          ".cl-q > input:not([type])",
+          ".cl-q > textarea",
+          ".cl-q > select"
+        ]
+      },
+      "authoringTemplateModelInference": false,
+      "privateRouteCodes": [404, 404]
+    },
+    "export": {
+      "fixtureOnly": true,
+      "ownerChecks": [
+        {
+          "owner": "pi",
+          "formats": [
+            {
+              "format": "print",
+              "status": 200,
+              "sha256": "9e31109dbb18a70fd7da3975064bcccdd00734567e06c3cfa7272a4df5c9137e"
+            },
+            {
+              "format": "markdown",
+              "status": 200,
+              "sha256": "4a174467d09a9e86fa8042834db90a3da188e82ca27f1595265b8dddd0ee70c1"
+            },
+            {
+              "format": "anki",
+              "status": 200,
+              "sha256": "eb61bb2e26b716378fb7d33fc572d9fd3fc635fdce149ef769b6db5748cfc9e2"
+            }
+          ],
+          "projectionHash": "3a13436d6c49a76bcf29cbb5545ed4ff7c58d6d490db789450765aeda44a3e43",
+          "teacherCalls": 0
+        },
+        {
+          "owner": "claude",
+          "formats": [
+            {
+              "format": "print",
+              "status": 200,
+              "sha256": "9e31109dbb18a70fd7da3975064bcccdd00734567e06c3cfa7272a4df5c9137e"
+            },
+            {
+              "format": "markdown",
+              "status": 200,
+              "sha256": "4a174467d09a9e86fa8042834db90a3da188e82ca27f1595265b8dddd0ee70c1"
+            },
+            {
+              "format": "anki",
+              "status": 200,
+              "sha256": "eb61bb2e26b716378fb7d33fc572d9fd3fc635fdce149ef769b6db5748cfc9e2"
+            }
+          ],
+          "projectionHash": "3a13436d6c49a76bcf29cbb5545ed4ff7c58d6d490db789450765aeda44a3e43",
+          "teacherCalls": 0
+        },
+        {
+          "owner": "codex",
+          "formats": [
+            {
+              "format": "print",
+              "status": 200,
+              "sha256": "9e31109dbb18a70fd7da3975064bcccdd00734567e06c3cfa7272a4df5c9137e"
+            },
+            {
+              "format": "markdown",
+              "status": 200,
+              "sha256": "4a174467d09a9e86fa8042834db90a3da188e82ca27f1595265b8dddd0ee70c1"
+            },
+            {
+              "format": "anki",
+              "status": 200,
+              "sha256": "a8d7298fc1b4a1231305d22e868959717156339f15595df2a32c01f424edea98"
+            }
+          ],
+          "projectionHash": "3a13436d6c49a76bcf29cbb5545ed4ff7c58d6d490db789450765aeda44a3e43",
+          "teacherCalls": 0
+        }
+      ],
+      "privateProbes": [
+        {
+          "route": "/c/rust/001-ownership/quiz/key.json",
+          "status": 404
+        },
+        {
+          "route": "/c/rust/.teacher.json",
+          "status": 404
+        },
+        {
+          "route": "/doc/rust/001-ownership/quiz/plan.json",
+          "status": 404
+        },
+        {
+          "route": "/api/export?classroom=rust%2f..%2fempty&format=anki",
+          "status": 400
+        },
+        {
+          "route": "/api/export?classroom=rust&format=anki&answers=all",
+          "status": 400
+        },
+        {
+          "route": "/c/rust/001-ownership/media/leak.png",
+          "status": 404
+        }
+      ],
+      "browserDownloadsAndPrint": true,
+      "answersOffAfterReload": true,
+      "teacherCalls": 0,
+      "officialImporter": "separate parent accepted export evidence; not repeated here"
+    },
+    "sourceLinks": {
+      "fixtureOrigins": true,
+      "realModelOrigins": false,
+      "modelCalls": 0,
+      "allNavigationHashReceiptsEqual": true
+    },
+    "memoryExport": {
+      "verdict": "PASS",
+      "memoryEpoch": "0d398dc",
+      "exportEpoch": "0d398dc",
+      "scope": "Final integrated source, saved memory fixture projection through export; no writes/evidence/schedule/display changes.",
+      "files": 40,
+      "canonicalHashesUnchanged": true,
+      "reviewItemsUnchanged": true,
+      "forecastUnchanged": true,
+      "displayUnchanged": true,
+      "receipts": [
+        {
+          "answers": false,
+          "parts": 2,
+          "media": 0,
+          "omissions": [
+            "Unreleased teaching, private keys, plans, variants, drafts, teacher sessions, recovery and review history are omitted.",
+            "Interactive widgets are not portable simulations. Their saved visible prose and code are included where available; use source lessons for controls. Scripts, custom styles, audio/video, and external images are omitted. Diagrams retain Mermaid source in Markdown and render in printable HTML and supported Anki webviews.",
+            "Anki contains saved reading cards and public question threads, plus eligible expected answers only when selected. Import adds or updates notes; it does not delete notes removed from a later export or copy Studens progress."
+          ],
+          "outputHashes": {
+            "markdown": "1e8f8d886b57a7c0b0adc287e991524eb1b04ad16681e39a84f5b6f24fe30233",
+            "print": "fdde7a794cf9476c9ae115069e57f085ef93d65910798ee6fd6b12a70ddba4be",
+            "anki": "145e28bb9a015ca6f6e2c7fa9c379ad4c62f27ae580bf56ed6bf8156643ad88e"
+          }
+        },
+        {
+          "answers": true,
+          "parts": 2,
+          "media": 0,
+          "omissions": [
+            "Unreleased teaching, private keys, plans, variants, drafts, teacher sessions, recovery and review history are omitted.",
+            "Interactive widgets are not portable simulations. Their saved visible prose and code are included where available; use source lessons for controls. Scripts, custom styles, audio/video, and external images are omitted. Diagrams retain Mermaid source in Markdown and render in printable HTML and supported Anki webviews.",
+            "Anki contains saved reading cards and public question threads, plus eligible expected answers only when selected. Import adds or updates notes; it does not delete notes removed from a later export or copy Studens progress.",
+            "Ownership: expected answer upcoming is not yet available."
+          ],
+          "outputHashes": {
+            "markdown": "4bfa1d0eba1f708781a343f20b7b8673239fb39195712e47cd337193bc5a309f",
+            "print": "029e8347cb933ccad9834f4613d2247c382290d81e98e0794773f91f5aed68d1",
+            "anki": "145e28bb9a015ca6f6e2c7fa9c379ad4c62f27ae580bf56ed6bf8156643ad88e"
+          }
+        }
+      ]
+    },
+    "marksMemoryExport": {
+      "verdict": "PASS",
+      "source": "0d398dc",
+      "boundary": "Explicit fixture mark action uses accepted private store; then read-only memory/export projections. This is not browser mark-action proof or model inference.",
+      "canonicalFilesBefore": 40,
+      "onlyExplicitPrivateMarkFileAdded": "rust/001-ownership/.learner-marks.json",
+      "allOtherHashesEqual": true,
+      "reviewItemsUnchanged": true,
+      "forecastUnchanged": true,
+      "memoryDisplayUnchanged": true,
+      "readsNoWrites": true,
+      "exports": [
+        {
+          "answers": false,
+          "parts": 2,
+          "markdownHash": "c6e3e9c88c7c5ee3a0694046fcdacb7acded68d8f3eaa98a5851b8625c73fef0",
+          "printHash": "5acd843966747c02c1eea79dbd1a54b9843b05a383912dd2e658e453ea97bea3",
+          "privateCanaryAbsent": true
+        },
+        {
+          "answers": true,
+          "parts": 2,
+          "markdownHash": "d27a6b23537d068651b13e88035a7a719a9c53827b2a746e70126f67cd9fc6d0",
+          "printHash": "9a87fabdade981e4ef3ed885d1f18d1f6ff5a77a319a52ac66bdcab934b68f6c",
+          "privateCanaryAbsent": true
         }
       ]
     }
   },
-  "nativeFailureDetails": {
-    "pi": "Next lesson research requested file: sources; public HTTP(S)-only reader rejected them. No plan/writes, affected context/lifecycle not reached. Shared guidance issue #88 is separately tracked. No reroll.",
-    "codex": {
-      "verdict": "FAIL",
-      "exitCode": 1,
-      "source": "269973315a22dd80358f30a601bbb4fb7cbf79ab",
-      "model": "gpt-6-luna",
-      "effort": "low",
-      "stoppedAt": "Machine dispute after successful original judgment dispute revision",
-      "error": "codex model configured default dispute request dispute:f50c222e-2171-4a58-b033-ac305e9d6e60 in rust/997-grade-dispute: The resolution does not belong to this dispute or has invalid arguments.",
-      "expectedDisputeId": "f50c222e-2171-4a58-b033-ac305e9d6e60",
-      "actualDisputeId": "dispute:f50c222e-2171-4a58-b033-ac305e9d6e60",
-      "cause": "Model returned the request id with dispute: prefix in dispute_id, while validator requires raw saved dispute.id. Prefix mismatch; correct rejection. No validator relaxation or retry.",
-      "planValidated": false,
-      "applied": 0,
-      "judgmentDisputeDone": true,
-      "machineDisputeCompletionVerified": false,
-      "finalCompletionLogReached": false,
-      "sourcePaths": ["src/grade-dispute.ts:194", "src/grade-dispute.ts:152"],
-      "rawTeacher": "/tmp/studens-issue26-recovery-20261020/real-codex/codex/classroom/.teacher.json",
-      "rawFailure": "/tmp/studens-issue26-recovery-20261020/real-codex/codex/disputes/failed-exact.json",
-      "scope": "Independent host gate failed; no causal claim that memory map caused model ID error. Pi context/lifecycle remains unverified due original research stop.",
-      "doctorAfterFailure": "PASS",
-      "retryAttempted": false,
-      "modelSubstitution": false
-    }
+  "historicalFailures": {
+    "original269": "Pi file-scheme research URL rejected before affected context; Codex prefixed dispute id rejected, applied0. No luck reroll.",
+    "nativeD8": "Pi whole target FAIL on duplicate second plan; missing lesson_html and one visible retry retained. Claude/Codex whole targets PASS only at historical d8. Each host reached7 actual affected inputs.",
+    "da40": "Full gate incomplete, explicitly parent-terminated after1219 tests and stalled browser; never PASS.",
+    "4d9": "Historical1233 tests/full browser PASS only at that source epoch.",
+    "prephase": "Boundary wire-JSON comparison and copied marks-driver source lookup errors corrected externally; index formatting corrected. All original raw failures retained.",
+    "currentInitialGate": "External runner injected PI_CLASSROOM_TAILSCALE=0 into config-default unit test. 1304 passed/1failed; no browser. Corrected only external unit subprocess environment; no source/test assertions changed."
   },
-  "semanticReview": {
-    "claude": {
-      "nativeVerdict": "PASS",
-      "quizTask": "Fresh function example, answerable, no supplied answer.",
-      "resumeTask": "Fresh loop-local String example, answerable, no supplied answer.",
-      "reteach": "Complete explanation, worked move example, new Vec ownership question. Assisted response correctly does not resolve independent gap.",
-      "qualityLimit": "Immediate learner answer explained rule without explicitly solving function case. Teacher record notes this limit and requests case-specific follow-up; zero delayed retention. No human-learning evaluation."
-    },
-    "codex": {
-      "nativeVerdict": "FAIL",
-      "quizTask": "Fresh function-local String example, answerable without supplied answer.",
-      "resumeTask": "New draft String/function example, answerable without supplied answer. Similar to earlier task; limited example variety.",
-      "reteach": "Complete explanation, worked move example, fresh local String question. Assisted rule-level answer acknowledged without retention claim.",
-      "qualityLimit": "Immediate learner response gives inner-block explanation rather than exact function example; accepted record supports rule only, zero delayed retention. Machine-dispute ID mismatch rejected; no completion claim."
-    }
-  },
-  "audit": {
-    "command": "npm run audit",
-    "exitCode": 0,
-    "installedProductionVersionsVerified": 123,
-    "productionVulnerabilities": 0,
-    "unchangedDevelopmentInstallFindings": {
-      "total": 7,
-      "moderate": 3,
-      "high": 2,
-      "critical": 2
-    }
-  },
-  "ownerFixtures": {
-    "pi": {
-      "readWrites": 0,
-      "teacherTurns": 0,
-      "pageErrors": 0,
-      "equalHashedFiles": 63,
-      "nativeClosedGradeCount": 1,
-      "restartPreserved": true,
-      "malformedExplicitRetry": true,
-      "privateStatuses": [
-        {
-          "route": "/c/rust/001-ownership/quiz/plan.json",
-          "status": 404
-        },
-        {
-          "route": "/c/rust/.teacher.json",
-          "status": 404
-        },
-        {
-          "route": "/static/../quiz/plan.json",
-          "status": 404
-        }
-      ],
-      "linkedReplyTime": true,
-      "delayedSuccessesAfterLinkedReply": 0,
-      "linkedDueUnchanged": true,
-      "correctionStrength": "Strength of evidence\nIndependent success \u00b7 more evidence needed",
-      "rawReport": "/tmp/studens-issue26-20261020/verify-integrated/browser/memory-map/pi/result.json"
-    },
-    "claude": {
-      "readWrites": 0,
-      "teacherTurns": 0,
-      "pageErrors": 0,
-      "equalHashedFiles": 63,
-      "nativeClosedGradeCount": 1,
-      "restartPreserved": true,
-      "malformedExplicitRetry": true,
-      "privateStatuses": [
-        {
-          "route": "/c/rust/001-ownership/quiz/plan.json",
-          "status": 404
-        },
-        {
-          "route": "/c/rust/.teacher.json",
-          "status": 404
-        },
-        {
-          "route": "/static/../quiz/plan.json",
-          "status": 404
-        }
-      ],
-      "linkedReplyTime": true,
-      "delayedSuccessesAfterLinkedReply": 0,
-      "linkedDueUnchanged": true,
-      "correctionStrength": "Strength of evidence\nIndependent success \u00b7 more evidence needed",
-      "rawReport": "/tmp/studens-issue26-20261020/verify-integrated/browser/memory-map/claude/result.json"
-    },
-    "codex": {
-      "readWrites": 0,
-      "teacherTurns": 0,
-      "pageErrors": 0,
-      "equalHashedFiles": 63,
-      "nativeClosedGradeCount": 1,
-      "restartPreserved": true,
-      "malformedExplicitRetry": true,
-      "privateStatuses": [
-        {
-          "route": "/c/rust/001-ownership/quiz/plan.json",
-          "status": 404
-        },
-        {
-          "route": "/c/rust/.teacher.json",
-          "status": 404
-        },
-        {
-          "route": "/static/../quiz/plan.json",
-          "status": 404
-        }
-      ],
-      "linkedReplyTime": true,
-      "delayedSuccessesAfterLinkedReply": 0,
-      "linkedDueUnchanged": true,
-      "correctionStrength": "Strength of evidence\nIndependent success \u00b7 more evidence needed",
-      "rawReport": "/tmp/studens-issue26-20261020/verify-integrated/browser/memory-map/codex/result.json"
-    }
-  },
-  "media": {
-    "before-desktop-light.png": {
-      "sha256": "4b14f14c3603a313054aa2944860f207dc9a1cb02a6486c1aca4681d4bab8d2a",
-      "bytes": 146545,
-      "width": 1280,
-      "height": 1592,
-      "source": "/tmp/studens-issue26-recovery-20261020/before-canonical/desktop-light.png"
-    },
-    "after-desktop-light.png": {
-      "sha256": "af0b8ecd2bef948bbf8afe2b16df1055c4c85d49c1a296d9e78324ec3811b2af",
-      "bytes": 402577,
-      "width": 1280,
-      "height": 3946,
-      "source": "/tmp/studens-issue26-recovery-20261020/media/pi/after-desktop-light.png"
-    },
-    "before-desktop-dark.png": {
-      "sha256": "870c706261cbfdd143f39ba9c9c188be552a2c9f85cbafc2e38429fcb77fb6b6",
-      "bytes": 150031,
-      "width": 1280,
-      "height": 1592,
-      "source": "/tmp/studens-issue26-recovery-20261020/before-canonical/desktop-dark.png"
-    },
-    "after-desktop-dark.png": {
-      "sha256": "199427c854e572df9aa90af311514611d5fa55638aea500dcc33210fd8d16902",
-      "bytes": 410298,
-      "width": 1280,
-      "height": 3946,
-      "source": "/tmp/studens-issue26-recovery-20261020/media/pi/after-desktop-dark.png"
-    },
-    "before-mobile-light.png": {
-      "sha256": "e1cad5c91b0b165e3f52da2df0faed7172da4fed6624472d20553039cb7c84ab",
-      "bytes": 142999,
-      "width": 390,
-      "height": 2087,
-      "source": "/tmp/studens-issue26-recovery-20261020/before-canonical/mobile-light.png"
-    },
-    "after-mobile-light.png": {
-      "sha256": "2ebde4f24832e724a119ae4e299f827ca0f7637d28ce3a9c92d92a13f971ae82",
-      "bytes": 404112,
-      "width": 390,
-      "height": 5629,
-      "source": "/tmp/studens-issue26-recovery-20261020/media/pi/after-mobile-light.png"
-    },
-    "before-mobile-dark.png": {
-      "sha256": "226c37142702f51b8cf5c8e18d30349621bbfb2245653505dac71585b579a4ff",
-      "bytes": 146829,
-      "width": 390,
-      "height": 2087,
-      "source": "/tmp/studens-issue26-recovery-20261020/before-canonical/mobile-dark.png"
-    },
-    "after-mobile-dark.png": {
-      "sha256": "b82f5e33a9f29c460b7671c3affccb98fffccb1deb476ad8dfa2bb10fd321c5b",
-      "bytes": 412993,
-      "width": 390,
-      "height": 5629,
-      "source": "/tmp/studens-issue26-recovery-20261020/media/pi/after-mobile-dark.png"
-    },
-    "after-correction-mobile-dark.png": {
-      "sha256": "8f148f75f09d770cc863c99dcaa7f6985ade5aae73064385a88b083bdccddb69",
-      "bytes": 479928,
-      "width": 390,
-      "height": 6179,
-      "source": "/tmp/studens-issue26-recovery-20261020/media/pi/corrected.png"
-    },
-    "long-objective-mobile-light.png": {
-      "sha256": "2b548e4d6168266fe0a5249379194477467603675d359a43c6686a53b945a574",
-      "bytes": 212392,
-      "width": 390,
-      "height": 3025,
-      "source": "/tmp/studens-issue26-recovery-20261020/media/pi/long-390-light.png"
-    },
-    "empty-mobile-dark.png": {
-      "sha256": "d7b862f7a596803c24c388e56762c91b2937f4f30e2666fabb5577d976802930",
-      "bytes": 152528,
-      "width": 390,
-      "height": 2036,
-      "source": "/tmp/studens-issue26-recovery-20261020/media/pi/empty-mobile-dark.png"
-    },
-    "invalid-history-mobile-dark.png": {
-      "sha256": "11bfc4d070b5ee6a2d0b174e6526450f5df3a7e6c0864adb32753c9059279dbc",
-      "bytes": 31591,
-      "width": 390,
-      "height": 844,
-      "source": "/tmp/studens-issue26-recovery-20261020/media/pi/error.png"
-    }
-  },
-  "retainedHistory": "All original failures and historical captures remain outside repo under /tmp/studens-issue26-20261020. Recovery media-driver 404 and corrected export capture retained under /tmp/studens-issue26-recovery-20261020. No repeated native model target or fallback."
+  "rawEvidenceDirectory": "/tmp/studens-issue26-final-bd7-20261020",
+  "priorRawEvidenceDirectories": [
+    "/tmp/studens-issue26-round26-20261020",
+    "/tmp/studens-issue26-integration-20261020",
+    "/tmp/studens-issue26-20261020",
+    "/tmp/studens-issue26-recovery-20261020"
+  ],
+  "historicalPublicMedia": "6617543b9249a842d42747bb6870a7a202d75652/screenshots/memory-map remains historical and is superseded by these fresh captures",
+  "productLimits": [
+    "Controlled owner/teacher fixtures do not prove native model behavior, model reliability or human retention.",
+    "No new native inference/authoring/model reroll selected by parent decision.",
+    "No confidence/selfrating scheduling changes; no grade/scheduler policy changes; private controls preserved.",
+    "Final released-install whole-product audit/video is parent-owned and still required."
+  ]
 }
