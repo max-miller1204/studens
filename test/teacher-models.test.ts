@@ -403,3 +403,26 @@ it("permits native Codex web research only on an explicit research turn", async 
   ).resolves.toEqual({ ok: true });
   expect(messages().find((m) => m.method === "thread/start").params.config.web_search).toBe("live");
 });
+
+it("disables inherited MCP servers, plugins, shell and research on dedicated Codex dispute turns", async () => {
+  f.write(
+    "behavior.json",
+    JSON.stringify({ mcpServers: { inherited: { command: "must-not-run" } } }),
+  );
+  await runStructured({ backend: "codex" }, "Resolve a grade dispute", f.root, () => {}, schema);
+  expect(
+    messages()
+      .find((m) => m.backend === "codex" && m.args)
+      .args.slice(0, 6),
+  ).toEqual(["app-server", "--stdio", "--disable", "apps", "--disable", "plugins"]);
+  const start = messages().find((m) => m.method === "thread/start");
+  expect(start.params).toMatchObject({
+    sandbox: "read-only",
+    approvalPolicy: "never",
+    config: {
+      mcp_servers: { inherited: { enabled: false } },
+      web_search: "disabled",
+      features: { shell_tool: false, plugins: false, apps: false },
+    },
+  });
+});

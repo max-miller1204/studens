@@ -3,6 +3,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { classroomDir, isValidSlug } from "./paths.ts";
 import { modelSelection } from "./teacher-models.ts";
+import type { GradeDispute, DisputeResolution } from "./grade-dispute.ts";
 import type { TeacherIdentity, TeacherPlan } from "./teacher.ts";
 
 export interface TeacherRequest {
@@ -10,8 +11,19 @@ export interface TeacherRequest {
   classroom: string;
   lesson: string;
   kind:
-    "ask" | "follow-up" | "quiz" | "reflect" | "chat" | "review" | "resume" | "refill" | "lesson";
+    | "ask"
+    | "follow-up"
+    | "quiz"
+    | "reflect"
+    | "chat"
+    | "review"
+    | "resume"
+    | "refill"
+    | "lesson"
+    | "dispute";
   target: string;
+  dispute?: GradeDispute;
+  disputeDecision?: DisputeResolution["decision"];
   turn?: string;
   prompt: string;
   at: number;

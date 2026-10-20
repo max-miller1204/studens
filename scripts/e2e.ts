@@ -1,3 +1,4 @@
+import { driveDisputeProbe } from "./dispute-probe.ts";
 import { readTeacherState } from "../src/service-state.ts";
 import {
   seedDailyCompanion,
@@ -560,6 +561,13 @@ async function main(): Promise<void> {
       root,
       base,
       artifacts ? path.join(artifacts, "criteria") : null,
+    );
+
+    await driveDisputeProbe(
+      browser,
+      root,
+      base,
+      artifacts ? path.join(artifacts, "disputes") : null,
     );
 
     log(

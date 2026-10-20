@@ -15,7 +15,7 @@ import { parseModelPlan, planSchema } from "../src/teacher.ts";
 import { simpleLessonOutput } from "./lesson-output-fixture.ts";
 import { makeFixture } from "./helpers.ts";
 
-it("sends the current canonical envelope and tool scope after lesson/refill history in the actual SDK", async () => {
+it("sends the current canonical envelope and tool scope after lesson/refill history, including a dispute in the actual SDK", async () => {
   const f = makeFixture();
   const cwd = path.join(f.root, "rust"),
     agentDir = path.join(f.root, "agent");
@@ -44,13 +44,19 @@ it("sends the current canonical envelope and tool scope after lesson/refill hist
     fs.mkdirSync(path.dirname(file), { recursive: true });
     fs.writeFileSync(file, JSON.stringify(manager.getHeader()) + "\n");
     let id: string | undefined;
-    for (const phase of ["lesson", "refill", "chat"] as const) {
+    for (const phase of ["lesson", "refill", "chat", "dispute"] as const) {
       const schema = planSchema(
         phase === "lesson"
           ? { operations: ["publish_lesson"], required: true, research: true }
           : phase === "refill"
             ? { operations: ["save_review_variants"], required: true }
-            : { operations: ["record_retrieval_check"], messageRequired: true, notesAllowed: true },
+            : phase === "dispute"
+              ? { operations: ["resolve_grade_dispute"], required: true, messageRequired: true }
+              : {
+                  operations: ["record_retrieval_check"],
+                  messageRequired: true,
+                  notesAllowed: true,
+                },
       );
       const output =
         phase === "lesson"
@@ -62,12 +68,19 @@ it("sends the current canonical envelope and tool scope after lesson/refill hist
                 learning_record: null,
                 notes_markdown: "",
               }
-            : {
-                calls: [],
-                message: "A controlled prose-only reply.",
-                learning_record: null,
-                notes_markdown: "",
-              };
+            : phase === "dispute"
+              ? {
+                  calls: [{ name: "resolve_grade_dispute", arguments_json: "{}" }],
+                  message: "Controlled dispute explanation.",
+                  learning_record: null,
+                  notes_markdown: "",
+                }
+              : {
+                  calls: [],
+                  message: "A controlled prose-only reply.",
+                  learning_record: null,
+                  notes_markdown: "",
+                };
       const scope = new AbortController(),
         loadout = piTeacherTools(schema, phase === "lesson", scope.signal);
       const priorBytes = fs.readFileSync(file);
@@ -168,6 +181,20 @@ it("sends the current canonical envelope and tool scope after lesson/refill hist
             m.content.some((c) => c.type === "toolCall" && "calls" in c.arguments),
           ),
         ).toBe(true);
+      }
+      if (phase === "dispute") {
+        expect(schema.required).toEqual(["calls", "message", "learning_record", "notes_markdown"]);
+        expect(schema.properties.calls).toMatchObject({
+          minItems: 1,
+          maxItems: 1,
+          items: { properties: { name: { enum: ["resolve_grade_dispute"] } } },
+        });
+        // The shared envelope advertises learning_record; dispute application rejects evidence writes.
+        expect(output.learning_record).toBeNull();
+        expect(schema.properties.notes_markdown).toEqual({ type: "string", enum: [""] });
+        expect([...active.keys()]).toEqual(["submit_teacher_plan"]);
+        expect(text).toContain(JSON.stringify(schema));
+        expect(text).not.toContain("For public web research use read_lesson_source");
       }
       unsubscribe();
       unsubscribe = undefined;

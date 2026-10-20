@@ -39,6 +39,13 @@ Initiating Pi chat context, extensions, skills, and project context files are no
 inherited. The dedicated teacher receives saved classroom context and each durable
 request instead. Initiating chat can author lessons directly. Explicit browser Next lesson requests use the same dedicated persistent teacher conversation.
 
+Codex dedicated turns use a read-only sandbox with shell and research disabled.
+Explicitly disable every configured MCP server, apps and plugin discovery. Disable
+apps and plugins at process startup as well as in thread settings: per-thread flags
+alone leave the native app catalog available, and an empty MCP map can merge with
+inherited servers. Claude dedicated turns use no tools and a
+strict empty MCP configuration. Pi exposes only its plan-return tool.
+
 One service owns one classrooms root and stable loopback port. Each classroom has
 one selected backend and dedicated teacher session. Browser requests start teacher
 work without a listening initiating agent. A different backend, package, version,
@@ -139,6 +146,17 @@ source notation to grading. Answers and feedback render Markdown server-side.
   answers. Reject teacher overrides and compute the final score with `gradeScore`
   from merged raw points. Attempts saved before machine allocations existed retain
   the original rubric validation and teacher grading contract.
+- **Grade disputes are revisions of saved attempts.** An explicit learner action saves
+  the question, grade timestamp, reason, original submission and verified rubric snapshot
+  in the classroom FIFO. Dedicated teachers return only `resolve_grade_dispute` plans.
+  Revalidate the exact target and snapshot before inference and application. Only the
+  disputed judgment allocation can change; `mergeGrades` still rejects machine overrides.
+  Explain or flag machine disputes without writing another grade. Save validated plans
+  before revisions, and link accepted grade files to their dispute for recovery even if
+  the process stops before saving the applied receipt. Never write learning records,
+  retrieval checks, authoring changes or gap notes from a dispute. Publish only linked
+  learner reasons, responses and existing grade feedback/history. Replaying uses the
+  original attempt and first feedback, with no extra exposure or review completion.
 - **Submission order is total.** Timestamps increase strictly per lesson. Attempts
   count submissions; regrades are revisions. Use `latestGrades()` consistently for
   scores, quiz state, health, and review. Refuse another attempt while one is ungraded.

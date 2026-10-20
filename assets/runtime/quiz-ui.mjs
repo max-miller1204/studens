@@ -1,4 +1,5 @@
 /** Hydrate quiz controls, collect answers, and restore attempts, grades, and drafts. */
+import { createGradeDisputes } from "./grade-disputes.mjs";
 import { gradePointsNotice, gradeSummary, questionGradeLabel, questionOutcome } from "./grade.mjs";
 import { normalizeText } from "./anchor.mjs";
 import { diagramSource } from "./diagrams.mjs";
@@ -23,6 +24,7 @@ import { practiceErrors, practiceFeedback } from "./practice.mjs";
  */
 export function createQuizzes({ config, drafts, placeTeacherPanel }) {
   const { scheduleDraft, flushDraft } = drafts;
+  const disputes = createGradeDisputes(config);
   /** Elements inside a question. */
   function own(question, selector) {
     return [...question.querySelectorAll(selector)];
@@ -607,7 +609,7 @@ export function createQuizzes({ config, drafts, placeTeacherPanel }) {
     for (const field of form.querySelectorAll(
       ".cl-q input, .cl-q textarea, .cl-q select, .cl-q button",
     )) {
-      field.disabled = locked;
+      if (!field.closest(".cl-disputes")) field.disabled = locked;
     }
     for (const segment of form.querySelectorAll(".cl-segment")) {
       segment.setAttribute("tabindex", locked ? "-1" : "0");
@@ -741,11 +743,27 @@ export function createQuizzes({ config, drafts, placeTeacherPanel }) {
       return;
     }
     if (form.dataset.state === "broken") return;
+    if (
+      form.dataset.submissionId === submission.id &&
+      grade &&
+      grade.gradedAt < Number(form.dataset.activeGrade ?? "0")
+    )
+      return;
+    if (
+      form.dataset.state === "graded" &&
+      form.dataset.submissionId === submission.id &&
+      grade?.gradedAt === Number(form.dataset.activeGrade)
+    ) {
+      disputes.history(form, state.history ?? [grade]);
+      disputes.render(form, state);
+      return;
+    }
     if (attempts < Number(form.dataset.activeAttempt ?? "0")) return;
     if (submission.submittedAt < Number(form.dataset.submittedAt ?? "0")) return;
     // The grade can arrive through SSE before the submit response arrives.
     if (!grade && form.dataset.submissionId === submission.id && form.dataset.state === "graded")
       return;
+    if (grade) form.dataset.activeGrade = String(grade.gradedAt);
     form.dataset.activeAttempt = String(attempts);
     form.dataset.submissionId = submission.id;
     form.dataset.submittedAt = String(submission.submittedAt);
@@ -781,6 +799,8 @@ export function createQuizzes({ config, drafts, placeTeacherPanel }) {
     setQuizState(form, "graded");
     setQuizStatus(form, `Graded ${new Date(grade.gradedAt).toLocaleString()}${attemptNote}`);
     renderGrade(form, grade);
+    disputes.history(form, state.history ?? [grade]);
+    disputes.render(form, state);
   }
 
   function renderGrade(form, grade) {
@@ -973,7 +993,7 @@ export function createQuizzes({ config, drafts, placeTeacherPanel }) {
     // A submitted or graded quiz keeps the answers it was sent with.
     else if (form.dataset.state === "fresh") restoreQuizDraft(form, value);
   }
-  return { hydrateQuizzes, applyQuizState, restoreDraft };
+  return { hydrateQuizzes, applyQuizState, restoreDraft, updateTeacher: disputes.updateTeacher };
 }
 
 export function quizForms() {

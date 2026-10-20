@@ -1,3 +1,4 @@
+import type { DisputeTarget } from "../grade-dispute.ts";
 import { isStoredReview } from "../paths.ts";
 import type { ReviewOwner, ReviewSession } from "../review-session.ts";
 import type * as store from "../store.ts";
@@ -27,6 +28,7 @@ export interface ServerHooks {
   /** Called after a follow-up is appended to an existing card. */
   onFollowUp(annotation: store.Annotation, followUp: store.FollowUp): void;
   /** Called after a quiz submission is persisted, to ask for grading. */
+  onGradeDispute?(input: DisputeTarget): string;
   onQuizSubmit(submission: store.QuizSubmission): void;
   /** Called after a reflection is saved, so the teacher sees it. */
   onReflect(reflection: store.Reflection): void;

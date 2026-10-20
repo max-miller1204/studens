@@ -46,6 +46,9 @@ export interface QuizQuestionGrade {
 }
 
 export interface QuizGrade {
+  /** Durable receipt for one accepted learner dispute; historical files stay unchanged. */
+  disputeId?: string;
+  revisesGradedAt?: number;
   submissionId: string;
   classroom: string;
   lesson: string;

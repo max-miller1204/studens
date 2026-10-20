@@ -6,6 +6,30 @@ import type { ModelCatalog, ModelChoice } from "./teacher-models.ts";
 import { TeacherDeadline } from "./teacher-deadline.ts";
 import { LESSON_OUTPUT_SCHEMA, lessonModelPlan } from "./lesson-output.ts";
 
+/** Process-wide discovery precedes per-thread settings; keep apps and plugins off at both boundaries. */
+export const CODEX_TEACHER_DISABLED_FEATURES = [
+  "apps",
+  "plugins",
+  "remote_plugin",
+  "skill_mcp_dependency_install",
+  "shell_tool",
+  "unified_exec",
+  "multi_agent",
+  "browser_use",
+  "in_app_browser",
+  "computer_use",
+  "image_generation",
+  "view_image",
+] as const;
+export const CODEX_TEACHER_ARGS = [
+  "app-server",
+  "--stdio",
+  ...CODEX_TEACHER_DISABLED_FEATURES.flatMap((name) => ["--disable", name]),
+];
+export const CODEX_TEACHER_FEATURES = Object.fromEntries(
+  CODEX_TEACHER_DISABLED_FEATURES.map((name) => [name, false]),
+);
+
 export type Backend = "codex" | "claude" | "pi";
 export interface TeacherIdentity {
   backend: Backend;
@@ -41,6 +65,7 @@ export const PLAN_SCHEMA = {
               "record_retrieval_check",
               "publish_review",
               "publish_lesson",
+              "resolve_grade_dispute",
             ],
           },
           arguments_json: { type: "string" },
@@ -328,29 +353,12 @@ async function runCodex(
 ): Promise<unknown> {
   // Dedicated teachers return plans. Installed plugins and connected apps can
   // bypass the filesystem sandbox, so an empty mcp_servers override is insufficient.
-  const disabledFeatures = [
-    "apps",
-    "plugins",
-    "remote_plugin",
-    "skill_mcp_dependency_install",
-    "shell_tool",
-    "unified_exec",
-    "multi_agent",
-    "browser_use",
-    "in_app_browser",
-    "computer_use",
-    "image_generation",
-    "view_image",
-  ];
-  const child = spawn(
-    "codex",
-    ["app-server", "--stdio", ...disabledFeatures.flatMap((name) => ["--disable", name])],
-    {
-      cwd,
-      stdio: ["pipe", "pipe", "pipe"],
-      signal,
-    },
-  );
+
+  const child = spawn("codex", CODEX_TEACHER_ARGS, {
+    cwd,
+    stdio: ["pipe", "pipe", "pipe"],
+    signal,
+  });
   let seq = 0,
     stderr = "",
     finalText = "";
@@ -521,7 +529,7 @@ async function runCodex(
         mcp_servers: Object.fromEntries(
           Object.keys(configuredServers ?? {}).map((name) => [name, { enabled: false }]),
         ),
-        features: Object.fromEntries(disabledFeatures.map((name) => [name, false])),
+        features: CODEX_TEACHER_FEATURES,
         web_search: research ? "live" : "disabled",
       },
     };
