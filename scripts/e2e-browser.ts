@@ -1,3 +1,4 @@
+import { verifyMemoryMapBrowser } from "./e2e-memory-map-browser.ts";
 import { verifyStepperPublication } from "./e2e-stepper-publication.ts";
 import { verifyDisputesBrowser } from "./e2e-disputes-browser.ts";
 import { verifyExpectedAnswers } from "./e2e-expected-answers.ts";
@@ -426,3 +427,5 @@ await verifyStepperBrowser(artifacts ? path.join(artifacts, "stepper") : null);
 await verifyStepperPublication(artifacts ? path.join(artifacts, "stepper-publication") : null);
 
 await verifyActivityBrowser(artifacts ? path.join(artifacts, "activity") : null);
+
+await verifyMemoryMapBrowser(artifacts ? path.join(artifacts, "memory-map") : null);

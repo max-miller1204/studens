@@ -97,6 +97,8 @@ export interface ReviewItem {
   lastAnswer: string;
   lastFeedback: string;
   attempts: number;
+  /** An incomplete exposure remains open until a full independent answer. */
+  gapOpen: boolean;
   misses?: number;
   needsReteach?: boolean;
 }
@@ -226,6 +228,7 @@ export function scheduleItems(events: ReviewEvent[]): ReviewItem[] {
     }
     let memory = initialMemory();
     let misses = 0;
+    let gapOpen = false;
     let box = 0;
     let dueAt = list[0].at + DAY_MS;
     let exposureAt = list[0].at;
@@ -248,6 +251,8 @@ export function scheduleItems(events: ReviewEvent[]): ReviewItem[] {
       context = evidenceContext(event.evidence, elapsed);
       const full = event.correct && (event.credit === undefined || event.credit === 1);
       const independentFull = full && independent(event.evidence);
+      if (!full) gapOpen = true;
+      else if (event.gapIndependent ?? independent(event.evidence)) gapOpen = false;
       const feedbackAt = Math.max(event.at, event.feedbackAt ?? event.at);
       const scheduledDueAt = dueAt;
       if (i === 0) dueAt = feedbackAt + DAY_MS;
@@ -361,6 +366,7 @@ export function scheduleItems(events: ReviewEvent[]): ReviewItem[] {
       lastFeedback: last.feedback,
       attempts: list.length,
       misses,
+      gapOpen,
       needsReteach:
         misses >= RETEACH_MISSES &&
         !(
