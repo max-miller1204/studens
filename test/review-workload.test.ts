@@ -170,6 +170,7 @@ it("shares durable reservations across classroom starts, daily plans, topics, re
   fs.unlinkSync(rootLock);
 });
 
+// Nine classrooms publish and grade four days on disk; allow for filesystem work, not a latency claim.
 it("bounds a many-classroom daily batch and rotates classrooms/topics over successive days", () => {
   for (let c = 0; c < 9; c++) seed(`class-${c}`);
   const served = new Set<string>();
@@ -232,7 +233,7 @@ it("bounds a many-classroom daily batch and rotates classrooms/topics over succe
   expect(
     pickAcrossClassrooms([...candidates].reverse(), NOW, state, [...history].reverse()),
   ).toEqual(new Map([["topics", next]]));
-});
+}, 20_000);
 
 it("gives never-selected classrooms priority with more classrooms than a daily allowance", () => {
   const candidates = Array.from({ length: 9 }, (_, i) => ({ classroom: `c${i}`, items: items() }));
