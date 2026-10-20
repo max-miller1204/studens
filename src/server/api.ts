@@ -1,4 +1,5 @@
 import type * as http from "node:http";
+import { handleExport } from "./exports.ts";
 import { handleActivity } from "./activity.ts";
 import { handleAsk, handleDeleteAnnotation, handleFollowUp } from "./annotations.ts";
 import { handleEvents } from "./events.ts";
@@ -19,6 +20,7 @@ export async function handleApi(
   url: URL,
 ): Promise<void> {
   const route = rest.join("/");
+  if (route === "export") return handleExport(req, res, url);
   if (route === "settings" || route === "settings/models")
     return handleSettings(req, res, url, route === "settings/models");
   if (

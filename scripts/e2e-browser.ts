@@ -2,6 +2,7 @@ import { verifyMemoryMapBrowser } from "./e2e-memory-map-browser.ts";
 import { verifySearchBrowser } from "./e2e-search-browser.ts";
 import { verifyStepperPublication } from "./e2e-stepper-publication.ts";
 import { verifyDisputesBrowser } from "./e2e-disputes-browser.ts";
+import { verifyClassroomExportBrowser } from "./e2e-export-browser.ts";
 import { verifyExpectedAnswers } from "./e2e-expected-answers.ts";
 import { verifyReviewWorkload } from "./e2e-review-workload.ts";
 import { verifyCriteriaBrowser } from "./e2e-criteria-browser.ts";
@@ -431,3 +432,5 @@ await verifyStepperPublication(artifacts ? path.join(artifacts, "stepper-publica
 await verifyActivityBrowser(artifacts ? path.join(artifacts, "activity") : null);
 
 await verifyMemoryMapBrowser(artifacts ? path.join(artifacts, "memory-map") : null);
+
+await verifyClassroomExportBrowser(artifacts ? path.join(artifacts, "export") : null);

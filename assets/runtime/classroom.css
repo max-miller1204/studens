@@ -2674,3 +2674,15 @@ body > .cl-teacher-activity {
     height: 2.5rem;
   }
 }
+
+/* Portable classroom exports. */
+.cl-export-form > label {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.cl-export-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
