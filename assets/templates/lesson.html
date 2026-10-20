@@ -31,7 +31,8 @@
     * Predict and test: the learner predicts a result, then sees the real result.
     * Debugging challenge: the learner finds the error in a short artifact (locate).
     * Guided experiment: change one input, observe the effect, explain it.
-    * Faded worked example: a full example, then the same steps with gaps (cloze).
+    * Faded worked example: use the reusable .cl-faded widget in faded.html.
+      It hands over one more step on each new case, ending with all steps omitted.
     * Comparison: two cases side by side, then a question about the difference.
     * Simulation or trace: step through a process one event at a time.
     * Decision exercise: given a situation, choose the next action and justify it.
@@ -61,6 +62,10 @@
     * form.cl-practice: short ungraded checks between sections. Read practice.html.
       Local feedback only; no saved attempt, grade, score, review, or teacher wake.
       Public practice keys must use different examples from the graded assessment.
+    * .cl-faded: ordered worked reasoning, principle prompts, progressively omitted
+      steps on new cases, local exact feedback or honest solution comparison. Read
+      faded.html for the copyable contract. Keep it outside forms, inside the gate.
+      Public practice only; no grades, saved progress, teacher calls, or learning credit.
     * form.cl-reflect: an ungraded self-explanation. Read it. It is not proof of
       mastery.
     * Glossary terms from GLOSSARY.md are marked on the page automatically.
@@ -138,6 +143,9 @@
             objective. Show a concrete case before you ask for work.
           </p>
         </section>
+
+        <!-- Optional: copy the .cl-faded section from assets/templates/faded.html
+             for a suitable new procedure. Keep public cases distinct from quizzes. -->
 
         <!-- Optional: add a short form.cl-practice here before the next section.
              Read assets/templates/practice.html for controls and public feedback.

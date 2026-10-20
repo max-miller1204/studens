@@ -4,6 +4,7 @@ import { initDiagrams } from "./diagrams.mjs";
 import { initLinks } from "./links.mjs";
 import { initMath } from "./math.mjs";
 import { initTheme } from "./theme.mjs";
+import { initFaded } from "./faded.mjs";
 import { createReviewScreen } from "./review-screen.mjs";
 import { createCards } from "./cards.mjs";
 import { createDrafts } from "./drafts.mjs";
@@ -50,6 +51,7 @@ function init() {
   // Also before the text index: each formula becomes a span.cl-math, which it skips.
   initMath(contentRoot).catch((err) => console.error("[classroom] math failed", err));
 
+  initFaded(contentRoot);
   highlights.init();
   quizzes.hydrateQuizzes();
   review = createReviewScreen({

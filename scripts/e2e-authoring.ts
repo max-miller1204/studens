@@ -67,6 +67,7 @@ import {
   type Harness,
 } from "./harness.ts";
 import { checkPractice, selectLocateAnswer } from "./browser-actions.ts";
+import { checkFaded } from "./faded-browser-actions.ts";
 import { playwright, playwrightCode } from "./playwright.ts";
 
 const AUTHORING_TIMEOUT_MS = 30 * 60_000;
@@ -248,6 +249,7 @@ interface LessonReport {
   formulas: number;
   reflections: number;
   inlineScripts: number;
+  fadedWidgets: number;
   localControls: Array<{ label: string; keyboard: boolean; changed: boolean }>;
   details: number;
   tables: number;
@@ -313,6 +315,7 @@ function inspectLesson(root: string, lesson: string, objective: string): LessonR
     formulas: count(body, /\\[([]/g),
     reflections: count(body, /class="[^"]*\bcl-reflect\b/g),
     inlineScripts: count(body, /<script\b(?![^>]*type="application\/json")/g),
+    fadedWidgets: 0,
     localControls: [],
     details: count(body, /<details\b/g),
     tables: count(body, /<table\b/g),
@@ -355,7 +358,7 @@ const SUBMIT_LESSON = `async page => {
       if (controls.get(i)?.keyboard) continue;
       const button = buttons.nth(i);
       const authored = await button.evaluate((b) =>
-        !b.closest('form, .cl-header, .cl-card-inline, .cl-card-panel, .cl-ask-pill, .cl-badge-marker, .cl-term, .cl-term-pop, .cl-contract-error, .cl-teacher'));
+        !b.closest('form, .cl-faded-runtime, .cl-header, .cl-card-inline, .cl-card-panel, .cl-ask-pill, .cl-badge-marker, .cl-term, .cl-term-pop, .cl-contract-error, .cl-teacher'));
       if (!authored || !(await button.isVisible())) continue;
       const label = ((await button.getAttribute('aria-label')) || (await button.innerText())).trim();
       if (await button.isDisabled()) {
@@ -372,6 +375,7 @@ const SUBMIT_LESSON = `async page => {
     }
   }
   await (${checkPractice.toString()})(page);
+  const faded = await (${checkFaded.toString()})(page);
   const submitted = [];
   for (const form of await page.locator('form.cl-quiz').all()) {
     if ((await form.getAttribute('data-state')) !== 'fresh') continue;
@@ -400,9 +404,9 @@ const SUBMIT_LESSON = `async page => {
       if (type === 'locate') await selectLocateAnswer(q.locator('.cl-segment').first());
     }
     const saved = await form.evaluate((f) => ({
-      checked: [...f.querySelectorAll('input:checked')].map((i) => i.value),
-      text: [...f.querySelectorAll('input[type=text], input:not([type]), textarea')].filter(i=>!i.closest('.cl-q-verdict')).map((i) => i.value),
-      selects: [...f.querySelectorAll('select')].map((s) => s.value),
+      checked: [...f.querySelectorAll('input:checked')].filter(el => el.closest('.cl-q') && !el.closest('.cl-q-verdict, .cl-card-panel')).map((i) => i.value),
+      text: [...f.querySelectorAll('input[type=text], input:not([type]), textarea')].filter(el => el.closest('.cl-q') && !el.closest('.cl-q-verdict, .cl-card-panel')).map((i) => i.value),
+      selects: [...f.querySelectorAll('select')].filter(el => el.closest('.cl-q') && !el.closest('.cl-q-verdict, .cl-card-panel')).map((s) => s.value),
       order: [...f.querySelectorAll('.cl-order > li')].map((li) => li.dataset.item),
       segments: [...f.querySelectorAll('.cl-segment[aria-pressed="true"]')].map((s) => s.dataset.segment),
     }));
@@ -413,7 +417,7 @@ const SUBMIT_LESSON = `async page => {
     });
     submitted.push({ quizId: await form.getAttribute('data-quiz-id'), status: result.status(), body: result.status() === 201 ? null : await result.text(), saved });
   }
-  return { errors, contract, outline, controls: [...controls.values()], submitted };
+  return { errors, contract, outline, controls: [...controls.values()], faded, submitted };
 }`;
 
 /** Reload a lesson and read each quiz's state, grade, and restored answers. */
@@ -429,9 +433,9 @@ const READ_GRADED = `async page => {
     attempts: f.dataset.attempts,
     grade: f.querySelector('.cl-grade-banner')?.innerText.replace(/\\s+/g, ' ').trim() ?? null,
     saved: {
-      checked: [...f.querySelectorAll('input:checked')].map((i) => i.value),
-      text: [...f.querySelectorAll('input[type=text], input:not([type]), textarea')].filter(i=>!i.closest('.cl-q-verdict')).map((i) => i.value),
-      selects: [...f.querySelectorAll('select')].map((s) => s.value),
+      checked: [...f.querySelectorAll('input:checked')].filter(el => el.closest('.cl-q') && !el.closest('.cl-q-verdict, .cl-card-panel')).map((i) => i.value),
+      text: [...f.querySelectorAll('input[type=text], input:not([type]), textarea')].filter(el => el.closest('.cl-q') && !el.closest('.cl-q-verdict, .cl-card-panel')).map((i) => i.value),
+      selects: [...f.querySelectorAll('select')].filter(el => el.closest('.cl-q') && !el.closest('.cl-q-verdict, .cl-card-panel')).map((s) => s.value),
       order: [...f.querySelectorAll('.cl-order > li')].map((li) => li.dataset.item),
       segments: [...f.querySelectorAll('.cl-segment[aria-pressed="true"]')].map((s) => s.dataset.segment),
     },
@@ -641,10 +645,12 @@ async function main(): Promise<void> {
           contract: string[];
           outline: string[];
           controls: LessonReport["localControls"];
+          faded: number;
           submitted: Submitted[];
         }>(browser, root, SUBMIT_LESSON);
         report.outline = result.outline;
         report.localControls = result.controls;
+        report.fadedWidgets = result.faded;
         for (const error of result.errors) report.problems.push(`Page error: ${error}`);
         for (const error of result.contract) report.problems.push(`Contract error: ${error}`);
         for (const control of result.controls) {
@@ -754,6 +760,7 @@ async function main(): Promise<void> {
         lessonsWithPretest: reports.filter((r) => r.quizzes.some((q) => q.kind === "pretest"))
           .length,
         lessonsWithLocalControls: reports.filter((r) => r.localControls.length > 0).length,
+        lessonsWithFadedWidgets: reports.filter((r) => r.fadedWidgets > 0).length,
         lessonsWithReflection: reports.filter((r) => r.reflections > 0).length,
         lessonsWithDiagrams: reports.filter((r) => r.diagrams > 0).length,
         lessonsWithMath: reports.filter((r) => r.formulas > 0).length,
