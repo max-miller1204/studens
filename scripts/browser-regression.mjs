@@ -370,7 +370,42 @@ export async function browserRegression(page, highlightText) {
     "The marker did not open the unsent question at its highlight",
   );
   await screenshot("restored-question-draft");
+  // A server-side delete can be visible before the browser consumes its response.
+  // Observe that actual response and let its success callback finish before reload.
+  await page.evaluate(() => {
+    window.studensCancelDraftSettled = false;
+    const originalFetch = window.fetch;
+    window.fetch = async (...args) => {
+      const [url, options] = args;
+      if (String(url) === "/api/draft" && options?.method === "PUT") {
+        const body = JSON.parse(options.body);
+        if (body.key === "ask" && body.value === null) {
+          window.fetch = originalFetch;
+          const response = await originalFetch(...args);
+          const json = response.json.bind(response);
+          response.json = async () => {
+            const value = await json();
+            setTimeout(() => (window.studensCancelDraftSettled = true), 0);
+            return value;
+          };
+          return response;
+        }
+      }
+      return originalFetch(...args);
+    };
+  });
+  const cleared = page.waitForResponse(
+    (r) =>
+      r.url().endsWith("/api/draft") &&
+      r.request().method() === "PUT" &&
+      r.request().postDataJSON()?.key === "ask" &&
+      r.request().postDataJSON()?.value === null,
+  );
   await page.keyboard.press("Escape");
+  const clearResponse = await cleared;
+  assert(clearResponse.ok(), await clearResponse.text());
+  await clearResponse.finished();
+  await page.waitForFunction(() => window.studensCancelDraftSettled === true);
   await waitDrafts((drafts) => !Object.hasOwn(drafts, "ask"), "Cancel kept the question draft");
   await page.reload();
   await page.locator('[data-quiz-id="all-types"]').waitFor();
