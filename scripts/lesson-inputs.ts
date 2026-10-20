@@ -10,6 +10,7 @@ import { authoredQuizzes } from "../src/quiz-authoring.ts";
 import { parseRubric } from "../src/rubric.ts";
 import { parseTeachingPlan } from "../src/teaching-plan.ts";
 import { authoredVariants } from "../src/review-variants.ts";
+import { validateCodeQuestions } from "../src/code-questions.ts";
 
 export const inputNames = [
   "lesson.html",
@@ -95,6 +96,7 @@ export function preflightLessonInputs(
 ): void {
   const meta = inputs.metadata ? jsonObject(inputs.metadata, "lesson.json") : null;
   validateLessonContractVersions(meta as LessonMeta | null, classroom, lesson);
+  validateCodeQuestions(inputs.html.text, meta);
   const key = inputs.key ? jsonObject(inputs.key, "quiz/key.json") : null;
   const plan = inputs.plan ? jsonObject(inputs.plan, "quiz/plan.json") : null;
   const requiresKey =

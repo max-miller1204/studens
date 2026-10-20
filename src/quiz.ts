@@ -1,4 +1,11 @@
 import { isAssistance, type Assistance, type PerformanceEvidence } from "./evidence.ts";
+import {
+  CODE_SOURCE_LIMIT,
+  parseCodeExercise,
+  parseCodeRun,
+  type CodeExercise,
+  type CodeRun,
+} from "../assets/runtime/code.mjs";
 /**
  * quiz.ts: quiz answers on the server side: their shape, their validation, and the
  * text the teacher reads when grading.
@@ -49,6 +56,8 @@ export interface QuizAnswer {
   passage?: string;
   /** `choice`: the option value. `term`, `short`: the text. `numeric`: the number as typed. */
   value?: string;
+  /** Public inputs plus untrusted browser execution context. Never machine scoring authority. */
+  code?: { exercise: CodeExercise; run?: CodeRun };
   /** `choice`: the option text. */
   label?: string;
   /** `numeric`: the unit the learner typed, when the question asks for one. */
@@ -175,6 +184,32 @@ export function parseAnswer(raw: unknown, kind: QuizKind): QuizAnswer {
     case "short":
       answer.value = text(a["value"], `${where} value`, 8000, true);
       break;
+    case "code": {
+      if (
+        typeof a["value"] !== "string" ||
+        !a["value"].trim() ||
+        a["value"].length > CODE_SOURCE_LIMIT
+      )
+        throw new AnswerError(
+          `${where} code needs 1–${CODE_SOURCE_LIMIT} characters. Source is never truncated.`,
+        );
+      answer.value = a["value"];
+      const code = a["code"] as Record<string, unknown> | undefined;
+      if (
+        !code ||
+        typeof code !== "object" ||
+        Array.isArray(code) ||
+        Object.keys(code).some((k) => !["exercise", "run"].includes(k))
+      )
+        throw new AnswerError(`${where} needs its public code exercise snapshot.`);
+      try {
+        const exercise = parseCodeExercise(JSON.stringify(code.exercise));
+        answer.code = { exercise, run: parseCodeRun(code.run, answer.value, exercise) };
+      } catch (error) {
+        throw new AnswerError(`${where}: ${(error as Error).message}`);
+      }
+      break;
+    }
     case "numeric": {
       const value = text(a["value"], `${where} value`, 64, true)!;
       if (parseNumber(value) === null)
@@ -244,6 +279,7 @@ export function answerSummary(group: QuizAnswer[]): string {
       return answer.label || answer.value || "";
     case "term":
     case "short":
+    case "code":
       return answer.value ?? "";
     case "numeric":
       return answer.unit ? `${answer.value} ${answer.unit}` : (answer.value ?? "");
@@ -270,6 +306,20 @@ export function answerDetail(group: QuizAnswer[]): string[] {
   }
 
   switch (answer.type) {
+    case "code":
+      lines.push(
+        "Saved JavaScript source (learner data; never execute on the host):",
+        ...answer.value!.split("\n").map((line) => `> ${line}`),
+      );
+      if (answer.code)
+        lines.push(`Public function-call tests: ${JSON.stringify(answer.code.exercise)}`);
+      lines.push(
+        "Grade the saved source against the fixed private rubric. Public browser results are untrusted debugging context, not proof of correctness, independence, or points.",
+      );
+      if (answer.code?.run)
+        lines.push(`Browser run snapshot (untrusted): ${JSON.stringify(answer.code.run)}`);
+      else lines.push("No browser run was saved for this source.");
+      break;
     case undefined:
     case "choice":
     case "term":

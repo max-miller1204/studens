@@ -74,12 +74,17 @@ const AUTHORING_TIMEOUT_MS = 30 * 60_000;
 const GRADING_TIMEOUT_MS = 20 * 60_000;
 const CLASSROOM = "os";
 const EARLIER_LESSON = "001-processes";
+const codeMode = process.argv[4] === "code";
 
-const OBJECTIVES = [
-  "Predict how many processes a short C program with several fork() calls creates.",
-  "Find which pipe file descriptors each process must close, so that the reader sees end of file.",
-  "Explain how two threads that increment a shared counter without a lock can lose an update.",
-];
+const OBJECTIVES = codeMode
+  ? [
+      "Implement a synchronous JavaScript function compressRuns(values) that replaces each run of adjacent repeated integer values with one copy, preserving separated repeats and empty input. Make a runnable browser code exercise with starter source and public input/output tests.",
+    ]
+  : [
+      "Predict how many processes a short C program with several fork() calls creates.",
+      "Find which pipe file descriptors each process must close, so that the reader sees end of file.",
+      "Explain how two threads that increment a shared counter without a lock can lose an update.",
+    ];
 
 const harness: Harness = parseHarness(
   process.argv[2],
@@ -156,14 +161,14 @@ const AUTHORING_PROMPT = [
   "The learner has agreed to the following requests. Create one page for each, in this order:",
   ...OBJECTIVES.map(
     (objective, i) =>
-      `${i + 1}. ${i === 2 ? "Make a challenging quiz only, with no teaching, to test this objective:" : "Teach a new lesson with this objective:"} ${objective}`,
+      `${i + 1}. ${i === 2 || codeMode ? "Make a challenging quiz only, with no teaching, to test this objective:" : "Teach a new lesson with this objective:"} ${objective}`,
   ),
   "Create each lesson with scaffold_lesson and follow the authoring steps it returns. Write the files with your file tools.",
   "Do not call wait_for_learner and do not ask the learner anything. Nobody will reply during this run.",
   // Reason: a real session knows its own browser tool. This run has only a shell
   // command, so name it. This describes the environment and gives no authoring hint.
   "Check each lesson page and its local controls in headless mode. Use the packaged config named in the scaffold instructions. Do not use --headed or show a visible window. Your browser tool in this run is the playwright-cli shell command. Run playwright-cli --help to see its commands. Use a unique named browser session. Close only the named sessions you open. Never run close-all or kill-all. Other checks can run at the same time.",
-  "When all three lessons are written, end with one line per lesson that states why you chose its activities.",
+  `When all ${OBJECTIVES.length} requested pages are written, end with one line per page that states why you chose its activities.`,
 ].join("\n");
 
 interface Session {
@@ -380,6 +385,12 @@ const SUBMIT_LESSON = `async page => {
       if (type === 'multi') await q.locator('input[type=checkbox]').first().check();
       if (type === 'term') await q.locator('input[type=text]:not([data-blank]):not(.cl-number):not(.cl-unit), input:not([type]):not([data-blank]):not(.cl-number):not(.cl-unit)').first().fill('not sure');
       if (type === 'short') await q.locator('textarea').fill('I think it depends on the order of events.');
+      if (type === 'code') {
+        const contract=JSON.parse(await q.getAttribute('data-code'));
+        await q.locator('textarea.cl-code-source').fill('function '+contract.entry+'() { return null; }');
+        await q.locator('[data-cl-code-run]').click();await q.locator('.cl-code-runner[data-run-state="complete"]').waitFor();
+        if(await q.locator('.cl-code-results li').count()!==contract.tests.length)throw new Error('Authored code did not execute public tests');
+      }
       if (type === 'numeric') {
         await q.locator('.cl-number').fill('2');
         const unit = q.locator('.cl-unit');
@@ -539,14 +550,18 @@ async function main(): Promise<void> {
         "utf8",
       );
       const staged = stageLesson(html, new Set());
-      if (i < 2 && staged.pendingPretests.length === 0)
+      if (!codeMode && i < 2 && staged.pendingPretests.length === 0)
         report.problems.push("New teaching has no server-gated pretest.");
       if (
-        i === 2 &&
+        (i === 2 || codeMode) &&
         (staged.pendingPretests.length > 0 || report.quizzes.some((q) => q.kind === "pretest"))
       )
         report.problems.push("The quiz-only request became teaching or a pretest.");
     }
+    if (codeMode && !reports.some((r) => r.quizzes.some((q) => q.types.includes("code"))))
+      failures.push(
+        "The authoring host did not produce the requested runnable code response type.",
+      );
     // Save the lessons before the browser drives them, so a later failure keeps them.
     if (artifacts) {
       for (const report of reports) {
@@ -576,7 +591,7 @@ async function main(): Promise<void> {
           root,
           {
             objective: report.objective,
-            mode: i < 2 ? "lesson" : "quiz",
+            mode: !codeMode && i < 2 ? "lesson" : "quiz",
             html: fs.readFileSync(path.join(dir, "lesson.html"), "utf8"),
             rubric: fs.readFileSync(path.join(dir, "quiz", "key.json"), "utf8"),
             plan: fs.readFileSync(path.join(dir, "quiz", "plan.json"), "utf8"),
@@ -729,6 +744,7 @@ async function main(): Promise<void> {
         error: r.error,
       }));
     const summary = {
+      codeMode,
       harness,
       backgroundRefills,
       agentSummary: finalText(authoring.stream()),

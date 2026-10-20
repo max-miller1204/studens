@@ -6,7 +6,12 @@ import {
   type QuestionType,
   type QuestionShape,
 } from "../assets/runtime/quiz.mjs";
-import { authoringContent, htmlAttributes, TAG_ATTRIBUTES } from "./authoring-html.ts";
+import {
+  authoringContent,
+  htmlAttributes,
+  decodeHtmlAttribute,
+  TAG_ATTRIBUTES,
+} from "./authoring-html.ts";
 
 /** One `.cl-q` element as written, before any check. */
 export interface AuthoredQuestion {
@@ -93,7 +98,7 @@ export function unfinishedQuestionLines(questions: AuthoredQuestion[]): string[]
 }
 
 /** Read the same control shapes that the browser validates before hydration. */
-export function authoredQuestionShapes(html: string): QuestionShape[] {
+export function authoredQuestionShapes(html: string, includeGated = false): QuestionShape[] {
   interface Element {
     tag: string;
     attributes: Map<string, string>;
@@ -137,7 +142,7 @@ export function authoredQuestionShapes(html: string): QuestionShape[] {
   const descendants = (element: Element): Element[] =>
     element.children.flatMap((child) => [
       child,
-      ...(child.tag === "template" ? [] : descendants(child)),
+      ...(child.tag === "template" && !includeGated ? [] : descendants(child)),
     ]);
   return descendants(root)
     .filter((element) => hasClass(element, "cl-q"))
@@ -164,6 +169,7 @@ export function authoredQuestionShapes(html: string): QuestionShape[] {
           .map((element) => element.attributes.get("data-item") ?? "");
       return {
         id: question.attributes.get("data-question-id") ?? null,
+        quizId: form.attributes.get("data-quiz-id") ?? null,
         type: question.attributes.get("data-type") ?? null,
         kind,
         reviewOf: question.attributes.get("data-review-of") ?? null,
@@ -181,6 +187,18 @@ export function authoredQuestionShapes(html: string): QuestionShape[] {
             !hasClass(element, "cl-unit"),
         ),
         textareas: count((element) => element.tag === "textarea"),
+        code: question.attributes.has("data-code")
+          ? decodeHtmlAttribute(question.attributes.get("data-code")!)
+          : null,
+        codeEditors: count((element) => {
+          if (element.tag !== "textarea" || !hasClass(element, "cl-code-source")) return false;
+          let parent = element.parent;
+          while (parent && parent !== question) {
+            if (parent.tag === "label") return true;
+            parent = parent.parent;
+          }
+          return false;
+        }),
         numbers: count((element) => element.tag === "input" && hasClass(element, "cl-number")),
         units: count((element) => hasClass(element, "cl-unit")),
         options: options.map((element) => element.attributes.get("value") ?? null),

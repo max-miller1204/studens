@@ -73,6 +73,52 @@ function codex(output: unknown = receipt, executed = command, exit_code = 0): st
 }
 
 describe("packaged authoring check receipts", () => {
+  it("accepts the observed Node type-stripping flag with the same bound receipt", () => {
+    expect(
+      packagedPageChecks(
+        "codex",
+        codex(
+          receipt,
+          "timeout 170 node --experimental-strip-types scripts/check-lesson.ts os 002-forks",
+        ),
+      ),
+    ).toHaveLength(1);
+    expect(
+      packagedPageChecks(
+        "codex",
+        codex(receipt, "cat scripts/check-lesson.ts --experimental-strip-types"),
+      ),
+    ).toEqual([]);
+  });
+  it.each([
+    "node --loader other.mjs /plugin/scripts/check-lesson.ts os 002-forks",
+    "node --import other.mjs /plugin/scripts/check-lesson.ts os 002-forks",
+    "node --eval 'node /plugin/scripts/check-lesson.ts os 002-forks'",
+    "node -e 'node /plugin/scripts/check-lesson.ts os 002-forks'",
+    "echo 'node /plugin/scripts/check-lesson.ts os 002-forks'",
+    "echo 'pretend; node /plugin/scripts/check-lesson.ts os 002-forks'",
+    'echo "pretend && node /plugin/scripts/check-lesson.ts os 002-forks"',
+    "printf 'synthetic receipt' # pretend; node /plugin/scripts/check-lesson.ts os 002-forks",
+    "cat <<'RECEIPT'\npretend; node /plugin/scripts/check-lesson.ts os 002-forks\nRECEIPT",
+    "check() { node /plugin/scripts/check-lesson.ts os 002-forks; }; printf 'synthetic receipt'",
+    "if false; then node /plugin/scripts/check-lesson.ts os 002-forks; fi",
+    "false && node /plugin/scripts/check-lesson.ts os 002-forks; printf 'synthetic receipt'",
+    "true || node /plugin/scripts/check-lesson.ts os 002-forks",
+    "(node /plugin/scripts/check-lesson.ts os 002-forks)",
+    "node /plugin/scripts/check-lesson.ts os 002-forks; printf 'synthetic receipt'",
+    "cd /plugin '&&' node scripts/check-lesson.ts os 002-forks",
+    "node '/plugin/scripts/check-lesson.ts''os' 002-forks",
+    "node 'pretend; node /plugin/scripts/check-lesson.ts' os 002-forks",
+    "/bin/bash -l 'node /plugin/scripts/check-lesson.ts os 002-forks'",
+    "cat /plugin/scripts/check-lesson.ts",
+  ])("rejects unrelated commands or semantic-changing flags: %s", (command) => {
+    expect(packagedPageChecks("codex", codex(receipt, command))).toEqual([]);
+  });
+  it("recognizes the actual Codex shell wrapper", () => {
+    expect(packagedPageChecks("codex", codex(receipt, `/bin/bash -lc '${command}'`))).toHaveLength(
+      1,
+    );
+  });
   it("accepts a successful Codex execution", () => {
     expect(packagedPageChecks("codex", codex())).toEqual([
       {
@@ -83,6 +129,12 @@ describe("packaged authoring check receipts", () => {
       },
     ]);
   });
+  it.each([{ classroom: "other" }, { lesson: "003-pipes" }])(
+    "rejects a complete receipt for a different invocation identity: %j",
+    (changed) => {
+      expect(packagedPageChecks("codex", codex({ ...receipt, ...changed }))).toEqual([]);
+    },
+  );
   it("recognizes shell-escaped program quotes", () => {
     expect(
       packagedPageChecks(
@@ -98,6 +150,7 @@ describe("packaged authoring check receipts", () => {
       initial: { ...receipt.initial, controls: ["a } { b"] },
     };
     const event = JSON.parse(codex());
+    event.item.command = `${command}; node /plugin/scripts/check-lesson.ts os 003-pipes`;
     event.item.aggregated_output = JSON.stringify(receipt) + "\n" + JSON.stringify(second) + "\n";
     expect(packagedPageChecks("codex", JSON.stringify(event)).map((check) => check.lesson)).toEqual(
       ["002-forks", "003-pipes"],
@@ -160,6 +213,9 @@ describe("packaged authoring check receipts", () => {
         preflight: receipt.preflight,
       },
     ]);
+  });
+  it("keeps a receipt before an explicit later failure", () => {
+    expect(packagedPageChecks("codex", codex(receipt, `${command}; false`, 1))).toHaveLength(1);
   });
   it("rejects a failed check that prints no receipt", () => {
     expect(packagedPageChecks("codex", codex("Error: Contract error", command, 1))).toEqual([]);

@@ -1,7 +1,7 @@
 /** Validate the canonical private rubric for newly scaffolded assessments. */
 import { validateCriteria, type RubricCriterion } from "./criteria.ts";
-import { authoredQuizzes } from "./quiz-authoring.ts";
-import { isQuestionType, isQuizKind } from "../assets/runtime/quiz.mjs";
+import { authoredQuizzes, authoredQuestionShapes } from "./quiz-authoring.ts";
+import { isQuestionType, isQuizKind, questionErrors } from "../assets/runtime/quiz.mjs";
 import { machineGraded } from "./closed-grading.ts";
 
 export interface RubricQuestion {
@@ -24,6 +24,13 @@ export function parseRubric(
   if (!rubric || typeof rubric !== "object" || Array.isArray(rubric))
     throw new Error("Private rubric must be an object keyed by quiz id.");
   const quizzes = authoredQuizzes(html);
+  for (const shape of (quizzes.some((q) => q.questions.some((q) => q.type === "code"))
+    ? authoredQuestionShapes(html, true)
+    : []
+  ).filter((q) => q.type === "code")) {
+    const errors = questionErrors(shape);
+    if (errors.length) throw new Error(`Code question ${shape.id}: ${errors.join(" ")}`);
+  }
   if (quizzes.length === 0) throw new Error("An assessment needs an authored quiz.");
   if (new Set(quizzes.map((q) => q.id)).size !== quizzes.length)
     throw new Error("Every authored quiz needs a unique id.");
@@ -59,8 +66,9 @@ export function parseRubric(
       )
         throw new Error(`Private rubric needs full and partial credit criteria for ${where}.`);
       try {
-        const closed = format === "machine" && machineGraded(question.type, entry);
-        if (requireCriteria || entry.criteria !== undefined) {
+        const closed =
+          (format === "machine" || question.type === "code") && machineGraded(question.type, entry);
+        if (requireCriteria || entry.criteria !== undefined || question.type === "code") {
           validateCriteria(entry.criteria, entry.points, where);
           if (closed && entry.criteria!.length !== 1)
             throw new Error(

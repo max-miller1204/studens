@@ -4,7 +4,16 @@
  */
 
 export type QuestionType =
-  "choice" | "multi" | "term" | "short" | "numeric" | "cloze" | "order" | "match" | "locate";
+  | "choice"
+  | "multi"
+  | "term"
+  | "short"
+  | "numeric"
+  | "cloze"
+  | "order"
+  | "match"
+  | "locate"
+  | "code";
 
 export type QuizKind = "check" | "pretest" | "review";
 
@@ -25,6 +34,7 @@ export declare function parseReviewKey(
 ): { lesson: string; quizId: string; questionId: string } | null;
 
 export interface QuestionShape {
+  quizId?: string | null;
   id: string | null;
   type: string | null;
   kind: QuizKind;
@@ -37,6 +47,8 @@ export interface QuestionShape {
   checkboxes: number;
   textInputs: number;
   textareas: number;
+  code?: string | null;
+  codeEditors?: number;
   numbers: number;
   units: number;
   /** The `value` attribute of each radio and checkbox, or null when it is absent. */

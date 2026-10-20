@@ -119,6 +119,12 @@ event handlers, teaching, hints, and answers. Media links must start with `/c/` 
 that they resolve from a review page. Keep element ids and radio names unique
 within the fragment; the assembler namespaces them when combining questions.
 
+For a runnable JavaScript `code` variant, include its labelled starter editor and
+public `data-code` function-call tests, as in the quiz contract. Those input/output
+examples are public debugging feedback, not private scoring answers. Keep the
+implementation and teacher-judgment criteria in the private rubric; never award
+points from browser pass flags or execute learner source on the host.
+
 In the original question's `quiz/plan.json` mapping, add `variants` with the same
 ids. Each mapping uses `objective: "original"`, `support: "independent"`, and a
 suitable mental task. For example:

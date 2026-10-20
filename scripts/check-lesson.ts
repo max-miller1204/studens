@@ -15,6 +15,7 @@ import * as server from "../src/server.ts";
 import * as store from "../src/store.ts";
 import { playwright, playwrightCode } from "./playwright.ts";
 import { checkPractice } from "./browser-actions.ts";
+import { checkCodeControls } from "./code-browser-actions.ts";
 import { checkFaded } from "./faded-browser-actions.ts";
 import { preflightLessonInputs, readLessonInputs, sameLessonInputs } from "./lesson-inputs.ts";
 
@@ -62,6 +63,7 @@ try {
     const contract = await page.locator('.cl-contract-error').allTextContents();
     if(contract.length) throw new Error(contract.join(' '));
     const practice = await (${checkPractice.toString()})(page);
+    const code = await (${checkCodeControls.toString()})(page);
     const faded = await (${checkFaded.toString()})(page);
     const controls = [];
     const buttons = page.locator('main[data-cl-content] button').filter({hasNot:page.locator('[type=submit]')});
@@ -82,7 +84,7 @@ try {
     }
     await page.waitForTimeout(250);
     if(errors.length) throw new Error(errors.join(' '));
-    return { quizzes:await page.locator('form.cl-quiz').count(), controls, practice, faded, contractErrors:0, pageErrors:0 };
+    return { quizzes:await page.locator('form.cl-quiz').count(), controls, practice, code, faded, contractErrors:0, pageErrors:0 };
   }`;
   async function inspect() {
     try {

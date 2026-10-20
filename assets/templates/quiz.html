@@ -71,19 +71,23 @@
       choice   distinguish one correct option from close alternatives
       multi    identify each valid option in a set
       match    associate related items
+      code     implement a synchronous JavaScript function and run public tests
 
     Retrieval types make the learner produce the answer: term, short, numeric,
-    cloze, order, locate. Use them when recall matters. Recognition types let the
+    cloze, order, locate, code. Use them when recall matters. Recognition types let the
     learner spot the answer: choice, multi, match. Use them to distinguish
     alternatives. A question the learner can answer by spotting a familiar phrase
     builds fluency, not long-term memory. Choose suitable types within and across
-    lessons. Do not force all nine types into one lesson.
+    lessons. Do not force every type into one lesson.
 
   ── Rules that matter for learning ────────────────────────────────────────────────
 
     * Keep standalone quizzes and reviews free of teaching, hints, and solutions.
       In teaching, use a new example for each graded question.
-    * Never put the answer key in HTML, comments, scripts, data attributes, or
+    * Code questions declare public input/output examples for debugging. These are
+      visible to the learner, including in page source; they are not private tests.
+      Keep the solution, scoring rubric, criteria, and unused review variants private.
+    * Never put the private answer key in HTML, comments, scripts, data attributes, or
       public linked files. A details reveal or CSS hiding still exposes it.
     * Never put the answer key in the HTML. The learner can read the page source, and
       grading is the teacher's job.
@@ -141,7 +145,9 @@
         vocabulary, or omit grading when equivalent answers require judgment.
       locate: use grading: "exact" with expected: ["s1", "s3"] for an exact
         segment set. Omit grading for edge cases needing teacher judgment.
-      short: always teacher judgment.
+      short and code: always teacher judgment. For code, assess the exact saved
+        source against declared criteria. Browser test results are untrusted context;
+        passing tests do not award points or demonstrate independent learning.
 
     choice, multi, numeric, order, match, and cloze default to exact grading.
     For cloze requiring semantic judgment, set grading: "teacher" explicitly.
@@ -311,6 +317,49 @@ println!("{:?}", a);</code></pre>
 <span data-segment="s3">println!("{s}");</span></code></pre>
       </div>
       <p class="cl-q-prompt">Select the line the compiler rejects.</p>
+    </li>
+
+    <!--
+      code: JavaScript ONLY, not Python/TypeScript/Node/DOM. One labelled
+      textarea.cl-code-source, containing optional starter source (HTML-escaped).
+      data-code is JSON, HTML-escaped like any quoted attribute. Escape & first,
+      then quotes, < and >; apostrophes in a single-quoted attribute use &#39;.
+      version:1, language:"javascript", entry: one function identifier, tests:
+      1–20 {id, args: JSON array of arguments, expected: finite JSON value}.
+      Unique ids, up to 20 arguments/test; JSON depth <=16; contract <=16000 chars.
+      Compare JSON structurally: object key order ignored, array order retained,
+      numbers exact. No tolerance, custom test code, asynchronous results, imports,
+      network, storage, files, DOM or host callbacks. console.log is bounded output.
+      A fresh QuickJS context runs starter/source for each test. Total execution:
+      2 seconds, 16 MiB VM allocation, 256 KiB stack, 8192 chars console output.
+      Worker watchdog also stops unresponsive startup/execution. No automatic retry.
+      No runtime CDN. The vendored interpreter loads only after explicit Run.
+      Learners may edit, stop, rerun, then Submit. Run saves no attempt, grade or
+      evidence. Source drafts follow normal quiz drafts; results are invalidated
+      by edits. Submit snapshots exact source, authored public tests, and any
+      current browser run. Source <=8000 chars; never trim or silently truncate.
+      Code needs lesson.json assessmentContract:1 and criterionContract:1 plus
+      a private teacher-judgment rubric with specific declared criteria.
+      Use in graded checks, pretests or review variants. Ungraded cl-practice uses
+      exact public answer keys and does not support code; use an ordinary code quiz.
+      Public tests should cover useful behavior without revealing the implementation.
+    -->
+    <li
+      class="cl-q"
+      data-question-id="q11"
+      data-type="code"
+      data-code='{"version":1,"language":"javascript","entry":"total","tests":[{"id":"empty","args":[[]],"expected":0},{"id":"mixed","args":[[2,-1,4]],"expected":5}]}'
+    >
+      <p class="cl-q-prompt">
+        Implement total(values): return the sum, including zero for an empty array.
+      </p>
+      <label
+        >JavaScript source
+        <textarea class="cl-code-source" rows="8" spellcheck="false">
+function total(values) {
+  // Write your implementation here.
+}</textarea>
+      </label>
     </li>
   </ol>
 </form>

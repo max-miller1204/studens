@@ -4,7 +4,7 @@ The learner submits typed answers and reads grades on the lesson page.
 
 ## Sub-features
 
-- Submit and restore all nine question types.
+- Submit and restore all ten question types, including runnable JavaScript.
 - Check inline ungraded practice locally, revise an answer, and start fresh on reload.
 - Study a faded worked example, attempt one more step per new case, and compare reasoning locally.
 - Grade closed answers immediately without a teacher turn. Keep saved machine allocations through recovery.
@@ -136,6 +136,75 @@ classroom: the preview must leave it unchanged. Private inputs stay outside
 the preview. Its disposable pretest grades only release controls and prove no
 model grading or learning outcome. Contract and receipt regressions also run in
 `test/lesson-inputs.test.ts` and `test/harness.test.ts`.
+
+For retained automated authoring evidence, invoke the checker as a separate simple
+command, optionally after `cd ... &&` or with `--experimental-strip-types`.
+Receipts must match that invocation's classroom/lesson and all saved input hashes.
+The receipt reader conservatively rejects multiline commands, heredocs, control
+flow and unrelated command prefixes. Keep any resulting missing-receipt failure;
+a separate checker replay is not another authoring generation.
+
+## Run JavaScript before submitting
+
+A `data-type="code"` question has a labelled `textarea.cl-code-source`, public
+function-call tests in `data-code`, and `Run code` / `Stop` controls. The supported
+language is synchronous JavaScript in the vendored QuickJS interpreter. Edit the
+starter, Run, read test results and console/errors, revise, then explicitly Submit.
+Run is debugging feedback: it creates no attempt, grade, teacher request or learning
+evidence. Submit saves exact source/tests and the current contextual run; normal
+private judgment criteria determine points. Grading and reload lock the editor.
+Client pass flags cannot grant points; disputes assess the original saved source.
+All tests shipped to the browser are public. Code is not an ungraded practice type.
+
+`node scripts/e2e-code-browser.ts /tmp/studens-code` drives actual browser WASM
+execution with correct/incorrect source, syntax/runtime/invalid JSON results,
+timeout, Stop/restart, bounded console/memory, editing during execution and stale
+or spoofed messages. It checks denied browser/origin/network/storage/import/worker
+escapes, no engine load on unrelated pages or before Run, and no Internet requests.
+Inspect `smoke.json`, `submission.json`, desktop/mobile light/dark captures and
+`execution.webm`. Submission checks include active-run refusal, duplicate/second-tab
+conflicts, immutable source/run hashes, criteria, reload, locks, private routes and
+a neighboring machine-scored quiz. The grader here is a fixture tool.
+
+`node scripts/e2e-code-review.ts /tmp/studens-code-review` uses a prepared private
+code variant through Start review, Run and Submit. A fixture incomplete criterion
+plan fails durably; reload does not retry. Explicit Retry saves one grade against
+the unchanged source/run snapshot. The default browser suite includes both drives.
+
+`node scripts/e2e-code-host.ts pi /tmp/studens-code-pi` (also `claude`, then `codex`)
+uses the actual initiating host and persistent fixed-model teacher. Correct source
+gets rubric credit. Constant source still receives zero when its client run snapshot
+claims passes; a dispute cannot replace the source or override machine neighbors.
+Inspect `report.json`, saved classroom teacher plans and model identities, hashes,
+and captures. A failed model plan remains a failure, with explicit recovery required;
+do not rerun unchanged to obtain a passing model response. This is model adherence,
+not a human retention measurement.
+
+For authoring and persistence contracts run
+`npx vitest run test/code.test.ts test/code-producer.test.ts test/code-grading-input.test.ts`. They trace typed
+service/Pi serialization, private variant assembly, unsupported or malformed
+contracts, immutable submissions, and exact-grading refusal. The packaged checker
+also runs disposable code and syntax-error feedback, restores starter source, and
+binds private inputs to its receipt without running learner source on the host.
+
+Code grading requests supply exact saved quiz/question citation reference forms,
+including on explicit Retry. These forms grant no eligibility: optional learning
+records still require fully credited supported questions, and null is valid.
+Missing, wrong and uncredited citations must continue to reject the whole plan
+before writes. To investigate a retained Pi code-grade failure, use
+`node scripts/replay-code-retry.ts /absolute/path/to/retained/pi /tmp/studens-code-retry`.
+The retained directory must include its classroom and native `pi-sessions/`.
+This clones both before opening the failed lesson and selecting Retry request.
+Inspect original/new plan, exact input, session-prefix and attempt/publication
+hashes, one grade, locked reload and repeated-retry refusal. This is one new real
+grading inference, not a rerun of the full host target or authoring generation.
+
+For a retained Claude directed finite-sum publication with no submitted attempt,
+`node scripts/replay-code-authoring.ts /absolute/path/to/retained/claude /tmp/studens-code-author-replay`
+clones its four checked files, runs the finite-number solution, then submits for
+the first actual grade in the saved teacher conversation. Inspect the provenance,
+unchanged original files, exact source, criteria and grade. Preserve the original
+failed target and distinguish a corrected learner action from lesson regeneration.
 
 ## Dispute a grade
 

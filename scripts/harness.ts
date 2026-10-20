@@ -319,16 +319,89 @@ export function packagedPageChecks(harness: Harness, events: string): PackagedPa
     return start >= 0 ? [...values, ...receipts(output.slice(start + 1))] : values;
   }
   function collect(command: string, output: string): void {
-    if (
-      !/\bnode\s+(?:\\?["'])?(?:[^\s"'\\]*\/)?scripts\/check-lesson\.ts(?:\\?["'])?\s/.test(command)
-    )
-      return;
+    // Codex records its shell wrapper; quoted prose/eval strings are not commands.
+    const shell = /^(?:\/bin\/)?(?:bash|sh) -(?:lc|cl|c) (["'])([\s\S]*)\1$/.exec(command.trim());
+    const executed = shell ? shell[2] : command.trim();
+    // Accept only a small, literal command grammar. Shell control flow, comments,
+    // heredocs, substitutions and function definitions cannot establish execution.
+    if (/[\r\n]/.test(executed)) return;
+    const tokens: string[] = [];
+    let rest = executed.trim();
+    while (rest) {
+      const match = /^(2>&1|&&|[;|]|\\"[^"\\]*\\"|"[^"\\$`]*"|'[^']*'|[A-Za-z0-9_./:@%+=,-]+)/.exec(
+        rest,
+      );
+      if (!match) return;
+      const word = match[0];
+      const value = word.startsWith('\\"')
+        ? word.slice(2, -2)
+        : word.startsWith('"') || word.startsWith("'")
+          ? word.slice(1, -1)
+          : word;
+      if (word !== value && ["&&", ";", "|", "2>&1"].includes(value)) return;
+      const remaining = rest.slice(word.length);
+      if (!/[;&|]/.test(word) && remaining && !/^[\s;&|]/.test(remaining)) return;
+      tokens.push(value);
+      rest = remaining.trimStart();
+    }
+    const invoked: { classroom: string; lesson: string }[] = [];
+    let i = 0;
+    while (i < tokens.length) {
+      while (tokens[i] === "cd") {
+        if (
+          !/^[A-Za-z0-9_./:@%+=,][A-Za-z0-9_./:@%+=, -]*$/.test(tokens[i + 1] ?? "") ||
+          tokens[i + 2] !== "&&"
+        )
+          return;
+        i += 3;
+      }
+      if (tokens[i] === "timeout") {
+        if (!/^\d+$/.test(tokens[i + 1] ?? "")) return;
+        i += 2;
+      }
+      if (tokens[i++] !== "node") return;
+      if (tokens[i] === "--experimental-strip-types") i++;
+      const program = tokens[i++];
+      if (!program || !/^(?:[A-Za-z0-9_./:@%+=,-]*\/)?scripts\/check-lesson\.ts$/.test(program))
+        return;
+      const classroom = tokens[i++],
+        lesson = tokens[i++];
+      if (![classroom, lesson].every((arg) => /^[A-Za-z0-9][A-Za-z0-9_.-]*$/.test(arg ?? "")))
+        return;
+      if (tokens[i] === "2>&1") i++;
+      if (tokens[i] === "|") {
+        if (tokens[++i] !== "tail") return;
+        i++;
+        if (tokens[i] === "-n") {
+          if (!/^\d+$/.test(tokens[++i] ?? "")) return;
+          i++;
+        } else if (!/^-\d+$/.test(tokens[i++] ?? "")) return;
+      }
+      invoked.push({ classroom, lesson });
+      if (
+        (tokens[i] === ";" || tokens[i] === "&&") &&
+        ["cd", "timeout", "node"].includes(tokens[i + 1])
+      ) {
+        i++;
+        continue;
+      }
+      if (tokens[i] === ";") {
+        i++;
+        if (tokens[i] === "false") i++;
+        else {
+          if (tokens[i++] !== "echo" || !/^[A-Za-z0-9_=.:/-]+$/.test(tokens[i++] ?? "")) return;
+        }
+      }
+      if (i !== tokens.length) return;
+    }
+    if (!invoked.length) return;
     const parsed = receipts(output);
     for (const value of parsed) {
       const receipt = value as Record<string, any>;
       if (
-        typeof receipt?.classroom === "string" &&
-        typeof receipt.lesson === "string" &&
+        invoked.some(
+          ({ classroom, lesson }) => receipt?.classroom === classroom && receipt.lesson === lesson,
+        ) &&
         typeof receipt.htmlHash === "string" &&
         /^[a-f0-9]{64}$/.test(receipt.htmlHash) &&
         receipt.preflight?.version === 1 &&

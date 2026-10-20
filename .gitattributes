@@ -1,0 +1,3 @@
+# The upstream singlefile module embeds WASM bytes in a JavaScript string.
+# Preserve its bytes and review updates through the vendor provenance hashes.
+assets/runtime/vendor/quickjs/variant/emscripten-module.browser-*.mjs binary

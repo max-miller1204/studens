@@ -13,8 +13,8 @@ const alternatives = (value) =>
 export function machineGraded(type, entry) {
   if (entry.grading !== undefined && entry.grading !== "exact" && entry.grading !== "teacher")
     throw new Error("grading must be exact or teacher.");
-  if (type === "short") {
-    if (entry.grading === "exact") throw new Error("short answers require teacher judgment.");
+  if (type === "short" || type === "code") {
+    if (entry.grading === "exact") throw new Error(`${type} answers require teacher judgment.`);
     return false;
   }
   const closed = ["choice", "multi", "numeric", "order", "match"].includes(type);

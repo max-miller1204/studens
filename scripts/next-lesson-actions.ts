@@ -7,8 +7,10 @@ import { lessonRequests } from "../src/next-lesson.ts";
 import * as store from "../src/store.ts";
 import { readTeacherState } from "../src/service-state.ts";
 import { control, ensureService, serviceStatus } from "../src/service-client.ts";
-import { TEST_MODELS } from "./harness.ts";
+import { ROOT, TEST_MODELS, until } from "./harness.ts";
 import { playwrightCode } from "./playwright.ts";
+export const DIRECTED_CODE_SOURCE =
+  "function sum(values) { return values.filter(Number.isFinite).reduce((total, value) => total + value, 0); }";
 export async function driveRealNextLesson(
   browser: string,
   root: string,
@@ -17,10 +19,53 @@ export async function driveRealNextLesson(
   artifacts: string | null,
   recoverPublication = false,
 ): Promise<void> {
+  const codeMode = process.env.STUDENS_VERIFY_CODE_LESSON === "1";
   const faded = process.env.STUDENS_VERIFY_FADED === "1";
-  const topic = faded
-    ? "Teach a short lesson on deciding whether two Rust borrows may coexist. Include one reusable .cl-faded widget with two ordered steps: identify the borrow kinds, then reason about their overlap. Declare three distinct fully specified code cases: worked, last-step completion, then all-step practice. The final case must require fresh work, not paraphrase the worked case. Use principle-focused self-explanation and compare responses for open reasoning. Use different code/values in the graded check and its private variants. Use the official Rust Book at https://doc.rust-lang.org/book/ch04-02-references-and-borrowing.html as the research source. Keep one objective, one prequestion, one later check, and two private review variants."
-    : "Teach a short lesson on shared borrowing in Rust: predict whether two immutable references may coexist. Use the official Rust Book at https://doc.rust-lang.org/book/ch04-02-references-and-borrowing.html as the research source. Keep one objective, one prequestion, one later check, and two private review variants for the check.";
+  if (codeMode && faded)
+    throw new Error("Select either STUDENS_VERIFY_CODE_LESSON or STUDENS_VERIFY_FADED.");
+  const sourceFiles = [
+    "src/lesson-output.ts",
+    "src/next-lesson.ts",
+    "src/quiz.ts",
+    "src/quiz-authoring.ts",
+    "src/rubric.ts",
+    "src/store/quizzes.ts",
+    "src/teacher.ts",
+    "src/teacher-service.ts",
+    "src/prompts.ts",
+    "src/grade-dispute.ts",
+    "assets/templates/quiz.html",
+    "assets/runtime/quiz.mjs",
+    "assets/runtime/quiz-ui.mjs",
+    "assets/runtime/code.mjs",
+    "assets/runtime/code-ui.mjs",
+    "assets/runtime/code-worker.mjs",
+    "assets/runtime/vendor/quickjs/provenance.json",
+    "package.json",
+    "package-lock.json",
+    "docs/CODE-EXERCISES.md",
+    "docs/TEACHING-PLAN.md",
+  ];
+  const inventory = (dir: string) =>
+    Object.fromEntries(
+      sourceFiles.map((file) => [
+        file,
+        createHash("sha256")
+          .update(fs.readFileSync(path.join(dir, file)))
+          .digest("hex"),
+      ]),
+    );
+  const loaded = codeMode ? (await serviceStatus()).packageRoot : undefined;
+  const sourceHashes = codeMode ? inventory(ROOT) : undefined;
+  if (codeMode) {
+    assert.ok(loaded);
+    assert.deepEqual(inventory(loaded), sourceHashes);
+  }
+  const topic = codeMode
+    ? 'Create a short JavaScript function assessment, explicitly skip the pretest and teaching gate together. One objective, one data-type="code" question, one normal check quiz. Ask the learner to implement function sum(values) returning the total of finite numbers, zero for an empty array. Use synchronous JavaScript only, entry sum, a labelled starter editor with a TODO instead of the solution, 3 public function-call tests including empty/mixed/negative inputs. Use private teacher judgment criteria for accumulating every input and the zero identity; accept loops or reduce. Add two private runnable code review variants with the same objective. No libraries, network, imports, host execution or hidden tests. Do not include any other quiz questions.'
+    : faded
+      ? "Teach a short lesson on deciding whether two Rust borrows may coexist. Include one reusable .cl-faded widget with two ordered steps: identify the borrow kinds, then reason about their overlap. Declare three distinct fully specified code cases: worked, last-step completion, then all-step practice. The final case must require fresh work, not paraphrase the worked case. Use principle-focused self-explanation and compare responses for open reasoning. Use different code/values in the graded check and its private variants. Use the official Rust Book at https://doc.rust-lang.org/book/ch04-02-references-and-borrowing.html as the research source. Keep one objective, one prequestion, one later check, and two private review variants."
+      : "Teach a short lesson on shared borrowing in Rust: predict whether two immutable references may coexist. Use the official Rust Book at https://doc.rust-lang.org/book/ch04-02-references-and-borrowing.html as the research source. Keep one objective, one prequestion, one later check, and two private review variants for the check.";
   const viewport = await playwrightCode<{ width: number; height: number }>(
     browser,
     root,
@@ -186,7 +231,7 @@ export async function driveRealNextLesson(
           );
         continue;
       }
-      if (retried || saved.document || saved.modelOutput === undefined)
+      if (codeMode || retried || saved.document || saved.modelOutput === undefined)
         throw new Error(`Real ${host} Next lesson failed: ${saved.error}`);
       console.log(
         `[e2e:${host}] Rejected authoring output: ${saved.error}. Exercising one explicit Retry lesson action.`,
@@ -316,6 +361,67 @@ export async function driveRealNextLesson(
       path.join(artifacts, "stored-next-lesson.json"),
       JSON.stringify(saved, null, 2),
     );
+  if (codeMode) {
+    const submission = await playwrightCode<{ id: string }>(
+      browser,
+      root,
+      `async page=>{
+      await page.goto(${JSON.stringify(base)}+'/c/rust/'+${JSON.stringify(saved!.lesson)});
+      const q=page.locator('.cl-q[data-type="code"]');if(await q.count()!==1)throw new Error('Service producer did not author exactly one runnable code question');
+      await q.getByLabel('JavaScript source',{exact:true}).fill(${JSON.stringify(DIRECTED_CODE_SOURCE)});
+      await q.locator('[data-cl-code-run]').click();await q.locator('.cl-code-runner[data-run-state="complete"]').waitFor();
+      const contract=JSON.parse(await q.getAttribute('data-code'));
+      if(await q.locator('[data-outcome="passed"]').count()!==contract.tests.length)throw new Error('Authored public tests failed for correct source');
+      const state=await (await page.request.get(${JSON.stringify(base)}+'/api/state?classroom=rust&lesson='+${JSON.stringify(saved!.lesson)})).json();
+      if(state.submissions?.length)throw new Error('Run created an attempt');
+      const response=page.waitForResponse(r=>r.url().endsWith('/api/quiz/submit')&&r.request().method()==='POST');
+      await page.getByRole('button',{name:'Submit for grading',exact:true}).click();const r=await response;if(r.status()!==201)throw new Error(await r.text());return r.json();
+    }`,
+    );
+    const grade = await until("authored code grade", 185000, () => {
+      const failed = readTeacherState("rust")?.requests.find(
+        (r) => r.target === submission.id && r.status === "failed",
+      );
+      if (failed) throw new Error(failed.error);
+      return (
+        store.latestGrades("rust", saved!.lesson).find((g) => g.submissionId === submission.id) ??
+        null
+      );
+    });
+    assert.equal(grade.score, 100);
+    const original = store.findSubmission(submission.id)!;
+    const hash = createHash("sha256").update(JSON.stringify(original)).digest("hex");
+    assert.equal(original.answers[0].value, DIRECTED_CODE_SOURCE);
+    assert.equal(original.answers[0].type, "code");
+    assert.ok(original.answers[0].code?.run);
+    assert.ok(original.rubricCriteria?.[original.answers[0].questionId]);
+    assert.equal(original.deterministicGrades?.length ?? 0, 0);
+    await playwrightCode(
+      browser,
+      root,
+      `async page=>{await page.reload();await page.locator('form[data-state="graded"]').waitFor();if(!await page.getByLabel('JavaScript source',{exact:true}).isDisabled())throw new Error('Authored code unlocked after grading');if(await page.locator('.cl-q-criteria li').count()<2)throw new Error('Missing authored criterion feedback');${artifacts ? `await page.screenshot({path:${JSON.stringify(path.join(artifacts, "authored-code-graded.png"))},fullPage:true});` : ""}return true;}`,
+    );
+    assert.equal(
+      createHash("sha256")
+        .update(JSON.stringify(store.findSubmission(submission.id)))
+        .digest("hex"),
+      hash,
+    );
+    if (artifacts)
+      fs.writeFileSync(
+        path.join(artifacts, "authored-code-submission.json"),
+        JSON.stringify(
+          { submission: original, grade, hash, loadedPackage: loaded, sourceHashes },
+          null,
+          2,
+        ),
+      );
+    assert.deepEqual(inventory(ROOT), sourceHashes);
+    assert.deepEqual(inventory(loaded!), sourceHashes);
+    console.log(
+      `[e2e:${host}] PASS: actual service-authored code ran public tests, submitted source for criterion grading and stayed locked on reload`,
+    );
+  }
   console.log(
     `[e2e:${host}] PASS: classroom Next lesson saved, checked without learner submissions, published and opened`,
   );

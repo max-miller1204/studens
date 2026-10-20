@@ -1,0 +1,37 @@
+[
+  {
+    "name": "quickjs-emscripten-core",
+    "version": "0.32.0",
+    "integrity": "sha512-QFnPfjFey8EqknSrSxe1hZrf1/8z7/6s1QzGOmKo6++02r7QRRX7ZoyNaZh7JuVjWsVW87KnQrbZqnHkOAzUyg==",
+    "shasum": "a7b1c923fb57538c2ee543c70a6755df52533b3f",
+    "files": {
+      "chunk-TAV5CUKK.mjs": "b423c720a9deef215b404e4ee212533bcef9de785a11f44aacf1ad8266ae6769",
+      "chunk-V2S4ZYJR.mjs": "fbf44a344aeaff0de89c9bbcb9a15037d8c9b66a532ee32f702b6ecbace0ae5d",
+      "index.mjs": "e8d69a97550f1a860f70e35b4b79d19da89390bd99454a9bbb5db36426bc78de",
+      "module-ES6BEMUI.mjs": "289a200ab91f855ed79f75147eb674b81cea7adf032f9344bd8b29ff5e7a7d43",
+      "module-asyncify-2EFITU5U.mjs": "c8cec04532f68af9aa436ad117defdc686d36a1670691d98cea9263345ba7b2b"
+    }
+  },
+  {
+    "name": "@jitl/quickjs-singlefile-browser-release-sync",
+    "version": "0.32.0",
+    "integrity": "sha512-Hfdl7rh8dzxNWFRiYAYNbhn0RMF1/tO6SMH2mUW0aTibqwaAtqPRbi4WkwaIDlhNz8Z4dksJi1Zjl1R54Jsc/Q==",
+    "shasum": "03f996f1c60a47fb1ee296221c164e4770f451e6",
+    "files": {
+      "chunk-FGV2HSCH.mjs": "6dd70060dcfcda101ba8d51cb4b341cc66fef2a58c07ea524b8ef508fd359e32",
+      "emscripten-module.browser-XIKQQPVU.mjs": "49c171aa6ee9c782f40229c95cdfaeb282b6740dd8eea4cc8e655986276a766a",
+      "emscripten-module.browser.mjs": "87a860137228c270aec26d601e5cc7756a30bb5620d3bea3c577ff490d766337",
+      "ffi.mjs": "3678ed1b43d0751000dad1cda02dc2c7b558677bb2a9fac9c8f49d3b68f0c3a3",
+      "index.mjs": "072f5a7f068718538805c1750871da9d90ef95aa7f7c9fc13cc1a1853081943d"
+    }
+  },
+  {
+    "name": "@jitl/quickjs-ffi-types",
+    "version": "0.32.0",
+    "integrity": "sha512-v9T+GQpmk43VDJ7d72sf0Nexhk+ArvtUihW27dy7lqAl0zBObFKtSBBIm5RBjwIhE8VwsPPm9PNuvPvNqLWUEg==",
+    "shasum": "43664daea79b1c42d69c262d80ebe743da25dc7d",
+    "files": {
+      "index.mjs": "5b6ccfe50a0d0066411135c66964b0c15c05167f5324df2e8066493da807efbe"
+    }
+  }
+]

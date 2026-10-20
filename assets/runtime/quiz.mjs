@@ -6,6 +6,8 @@
  * tests import this file, so they exercise the code the browser runs.
  */
 
+import { parseCodeExercise } from "./code.mjs";
+
 /** What the learner produces. The stimulus (what they look at) is separate. */
 export const QUESTION_TYPES = [
   "choice",
@@ -17,10 +19,11 @@ export const QUESTION_TYPES = [
   "order",
   "match",
   "locate",
+  "code",
 ];
 
 /** Types that make the learner produce the answer. Prefer these. */
-export const RETRIEVAL_TYPES = ["term", "short", "numeric", "cloze", "order", "locate"];
+export const RETRIEVAL_TYPES = ["term", "short", "numeric", "cloze", "order", "locate", "code"];
 
 /** Types that let the learner recognise the answer. Use these for quick checks. */
 export const RECOGNITION_TYPES = ["choice", "multi", "match"];
@@ -105,6 +108,7 @@ const ALLOWED_INPUTS = {
   order: [],
   match: [],
   locate: [],
+  code: ["textareas"],
 };
 
 const INPUT_NAMES = {
@@ -226,6 +230,15 @@ export function questionErrors(shape) {
     case "short":
       if (shape.textareas !== 1) errors.push(`needs exactly 1 textarea, found ${shape.textareas}.`);
       break;
+    case "code":
+      if (shape.textareas !== 1 || shape.codeEditors !== 1)
+        errors.push("needs exactly one textarea.cl-code-source in a label.");
+      try {
+        parseCodeExercise(shape.code);
+      } catch (error) {
+        errors.push(error.message);
+      }
+      break;
     case "numeric":
       if (shape.numbers !== 1)
         errors.push(`needs exactly 1 input.cl-number, found ${shape.numbers}.`);
@@ -253,6 +266,8 @@ export function questionErrors(shape) {
   if (shape.type !== "locate" && shape.select !== null) {
     errors.push('has data-select, but only a "locate" question can use it.');
   }
+  if (shape.type !== "code" && shape.code != null)
+    errors.push('has data-code, but only a "code" question can use it.');
 
   return errors;
 }
