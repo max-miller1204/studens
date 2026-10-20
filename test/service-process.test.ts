@@ -131,12 +131,15 @@ afterEach(async () => {
     else process.env.PI_CLASSROOM_SERVICE_PORT = originalPort;
   }
 });
-function client() {
-  const child = spawn(process.execPath, [path.join(packageRoot(), "mcp/launch.mjs")], {
+function client(gateStartup = false) {
+  const args = gateStartup
+    ? ["--import", path.join(packageRoot(), "test/service-process-startup.mjs")]
+    : [];
+  const child = spawn(process.execPath, [...args, path.join(packageRoot(), "mcp/launch.mjs")], {
     cwd: packageRoot(),
     env,
-    stdio: ["pipe", "pipe", "pipe"],
-  });
+    stdio: gateStartup ? ["pipe", "pipe", "pipe", "ipc"] : ["pipe", "pipe", "pipe"],
+  }) as ChildProcessWithoutNullStreams;
   const lines = readline.createInterface({ input: child.stdout });
   let stderr = "";
   child.stderr.on("data", (chunk) => (stderr += chunk));
@@ -149,7 +152,24 @@ function client() {
   });
   const exited = new Promise<void>((r) => child.on("close", () => r()));
   mcpChildren.set(child, exited);
+  const startups: Array<ServiceOwner & { root: string }> = [];
+  const startupExits = new Map<number, { code: number; signal: string | null }>();
+  let startupDecision: { winner: number; path: string } | undefined;
+  child.on("message", (message: any) => {
+    if (message.type === "fixture-service-held") startups.push(message);
+    if (message.type === "fixture-service-exit") startupExits.set(message.pid, message);
+    if (message.type === "fixture-startup-decision")
+      startupDecision = { winner: message.winner, path: message.path };
+  });
   return {
+    startups,
+    startupExits,
+    startupDecision: () => startupDecision,
+    releaseStartup(pid: number) {
+      if (!startups.some((owner) => owner.pid === pid))
+        throw new Error("Cannot release an unrecorded startup fixture child.");
+      child.send({ type: "fixture-release-startup", pid });
+    },
     child,
     exited,
     stderr: () => stderr,
@@ -364,24 +384,95 @@ it("keeps HTTP and submissions alive after MCP exit, reconnects, and preserves g
 }, 25_000);
 
 it("attaches simultaneous MCP clients to one owner without a port conflict", async () => {
-  const a = client(),
-    b = client();
+  const a = client(true),
+    b = client(true);
+  let released = false;
+  let failure: unknown;
   try {
     await Promise.all([
       a.call("initialize", { clientInfo: { name: "codex-test" } }),
       b.call("initialize", { clientInfo: { name: "codex-test" } }),
     ]);
-    const replies = await Promise.all([
-      a.call("tools/call", { name: "open_classroom", arguments: { classroom: "rust" } }),
-      b.call("tools/call", { name: "open_classroom", arguments: { classroom: "rust" } }),
-    ]);
+    const first = a.call("tools/call", {
+      name: "open_classroom",
+      arguments: { classroom: "rust" },
+    });
+    let secondFinished = false;
+    const second = b
+      .call("tools/call", { name: "open_classroom", arguments: { classroom: "rust" } })
+      .then((reply) => {
+        secondFinished = true;
+        return reply;
+      });
+    await waitFor(async () => a.startups.length === 1 && b.startups.length === 1);
+    for (const candidate of [...a.startups, ...b.startups]) {
+      expect(candidate).toMatchObject({
+        root: f.root,
+        packageRoot: packageRoot(),
+        port: Number(env.PI_CLASSROOM_SERVICE_PORT),
+      });
+      expect(candidate.pid).toBeGreaterThan(0);
+    }
+    a.releaseStartup(a.startups[0].pid);
+    const firstReply = await first;
+    const owner = await serviceStatus();
+    expect(owner.pid).toBe(a.startups[0].pid);
+    await waitFor(async () => !!b.startupDecision());
+    // A successful winner probe must keep the losing start in readiness, not attach.
+    expect(b.startupDecision()).toEqual({ winner: owner.pid, path: "/status" });
+    expect(secondFinished).toBe(false);
+    expect((await fetch(owner.url)).status).toBe(200);
+    expect(serviceOwnerExited(owner, servicePaths())).toBe(false);
+    b.releaseStartup(b.startups[0].pid);
+    released = true;
+    const replies = [firstReply, await second];
+    await waitFor(async () => b.startupExits.has(b.startups[0].pid));
+    expect(b.startupExits.get(b.startups[0].pid)).toMatchObject({ code: 1, signal: null });
     for (const reply of replies) expect(reply.result.isError).toBe(false);
     expect(replies[0].result.content).toEqual(replies[1].result.content);
     expect((await serviceStatus()).running).toBe(true);
-  } finally {
-    a.child.stdin.end();
+    expect((await serviceStatus()).pid).toBe(owner.pid);
     b.child.stdin.end();
-    await Promise.all([a.exited, b.exited]);
+    await b.exited;
+    expect((await fetch(owner.url)).status).toBe(200);
+    const stopped = await a.call("tools/call", {
+      name: "classroom_service",
+      arguments: { action: "stop" },
+    });
+    if (
+      stopped.result?.isError === false &&
+      JSON.parse(stopped.result.content[0].text).stopping === true
+    )
+      acknowledgedStop = owner;
+    expect(stopped.result.isError).toBe(false);
+    expect(JSON.parse(stopped.result.content[0].text).stopping).toBe(true);
+    await waitFor(async () => serviceOwnerExited(owner, servicePaths()));
+    await waitFor(async () => a.startupExits.has(owner.pid));
+    expect(a.startupExits.get(owner.pid)).toMatchObject({ code: 0, signal: null });
+    expect((await serviceStatus()).running).toBe(false);
+  } catch (error) {
+    failure = error;
+    throw error;
+  } finally {
+    try {
+      // Release/reap a held loser while the original owner remains live after failure.
+      if (!released && b.startups[0]) {
+        b.releaseStartup(b.startups[0].pid);
+        await waitFor(async () => b.startupExits.has(b.startups[0].pid));
+      }
+    } catch (error) {
+      if (failure)
+        throw new AggregateError([failure, error], "MCP assertion and startup cleanup failed.");
+      throw error;
+    } finally {
+      a.child.stdin.end();
+      b.child.stdin.end();
+      await Promise.all([a.exited, b.exited]);
+    }
+  }
+  for (const c of [a, b]) {
+    expect(c.child.exitCode).toBe(0);
+    expect(c.stderr()).not.toContain("detach failed");
   }
 }, 15_000);
 
