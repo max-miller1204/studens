@@ -8,6 +8,7 @@
 
 import { escapeHtml, renderMarkdown } from "./markdown.ts";
 import { lessonUrl } from "./paths.ts";
+import { missionSummary, renderMission } from "./mission-map.ts";
 import {
   DEFAULT_REVIEW_SIZE,
   MAX_REVIEW_SIZE,
@@ -174,28 +175,7 @@ function classroomCard(classroom: Classroom, due: number): string {
  * most useful line to show on a card — far better than a truncated lesson title.
  */
 export function missionWhy(mission: string | null): string | null {
-  if (!mission) return null;
-
-  const lines = mission.split("\n");
-  const start = lines.findIndex((line) => /^##\s+why\s*$/i.test(line.trim()));
-  if (start === -1) return null;
-
-  const body: string[] = [];
-  for (const line of lines.slice(start + 1)) {
-    if (/^##\s/.test(line)) break;
-    body.push(line);
-  }
-
-  const firstParagraph = body
-    .join("\n")
-    .trim()
-    .split(/\n\s*\n/)[0]
-    ?.replace(/\s+/g, " ")
-    .trim();
-  if (!firstParagraph) return null;
-  return firstParagraph.length > 220
-    ? firstParagraph.slice(0, 217).trimEnd() + "…"
-    : firstParagraph;
+  return missionSummary(mission);
 }
 
 // ── Classroom page ────────────────────────────────────────────────────────────
@@ -241,7 +221,7 @@ ${lessons.map((lesson, i) => lessonRow(lesson, i, data.progress.dueByLesson[less
   ${classroom.mission ? `<p class="cl-lede">${escapeHtml(missionWhy(classroom.mission) ?? "")}</p>` : ""}
 </div>
 ${progressSection(data)}
-<p><a href="/c/${encodeURIComponent(classroom.name)}/reviews">Review history</a> · <a href="/c/${encodeURIComponent(classroom.name)}/settings">Settings</a></p>
+<p><a href="/c/${encodeURIComponent(classroom.name)}/course-map">Course map</a> · <a href="/c/${encodeURIComponent(classroom.name)}/reviews">Review history</a> · <a href="/c/${encodeURIComponent(classroom.name)}/settings">Settings</a></p>
 <section class="cl-section">
   <h2 class="cl-section-title">Lessons</h2>
   ${lessonList}
@@ -588,7 +568,7 @@ export function documentPage(
   return shell({
     title: `${prettyFileName(fileName)} — ${classroom.title}`,
     breadcrumb: `${classroomCrumbs(classroom)}${parentCrumb}${sep}<span class="cl-crumb cl-crumb-current">${escapeHtml(prettyFileName(fileName))}</span>`,
-    body: `<article class="cl-doc">\n${renderMarkdown(markdown)}\n</article>`,
+    body: `<article class="cl-doc">\n${fileName === "MISSION.md" ? renderMission(markdown) : renderMarkdown(markdown)}\n</article>`,
   });
 }
 

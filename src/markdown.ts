@@ -9,7 +9,7 @@
  */
 
 import { Marked } from "marked";
-import type { TokenizerAndRendererExtension, Tokens } from "marked";
+import type { RendererObject, TokenizerAndRendererExtension, Tokens } from "marked";
 import temml from "../assets/runtime/vendor/temml/temml.mjs";
 
 /** Inline formulas, tried in order. `$` needs no space inside it and no digit after it. */
@@ -57,7 +57,12 @@ const inlineMath: TokenizerAndRendererExtension = {
   renderer: (token) => renderTex(token as MathToken),
 };
 
-const markdown = new Marked({ gfm: true, breaks: false, extensions: [blockMath, inlineMath] });
+/** Share canonical math parsing with public documents that restrict HTML and links. */
+export function createMarkdown(renderer?: RendererObject): Marked {
+  return new Marked({ gfm: true, breaks: false, extensions: [blockMath, inlineMath], renderer });
+}
+
+const markdown = createMarkdown();
 
 /**
  * One formula as MathML. TeX that does not parse shows its error and its source in
