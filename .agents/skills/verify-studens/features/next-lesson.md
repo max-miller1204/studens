@@ -50,6 +50,9 @@ receives at most one explicit browser retry with its actual error in context.
 Inspect `stored-next-lesson.json`, `*-next-lesson.png`, and any
 `next-lesson-failed.json` / `next-lesson-retry-failed.json`. Host model output may
 fail validation; a fixture success does not cancel a real-host failure.
+Inspect the owning native teacher trace before claiming actual research. A source
+URL in saved HTML proves a citation, not that a web tool fetched it. Keep native
+tool-scope, rejected-output recovery and successful publication receipts separate.
 
 ## Gotchas
 
