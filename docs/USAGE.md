@@ -12,9 +12,8 @@
 
 Omit the topic to continue. In Pi, `/classroom <name>` opens one classroom,
 `/classroom list` lists saved material, and `/classroom status` reports the server.
-Links are returned to you; commands do not launch a browser. The `open_classroom`
-tool also accepts an exact `lesson` directory with `classroom` to return a canonical
-lesson link.
+Links are returned to you; commands do not launch a browser. Pass `open_classroom`
+both `classroom` and `lesson` to get a lesson link.
 
 On the lesson page, highlight text to ask a question and use its card for follow-ups.
 Submit quizzes for per-question feedback. Reply to teacher questions below the
@@ -33,7 +32,7 @@ returns its classrooms to **Unfiled** and keeps their lessons and links.
 
 Pi, Claude Code, and Codex share a persistent service with one dedicated teacher per
 classroom. In Pi, use `/classroom start`, `/classroom status`, and `/classroom stop`.
-The widget shows the persistent service port. Closing the initiating chat leaves it running. Use `classroom_service`
+The widget shows the service port. Closing the initiating chat leaves it running. Use `classroom_service`
 with action `start`, `status`, or `stop`, or run these commands from the package:
 
 ```sh
@@ -54,23 +53,17 @@ appear on the page; resolve the cause and select **Retry request**.
 
 ### Pi teacher context and migration
 
-The dedicated Pi teacher uses your Pi account and configured provider/model, including
-`models.json` providers. It has its own saved conversation, not the context of the
-Pi session that opened the link. Model settings on the classroom page control this
-teacher independently of your initiating chat. Lessons, notes, saved grades and
-panel conversations supply durable context. Explicit **Next lesson** requests on the
-classroom page use this same dedicated teacher. The teacher cannot use
-initiating-session extensions or interactive tools.
+The dedicated Pi teacher uses your Pi account and models, including `models.json`
+providers. It keeps its own conversation, separate from the Pi chat that opened the
+link, and cannot use that chat's extensions or tools. Classroom settings choose its
+model. **Next lesson** uses this same teacher.
 
-Before upgrading from Pi's live-session delivery, finish or explicitly retry its
-pending review (including unpublished daily groups), refill, and resume work with the previous package, then stop that
-server, including idle legacy servers without pending request records. The new
-service rejects recorded unfinished legacy ownership and preserves those
-files. It never deletes a plan or takes over a live owner. Keep the previous package
-and a complete data backup available if recovery is needed. Remove its tailnet route
-with that package's explicit stop before opening the persistent service. Older
-packages cannot read the new Pi teacher identity; rollback requires the matching
-whole-data backup described in [rollback and recovery](ROLLBACK.md).
+Before upgrading from Pi's live-session delivery, finish or retry pending reviews,
+daily groups, refills, and resumes with the previous package. Then stop its server
+and remove its tailnet route with that package's stop command. The new service
+refuses unfinished legacy ownership rather than taking it over. Keep the previous
+package and a full data backup; older packages cannot read the new Pi teacher
+identity. See [rollback](ROLLBACK.md).
 
 ## Updating Studens
 

@@ -1,82 +1,45 @@
 # Course map
 
-The learner sees the mission, planned upcoming objectives, lesson coverage and
-explicit objective connections without changing learner or teacher state.
+The learner sees the mission, upcoming objectives, lesson coverage, and objective
+connections without changing learner or teacher state.
 
 ## Sub-features
 
-- Read legacy mission prose as headings, lists and safe links.
-- Read explicitly authored upcoming objectives and prerequisite or related links.
+- Read legacy mission prose as headings, lists, and safe links.
+- Read authored upcoming objectives and prerequisite or related links.
 - Follow lesson links and objective anchors; several quizzes can share an objective.
-- Keep unreleased pretest objectives and their entire connections private.
-- View empty and legacy classrooms; correct saved data and retry explicitly.
+- Keep unreleased pretest objectives and their connections private.
+- View empty and legacy classrooms; fix saved data and retry explicitly.
 
 ## How to get to it (user POV)
 
-1. Open a classroom and select **Course map** (also works with keyboard Enter).
-2. Use **Coming up**, **Lesson objectives** and **Connections** to move around the map.
-3. Follow a lesson title to study it or **Read mission document** for the mission.
+1. Open a classroom and select **Course map**.
+2. Use **Coming up**, **Lesson objectives**, and **Connections**.
+3. Follow a lesson title, or **Read mission document**.
 4. Use **Back to classroom** to return.
 
 ## Driving it with playwright-cli
 
-Run `npm run verify -- browser --artifacts /tmp/studens-course-map` using the shared
-launch instructions. The course-map drive uses scratch classrooms and the actual
-loopback server, with a fixture grader only for the pretest release.
+Run `npm run verify -- browser --artifacts /tmp/studens-course-map`.
 
-The drive opens the classroom link with keyboard Enter. It checks `.cl-map-objective`
-and `.cl-map-connections` for one objective shared by two quizzes, and `.cl-map-edges`
-for explicitly recorded links. Same objective ids in separate lessons remain distinct.
-It follows a lesson and the mission document, returns to the classroom, and checks
-an empty classroom and an unstructured legacy mission without invented links.
+The drive opens the map with keyboard Enter and checks `.cl-map-objective`,
+`.cl-map-connections`, and `.cl-map-edges` for an objective shared by two quizzes.
+It checks empty and legacy classrooms, a metadata fence directly after the Why
+paragraph, and valid and invalid math. Inspect `course-map/` captures at 1280×900 and
+390×844 in both themes; long statements must wrap.
 
-Inspect `course-map/` screenshots at desktop 1280×900 and mobile 390×844 in both
-themes. Long statements must wrap without horizontal overflow. Inspect error,
-legacy, empty and released screenshots as well.
+A corrupt plan and a broken connection target each show a specific file error.
+After the fix, **Retry loading course map** recovers with no teacher work. Private
+routes return 404. Viewing makes no non-GET/HEAD requests; `*-hashes.json` must stay
+identical.
 
-The drive corrupts a private plan on disk and then a mission connection target.
-Both produce a specific file error. After correcting the file, select
-**Retry loading course map**; no teacher retry is triggered. Private direct/API/static
-and symlink routes must return 404. Inspect `result.json` for route statuses and
-`*-hashes.json` for identical classroom files after ordinary, error, legacy and
-released viewing. The initial viewing phase must make zero non-GET/HEAD requests.
-
-The summary privacy probe puts a tilde metadata fence immediately after the Why
-paragraph, without a blank line. It opens the landing card, classroom hero, mission
-document and course map. Every surface must preserve the public Why prose and omit
-the gated metadata references; `summary-viewing-hashes.json` must remain identical.
-
-The math compatibility probe opens the mission document and map with two inline
-formulas, one display formula and one invalid formula. Each surface must show
-three MathML elements, the specific canonical parse error, its original heading
-level, no metadata references and no horizontal overflow in both sizes/themes.
-Inspect `math-*.png`, `result.json` and identical `math-viewing-hashes.json`.
-
-Finally submit the real pretest through its textarea and **Submit for grading**.
-Only this explicit answer creates one submission and grade. Before grading, neither
-the gated objective nor its edge appears in the map or mission document. After
-grading the objective and edge appear; reload preserves them and adds no writes.
-
-The lesson reading recipe also checks the projection of released **builds-on**
-relationships into prerequisite lesson links. `related` and upcoming connections
-retain their existing meanings. Pending Next lesson requests stay outside both
-source navigation and the map, even if partial lesson files exist.
+Finally, submitting the real pretest releases the gated objective and its edge. Only
+that submission creates a grade.
 
 ## Gotchas
 
-The optional `studens-course-map` block in `MISSION.md` is an authoring contract;
-see `docs/MISSION-FORMAT.md`. Upcoming statements are public. Hidden endpoint
-connections have no stub, type, label or count. Legacy absence is not corruption.
-Tests cover invalid JSON, duplicates, stale targets and prerequisite cycles; the
-browser drive proves actual load errors and explicit retry.
-
-This feature describes teaching coverage and author intentions. It does not mark
-mastery or prove human retention. Fixture grading does not prove a model connection
-or real authoring adoption. Select the authoring targets when changing the mission
-contract or its guidance.
-
-For an unambiguous released objective's existing validated prequestion `teaching`
-mapping, the prerequisite link includes its unique visible safe section anchor.
-Missing or ambiguous mappings retain the owning lesson link; gated mappings expose
-no destination before release. The source fixture clicks the released Borrowing
-prerequisite and checks focus/visibility at `#teach-borrow` after one diagnostic grade.
+- The `studens-course-map` block in `MISSION.md` is an authoring contract; see
+  `docs/MISSION-FORMAT.md`. Hidden endpoints leave no stub, label, or count.
+- A released prequestion mapping links to its unique section anchor; missing or
+  ambiguous mappings link to the lesson.
+- The map shows coverage and intentions. It does not mark mastery or retention.

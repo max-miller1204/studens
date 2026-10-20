@@ -25,20 +25,31 @@ Edit learner preferences, connection settings, and the model for a persistent cl
 
 ## Driving it with playwright-cli
 
-Run `npm run verify -- browser --artifacts /tmp/studens-settings-browser`.
-The settings fixture covers preference/config preservation, reload, default and custom model choices, a change during active work, unavailable-model errors, explicit retry, stale saves, restart, and 375px layout. Its nested-error probe checks literal HTML, exact original details, and refresh preserving the open details. Inspect `browser/settings/` screenshots, `settings-state.json`, and `NOTES.md`. It uses fixture teachers, so it does not prove account access.
+Run `npm run verify -- browser --artifacts /tmp/studens-settings-browser`. The fixture
+covers preference preservation, default and custom models, a change during active
+work, unavailable-model errors, explicit retry, stale saves, restart, nested error
+details rendered as text, and 375px layout. A saved port change must leave the
+listener on its original port. Inspect `browser/settings/`, `settings-state.json`,
+`settings-ports.json`, and `NOTES.md`.
 
-The connection check saves a port distinct from the original listener and requires
-the listener to remain on that exact original port. Inspect `settings-ports.json`
-for original, requested, saved, and current ports; `settings-state.json` also retains
-the original and requested values.
+For real model selection, run `npm run verify -- settings claude --artifacts
+/tmp/studens-settings-claude`, then the same for `codex`. These select Claude
+`sonnet` or Codex `gpt-6.1-sol`, switch during a running request, restart, submit an
+unavailable custom ID, and retry with the default. Inspect
+`settings-<host>/settings-report.json` and `service.log`. The original grade and
+conversation must not change.
 
-Run `npm run verify -- settings claude --artifacts /tmp/studens-settings-claude`, then `npm run verify -- settings codex --artifacts /tmp/studens-settings-codex` for actual selection. These use the shared fixed verification defaults, then deliberately select Claude `sonnet` or Codex `gpt-6.1-sol` from the discovered catalog. They record both requested and resolved models. A missing choice or unavailable model fails; no replacement is selected. The drives change the selection while the first request runs, finish a turn on the new model, restart the persistent service, submit an unavailable custom ID, and explicitly retry with the configured default. Inspect `settings-<host>/settings-report.json`, screenshots, `classroom/`, and `service.log`. The unavailable Codex captures include desktop, 375px mobile, and expanded details; compare the details text with the saved failed request. The original grade and conversation identity must stay unchanged.
+The real Pi lifecycle drive selects an unavailable `provider/model`, confirms no
+automatic retry, and retries from the lesson. Inspect `pi/lifecycle/pi-unavailable.png`.
+The Pi label reports the SDK selection, not provider routing.
 
-The real Pi target's lifecycle drive opens the persistent model selector, uses an unavailable exact `provider/model` ID, verifies the durable error and the lack of automatic retry after selecting the configured default, and retries from the lesson. It checks the SDK-selected model and separate conversation survive reconnect and restart. The Pi label reports SDK selection; provider-resolved identity is not independently verified. Inspect `pi/lifecycle/pi-unavailable.png`, `lifecycle.json`, and the saved private Pi session. Successful selection of an alternate Pi model remains outside this drive; no replacement is used when a requested model fails.
-
-For real tailnet changes, follow the tailnet prerequisites in the feature index. The phone target now also disables and enables links through the settings page. It verifies route removal/restoration before opening again from the agent, then checks explicit service-stop cleanup and unchanged unrelated routes. Inspect `phone/settings-tailnet-disabled.png`.
+The `phone` target also toggles tailnet links from this page; inspect
+`phone/settings-tailnet-disabled.png`.
 
 ## Gotchas
 
-Model catalogs describe choices; a completed inference turn establishes access for that request. Claude aliases can resolve to a different full model ID. Codex uses the RPC model value, which may differ from the catalog row ID. Global CLI settings must not be edited by these drives. A saved model change does not retry a failed request or replace a saved plan. A failed status refresh stops until Reload settings. Settings error recovery uses Reload settings, Reload models, or another explicit save; there is no automatic fallback.
+- A catalog lists choices. Only a completed turn proves access.
+- Claude aliases and Codex RPC values can differ from catalog IDs.
+- Drives must not edit global CLI settings.
+- Saving a model does not retry a failed request. Recovery uses Reload settings,
+  Reload models, or another explicit save.

@@ -24,13 +24,11 @@ return a link. They never open a browser. See [phone and remote links](USAGE.md#
 session. The scaffold instructions name the packaged headless config.
 Set `PI_CLASSROOM_CONFIG` to read the settings from another file.
 
-All three hosts use the persistent service port `43123` by default. A configured
-`port` applies to the shared service. `PI_CLASSROOM_SERVICE_PORT` takes priority over
-that file. The stable private socket and `.pi-teach-service` ownership identity are
-unchanged. An occupied port fails explicitly; no alternate port is selected.
-Pi's SDK reads `PI_CODING_AGENT_DIR` (default `~/.pi/agent`) for account credentials,
-`models.json`, and model/thinking settings. Service startup captures its environment;
-stop and restart explicitly after changing that environment.
+All three hosts share the service port, `43123` by default. `PI_CLASSROOM_SERVICE_PORT`
+overrides `port`. An occupied port fails; no other port is tried. Pi's SDK reads
+`PI_CODING_AGENT_DIR` (default `~/.pi/agent`) for credentials, `models.json`, and
+model settings. The service captures its environment at startup, so restart it after
+changing these.
 Get the current URL from `open_classroom` or `/classroom`.
 
 ## Storage
@@ -71,33 +69,19 @@ first `.html` file. Lesson order comes from the numeric prefix on the directory 
 
 The `quiz/` directory is never served as static files, only through the JSON API. An
 answer key written to `quiz/key.json` is therefore not readable from the page.
-New scaffold metadata includes `criterionContract: 1`. Private submission files
-save `rubricCriteria` definitions fixed before submission; learner JSON responses
-omit this snapshot and saved machine allocations. After grading, public grades
-include only each submitted question's approved criterion descriptions, earned and
-possible points, and explanations. Regrades add files; saved history is never
-rewritten to infer missing criteria. Older attempts retain their original totals
-and display that no criterion breakdown was recorded.
+Submissions privately save the `rubricCriteria` fixed before submission. Public
+grades show only each question's criterion descriptions, points, and explanations.
+Regrades add files and never rewrite history; older attempts show no breakdown.
 
-New reviews open at `/c/<classroom>/reviews/<review-id>`. Review history is at
-`/c/<classroom>/reviews`; reviews do not appear in the lesson list. Existing
-numbered review directories and their lesson links remain usable. The `.reviews/`
-directory is never a static route, and review keys and plans remain private.
+New reviews open at `/c/<classroom>/reviews/<review-id>`, with history at
+`/c/<classroom>/reviews`. Reviews stay out of the lesson list, and numbered legacy
+reviews keep their links. `.reviews/` is never served.
 
-Progress offers sizes 3 through 12 and topics from saved objective groups.
-Ungrouped items use the original objective; historical items use their lesson.
-Early selections save their timing on submissions: neither a success nor a miss
-can extend the scheduled interval. Immediate or assisted performance remains
-separate from delayed retention evidence. Retirement excludes an item from active
-counts and future selections while retaining its actual quiz evidence and every
-published review. Restore it from `Manage review items`. Edits use a private lock
-and revisions; stale or interrupted edits require an explicit retry.
-
-`Flag bad question` prepares a report in the review's teacher panel. Add the problem
-and send it there. Reports use the same durable teacher requests, saved messages,
-owner checks, and explicit failure retry as other panel replies. They do not change
-question pools, saved grades, or historical links. Private control and teacher state
-are never static routes.
+Reviews offer 3 to 12 items and topics from saved objective groups. Early reviews
+never extend the scheduled interval. Retiring an item removes it from counts and
+future selections but keeps its evidence; restore it from `Manage review items`.
+`Flag bad question` sends a report through the review's teacher panel without
+changing pools or grades. Stale or interrupted edits need an explicit retry.
 
 ### Links in teaching documents
 
@@ -120,21 +104,27 @@ From a reference document, use `/c/<classroom>/<lesson>` for lesson links. Repla
 
 ## Settings page
 
-Open a classroom and select **Settings** beside Review history. Connection settings are shared across classrooms and use the validated configuration file above; unrelated keys are preserved. Local port changes apply only after an explicit server stop and restart. Obtain the new link from your agent. Tailnet link changes apply on save using the current host’s owned route, while environment overrides still take priority. A failed link update reports that the settings were saved and asks for another explicit save to retry.
+Open a classroom and select **Settings** beside Review history.
 
-Pace, depth, and tone are optional single-line preferences, at most 200 characters each. They are stored as `- Pace:`, `- Depth:`, and `- Tone:` bullets inside `NOTES.md`’s `## Preferences` section. Other preferences, the notes index, and other classrooms are preserved. Missing notes start from the canonical notes template. A stale page must reload before saving over a newer edit.
+**Connection.** Settings are shared across classrooms and saved to the configuration
+file above, keeping unrelated keys. Tailnet link changes apply on save; environment
+overrides still win. A local port change applies only after you stop and restart the
+service. A failed link update keeps the saved settings and needs another explicit save.
 
-All persistent classrooms offer **Teacher model**. **Use tool’s configured default** reads the installed tool’s effective configuration for the next request, including when a previous request selected another model. The dropdown is discovered from the installed host: Codex uses paginated `model/list` and its configured model; Claude uses its initialization catalog and effective settings. **Custom model ID…** supports configured/provider IDs that are absent from the picker. Discovery does not guarantee account access. The Claude discovery protocol was verified with Claude Code 2.1.303; unsupported host protocols report an error and require explicit action.
+**Preferences.** Pace, depth, and tone are single lines of up to 200 characters,
+saved as `- Pace:`, `- Depth:`, and `- Tone:` under `## Preferences` in `NOTES.md`.
+Other notes are kept. A stale page must reload before saving.
 
-Selections are private to the classroom’s `.teacher.json`, survive service restarts, and never edit global CLI configuration. Claude receives `--model`; Codex receives the model on thread start/resume and turn start. **Last answering model** comes from Claude’s assistant messages or the completed Codex turn’s resolved thread model, independently of the requested/default setting. A reported reroute or unexpected resolution fails the request before its plan is applied.
+**Teacher model.** Choose **Use tool's configured default**, a model from the host's
+catalog (Codex `model/list`; Claude's initialization catalog; Pi's SDK catalog), or
+**Custom model ID…**. A catalog entry does not guarantee account access. The choice is
+private to the classroom's `.teacher.json`, survives restarts, and never edits global
+CLI settings. **Last answering model** shows the model that actually answered; Pi shows
+**Last Pi SDK model selection**, which does not prove provider routing. An unexpected
+reroute fails the request before its plan is applied.
 
-A setting change applies between teacher requests and keeps the existing conversation. Running work finishes with its original setting; saved plans recover without another model request or grade. A model error names the selection and stays visible until explicit request retry. Choosing another setting alone does not retry the request. Pi selects an exact `provider/model` ID through its SDK catalog and records the
-successful SDK selection separately as **Last Pi SDK model selection**. The packaged
-Pi SDK initializes its assistant model from the selected catalog entry; its
-OpenAI Codex response handlers do not independently replace that value with a
-provider-resolved response model. This label reports the exact SDK selection,
-not independent evidence of upstream routing. The service rejects SDK fallback
-messages or a different SDK selection; provider-side rerouting remains unverified.
-Its dedicated session is saved privately under
-`.pi-teach-service/pi-sessions/`; include it in whole-data backups. A missing or
-unsafe session file is an explicit recovery error, never a new conversation.
+Changes apply between requests and keep the conversation. Running work finishes on
+its original model. A model error stays visible until you retry the request;
+changing the setting alone does not retry. Pi's teacher session is saved under
+`.pi-teach-service/pi-sessions/`; include it in backups. A missing session file is a
+recovery error, never a new conversation.

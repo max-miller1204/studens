@@ -88,13 +88,13 @@ plan or model narrative. Regrading is not another exposure. Same-attempt objecti
 probes use their weakest credit and independence. Only full independent retrieval
 on or after the due time, at least 24 actual hours after the latest feedback/check,
 can grow stability and extend the interval. Explicitly selected early reviews never
-postpone their saved original due date, even if answered later. Replay also honors
-the due-time cap in immutable selections created under the earlier scheduler. Supported, unknown,
-and immediate success cannot grow memory. Incomplete work resets delayed evidence;
+postpone their saved original due date, even if answered later. Replay honors the
+due-time cap in selections saved by the earlier scheduler. Supported, unknown, and
+immediate success cannot grow memory. Incomplete work resets delayed evidence;
 three unresolved misses pause review for re-teaching. A supported or unknown-independence success cannot
 resolve a paused item, including historical questions with no objective snapshot.
 Saved assistance/support can resolve an independently demonstrated gap while the
-historical objective context and retention claim remain unknown. Historical context stays unknown. Confidence and
+historical objective context and retention claim remain unknown. Confidence and
 self-ratings have no scheduling input; confidence may shape feedback only.
 
 **Memory choices (`studens-fsrs45-v1`):** Start stability S at 1 day and difficulty D

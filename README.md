@@ -27,8 +27,8 @@ codex plugin marketplace add max-miller1204/studens
 codex plugin add studens@studens
 ```
 
-All hosts require Node 22.19 or later, including the packaged Pi SDK. The plugin installs its runtime
-dependencies on first start. There is no build step.
+All hosts require Node 22.19 or later. The plugin installs its runtime dependencies
+on first start. There is no build step.
 
 Pi installs the named release tag. Both plugin marketplaces also fetch the plugin
 from a release tag, even when the catalog tracks `main`. Merging a feature PR does
@@ -47,9 +47,8 @@ Upgrading from pi-teach? Remove the old plugin before installing Studens; see th
 Read, ask questions, and reply to the teacher on the lesson page. Quizzes save your
 answers and feedback. The classroom page offers spaced reviews and folders.
 Choose **Export** for an Anki deck, printable classroom, or portable Markdown.
-Exports contain saved public material; expected answers stay excluded unless you
-select answers already unlocked under the original grading rules.
-Claude Code and Codex teachers run in a persistent local service.
+Expected answers are excluded unless you opt in. All three hosts share a persistent
+local teacher service.
 
 All three hosts save material in `~/.pi/agent/classrooms/`.
 

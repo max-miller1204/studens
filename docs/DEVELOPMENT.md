@@ -13,22 +13,16 @@ state. Use [verify-studens](../.agents/skills/verify-studens/SKILL.md) to select
 additional checks for changed host behavior. Run `claude plugin validate .` after
 manifest changes. Run this checkout with `pi -e .` or `claude --plugin-dir .`.
 
-Production dependency and launcher changes also require `npm run audit`, an existing
-CI gate beyond default verification. It first compares installed production package
-versions with the lock, then audits that production tree. A root lock edit alone is
-insufficient: a dependency's published shrinkwrap can install different files.
+Production dependency and launcher changes also require `npm run audit`, a separate
+CI gate. It compares installed production versions with the lock, then audits that
+tree. A lock edit alone is not enough: a dependency's shrinkwrap can install other files.
 
-The dedicated Pi teacher uses SDK 1.0.1 and its pinned Pi release cohort. This is the
-first upstream release that both patches brace-expansion and removes the published
-shrinkwrap; older releases blocked consumer overrides. See the
-[Pi 1.0.1 release](https://github.com/earendil-works/pi/releases/tag/v1.0.1),
-[undici 8.10.2 security release](https://github.com/nodejs/undici/releases/tag/v8.10.2),
-and [brace-expansion advisory](https://github.com/juliangruber/brace-expansion/security/advisories/GHSA-q2hr-2g5m-vwhr).
-The lock contains undici 8.10.2 and brace-expansion 5.0.12. Node remains 22.19+.
-Cache warming, automatic retries, and compaction are disabled for dedicated teacher
-turns. The initiating Pi CLI is a separate installation; fresh migration checks use
-the checkout's local CLI 1.0.1 through npm's PATH. Earlier CLI/SDK 0.83.0 receipts describe their original source, not this
-patched dependency boundary. Saved version 3 Pi conversations remain readable.
+The dedicated Pi teacher pins the Pi SDK 1.0.1 release cohort, the first without a
+published shrinkwrap and with the
+[brace-expansion fix](https://github.com/juliangruber/brace-expansion/security/advisories/GHSA-q2hr-2g5m-vwhr).
+Teacher turns disable cache warming, automatic retries, and compaction. The
+initiating Pi CLI is a separate install; `npm run verify -- pi` uses the checkout's
+local CLI.
 
 ## Release versions
 

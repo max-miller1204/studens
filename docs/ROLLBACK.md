@@ -2,57 +2,39 @@
 
 [Documentation](README.md)
 
-Criterion grading adds private `rubricCriteria` snapshots to submissions and saved
-criterion allocations to grades and teacher plans. **Do not point published v0.11.6 or older
-code at a root that has been used by criterion-enabled code.** Its
-`publicSubmission()` spreads unknown fields, so even a pending attempt can expose
-the snapshot through learner state. Static file guards do not protect an API
-projection. The older published release cannot be repaired retroactively. Published v0.11.6
-already redacts private `earlyReviewKeys` selection snapshots; v0.11.5 and older
-also expose that field on a blind downgrade from review-controls data. Preserve
-both fields and the complete review controls, options, evidence and history in the
-newer backup. A version label alone does not establish projection compatibility.
+Newer releases save private fields that older code can leak. Criterion grading adds
+`rubricCriteria` snapshots to submissions, and review controls add `earlyReviewKeys`.
+**Never point v0.11.6 or older at a classrooms root used by criterion-enabled code.**
+Its `publicSubmission()` spreads unknown fields, so learner state can expose those
+snapshots even for a pending attempt. v0.11.5 and older also expose `earlyReviewKeys`.
+There is no automatic data downgrade.
 
-Before deployment, stop the persistent service explicitly and end every live Pi
-session using this classrooms root. Confirm all owners have stopped; detaching MCP
-is not stopping the service. Keep access stopped while taking a private, complete
-copy of the root, including dotfiles, `.reviews`, `.teacher.json`, plans, drafts,
-history, review/refill state and configuration. Record the exact installed code
-commit/tag, root path, external config path, file hashes and permissions. Copy any
-external configuration too. Keep backups outside all served directories, accessible
-only to the owner. Verify that a disposable copy opens with the recorded code
-before allowing deployment writes. A code checkpoint alone is insufficient.
+## Before deploying
 
-To return to the previous published release:
+1. Stop the persistent service explicitly and end every live Pi session on this root.
+   Detaching MCP does not stop the service.
+2. Copy the complete root privately, including dotfiles, `.reviews/`, `.teacher.json`,
+   plans, drafts, history, and configuration, plus any external config file.
+3. Record the installed commit or tag, root path, config path, file hashes, and permissions.
+4. Keep backups outside served directories, readable only by you.
+5. Confirm a disposable copy opens with the recorded code.
 
-1. Stop all service and live Pi owners again. Do not serve the newer data with older
-   code, even briefly.
-2. Retain a second complete private backup of the current root and configuration.
-   Verify its hashes. Keep the deployed code commit available with this backup.
-3. Select a **separate restored copy** of the complete pre-deployment backup and its
-   matching configuration. Do not overlay it onto the newer root: new files left
-   behind would defeat the restore. Preserve the newer root untouched.
-4. Start the recorded older code with the restored root. Check loopback ownership,
-   settings, an existing grade/history, learner-state projections and private route
-   refusal before restoring access. Preserve unrelated Tailscale routes; never
-   enable Funnel.
+## Returning to the previous release
 
-This returns all classroom state to the backup time. Work since that backup is
-retained only in the private newer root and is unavailable in the older runtime.
-Do not merge its submissions, grades, plans or requests into the old root. Resuming
-that work requires stopping the old owners, selecting the complete newer root with
-criterion- and review-compatible code and its matching configuration, then checking recovery.
-Do not run both copies concurrently or replay the same external conversation in
-both. Model conversation history outside the root is not reverted by a filesystem
-backup; resuming teacher work across this boundary requires separate review.
+1. Stop the service and all live Pi owners. Never serve newer data with older code.
+2. Take a second complete backup of the current root and configuration, and keep the
+   deployed commit with it.
+3. Restore the pre-deployment backup to a **separate** directory. Do not overlay it on
+   the newer root.
+4. Start the recorded older code on the restored root. Check ownership, settings, an
+   existing grade, learner state, and private route refusal before restoring access.
+   Preserve unrelated Tailscale routes and never enable Funnel.
 
-To retain newer work online, use a reviewed compatible code revision that keeps
-both criterion and early-review snapshot redaction, saved allocation validation, plan validation/recovery,
-model snapshots and grade idempotency. Reverting only presentation is possible;
-blindly reverting the storage/service contracts is not. Removing `rubricCriteria` or `earlyReviewKeys`
-from canonical files, flattening criterion grades, or rewriting historical totals
-is not a supported rollback. There is no automatic data downgrade.
+This returns all classroom state to the backup time. Work since then stays in the
+newer root. Do not merge it into the old root or run both copies at once. Model
+conversation history outside the root is not reverted.
 
-The deployment owner must choose the acceptable state boundary and keep both
-backups. A later release checkpoint does not make an older code/data pair
-compatible with newer durable fields.
+To keep newer work online instead, use a compatible code revision that still redacts
+criterion and early-review snapshots and validates saved plans. Reverting presentation
+is fine; removing `rubricCriteria` or `earlyReviewKeys` or rewriting historical
+totals is not a supported rollback.

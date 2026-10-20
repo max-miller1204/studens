@@ -26,25 +26,19 @@ Claude Code and Codex load the root plugin through `.claude-plugin/` and
 installs production dependencies on first use, and starts `src/mcp-stdio.ts`.
 MCP clients attach to that persistent service. Closing stdin detaches the client.
 
-Pi's dedicated teacher uses the packaged Pi SDK with the existing Pi account,
-provider catalog, and effective model settings. Configuration is read into memory;
-retry, compaction, and cache warming are disabled for these service turns, without editing global
-settings. A single structured-output tool returns a plan to the service and cannot
-write learner data. Its persisted Pi session lives in the private service directory.
-Dedicated in-memory settings clear package, extension, skill, prompt, and theme
-sources before SDK resource resolution, which can install packages before applying
-loader flags. Account/provider/model/thinking settings are retained; global and
-project configuration files remain unchanged.
-Initiating Pi chat context, extensions, skills, and project context files are not
-inherited. The dedicated teacher receives saved classroom context and each durable
-request instead. Initiating chat can author lessons directly. Explicit browser Next lesson requests use the same dedicated persistent teacher conversation.
+Pi's dedicated teacher uses the packaged Pi SDK with the existing account, provider
+catalog, and model settings, read into memory without editing global files. Retry,
+compaction, and cache warming are off. In-memory settings clear package, extension,
+skill, prompt, and theme sources before SDK resource resolution, because resolution
+can install packages. The teacher does not inherit initiating chat context; it gets
+saved classroom context and each durable request. Its session lives in the private
+service directory.
 
-Codex dedicated turns use a read-only sandbox with shell and research disabled.
-Explicitly disable every configured MCP server, apps and plugin discovery. Disable
-apps and plugins at process startup as well as in thread settings: per-thread flags
-alone leave the native app catalog available, and an empty MCP map can merge with
-inherited servers. Claude dedicated turns use no tools and a
-strict empty MCP configuration. Pi exposes only its plan-return tool.
+Dedicated teachers get no unrelated tools. Pi exposes only its plan-return tool.
+Claude uses no tools and a strict empty MCP configuration. Codex uses a read-only
+sandbox with shell and research off, and disables every MCP server, app, and plugin
+at process startup as well as per thread: thread flags alone leave the app catalog
+available, and an empty MCP map can merge with inherited servers.
 
 One service owns one classrooms root and stable loopback port. Each classroom has
 one selected backend and dedicated teacher session. Browser requests start teacher
@@ -165,19 +159,14 @@ points. See [code exercises](CODE-EXERCISES.md) for the authoring and isolation 
   retrieval checks, authoring changes or gap notes from a dispute. Publish only linked
   learner reasons, responses and existing grade feedback/history. Replaying uses the
   original attempt and first feedback, with no extra exposure or review completion.
-- **Expected answers are read-only and attempt-bound.** New attempts privately save
-  the lesson source digest alongside the rubric digest. The expected-answer endpoint
-  accepts only the current saved attempt and requires the original complete grade,
-  unchanged source, exact quiz/question type, and an allowlisted rubric projection.
-  Correct original answers and graded pretests are available immediately. Original
-  check/review misses require a completed validated corrective request, its actual
-  saved learner reply, the server-selected preceding teacher task chain back to this
-  exact attempt, and the matching saved retrieval check/record. An exact question
-  key can identify one miss; an objective shared by several misses is insufficient.
-  Historical replies without that provenance remain unavailable. Dispute revisions
-  do not bypass the original-miss gate. No read/reveal runs a teacher, writes evidence,
-  changes a grade, unlocks an editor or completes a daily review. Missing/changed
-  originals give specific errors and explicit retry, never a replacement key.
+- **Expected answers are read-only and attempt-bound.** Attempts privately save the
+  lesson source and rubric digests. The endpoint serves only the current attempt with
+  its original complete grade, unchanged source, and an allowlisted rubric projection.
+  Correct answers and graded pretests unlock at once. A miss unlocks only after its
+  own validated corrective task, the learner's saved reply, and the matching retrieval
+  check; a shared objective is not enough, and disputes cannot bypass this. Reads never
+  run a teacher, write evidence, or change grades. Changed originals give a specific
+  error and explicit retry.
 - **Submission order is total.** Timestamps increase strictly per lesson. Attempts
   count submissions; regrades are revisions. Use `latestGrades()` consistently for
   scores, quiz state, health, and review. Refuse another attempt while one is ungraded.
@@ -199,54 +188,35 @@ points. See [code exercises](CODE-EXERCISES.md) for the authoring and isolation 
   Validate keys, rubric, controls, and plan before publication. Hide unfinished
   reviews from lists, routes, and submissions. Repeated clicks reuse work; published
   reviews open across hosts. Saved service plans resume without another model turn.
-- **Explicit next lessons are private until checked.** The classroom control saves
-  an owner-bound request in `.lesson-requests.json`. Its optional topic and status
-  survive reload. Service authoring shares the classroom request queue and teacher
-  identity for Pi, Claude, and Codex. Pi SDK authoring advertises only its typed
-  output tool and bounded public source reader, with no external resources or
-  native file/shell tools. Each SDK turn reconstructs its tools when reopening the
-  same private session; ordinary requests expose only the plan tool. A research
-  failure requires explicit retry. Owning-request and current SDK tool cancellation
-  stop research before DNS or sockets, interrupt active transfers, and prevent
-  following redirects or accepting late output. Classroom resources are supplied through path
-  guards. Private service-delivery markers distinguish new Pi authoring from legacy
-  live-session requests, which must finish in their previous package. Only explicit
-  authoring enables web research. Dedicated Codex processes disable
-  installed plugins, connected apps, execution and other unrelated tools, disable
-  configured MCP servers, and require an empty per-thread MCP inventory before
-  inference. An empty configuration map alone does not remove plugin tools.
-  Provider lesson responses carry HTML, rubric entries, objective mappings and private
-  variants as typed data. Code serializes both private JSON files and the canonical
-  saved publication call; models never encode nested JSON strings. New lesson
-  publication declares criterionContract1 and checks the fixed criteria on every
-  visible question and private review variant. Save and validate complete output before
-  publication, run `scripts/check-lesson.ts` in disposable state, then expose the
-  lesson. Recover checked output without a model turn; retain rejected output and
-  require explicit retry. Never create learner submissions during checking.
+- **Explicit next lessons are private until checked.** The classroom control saves an
+  owner-bound request in `.lesson-requests.json`. Service authoring shares the
+  classroom queue and teacher for all hosts. Only explicit authoring enables research:
+  Pi gets its typed output tool and a bounded public source reader, and ordinary
+  requests in the same session get only the plan tool. Cancellation stops research
+  before DNS or sockets and never accepts late output. Legacy live-session Pi requests
+  must finish in their previous package. Models return HTML, rubric, objectives, and
+  variants as typed data; code serializes the private files and publication call.
+  Validate complete output, run `scripts/check-lesson.ts` in disposable state, then
+  publish. Checked output recovers without a model turn; rejected output is kept and
+  needs explicit retry. Checking never creates learner submissions.
 - **Daily review keeps classroom boundaries.** The private root `.daily-reviews.json`
   saves every classroom selection and document before the first publication. Each
-  group reuses a normal classroom review and its original objective keys. Group
-  completion derives from saved card grades; navigation never grades or extends a
-  schedule. Later groups need explicit progression. Reads, reloads and repeated
-  starts reuse saved requests; publication and ownership failures require retry.
-  Daily history links to each classroom’s separate review history and teacher panel.
-  Save declared criterion requirements with new prepared plans and retain their
-  definitions in the private document through publication. Legacy plans remain
-  compatible. Public attempts redact criterion and early-timing snapshots.
+  group is a normal classroom review with its original objective keys. Completion
+  derives from saved card grades; navigation never grades or extends a schedule.
+  Later groups need explicit progression. Failures require retry. Public attempts
+  redact criterion and early-timing snapshots.
 - **Variant refills are background work.** Save private refill requests with their host
   and learner mistake. Run them after queued learner requests in the same sequential
   teacher session. Save validated output before atomically adding a supplemental
   private pool; never rewrite a submitted rubric. Recover saved output once. Failed
   model work requires explicit retry and cannot block an already prepared review.
   Replaying the same saved batch never duplicates variants.
-- **Learner marks never wake a teacher.** Version-1 `.learner-marks.json` files hold
-  highlights, margin notes, and bookmarks separately from question annotations.
-  Private path guards, an exclusive edit lock, atomic replacement, and per-mark
-  revisions protect writes. Reads and mark actions create no assessment or learning
-  evidence. The canonical text index and text-quote selector anchor marks; tied or
-  missing passages stay unresolved. Browser paint ranges leave authored controls
-  intact, and mark editors remain outside quizzes and their answer snapshots.
-  Unsent mark drafts stay in the tab session; only explicit actions send writes.
+- **Learner marks never wake a teacher.** Version-1 `.learner-marks.json` holds
+  highlights, notes, and bookmarks apart from question annotations, protected by path
+  guards, an edit lock, atomic writes, and per-mark revisions. Marks anchor through
+  the canonical text index and a text-quote selector; tied or missing passages stay
+  unresolved. Mark UI stays outside quizzes and answer snapshots. Unsent drafts live
+  in the tab session.
 - **Drafts never wake a teacher.** Restore them once on load, only into fresh quizzes.
   Reconnect must not overwrite typing. Successful submissions clear their draft.
 - **Daily edits serialize across hosts.** Lock root batch creation and group edits,
