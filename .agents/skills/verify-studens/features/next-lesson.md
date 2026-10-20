@@ -37,7 +37,10 @@ Service publication retry follows a service restart and uses one model-plan turn
 An additional request deliberately throws a page error; it must remain unpublished
 until an explicit retry supplies corrected output. Inspect `page-check-failed.png`
 and the retained rejected document. Wrong-host status and retry requests must show
-an owner error without changing work. Neither page check creates learner submissions.
+an owner error without changing work. Neither page check creates learner submissions. The receipt must bind all four exact
+publication files: HTML, metadata, private key and teaching plan. A pending older
+HTML-only receipt is rechecked on explicit saved-plan retry, without another model
+turn; compare its restored hashes with the published bytes.
 
 The real host targets in the shared skill now start a lesson from the classroom
 before the original reading/quiz/panel paths. They request an official Rust source,

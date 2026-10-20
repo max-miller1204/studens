@@ -1,5 +1,8 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { createHash } from "node:crypto";
+import { lessonPublicationFiles } from "../src/next-lesson.ts";
+import type { LessonRequest } from "../src/next-lesson.ts";
 import type { LessonDocument } from "../src/next-lesson.ts";
 import { lessonHtml } from "./helpers.ts";
 
@@ -47,4 +50,19 @@ export function nextLessonDocument(root: string): LessonDocument {
     rubric_json: JSON.stringify(rubric),
     teaching_plan_json: JSON.stringify(plan),
   };
+}
+
+/** Controlled receipt at the private checker boundary; real browser checks create their own. */
+export function nextLessonReceipt(request: LessonRequest, document: LessonDocument): string {
+  return JSON.stringify({
+    preflight: {
+      version: 1,
+      inputHashes: Object.fromEntries(
+        Object.entries(lessonPublicationFiles(request, document)).map(([name, text]) => [
+          name,
+          createHash("sha256").update(text).digest("hex"),
+        ]),
+      ),
+    },
+  });
 }

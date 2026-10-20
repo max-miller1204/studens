@@ -4,8 +4,9 @@ import { randomUUID } from "node:crypto";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { makeFixture, seedClassroom, seedPreparedReviewSource } from "./helpers.ts";
 import type { Fixture } from "./helpers.ts";
-import { nextLessonDocument } from "./next-lesson-fixture.ts";
+import { nextLessonDocument, nextLessonReceipt } from "./next-lesson-fixture.ts";
 import {
+  completeLessonRequest,
   startLessonRequest,
   lessonRequests,
   requireLessonOwner,
@@ -247,7 +248,7 @@ it.each(["pi", "claude", "codex"] as const)(
       status: "running",
       pageCheck: {
         hash: createHash("sha256").update(JSON.stringify(document)).digest("hex"),
-        report: "Fixture receipt at the production page-check recovery boundary.",
+        report: nextLessonReceipt(r, document),
       },
     });
     saveTeacherState("rust", {
@@ -334,7 +335,7 @@ it("acknowledges only an identical completed Pi publication in its owning origin
   updateLessonRequest(saveLessonDocument(request, document), {
     pageCheck: {
       hash: createHash("sha256").update(JSON.stringify(document)).digest("hex"),
-      report: "Fixture receipt at the production publication boundary.",
+      report: nextLessonReceipt(request, document),
     },
   });
   const first = await bridge.lessonTool().execute(piLessonArguments(document));
@@ -551,4 +552,19 @@ it("recovers persistent Pi lesson failure in the same service queue without anot
   expect(lessonRequests("rust")[0].status).toBe("failed");
   expect(readTeacherState("rust")!.identity.backend).toBe("pi");
   await restarted.stop();
+});
+
+it("refuses a corrupt saved page-check receipt before publication writes", async () => {
+  const { createHash } = await import("node:crypto");
+  const request = startLessonRequest("rust", randomUUID(), "", "pi", "service");
+  const document = nextLessonDocument(fixture.root);
+  const saved = updateLessonRequest(saveLessonDocument(request, document), {
+    pageCheck: {
+      hash: createHash("sha256").update(JSON.stringify(document)).digest("hex"),
+      report: "corrupt receipt",
+    },
+  });
+  await expect(completeLessonRequest(saved)).rejects.toThrow("receipt is invalid JSON");
+  expect(fs.existsSync(path.join(fixture.root, "rust", request.lesson))).toBe(false);
+  expect(lessonRequests("rust")[0].document).toEqual(document);
 });

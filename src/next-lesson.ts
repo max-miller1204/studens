@@ -191,6 +191,48 @@ export function saveLessonDocument(
     throw new Error("A validated lesson plan is already saved. Retry publication of that plan.");
   return updateLessonRequest(request, { document });
 }
+/** These exact bytes are checked privately and then published without reserialization. */
+export function lessonPublicationFiles(request: LessonRequest, document: LessonDocument) {
+  const files = {
+    "lesson.html": document.lesson_html,
+    "quiz/key.json": document.rubric_json,
+    "quiz/plan.json": document.teaching_plan_json,
+    "lesson.json": JSON.stringify(
+      {
+        title: document.title,
+        summary: document.summary,
+        createdAt: request.at,
+        kind: "lesson",
+        assessmentContract: 1,
+        criterionContract: 1,
+        instructionalContract: 1,
+        reviewVariantContract: 1,
+      },
+      null,
+      2,
+    ),
+  };
+  return files;
+}
+function pageCheckMatches(report: string, files: Record<string, string>): boolean {
+  let receipt;
+  try {
+    receipt = JSON.parse(report);
+  } catch {
+    throw new Error("Stored lesson page-check receipt is invalid JSON.");
+  }
+  const hashes = receipt?.preflight?.inputHashes;
+  return (
+    receipt?.preflight?.version === 1 &&
+    !!hashes &&
+    typeof hashes === "object" &&
+    !Array.isArray(hashes) &&
+    Object.keys(hashes).length === Object.keys(files).length &&
+    Object.entries(files).every(
+      ([name, text]) => hashes[name] === createHash("sha256").update(text).digest("hex"),
+    )
+  );
+}
 const exec = promisify(execFile);
 export async function completeLessonRequest(request: LessonRequest): Promise<void> {
   let saved = lessonRequests(request.classroom).find((r) => r.id === request.id)!;
@@ -199,12 +241,17 @@ export async function completeLessonRequest(request: LessonRequest): Promise<voi
   validateLessonDocument(saved.document);
   const document = saved.document,
     hash = createHash("sha256").update(JSON.stringify(document)).digest("hex");
-  if (saved.pageCheck?.hash !== hash) {
+  const files = lessonPublicationFiles(saved, document);
+  if (saved.pageCheck?.hash !== hash || !pageCheckMatches(saved.pageCheck.report, files)) {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), "studens-next-page-"));
     try {
       const dir = path.join(root, saved.classroom, saved.lesson);
       fs.mkdirSync(dir, { recursive: true });
-      fs.writeFileSync(path.join(dir, "lesson.html"), document.lesson_html);
+      for (const [name, text] of Object.entries(files)) {
+        const file = path.join(dir, name);
+        fs.mkdirSync(path.dirname(file), { recursive: true });
+        fs.writeFileSync(file, text, { mode: name.startsWith("quiz/") ? 0o600 : 0o644 });
+      }
       for (const name of ["classroom.json", "GLOSSARY.md", "assets", "reference"]) {
         const source = safeStaticFile(classroomDir(saved.classroom), name);
         if (source) fs.cpSync(source, path.join(root, saved.classroom, name), { recursive: true });
@@ -236,30 +283,13 @@ export async function completeLessonRequest(request: LessonRequest): Promise<voi
             .find((message) => !message.includes("### Error")) ?? e.message;
         throw new Error(`Lesson headless page check failed: ${detail}`);
       }
+      if (!pageCheckMatches(report, files))
+        throw new Error("Lesson headless page check did not bind the complete publication files.");
       saved = updateLessonRequest(saved, { pageCheck: { hash, report } });
     } finally {
       fs.rmSync(root, { recursive: true, force: true });
     }
   }
-  const files = {
-    "lesson.html": document.lesson_html,
-    "quiz/key.json": document.rubric_json,
-    "quiz/plan.json": document.teaching_plan_json,
-    "lesson.json": JSON.stringify(
-      {
-        title: document.title,
-        summary: document.summary,
-        createdAt: saved.at,
-        kind: "lesson",
-        assessmentContract: 1,
-        criterionContract: 1,
-        instructionalContract: 1,
-        reviewVariantContract: 1,
-      },
-      null,
-      2,
-    ),
-  };
   const dir = lessonDir(saved.classroom, saved.lesson);
   for (const [name, text] of Object.entries(files)) {
     const target = path.join(dir, name);

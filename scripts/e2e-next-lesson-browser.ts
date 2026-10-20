@@ -3,8 +3,8 @@ import { hooks } from "../src/server/hooks.ts";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import assert from "node:assert/strict";
-import { randomUUID } from "node:crypto";
-import { lessonRequests } from "../src/next-lesson.ts";
+import { createHash, randomUUID } from "node:crypto";
+import { lessonRequests, updateLessonRequest } from "../src/next-lesson.ts";
 import { readTeacherState } from "../src/service-state.ts";
 import { TeacherService } from "../src/teacher-service.ts";
 import * as server from "../src/server.ts";
@@ -85,9 +85,25 @@ export async function verifyNextLessonBrowser(artifacts: string | null): Promise
       assert.equal(runs, 1);
       assert.ok(saved.document);
       assert.ok(saved.pageCheck);
+      const checked = JSON.parse(saved.pageCheck.report);
+      assert.equal(checked.preflight.version, 1);
+      assert.equal(Object.keys(checked.preflight.inputHashes).length, 4);
+      assert.ok(
+        Object.values(checked.preflight.inputHashes).every((hash) => typeof hash === "string"),
+      );
       assert.equal(saved.status, "failed");
       assert.equal(saved.topic, "Track moves between scopes");
       assert.equal(store.readLesson("rust", saved.lesson), null);
+      // A durable receipt must bind the actual private publication bytes, not just HTML.
+      for (const [name, text] of Object.entries({
+        "lesson.html": document.lesson_html,
+        "quiz/key.json": document.rubric_json,
+        "quiz/plan.json": document.teaching_plan_json,
+      }))
+        assert.equal(
+          checked.preflight.inputHashes[name],
+          createHash("sha256").update(text).digest("hex"),
+        );
       assert.equal((await fetch(`${base}/c/rust/${saved.lesson}`)).status, 404);
       assert.equal((await fetch(`${base}/c/rust/${saved.lesson}/media/foo`)).status, 404);
       assert.equal(
@@ -143,6 +159,13 @@ export async function verifyNextLessonBrowser(artifacts: string | null): Promise
         ).status,
         400,
       );
+      // Historical HTML-only receipts are rechecked on explicit saved-plan retry.
+      updateLessonRequest(saved, {
+        pageCheck: {
+          hash: saved.pageCheck.hash,
+          report: JSON.stringify({ initial: checked.initial, released: checked.released }),
+        },
+      });
       {
         await teacher.stop();
         teacher = new TeacherService(async () => {
@@ -168,6 +191,15 @@ export async function verifyNextLessonBrowser(artifacts: string | null): Promise
       );
       assert.equal(runs, 1);
       assert.equal(lessonRequests("rust").at(-1)!.status, "done");
+      const recoveredReceipt = JSON.parse(lessonRequests("rust").at(-1)!.pageCheck!.report);
+      assert.equal(recoveredReceipt.preflight.version, 1);
+      for (const [name, hash] of Object.entries(recoveredReceipt.preflight.inputHashes))
+        assert.equal(
+          hash,
+          createHash("sha256")
+            .update(fs.readFileSync(path.join(fixture.root, "rust", saved.lesson, name)))
+            .digest("hex"),
+        );
       assert.equal(store.listSubmissions("rust", saved.lesson).length, 0);
       assert.equal(store.listGrades("rust", saved.lesson).length, 0);
       assert.equal(

@@ -220,6 +220,16 @@ export async function driveRealNextLesson(
     createHash("sha256").update(JSON.stringify(saved!.document)).digest("hex"),
   );
   assert.equal(JSON.parse(saved!.pageCheck.report).learnerStateChanged, false);
+  const checkedInputs = JSON.parse(saved!.pageCheck.report).preflight;
+  assert.equal(checkedInputs.version, 1);
+  assert.equal(Object.keys(checkedInputs.inputHashes).length, 4);
+  for (const [name, hash] of Object.entries(checkedInputs.inputHashes))
+    assert.equal(
+      hash,
+      createHash("sha256")
+        .update(fs.readFileSync(path.join(root, "rust", saved!.lesson, name)))
+        .digest("hex"),
+    );
   assert.equal(JSON.stringify(store.readLearningRecords("rust")), originalEvidence);
   if (selected) {
     const teacher = readTeacherState("rust")!;
