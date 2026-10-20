@@ -93,3 +93,8 @@ rendered. Legacy missions without this block show their readable context and
 explicit absence of a recorded plan ahead. Mission prose renders headings, lists
 and safe links; raw HTML is escaped, remote images are not loaded, and script URLs
 are not active.
+
+Released lessons also show backward lesson links for their explicit `builds-on`
+connections. Related edges and upcoming goals never become prerequisite lesson
+links. See [source links](SOURCE-LINKS.md) for the distinction between a planned
+prerequisite and the actual declared teaching section of a glossary term.

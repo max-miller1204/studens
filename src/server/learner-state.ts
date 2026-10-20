@@ -1,10 +1,11 @@
 import type * as http from "node:http";
 import { draftErrors, isDraftKey } from "../../assets/runtime/draft.mjs";
 import { isContractId } from "../../assets/runtime/quiz.mjs";
-import { isValidSlug } from "../paths.ts";
+import { isValidSlug, privateStatePath } from "../paths.ts";
 import { reteachOffers } from "../reteach.ts";
 import { reviewSessions } from "../review-session.ts";
 import * as store from "../store.ts";
+import { glossaryWithOrigins } from "../store/lesson-sources.ts";
 import { hooks } from "./hooks.ts";
 import { readPublicState, publicStateError } from "../public-state-errors.ts";
 import { lessonParams, readJsonBody, sendJson } from "./http.ts";
@@ -50,7 +51,19 @@ export function handleGlossary(res: http.ServerResponse, url: URL): void {
   if (!isValidSlug(classroom) || !store.readClassroom(classroom)) {
     return sendJson(res, { error: "Unknown classroom" }, 404);
   }
-  sendJson(res, store.readGlossary(classroom));
+  try {
+    privateStatePath(`${classroom}/GLOSSARY.md`);
+    sendJson(res, glossaryWithOrigins(classroom, store.readGlossary(classroom)));
+  } catch {
+    sendJson(
+      res,
+      {
+        error:
+          "Cannot load glossary: GLOSSARY.md is unreadable or unsafe. Correct the saved file, then retry.",
+      },
+      500,
+    );
+  }
 }
 
 export async function handleReflect(

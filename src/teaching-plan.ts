@@ -3,6 +3,7 @@ import { isContractId } from "../assets/runtime/quiz.mjs";
 import { authoringContent, htmlAttributes, TAG_ATTRIBUTES } from "./authoring-html.ts";
 import { authoredQuizzes } from "./quiz-authoring.ts";
 import { stageLesson } from "./pretest.ts";
+import { teachingSources } from "./lesson-sources.ts";
 
 export const MENTAL_TASKS = [
   "prediction",
@@ -53,6 +54,7 @@ function nonempty(value: unknown): value is string {
 }
 
 export function parseTeachingPlan(text: string, html: string): TeachingPlan {
+  teachingSources(html);
   const plan = object(JSON.parse(text), "Teaching plan");
   if (plan.version !== 1) throw new Error("Teaching plan needs version 1.");
   const objectives = object(plan.objectives, "Teaching objectives");

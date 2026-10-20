@@ -26,6 +26,12 @@ export async function driveRealNextLesson(
   const stepper = mode === "stepper";
   const sourceFiles = [
     "src/lesson-output.ts",
+    "src/lesson-sources.ts",
+    "src/store/lesson-sources.ts",
+    "src/store/course-map.ts",
+    "scripts/lesson-inputs.ts",
+    "scripts/check-lesson.ts",
+    "docs/SOURCE-LINKS.md",
     "src/next-lesson.ts",
     "src/pi-teacher.ts",
     "src/lesson-research.ts",
@@ -111,7 +117,6 @@ export async function driveRealNextLesson(
   );
   const deadline = Date.now() + 600_000;
   let saved;
-  let retried = false;
   let recovery: { marker: string; file: string } | undefined;
   let publicationRetried = false;
   let recoveredSession: { path: string; bytes: Buffer; plan: unknown; request: string } | undefined;
@@ -135,14 +140,16 @@ export async function driveRealNextLesson(
         fs.writeFileSync(
           path.join(
             artifacts,
-            retried ? "next-lesson-retry-failed.json" : "next-lesson-failed.json",
+            publicationRetried
+              ? "next-lesson-publication-retry-failed.json"
+              : "next-lesson-failed.json",
           ),
           JSON.stringify(saved, null, 2),
         );
         await playwrightCode(
           browser,
           root,
-          `async page=>{await page.goto(${JSON.stringify(base)}+'/c/rust');await page.getByRole('button',{name:'Retry lesson',exact:true}).waitFor();await page.screenshot({path:${JSON.stringify(path.join(artifacts, retried ? "next-lesson-retry-failed.png" : "next-lesson-failed.png"))},fullPage:true});return true;}`,
+          `async page=>{await page.goto(${JSON.stringify(base)}+'/c/rust');await page.getByRole('button',{name:'Retry lesson',exact:true}).waitFor();await page.screenshot({path:${JSON.stringify(path.join(artifacts, publicationRetried ? "next-lesson-publication-retry-failed.png" : "next-lesson-failed.png"))},fullPage:true});return true;}`,
         );
       }
       if (
@@ -245,18 +252,7 @@ export async function driveRealNextLesson(
           );
         continue;
       }
-      if (codeMode || retried || saved.document || saved.modelOutput === undefined)
-        throw new Error(`Real ${host} Next lesson failed: ${saved.error}`);
-      console.log(
-        `[e2e:${host}] Rejected authoring output: ${saved.error}. Exercising one explicit Retry lesson action.`,
-      );
-      await playwrightCode(
-        browser,
-        root,
-        `async page=>{await page.getByRole('button',{name:'Retry lesson',exact:true}).click();return true;}`,
-      );
-      retried = true;
-      continue;
+      throw new Error(`Real ${host} Next lesson failed on its original request: ${saved.error}`);
     }
     if (saved?.status === "done") break;
     await new Promise((resolve) => setTimeout(resolve, 500));

@@ -21,11 +21,9 @@ export function closedReviewActions(screenshot: string | null): string {
     await page.waitForFunction(() => document.querySelectorAll('.cl-teacher-message[data-role="teacher"]').length > 1 || [...document.querySelectorAll('.cl-teacher-request')].some(el => el.textContent.includes('Teacher failed:')), null, {timeout:120000});
     const correctiveFailures = [];
     if (await page.locator('.cl-teacher-request').filter({hasText:'Teacher failed:'}).count()) {
-      ${teacherFailureRetryActions(screenshot ? `${screenshot}.reply-failed.png` : null)}
-      correctiveFailures.push(preservedTeacherFailure);
-      await page.waitForFunction(() => document.querySelectorAll('.cl-teacher-message[data-role="teacher"]').length > 1 || [...document.querySelectorAll('.cl-teacher-request')].some(el => el.textContent.includes('Teacher failed:')), null, {timeout:120000});
-      const stillFailed = page.locator('.cl-teacher-request').filter({hasText:'Teacher failed:'});
-      if (await stillFailed.count()) throw new Error(await stillFailed.allTextContents());
+      const failed = page.locator('.cl-teacher-request').filter({hasText:'Teacher failed:'});
+      ${screenshot ? `await page.screenshot({path:${JSON.stringify(screenshot + ".reply-failed.png")},fullPage:true});` : ""}
+      throw new Error('Original corrective reply failed: ' + (await failed.allTextContents()).join('; '));
     }
     await page.waitForFunction(() => document.querySelectorAll('.cl-teacher-message[data-role="teacher"]').length > 1, null, {timeout:120000});
   `;

@@ -11,7 +11,8 @@ The learner reads a lesson and asks about text without leaving the page.
 - Restore saved cards and unsent text after reload.
 - Keep rejected questions on the page with their specific error and an explicit resend.
 - Save an ungraded self-explanation and restore its text and draft after reload.
-- Open glossary definitions. Draw diagrams and math. Change the theme.
+- Open glossary definitions after recall, then follow a declared teaching origin.
+- Follow explicit prerequisite lesson links. Draw diagrams and math. Change the theme.
 
 ## How to get to it (user POV)
 
@@ -81,6 +82,39 @@ check, not an authored-lesson quality evaluation.
 
 The suite opens glossary definitions and changes the theme. It checks drawn diagrams, accessible descriptions, and a visible error for invalid Mermaid source. Diagram text must not offer the ask pill. It checks drawn math, literal TeX in code, a visible error for invalid TeX, and Markdown math in a card answer. Math text must not offer the ask pill. A highlight around a formula marks the whole formula and quotes it as TeX. Grading receives each formula as TeX.
 
+The `lesson-sources/` drive opens the canonical `.cl-lesson-shell` with Pi, Claude,
+and Codex owner fixtures. Use the **Builds on** link to open the prerequisite lesson.
+Focus a `.cl-term`, press Enter, and require the source link to stay hidden until
+**Show the definition**. The **Taught in** link opens the canonical owning lesson
+and its declared section. Escape and **Close definition** return focus to the term.
+The drive clicks actual destinations, reloads them, and checks viewport bounds in
+1280×900 and 390×844 light/dark layouts. Repeated sections retain term controls;
+code, generated math and diagram nodes remain unwrapped. Search's glossary-term
+result also opens its real teaching source.
+
+Source-error probes remove or edit a declaration, supply traversal/URL-like anchor
+ids, and corrupt the saved prerequisite relationship. Missing provenance stays
+unlinked; malformed provenance names its file. Correct the file, then use **Retry
+loading teaching sources** or **Retry loading lesson links**. Neither control runs
+a teacher. Pending authoring, private files, legacy and private review neighbors,
+and unreleased teaching must never become source destinations. Only a separate
+explicit diagnostic submission releases its pretest; reloading and following links
+adds no grade or learning record. Inspect `result.json`, per-phase `*-hashes.json`,
+raw screenshots and `cleanup.json`. These declarations are fixture author metadata,
+not evidence of native model adoption or human learning.
+
 ## Gotchas
 
 The browser suite uses fixture teachers. Use the real host targets for model answers. Quiz help before grading must clarify the question without solving it. Saved cards sit in document flow. A reload must preserve their location.
+
+Source destinations measure the actual sticky header, position and focus the teaching
+section below it, and retain the anchor after reload. A previously shown link whose
+section was edited keeps its original hash and shows a specific missing-section state
+with explicit Retry and lesson-start links; it never guesses a replacement. Inspect
+`stale-held-source-hashes.json` and `stale-source-retry-hashes.json` alongside actual
+viewport bounding boxes. Published full-page captures reset scroll to the top.
+
+Following a glossary source closes its dialog, including a source in the current
+lesson. Retained native output checks must assert the dialog closes before reload
+and focus reaches the actual teaching section; reloading alone can hide this bug.
+The original same-lesson failure and unchanged classroom hashes remain in the packet.

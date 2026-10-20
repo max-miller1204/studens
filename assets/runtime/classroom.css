@@ -1626,6 +1626,32 @@ figure:has(> .cl-diagram) figcaption {
   font-size: 0.9rem;
 }
 
+.cl-lesson-links {
+  width: min(100% - 2rem, 52rem);
+  margin: 1rem auto;
+  padding: 1rem;
+  border: 1px solid var(--cl-border);
+  border-radius: var(--cl-radius);
+  overflow-wrap: anywhere;
+}
+.cl-lesson-links p {
+  margin: 0 0 0.5rem;
+}
+.cl-lesson-links ul {
+  margin: 0 0 0.5rem;
+}
+.cl-term-pop {
+  max-height: calc(100dvh - 16px);
+  overflow: auto;
+  overflow-wrap: anywhere;
+}
+.cl-term-origin {
+  margin: 0.75rem 0;
+}
+.cl-term-origin p {
+  margin: 0.5rem 0;
+}
+
 .cl-term-pop[hidden] {
   display: none;
 }

@@ -18,6 +18,8 @@ export interface LessonRuntimeConfig {
   delivery?: "push" | "wait" | "service";
   pendingPretests?: string[];
   reviewScreen?: boolean;
+  prerequisites?: { title: string; url: string }[];
+  prerequisiteError?: string;
 }
 
 /** The `<head>` additions: shared stylesheet plus the no-flash theme bootstrap. */
