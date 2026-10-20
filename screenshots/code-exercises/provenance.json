@@ -4,7 +4,7 @@
   "version": "0.11.8",
   "versionOrigin": "Inherited accepted main; no issue15 version bump.",
   "runtime": "Node24.22.0/Chrome/QuickJS0.32.0",
-  "capture": "Actual accepted56 baseline (short answer precursor with identical prompt/source) and integrated693 explicit Run; desktop1280x900/mobile375x812, light/dark. Source editor, public results/errors, locked grade and short real wrong-source -> revision -> correct Run recording inspected. Grade screenshot uses fixture teacher; actual model grading is separate retained evidence.",
+  "capture": "Canonical-shell disposable authored fixtures: accepted56 short-answer precursor before / integrated693 real code after; matching title, prompt, source, viewport. Desktop1280x900/mobile375x812 light/dark; explicit Run, errors, revision, submission/locked fixture grade and real recording inspected. Exact source unchanged; no model calls.",
   "sourceHashes": {
     "assets/runtime/anchor.d.mts": "5c5c676547f230a57164fbc7fd27c5bafc80027a991ba2e5cf4c65a536c78422",
     "assets/runtime/anchor.mjs": "8ed290ebd672350ec12e8a589071c44da35c12b8037e2ab3d6a4edb4a946f44e",
@@ -173,17 +173,100 @@
     "src/tools.ts": "c959357521ff9c56b0d923cb3ee8412576d9a879ec39b0281350dcdfaaebf64c"
   },
   "files": {
-    "after-desktop-light.png": "7555d802a1478225c1006035ec6176337a170426f08687b9553865ded4cbb1b8",
-    "after-mobile-dark.png": "76a29365135dc21260be8907edf3a6c4b9c3c3fe8186cde0e5baa33a54cc2154",
-    "timeout-mobile.png": "0093b2bba3fd47005d11144d132a96e48b61210a28b37e876e9c77f13e7ca0f6",
-    "before-mobile-dark.png": "f52b6ebeb823bd9e187c2b5d3574bb224d36369f124e9be32602b6dbaca173e1",
-    "after-mobile-light.png": "6f4bd210757de9835176d77cab3e0c0e2f0b2b89b3011977d27685f220c4dbd0",
-    "execution.mp4": "cd014871d617d801637d89f4f5f374116b3f0ba46fa8ddb307b1d9f8f734a9ae",
-    "output-limit-mobile.png": "13302f9fcf01c4e91b55425ed4f32fa1e978a0463aeca6622055b5fbf7435573",
-    "before-desktop-light.png": "81a5e60526a134e3cdb3c36d9454a4ea305a57e1b0a06f7e07765bdf2e17f141",
-    "after-desktop-dark.png": "05d2738d63e5f7abbc859a0153f01206a80b3c7aa54599abee0d08d183444eb8",
-    "syntax-mobile.png": "14ed56043ee13043aaf7b6e9464e9b32ddd9ef81f9f33fae22a8882ee4d42efa",
-    "graded-mobile-dark.png": "cef241b268d1375ea7e81904fa9dad206b7f5c722d2f793a46c174c570ef9012"
+    "after-desktop-light.png": "bb9a27145874797bf5f14d9264aad6d77e90afbefcd37434846709216a3b94ac",
+    "after-mobile-dark.png": "5bf3c36f831d29994a667f7d1d73431116432aea0550792238f421547939e2a6",
+    "timeout-mobile.png": "909701065af55c848807e3a5b1b48e866966118ed2de50d58f6775e5a3a20f4b",
+    "before-mobile-dark.png": "add3acc130fd322360d928592598d97d3600531183a91a331486f939d5dbce03",
+    "after-mobile-light.png": "47e6f30a0ef40129019bc3ed622c58ca82c60e3cdc2c54f0fcd6d49a4c313c63",
+    "execution.mp4": "12a05fd78668f61fc6609ec95f58959f912609e17ad80c809218470e93e4931d",
+    "output-limit-mobile.png": "97827e9719020e8fa04e31ac44006903809ea0f01fba16c97dd8957577bd7c2b",
+    "before-desktop-light.png": "8ba5353a11d813c2737bb7b3999565257ce27620f4fda77f14fbd8d29244af23",
+    "after-desktop-dark.png": "a6bfff61c025dcf39eabfb008dbdbdeb85c9209ad5c6207a131ce59daf48ce85",
+    "syntax-mobile.png": "2328fe9bb45cfdb33f5b5394d1de2e5b7519d6be85df088d1d2221be04f53c38",
+    "graded-mobile-dark.png": "95d6ac711e4eaefe789b773b7438cf2c262d587c1e3e91e22997e6979ee24d6d"
   },
-  "limits": "Original full host failures remain retained. Accepted17 changed authoring guidance/browser boot/style; grading/engine/serializer equivalence is proven separately. These images are browser UI evidence, not human learning or final-source authoring model adherence."
+  "limits": "Original full host failures remain retained. Accepted17 changed authoring guidance/browser boot/style; grading/engine/serializer equivalence is proven separately. These images are browser UI evidence, not human learning or final-source authoring model adherence.",
+  "canonicalFixture": {
+    "verdict": "PASS",
+    "runtimeSourceUnchanged": "693d2010e7c210424862d2d03138f0b214f485b1",
+    "base": "56a2186ff1d1e547acf245fee08bad6371e18dcb",
+    "modelInference": 0,
+    "commands": [
+      {
+        "command": "node /tmp/studens-issue15-20261020/canonical-media/before-runner.ts",
+        "exitCode": 0
+      },
+      {
+        "command": "node /tmp/studens-issue15-20261020/canonical-media/after-runner.ts",
+        "exitCode": 0,
+        "limit": "First stills retained control auto-scroll; preserved, superseded by scroll-top capture."
+      },
+      {
+        "command": "node /tmp/studens-issue15-20261020/canonical-media/after-final-runner.ts",
+        "exitCode": 0
+      },
+      {
+        "command": "ffmpeg transcode and two frame extractions (exact args retained in tool record/logs)",
+        "exitCode": 0
+      }
+    ],
+    "template": {
+      "file": "assets/templates/lesson.html",
+      "sha256": "7da84785b7746facce0dd7b167413a33b9d6d2033c3bbd0c661063147908f7c2",
+      "canonicalMain": "<main class=\"cl-lesson-shell\" data-cl-content>",
+      "css": "assets/runtime/classroom.css",
+      "cssSha256": "b47c61a1e74d973c414853a55864ca3172bf7a8834713ba5aa11f75c7b0e62f6"
+    },
+    "fixtureChanges": "External helper authors canonical main and viewport metadata before server load; fixture-only 001 lesson title/summary corrected Ownership -> Summing values on both sides. No DOM/CSS injection. Short-answer baseline precursor and code after use same prompt/source.",
+    "fixtureHashes": {
+      "before": {
+        "before/fixtures/1-original.html": "8781566b174eef533714d762a51b48ea9adf2f13b68612dc3872526422a0ffdf",
+        "before/fixtures/rust/001-ownership/lesson.html": "a32db6b963873884b17dcda91d628ca595371fced121af9f8451424a2f6dfa17",
+        "before/fixtures/rust/001-ownership/lesson.html.before": "a32db6b963873884b17dcda91d628ca595371fced121af9f8451424a2f6dfa17",
+        "before/fixtures/rust/001-ownership/lesson.json": "eba841ae6ff5d07ab6fd1da07ba4f8de341cc2368a47ff03c478d4d31d2814fe",
+        "before/fixtures/rust/001-ownership/lesson.json.before": "9c32fe610b3fbb3b981211f8e8a048ac6239935362ae8c9ff0eba1012ff53b7d"
+      },
+      "after": {
+        "after-final/fixtures/1-original.html": "ba94caa3c7e9daf08a8d28959f6e2a541327cb54cf869b0f5294f88000e9e0b1",
+        "after-final/fixtures/2-original.html": "a113285e8a6a4c1b09980d9c25e18beb0cdf149c3545ed439b2d239dd7eb124b",
+        "after-final/fixtures/3-original.html": "12b011a006c11a2a0cfe99f4443d00e67e8f6a21bea8e240cae656c7b0be39de",
+        "after-final/fixtures/rust/001-ownership/lesson.html": "f3c04eac7b2091b99e796686f1aa142fbc402c55160ed395a3538903efe017a9",
+        "after-final/fixtures/rust/001-ownership/lesson.html.before": "f3c04eac7b2091b99e796686f1aa142fbc402c55160ed395a3538903efe017a9",
+        "after-final/fixtures/rust/001-ownership/lesson.json": "e423fee896ab1cf5c9ec49bea1604167a5fe13e11dbf697d374617b510a5dcd6",
+        "after-final/fixtures/rust/001-ownership/lesson.json.before": "2770d09c17087b1d241a4e352d7d4a9ebbd13945e9d8ae9f64306953e5af0fe2",
+        "after-final/fixtures/rust/002-neighbor/lesson.html": "948296dfa6ba9952d09045c1759d6af3066a60e96bba59d968f413f60c42ea56",
+        "after-final/fixtures/rust/002-neighbor/lesson.html.before": "948296dfa6ba9952d09045c1759d6af3066a60e96bba59d968f413f60c42ea56",
+        "after-final/fixtures/rust/002-neighbor/lesson.json": "ca62c5b2070e1990c9d5f8c1fc40108573b800d584d8ea6f2386b8427152d5fc",
+        "after-final/fixtures/rust/002-neighbor/lesson.json.before": "ca62c5b2070e1990c9d5f8c1fc40108573b800d584d8ea6f2386b8427152d5fc",
+        "after-final/fixtures/rust/003-json-input/lesson.html": "56a130dcc4f51533b0279a72fb63d8f1246333b83135defecec389b30b27f1d5",
+        "after-final/fixtures/rust/003-json-input/lesson.html.before": "56a130dcc4f51533b0279a72fb63d8f1246333b83135defecec389b30b27f1d5",
+        "after-final/fixtures/rust/003-json-input/lesson.json": "de4f586b15f8e58dd190a7d018d5b9fce83faff96623272acdb6322c0e028d34",
+        "after-final/fixtures/rust/003-json-input/lesson.json.before": "de4f586b15f8e58dd190a7d018d5b9fce83faff96623272acdb6322c0e028d34"
+      }
+    },
+    "helperHashes": {
+      "after-runner.ts": "4762fba5a480641cfb86e7c54a7f308532b56285fb3f5af07b935e4a2ae3334d",
+      "after-helpers.ts": "986349714275ddc92e69246a3b043f220f733629a9f03b7ba77350234abb43d9",
+      "before-runner.ts": "fa9e864387e4fa4fb026e0b0d80765194087fa31de57ff4580e7f549c303c881",
+      "after-final-runner.ts": "11756a97041e0b65355842ee2934ccab489af4a3347c91bb09d950368456e1fd",
+      "after-final-helpers.ts": "380a7ef437c202ed1b2bda209a3cfbbd68a31d40e8e7f2120cc71e5a0855898c",
+      "before-helpers.ts": "9d19ae23b6490755f4bbc5938913ab2372a4260b9639f118ed7494ff9cd1e78a",
+      "capture-probes.ts": "098d73f81ca8d28ff1e67681a62cff0c4b0967213b6876405d5fc53854ae0868"
+    },
+    "inspected": [
+      "before-desktop-light.png",
+      "before-mobile-dark.png",
+      "after-desktop-light.png",
+      "after-desktop-dark.png",
+      "after-mobile-light.png",
+      "after-mobile-dark.png",
+      "syntax-mobile.png",
+      "timeout-mobile.png",
+      "output-limit-mobile.png",
+      "graded-mobile-dark.png",
+      "wrong-frame.png",
+      "correct-frame.png"
+    ],
+    "historical": "a769241 media remains immutable in git and canonical-media/historical-a769; old main lacked cl-lesson-shell and old breadcrumb Ownership, superseded."
+  }
 }
