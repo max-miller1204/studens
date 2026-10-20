@@ -82,6 +82,18 @@ export async function verifyDisputesBrowser(artifacts: string | null) {
     fs.mkdirSync(path.join(dir, "quiz"), { recursive: true });
     for (const file of ["lesson.html", "lesson.json", "quiz/key.json"])
       fs.copyFileSync(path.join(source, file), path.join(dir, file));
+    const lessonHtml = path.join(dir, "lesson.html");
+    fs.writeFileSync(
+      lessonHtml,
+      fs
+        .readFileSync(lessonHtml, "utf8")
+        .replace(
+          "<form",
+          "<section>" +
+            "<p>Earlier lesson context for the saved dispute navigation check.</p>".repeat(45) +
+            "</section><form",
+        ),
+    );
     const submission = store.createSubmission({ ...seed.submission, lesson, kind: "check" });
     const original = applyGrade(submission, {
       score: seed.grade.score,
@@ -108,6 +120,52 @@ export async function verifyDisputesBrowser(artifacts: string | null) {
     await teacher.idle();
     const failed = readTeacherState("rust")!;
     save("failed-request", failed);
+    const navigation = await playwrightCode(
+      session,
+      f.root,
+      `async page=>{
+      await page.goto(${JSON.stringify(base + "/c/rust")});
+      const link=page.locator('.cl-teacher-activity a[href*="996-retry-dispute"]'); await link.waitFor();
+      const href=await link.getAttribute('href');
+      await page.route('**/api/state?classroom=rust&lesson=996-retry-dispute',async route=>{await new Promise(r=>setTimeout(r,500));await route.continue();},{times:1});
+      await link.click(); await page.waitForURL('**/996-retry-dispute#cl-dispute-*');
+      const id=decodeURIComponent(new URL(page.url()).hash.slice(1));
+      const geometry=()=>page.evaluate(id=>{const el=document.getElementById(id);if(!el)return null;const r=el.getBoundingClientRect();return{top:r.top,bottom:r.bottom,scrollY,viewport:innerHeight,inViewport:r.top>=0&&r.bottom<=innerHeight};},id);
+      await page.waitForFunction(id=>{const el=document.getElementById(id);if(!el)return false;const r=el.getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight;},id);
+      const initial=await geometry();
+      ${artifacts ? `await page.screenshot({path:${JSON.stringify(path.join(artifacts, "activity-navigation-mobile.png"))}});` : ""}
+      await page.evaluate(()=>{location.hash='';window.scrollTo(0,0);});
+      await page.waitForFunction(()=>!location.hash&&scrollY===0);
+      await page.evaluate(id=>{location.hash=encodeURIComponent(id);},id);
+      await page.waitForFunction(id=>{const r=document.getElementById(id).getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight;},id);
+      const later=await geometry();
+      const pageErrors=[];page.on('pageerror',error=>pageErrors.push(String(error)));
+      await page.evaluate(()=>{location.hash='cl-dispute-%E0%A4%A';window.scrollTo(0,0);});
+      await page.waitForTimeout(100);
+      if(pageErrors.length||await page.evaluate(()=>scrollY)!==0)throw new Error('Malformed dispute fragment threw or scrolled');
+      await page.evaluate(id=>{location.hash=encodeURIComponent(id);},id);
+      await page.waitForFunction(id=>{const r=document.getElementById(id).getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight;},id);
+      await page.evaluate(id=>{
+        const composer=document.querySelector('.cl-q[data-question-id="exact"] details.cl-dispute-compose');composer.open=true;
+        const field=composer.querySelector('textarea');field.dataset.navigationFocus='true';field.focus({preventScroll:true});
+        document.getElementById(id).dataset.beforeNavigationRefresh='true';window.scrollTo(0,0);
+      },id);
+      return{href,id,initial,later,malformedErrors:pageErrors};
+    }`,
+    );
+    save("activity-navigation", navigation);
+    server.pushEvent("rust", lesson, "teacher", teacher.publicState("rust", lesson));
+    await playwrightCode(
+      session,
+      f.root,
+      `async page=>{
+      const id=${JSON.stringify(navigation.id)};
+      await page.waitForFunction(id=>!document.getElementById(id)?.dataset.beforeNavigationRefresh,id);
+      if(await page.evaluate(()=>scrollY)!==0)throw new Error('Teacher refresh stole scroll after fragment navigation');
+      if(!await page.locator('[data-navigation-focus]').evaluate(el=>document.activeElement===el))throw new Error('Teacher refresh stole focus after fragment navigation');
+      return true;
+    }`,
+    ).then((result) => save("activity-navigation-refresh", result));
     if (turns !== 3 || store.listGrades("rust", lesson).length !== 1)
       throw new Error("Reload retried or revised a failed dispute");
     await playwrightCode(
@@ -126,7 +184,7 @@ export async function verifyDisputesBrowser(artifacts: string | null) {
         const response=await page.request.post(${JSON.stringify(base)}+'/api/quiz/dispute',{data:{...target,id:crypto.randomUUID(),...patch}});
         if(response.status()<400)throw new Error('Accepted stale/neighbor/blank dispute'); probes.push({patch,status:response.status(),body:await response.json()});
       }
-      for(const file of ['quiz/key.json','quiz/plan.json','quiz/submissions/no.json','quiz/grades/no.json'])if((await page.request.get(page.url()+'/'+file)).status()!==404)throw new Error('Private file served');
+      for(const file of ['quiz/key.json','quiz/plan.json','quiz/submissions/no.json','quiz/grades/no.json'])if((await page.request.get(${JSON.stringify(base + "/c/rust/" + lesson + "/")}+file)).status()!==404)throw new Error('Private file served');
       const state=await (await page.request.get(${JSON.stringify(base)}+'/api/state?classroom=rust&lesson='+${JSON.stringify(lesson)})).json();
       await second.close(); return {probes,state};
     }`,
@@ -140,7 +198,7 @@ export async function verifyDisputesBrowser(artifacts: string | null) {
       throw new Error("Explicit retry did not revise exactly once");
     save("final-teacher", readTeacherState("rust"));
     console.log(
-      "PASS: fixture dispute failure, reload without retry, explicit retry once, second tab, stale/unknown/neighbor/blank targets and private routes",
+      "PASS: fixture dispute async activity navigation, encoded/later/malformed fragments, no refresh scroll/focus steal, failure, reload without retry, explicit retry once, second tab, stale/unknown/neighbor/blank targets and private routes",
     );
   } catch (error) {
     save("browser-failure", { error: String(error), teacher: readTeacherState("rust") });

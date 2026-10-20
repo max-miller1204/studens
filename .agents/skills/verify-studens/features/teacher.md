@@ -113,6 +113,8 @@ The root landing and daily pages show public item links labeled with their ownin
 classroom. Next lesson distinguishes writing, checking, and publication from its
 saved state. A daily group's retry stays with the daily owner and its eligibility
 checks. Global retries refresh the matching owning controls.
+Dispute links scroll to their saved history after async state arrives and on later
+fragment navigation. Ordinary teacher refreshes preserve the reader's scroll and focus.
 A lost or unreadable status connection requires `Retry activity status`.
 
 The default browser target includes `activity/`. Its fixture submits explanations
@@ -138,6 +140,14 @@ ownership assertions. `activity-events*.json` in real-host evidence records publ
 SSE-triggered projections. The publication-recovery drive explicitly closes and
 reopens its recorder around the owned service restart; it never reconnects or
 retries model work implicitly.
+
+The dispute fixture follows the activity link from the classroom into a long lesson
+with delayed state. It requires the saved dispute fully inside the mobile viewport,
+handles encoded and malformed fragments, then sends a real teacher SSE refresh and
+checks that scroll and focus stay put. It still requires exactly one explicit retry,
+immutable original grades, second-tab locks and private-path 404s. Inspect the dispute
+fixture's `activity-navigation.json`, `activity-navigation-refresh.json` and
+`activity-navigation-mobile.png`.
 
 `test/activity-privacy.test.ts` covers malformed lesson, daily, review, refill,
 teacher, annotation, lesson metadata and assessment-history JSON, nested private
