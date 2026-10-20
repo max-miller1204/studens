@@ -92,7 +92,9 @@ keeps package resolution enabled, so offline mode cannot hide a discovery failur
 
 For Pi request-envelope changes, run
 `npx vitest run test/pi-teacher-envelope.test.ts`. This actual-SDK fixture reopens
-one saved conversation through lesson, refill, ordinary and dispute requests. It inspects
+one saved conversation through lesson, typed passage Ask/follow-up, refill, ordinary
+and dispute requests. Passage responses contain only `annotation_id` and
+`answer_markdown`; the host serializes their canonical saved operation. It inspects
 the serialized provider transcript for the active schema and request text, permits
 an ordinary `calls: []` reply only with the required outer fields, and requires
 research tools to disappear after the explicit lesson. A dispute requires exactly
@@ -101,6 +103,12 @@ records and notes; its active SDK loadout still contains only the plan tool. Onl
 and auth preflight are controlled; it makes no real model or network call. A real
 failed request still requires one explicit browser retry after an input correction;
 a passing fixture does not erase its rejected output or prove why it failed.
+
+`npx vitest run test/passage-answer.test.ts test/teacher-models.test.ts` checks
+strict typed fields, annotation ownership, FIFO, raw output before decoding,
+refused answer writes and explicit saved-plan recovery. Historical malformed
+canonical JSON must remain failed until explicit retry requests new typed output.
+Saved canonical plans recover without another inference or duplicate answer.
 
 For a changed real Pi path, run `npm run verify -- pi`. For shared service or prompt changes, run `npm run verify -- claude`, then `npm run verify -- codex`. Add `--artifacts <directory>` to retain host evidence. These drives ask a question, submit a wrong answer, and reply in the panel. They check that the quiz score remains unchanged.
 

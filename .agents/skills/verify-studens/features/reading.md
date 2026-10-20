@@ -7,7 +7,7 @@ The learner reads a lesson and asks about text without leaving the page.
 - Select lesson prose or a quiz question and its options. Selection alone sends nothing.
 - Explicitly highlight, add a margin note, or bookmark without asking the teacher.
 - Revisit, edit notes, and delete marks from the lesson-local Saved marks panel.
-- Read a card answer and send a card follow-up.
+- Read a card answer and send a card follow-up, preserving multiline Markdown and code.
 - Restore saved cards and unsent text after reload.
 - Keep rejected questions on the page with their specific error and an explicit resend.
 - Save an ungraded self-explanation and restore its text and draft after reload.
@@ -38,6 +38,14 @@ Immediate answer SSE must remain visible when the older pending HTTP response ar
 The original answer stays unchanged and no quiz or grade is created. Inspect
 `question-errors/result.json` and its matched mobile/light and desktop/dark errors.
 The fixture records native dialogs and requires none; it never dismisses one.
+
+The service fixture also sends typed passage answers containing line breaks, quotes,
+backslashes, Unicode and fenced code. It clicks the card follow-up, reloads both
+answers, then restarts with a saved plan whose answer receipt was interrupted.
+Require unchanged answer bytes and no new model turn. Inspect
+`service/typed-passage-reload.json`, `typed-passage-reload.png`, and
+`typed-passage-recovered.json`. These controlled responses prove transport and
+persistence, not model behavior.
 
 The suite fills `form.cl-reflect textarea` and selects `Save`. Saved text must remain
 after reload; an unsent reflection draft must survive pretest release without waking

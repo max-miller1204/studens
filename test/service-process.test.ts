@@ -69,7 +69,7 @@ lines.on('line', line => {
    send({method:'item/completed',params:{threadId:'other-thread',turnId:'other-turn',item:{type:'agentMessage',text:'not a plan'}}});
    send({method:'turn/completed',params:{threadId:'other-thread',turn:{id:'other-turn',status:'failed',error:{message:'unrelated failure'}}}});
   }
-  send({method:'item/completed',params:{threadId:'test-dedicated-session',turnId:'test-turn',item:{type:'agentMessage',text:JSON.stringify({calls,message:'What happens with another owner?',learning_record:null,notes_markdown:''})}}});
+  send({method:'item/completed',params:{threadId:'test-dedicated-session',turnId:'test-turn',item:{type:'agentMessage',text:JSON.stringify(ask ? {annotation_id:ask[1],answer_markdown:'The owner releases the value.'} : {calls,message:'What happens with another owner?',learning_record:null,notes_markdown:''})}}});
   send({method:'turn/completed',params:{threadId:'test-dedicated-session',turn:{id:'test-turn',status:'completed'}}});
   };
   if (behavior.gate) {
