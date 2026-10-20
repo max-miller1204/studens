@@ -1,3 +1,4 @@
+import { verifyDisputesBrowser } from "./e2e-disputes-browser.ts";
 import { verifyReviewWorkload } from "./e2e-review-workload.ts";
 import { verifyCriteriaBrowser } from "./e2e-criteria-browser.ts";
 import { verifySettingsBrowser } from "./e2e-settings-browser.ts";
@@ -393,6 +394,7 @@ await verifyReviewWorkload(artifacts ? path.join(artifacts, "review-workload") :
 await verifyReviewCards(artifacts ? path.join(artifacts, "review-cards") : null);
 await verifyReteachBrowser(artifacts ? path.join(artifacts, "reteach") : null);
 
+await verifyDisputesBrowser(artifacts ? path.join(artifacts, "disputes") : null);
 await verifyCriteriaBrowser(artifacts ? path.join(artifacts, "criteria") : null);
 await verifySettingsBrowser(artifacts ? path.join(artifacts, "settings") : null);
 

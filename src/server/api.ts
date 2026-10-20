@@ -4,7 +4,7 @@ import { handleEvents } from "./events.ts";
 import { handleFolders } from "./folders.ts";
 import { sendJson } from "./http.ts";
 import { handleDraft, handleGlossary, handleReflect, handleState } from "./learner-state.ts";
-import { handleQuizSubmit } from "./quizzes.ts";
+import { handleQuizDispute, handleQuizSubmit } from "./quizzes.ts";
 import { handleDailyReview } from "./daily-review.ts";
 import { handleReview } from "./review.ts";
 import { handleSettings } from "./settings.ts";
@@ -36,6 +36,7 @@ export async function handleApi(
   if (route === "events" && req.method === "GET") return handleEvents(req, res, url);
   if (route === "state" && req.method === "GET") return handleState(res, url);
   if (route === "ask" && req.method === "POST") return handleAsk(req, res);
+  if (route === "quiz/dispute" && req.method === "POST") return handleQuizDispute(req, res);
   if (route === "quiz/submit" && req.method === "POST") return handleQuizSubmit(req, res);
   if (route === "reflect" && req.method === "POST") return handleReflect(req, res);
   if (route === "draft" && req.method === "PUT") return handleDraft(req, res);

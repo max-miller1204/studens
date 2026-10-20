@@ -38,7 +38,7 @@ if(backend==='claude'&&!process.argv.includes('--input-format')) {
  }
  if(!m.id)return;
  if(m.method==='initialize')send({id:m.id,result:{}});
- else if(m.method==='config/read')send({id:m.id,result:{config:{model:'configured-custom'}}});
+ else if(m.method==='config/read')send({id:m.id,result:{config:{model:'configured-custom',mcp_servers:{inherited:{command:'must-not-run'}}}}});
  else if(m.method==='model/list')send({id:m.id,result:{data:[{id:'catalog-'+(m.params.cursor||'first'),model:'catalog-'+(m.params.cursor||'first'),displayName:'Catalog',isDefault:false}],nextCursor:m.params.cursor?null:'second'}});
  else if(m.method==='thread/start'||m.method==='thread/resume')send({id:m.id,result:{model:m.params.model,thread:{id:m.params.threadId||'same-thread'}}});
  else if(m.method==='turn/start') {
@@ -218,4 +218,26 @@ it("ignores model reroutes from a stale turn in the same resumed thread", async 
     ),
   ).resolves.toEqual({ ok: true });
   expect(active).toBe("custom-id");
+});
+
+it("disables inherited MCP servers, plugins, shell and research on dedicated Codex turns", async () => {
+  await runStructured({ backend: "codex" }, "Resolve a grade dispute", f.root, () => {}, schema);
+  expect(messages().find((m) => m.backend === "codex" && m.args).args).toEqual([
+    "app-server",
+    "--stdio",
+    "--disable",
+    "apps",
+    "--disable",
+    "plugins",
+  ]);
+  const start = messages().find((m) => m.method === "thread/start");
+  expect(start.params).toMatchObject({
+    sandbox: "read-only",
+    approvalPolicy: "never",
+    config: {
+      mcp_servers: { inherited: { enabled: false } },
+      web_search: "disabled",
+      features: { shell_tool: false, plugins: false, apps: false },
+    },
+  });
 });

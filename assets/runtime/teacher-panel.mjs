@@ -24,6 +24,7 @@ export function createTeacherPanel({ config, contentRoot, drafts }) {
 
   /** What the panel says while a request runs. Cards show their own progress. */
   const TEACHER_WORKING = {
+    dispute: "Your teacher is reviewing your grade dispute…",
     resume: "Your teacher is resuming this check.",
     quiz: "Your teacher is grading your quiz…",
     reflect: "Your teacher is reading your explanation…",

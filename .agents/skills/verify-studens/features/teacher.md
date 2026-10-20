@@ -81,6 +81,16 @@ For a changed real Pi path, run `npm run verify -- pi`. For shared service or pr
 
 The service reply fixture reports no help. The drives require the actual reply and reported assistance in a saved retrieval check. They require a linked learning record and keep immediate correction outside retained evidence. Inspect `stored-teacher-state.json` and the retained `classroom/` files.
 
+Dedicated Codex isolation also needs a native catalog check. Start the actual
+app-server with the packaged `CODEX_TEACHER_ARGS` and use
+`CODEX_TEACHER_FEATURES` in its thread settings, with configured MCP servers
+disabled and `web_search=disabled`. Check `mcpServerStatus/list` with `detail=full`
+for a fresh `thread/start` and a copied saved `thread/resume`, without `turn/start`.
+Both must expose zero servers/tools. Preserve paginated raw catalogs, source hashes
+and the original rollout bytes. An empty MCP config, a mock transport assertion or
+a passing model turn alone does not prove this boundary. Apps and plugins must be
+disabled before process discovery as well as in thread settings.
+
 ## Gotchas
 
 Fixture teachers do not prove model responses. All three hosts use a dedicated persistent teacher session. The initiating Pi session context is intentionally separate. Legacy Pi bridge fixtures cover historical state, not a second production delivery path. Starting a new lesson still requires the initiating host. Private quiz keys must remain unavailable over HTTP.

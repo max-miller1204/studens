@@ -1,18 +1,24 @@
 /** Evaluate rubric fidelity with alternate, partial, uncertain, assisted, and old answers. */
 import * as fs from "node:fs";
+import { createHash } from "node:crypto";
+import { submissionsDir } from "../src/paths.ts";
+import * as server from "../src/server.ts";
+import { playwright, playwrightCode } from "./playwright.ts";
+import { hasQuestionExplanation, questionFeedbackText } from "./feedback-explanation.ts";
 import * as path from "node:path";
-import { makeFixture, seedClassroom } from "../test/helpers.ts";
+import { makeFixture, seedClassroom, lessonHtml } from "../test/helpers.ts";
 import { dedicatedTeacherPrompt, gradePrompt } from "../src/prompts.ts";
 import { classroomTools, PI_HOST, isFailure } from "../src/tools.ts";
 import { answerGradingTool, GRADE_ANSWERS } from "../src/teacher-grading.ts";
-import { runTeacher } from "../src/teacher.ts";
+import { parsePlan, runTeacher } from "../src/teacher.ts";
 import * as store from "../src/store.ts";
 import { parseHarness, useTestModel } from "./harness.ts";
 
 const backend = parseHarness(
   process.argv[2],
-  "Usage: node scripts/e2e-feedback.ts <claude|codex> [artifacts]",
+  "Usage: node scripts/e2e-feedback.ts <claude|codex> [artifacts] [saved-plan-replay]",
 );
+const replayPath = process.argv[4] ? path.resolve(process.argv[4]) : null;
 const artifacts = process.argv[3] ? path.resolve(process.argv[3]) : null;
 if (artifacts) fs.mkdirSync(artifacts, { recursive: true });
 const fixture = makeFixture();
@@ -126,7 +132,7 @@ fixture.write(
   JSON.stringify({ title: "Feedback evaluation", assessmentContract: 1 }),
 );
 fixture.write("rust/001-ownership/quiz/key.json", JSON.stringify(rubric));
-const restoreModel = useTestModel(backend);
+const restoreModel = replayPath ? () => {} : useTestModel(backend);
 try {
   const submission = store.createSubmission({
     classroom: "rust",
@@ -149,26 +155,28 @@ try {
   const definitions = classroomTools(PI_HOST)
     .filter((t) => t.name === "grade_lesson_quiz")
     .map(answerGradingTool);
-  const plan = await runTeacher(
-    { backend },
-    dedicatedTeacherPrompt(
-      "feedback-evaluation",
-      gradePrompt(submission, "service"),
-      { lesson: html, privateRubric: rubric, submission },
-      definitions,
-    ),
-    fixture.root,
-    () => {},
-    undefined,
-    { operations: [GRADE_ANSWERS], required: true, messageRequired: true },
-    (raw) => {
-      if (artifacts)
-        fs.writeFileSync(
-          path.join(artifacts, `${backend}-feedback-raw.json`),
-          JSON.stringify(raw, null, 2),
-        );
-    },
-  );
+  const plan = replayPath
+    ? parsePlan(JSON.parse(fs.readFileSync(replayPath, "utf8")))
+    : await runTeacher(
+        { backend },
+        dedicatedTeacherPrompt(
+          "feedback-evaluation",
+          gradePrompt(submission, "service"),
+          { lesson: html, privateRubric: rubric, submission },
+          definitions,
+        ),
+        fixture.root,
+        () => {},
+        undefined,
+        { operations: [GRADE_ANSWERS], required: true, messageRequired: true },
+        (raw) => {
+          if (artifacts)
+            fs.writeFileSync(
+              path.join(artifacts, `${backend}-feedback-raw.json`),
+              JSON.stringify(raw, null, 2),
+            );
+        },
+      );
   if (artifacts)
     fs.writeFileSync(
       path.join(artifacts, `${backend}-feedback-plan.json`),
@@ -177,6 +185,19 @@ try {
   if (plan.calls.length !== 1 || plan.calls[0].name !== GRADE_ANSWERS)
     throw new Error("Feedback evaluation needs one grade call.");
   const args = JSON.parse(plan.calls[0].arguments_json);
+  if (replayPath) {
+    if (typeof args.submission_id !== "string" || !/^[a-f0-9-]{36}$/.test(args.submission_id))
+      throw new Error("The saved feedback plan has no valid original submission id.");
+    // Recreate the isolated fixture under the exact retained plan identity. This is
+    // plan replay, not a fresh model run or recovery of the deleted original fixture.
+    const dir = submissionsDir(submission.classroom, submission.lesson);
+    const before = path.join(dir, `${submission.submittedAt}-${submission.id}.json`);
+    submission.id = args.submission_id;
+    const after = path.join(dir, `${submission.submittedAt}-${submission.id}.json`);
+    fs.renameSync(before, after);
+    fs.writeFileSync(after, JSON.stringify(submission, null, 2));
+  }
+
   if (Object.hasOwn(args, "score")) throw new Error("The dedicated teacher must omit score.");
   if (
     args.questions.length !== questions.length ||
@@ -204,10 +225,11 @@ try {
     }
     if (!verdict.feedback.trim()) throw new Error(`Missing feedback for ${q.id}.`);
   }
-  const uncertainFeedback = args.questions.find(
+  const uncertain = args.questions.find(
     (g: { question_id: string }) => g.question_id === "uncertain",
-  ).feedback;
-  if (!/2\.5|mean|averag|squar|divid/i.test(uncertainFeedback))
+  );
+  const uncertainFeedback = uncertain.feedback;
+  if (!hasQuestionExplanation(uncertain))
     throw new Error("Uncertain correct answer needs explanatory reinforcement.");
   const result = await definitions[0].execute(args);
   if (isFailure(result)) throw new Error(result.content[0].text);
@@ -216,9 +238,52 @@ try {
     throw new Error(`Feedback score is ${result.details.score}, expected ${expectedScore}.`);
   if (store.reviewItems("rust").some((i) => i.progress === "retained-evidence"))
     throw new Error("Immediate or old answers cannot prove retained knowledge.");
+  let visibleExplanation: unknown;
+  if (replayPath) {
+    fixture.write("rust/001-ownership/lesson.html", lessonHtml("Feedback evaluation", html));
+    const session = `studens-feedback-replay-${process.pid}`;
+    let opened = false;
+    try {
+      const base = await server.start(0);
+      await playwright(session, fixture.root, "open", `${base}/c/rust/001-ownership`);
+      opened = true;
+      visibleExplanation = await playwrightCode(
+        session,
+        fixture.root,
+        `async page=>{
+        await page.locator('form[data-state="graded"]').waitFor();
+        const verdict=page.locator('.cl-q[data-question-id="uncertain"] .cl-q-verdict');
+        const expected=${JSON.stringify(uncertain.criteria.map((c: { feedback: string }) => c.feedback))};
+        for(const explanation of expected)if(!await verdict.getByText(explanation,{exact:true}).isVisible())throw new Error('A retained criterion explanation is not visible on its question');
+        if(!await page.locator('.cl-q[data-question-id="uncertain"] > textarea').isDisabled())throw new Error('Replayed graded answer unlocked');
+        await page.setViewportSize({width:1280,height:900});
+        ${artifacts ? `await page.screenshot({path:${JSON.stringify(path.join(artifacts, "feedback-replay-desktop.png"))},fullPage:true});` : ""}
+        await page.setViewportSize({width:375,height:812});
+        ${artifacts ? `await page.screenshot({path:${JSON.stringify(path.join(artifacts, "feedback-replay-mobile.png"))},fullPage:true});` : ""}
+        return {questionId:'uncertain',feedback:await verdict.locator('.cl-q-verdict-feedback').innerText(),criteria:await verdict.locator('.cl-q-criteria').innerText(),allCriteriaVisible:true};
+      }`,
+      );
+    } finally {
+      if (opened) await playwright(session, fixture.root, "close");
+      await server.close();
+    }
+  }
   const report = {
     backend,
-    kind: "agent-adherence",
+    kind: replayPath ? "saved-model-plan-replay" : "agent-adherence",
+    inference: !replayPath,
+    ...(replayPath
+      ? {
+          replaySource: replayPath,
+          replaySourceSha256: createHash("sha256")
+            .update(fs.readFileSync(replayPath))
+            .digest("hex"),
+          fixtureLimit:
+            "Recreated scratch attempt with original plan id and current fixture time. No new model inference and no recovery of the original deleted fixture.",
+        }
+      : {}),
+    questionExplanation: questionFeedbackText(uncertain),
+    visibleExplanation,
     humanLearningEvidence: false,
     expectedScore,
     machineQuestions: submission.deterministicGrades?.length,

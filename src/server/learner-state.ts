@@ -17,6 +17,9 @@ export function handleState(res: http.ServerResponse, url: URL): void {
     quizzes: store.latestQuizStates(params.classroom, params.lesson).map((state) => ({
       ...state,
       submission: store.publicSubmission(state.submission),
+      history: store
+        .listGrades(params.classroom, params.lesson)
+        .filter((g) => g.submissionId === state.submission.id),
     })),
     reflections: store.latestReflections(params.classroom, params.lesson),
     drafts: store.readDrafts(params.classroom, params.lesson),

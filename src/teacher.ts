@@ -5,6 +5,17 @@ import { claudeModels } from "./teacher-models.ts";
 import type { ModelCatalog, ModelChoice } from "./teacher-models.ts";
 import { TeacherDeadline } from "./teacher-deadline.ts";
 
+/** Process-wide discovery precedes per-thread settings; keep apps and plugins off at both boundaries. */
+export const CODEX_TEACHER_ARGS = [
+  "app-server",
+  "--stdio",
+  "--disable",
+  "apps",
+  "--disable",
+  "plugins",
+];
+export const CODEX_TEACHER_FEATURES = { shell_tool: false, plugins: false, apps: false };
+
 export type Backend = "codex" | "claude" | "pi";
 export interface TeacherIdentity {
   backend: Backend;
@@ -39,6 +50,7 @@ export const PLAN_SCHEMA = {
               "grade_quiz_answers",
               "record_retrieval_check",
               "publish_review",
+              "resolve_grade_dispute",
             ],
           },
           arguments_json: { type: "string" },
@@ -289,7 +301,7 @@ async function runCodex(
   saveActiveModel?: (model: string) => void,
   catalogOnly = false,
 ): Promise<unknown> {
-  const child = spawn("codex", ["app-server", "--stdio"], {
+  const child = spawn("codex", CODEX_TEACHER_ARGS, {
     cwd,
     stdio: ["pipe", "pipe", "pipe"],
     signal,
@@ -440,7 +452,15 @@ async function runCodex(
       cwd,
       approvalPolicy: "never",
       sandbox: "read-only",
-      config: { mcp_servers: {}, features: { shell_tool: false } },
+      // Empty maps merge with inherited configuration. Disable each configured server
+      // and plugin discovery so the dedicated teacher has no direct grade/tool escape.
+      config: {
+        mcp_servers: Object.fromEntries(
+          Object.keys(settings.config?.mcp_servers ?? {}).map((name) => [name, { enabled: false }]),
+        ),
+        web_search: "disabled",
+        features: CODEX_TEACHER_FEATURES,
+      },
     };
     const result = identity.sessionId
       ? await request("thread/resume", { ...config, threadId: identity.sessionId })
