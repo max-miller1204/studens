@@ -107,6 +107,8 @@ function client() {
     stdio: ["pipe", "pipe", "pipe"],
   });
   const lines = readline.createInterface({ input: child.stdout });
+  let stderr = "";
+  child.stderr.on("data", (chunk) => (stderr += chunk));
   const pending = new Map<number, (value: any) => void>();
   let id = 0;
   lines.on("line", (line) => {
@@ -114,10 +116,11 @@ function client() {
     pending.get(m.id)?.(m);
     pending.delete(m.id);
   });
-  const exited = new Promise<void>((r) => child.on("exit", () => r()));
+  const exited = new Promise<void>((r) => child.on("close", () => r()));
   return {
     child,
     exited,
+    stderr: () => stderr,
     async call(method: string, params: unknown = {}) {
       const key = ++id;
       const reply = new Promise<any>((resolve) => pending.set(key, resolve));
@@ -126,6 +129,76 @@ function client() {
     },
   };
 }
+it.each(["codex", "claude"])(
+  "stops explicitly before %s MCP exit without detaching again",
+  async (name) => {
+    const c = client();
+    try {
+      await c.call("initialize", { clientInfo: { name } });
+      await c.call("tools/list");
+      for (const action of ["status", "stop"]) {
+        const response = await c.call("tools/call", {
+          name: "classroom_service",
+          arguments: { action },
+        });
+        expect(JSON.parse(response.result.content[0].text)).toMatchObject({
+          running: false,
+          root: f.root,
+        });
+        expect((await serviceStatus()).running).toBe(false);
+      }
+      const response = await c.call("tools/call", {
+        name: "classroom_service",
+        arguments: { action: "start" },
+      });
+      const status = JSON.parse(response.result.content[0].text);
+      expect(status.root).toBe(f.root);
+      expect((await fetch(status.url)).status).toBe(200);
+      const stopped = await c.call("tools/call", {
+        name: "classroom_service",
+        arguments: { action: "stop" },
+      });
+      expect(stopped.result.isError).toBe(false);
+      expect(JSON.parse(stopped.result.content[0].text).stopping).toBe(true);
+      await waitFor(async () => !(await serviceStatus()).running);
+    } finally {
+      c.child.stdin.end();
+      await c.exited;
+    }
+    expect(c.child.exitCode).toBe(0);
+    expect(c.stderr()).not.toContain("detach failed");
+  },
+);
+
+it("keeps a refused explicit stop visible and HTTP live after MCP exit", async () => {
+  const c = client();
+  const phone = path.join(f.root, ".pi-teach-service/phone.json");
+  try {
+    await c.call("initialize", { clientInfo: { name: "codex" } });
+    const started = await c.call("tools/call", {
+      name: "classroom_service",
+      arguments: { action: "start" },
+    });
+    const status = JSON.parse(started.result.content[0].text);
+    fs.writeFileSync(phone, "{}");
+    const stopped = await c.call("tools/call", {
+      name: "classroom_service",
+      arguments: { action: "stop" },
+    });
+    expect(stopped.result.isError).toBe(true);
+    expect(stopped.result.content[0].text).toContain("Invalid phone route ownership file.");
+    c.child.stdin.end();
+    await c.exited;
+    expect((await serviceStatus()).pid).toBe(status.pid);
+    expect((await fetch(status.url)).status).toBe(200);
+    expect(fs.readFileSync(phone, "utf8")).toBe("{}");
+    expect(c.stderr()).not.toContain("detach failed");
+  } finally {
+    fs.rmSync(phone, { force: true });
+    c.child.stdin.end();
+    await c.exited;
+  }
+});
 async function waitFor(probe: () => Promise<boolean>) {
   const deadline = Date.now() + 10_000;
   while (Date.now() < deadline) {
@@ -338,7 +411,10 @@ it("accepts another lesson submission and control requests during a long Codex g
   f.write("rust/002-borrowing/quiz/key.json", '{"q1":"dropped"}');
   f.write("behavior.json", JSON.stringify({ gate: true, progress: true }));
   accelerateDeadline();
-  const base = await openDetached();
+  const c = client();
+  await c.call("initialize", { clientInfo: { name: "codex" } });
+  await c.call("tools/call", { name: "open_classroom", arguments: { classroom: "rust" } });
+  const base = (await serviceStatus()).url;
   const first = await submit(base, "001-ownership");
   await waitFor(async () => fs.existsSync(path.join(f.root, "turns.log")));
   const second = await submit(base, "002-borrowing");
@@ -347,6 +423,12 @@ it("accepts another lesson submission and control requests during a long Codex g
   const state = JSON.parse(fs.readFileSync(path.join(f.root, "rust/.teacher.json"), "utf8"));
   expect(state.requests.map((r: any) => r.status)).toEqual(["running", "queued"]);
   expect(fs.readFileSync(path.join(f.root, "turns.log"), "utf8").trim()).toBe(first.id);
+  const teacherBefore = fs.readFileSync(path.join(f.root, "rust/.teacher.json"), "utf8");
+  c.child.stdin.end();
+  await c.exited;
+  expect(c.stderr()).not.toContain("detach failed");
+  expect((await fetch(base)).status).toBe(200);
+  expect(fs.readFileSync(path.join(f.root, "rust/.teacher.json"), "utf8")).toBe(teacherBefore);
   await new Promise((r) => setTimeout(r, 2000));
   f.write("release", "");
   await waitFor(async () => {
