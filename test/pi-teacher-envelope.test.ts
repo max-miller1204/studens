@@ -44,19 +44,21 @@ it("sends the current canonical envelope and tool scope after lesson/refill hist
     fs.mkdirSync(path.dirname(file), { recursive: true });
     fs.writeFileSync(file, JSON.stringify(manager.getHeader()) + "\n");
     let id: string | undefined;
-    for (const phase of ["lesson", "refill", "chat", "dispute"] as const) {
+    for (const phase of ["lesson", "refill", "chat", "grade", "dispute"] as const) {
       const schema = planSchema(
         phase === "lesson"
           ? { operations: ["publish_lesson"], required: true, research: true }
           : phase === "refill"
             ? { operations: ["save_review_variants"], required: true }
-            : phase === "dispute"
-              ? { operations: ["resolve_grade_dispute"], required: true, messageRequired: true }
-              : {
-                  operations: ["record_retrieval_check"],
-                  messageRequired: true,
-                  notesAllowed: true,
-                },
+            : phase === "grade"
+              ? { operations: ["grade_quiz_answers"], required: true }
+              : phase === "dispute"
+                ? { operations: ["resolve_grade_dispute"], required: true, messageRequired: true }
+                : {
+                    operations: ["record_retrieval_check"],
+                    messageRequired: true,
+                    notesAllowed: true,
+                  },
       );
       const output =
         phase === "lesson"
@@ -68,19 +70,26 @@ it("sends the current canonical envelope and tool scope after lesson/refill hist
                 learning_record: null,
                 notes_markdown: "",
               }
-            : phase === "dispute"
+            : phase === "grade"
               ? {
-                  calls: [{ name: "resolve_grade_dispute", arguments_json: "{}" }],
-                  message: "Controlled dispute explanation.",
+                  calls: [{ name: "grade_quiz_answers", arguments_json: "{}" }],
+                  message: "",
                   learning_record: null,
                   notes_markdown: "",
                 }
-              : {
-                  calls: [],
-                  message: "A controlled prose-only reply.",
-                  learning_record: null,
-                  notes_markdown: "",
-                };
+              : phase === "dispute"
+                ? {
+                    calls: [{ name: "resolve_grade_dispute", arguments_json: "{}" }],
+                    message: "Controlled dispute explanation.",
+                    learning_record: null,
+                    notes_markdown: "",
+                  }
+                : {
+                    calls: [],
+                    message: "A controlled prose-only reply.",
+                    learning_record: null,
+                    notes_markdown: "",
+                  };
       const scope = new AbortController(),
         loadout = piTeacherTools(schema, phase === "lesson", scope.signal);
       const priorBytes = fs.readFileSync(file);
@@ -145,6 +154,7 @@ it("sends the current canonical envelope and tool scope after lesson/refill hist
         piTeacherRequestPrompt("Controlled " + phase + " request", schema, phase === "lesson"),
       );
       expect(loadout.result()).toEqual(output);
+      expect(generated).toBe(1);
       const active = new Map<string, Tool>();
       for (const message of payloads[0].messages) {
         if (message.role !== "system") continue;
