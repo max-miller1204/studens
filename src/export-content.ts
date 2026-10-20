@@ -42,6 +42,10 @@ export function nodeText(node: ContentNode): string {
 }
 export type ResourceLink = (value: string, media: boolean) => string | null;
 export function safeContent(source: string, link: ResourceLink): string {
+  const hasOption = (n: ContentNode): boolean =>
+    (n.tag === "input" &&
+      ["radio", "checkbox"].includes(n.attrs.get("type")?.toLowerCase() ?? "")) ||
+    n.children.some(hasOption);
   const render = (n: ContentNode, literal = false): string => {
     if (n.kind === "text") return literal ? escapeHtml(n.text) : mathText(n.text);
     if (n.attrs.has("hidden") || n.attrs.get("aria-hidden") === "true") return "";
@@ -60,6 +64,8 @@ export function safeContent(source: string, link: ResourceLink): string {
     if (n.attrs.has("data-cl-stepper") || classes.includes("cl-stepper"))
       return `<p><em>Interactive widget omitted. Open the source lesson to use its controls.</em></p>`;
     if (n.tag === "svg") return staticSvg(n);
+    // Dropping controls must not join neighboring public option labels.
+    if (n.tag === "label" && hasOption(n)) return `<div>${children()}</div>`;
     if (!allowed.has(n.tag)) return children();
     if (n.tag === "a") {
       const href = link(n.attrs.get("href") ?? "", false);
@@ -82,8 +88,19 @@ export function safeContent(source: string, link: ResourceLink): string {
 export function portableMarkdown(source: string): string {
   const tree = contentTree(source);
   const escape = (s: string) => s.replace(/([\\`*_{}\[\]<>#+.!|~=\-])/g, "\\$1");
-  const render = (n: ContentNode, depth = 0): string => {
-    const body = () => n.children.map((c) => render(c, depth)).join("");
+  const render = (n: ContentNode): string => {
+    const body = () => {
+      let previous = "";
+      return n.children
+        .map((c) => {
+          // Adjacent lists of the same type need a block boundary to avoid merging.
+          const boundary =
+            c.tag === previous && ["ul", "ol"].includes(c.tag) ? "\n\n<!-- -->\n\n" : "";
+          if (c.kind !== "text" || c.text.trim()) previous = c.tag;
+          return boundary + render(c);
+        })
+        .join("");
+    };
     if (n.kind === "text") return escape(n.text);
     if (n.attrs.get("class") === "cl-export-math") {
       const tex = n.attrs.get("data-tex") ?? "";
@@ -128,14 +145,16 @@ export function portableMarkdown(source: string): string {
         "\n\n" +
         n.children
           .filter((c) => c.tag === "li")
-          .map(
-            (c, i) =>
-              `${"  ".repeat(depth)}${n.tag === "ol" ? `${i + 1}.` : "-"} ${c.children
-                .map((x) => render(x, depth + 1))
-                .join("")
+          .map((c, i) => {
+            const marker = n.tag === "ol" ? `${i + 1}. ` : "- ";
+            // CommonMark continuations align after this marker; parents indent nested lists once.
+            return (
+              marker +
+              render(c)
                 .trim()
-                .replace(/\n/g, "\n  ")}`,
-          )
+                .replace(/\n/g, "\n" + " ".repeat(marker.length))
+            );
+          })
           .join("\n") +
         "\n\n"
       );

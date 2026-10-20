@@ -20,6 +20,8 @@ import {
   svgMedia,
 } from "../src/export-content.ts";
 import * as server from "../src/server.ts";
+import { Marked } from "marked";
+import type { ContentNode } from "../src/export-content.ts";
 let f: ReturnType<typeof makeFixture>;
 beforeEach(() => {
   f = makeFixture();
@@ -123,6 +125,107 @@ it("reconstructs inert markup and Markdown with code, optional list endings and 
   expect(md).toContain("- one\n- two");
   expect(md).toContain("one\n\nthree `ticks`");
   expect(md).toContain("**this**");
+});
+it("keeps public option boundaries while preserving inline reading and dropping source attributes", () => {
+  const inline = "<p>Read <em>this</em><strong>now</strong>, <code>a+b</code>! café λ.</p>";
+  const label = (type: string, text: string) =>
+    `<label class="PRIVATE_CLASS" onclick="bad()"><span><input type="${type}" value="PRIVATE_KEY"></span>${text}</label>`;
+  for (const type of ["radio", "checkbox"]) {
+    const html = safeContent(
+      inline + label(type, "New <em>owner</em> — café λ") + label(type, "Old binding"),
+      () => null,
+    );
+    expect(html).toBe(
+      inline +
+        "<div><span></span>New <em>owner</em> — café λ</div><div><span></span>Old binding</div>",
+    );
+    const md = portableMarkdown(html);
+    expect(md.startsWith(portableMarkdown(inline))).toBe(true);
+    expect(md).toMatch(/New \*owner\* — café λ\n\s*\nOld binding/);
+    expect(html).not.toMatch(/label|input|PRIVATE|onclick/);
+  }
+  // Ordinary labels and inline neighbors are not option blocks.
+  expect(safeContent("a<label><em>b</em></label><code>c</code>d", () => null)).toBe(
+    "a<em>b</em><code>c</code>d",
+  );
+  // The standard template already puts labels in list items; retain that structure.
+  const listed = safeContent(
+    `<ul><li>${label("radio", "One")}</li><li>${label("radio", "Two")}</li></ul>`,
+    () => null,
+  );
+  expect(nodeText(contentTree(listed))).toBe("OneTwo");
+  expect(portableMarkdown(listed)).toBe("- One\n- Two\n");
+});
+it("round-trips question ownership, continuation blocks and nested lists through Markdown", () => {
+  const source = `<ol>${Array.from(
+    { length: 12 },
+    (_, i) =>
+      `<li><p>Question ${i + 1} — <em>café</em> <code>a+b</code>?</p><div>First [resource]</div><div>Second *resource*</div>${
+        i === 0
+          ? "<ul><li><p>Nested lead</p><ol><li>Deep A</li><li>Deep B</li></ol></li></ul>"
+          : i === 1
+            ? "<ol><li>Left A</li><li>Left B</li></ol>\n<ol><li>Right A</li><li>Right B</li></ol>"
+            : i === 9
+              ? "<p>Another <strong>paragraph</strong>.</p><pre><code>  alpha &lt;beta&gt;\n\n\nomega `ticks`</code></pre><table><tr><td>A<br>B</td><td>λ &amp; café</td></tr></table>"
+              : ""
+      }</li>`,
+  ).join("")}</ol>`;
+  // Parse the portable Markdown as CommonMark/GFM, without lesson-specific TeX extensions.
+  const tree = contentTree(
+    new Marked({ gfm: true }).parse(portableMarkdown(safeContent(source, () => null)), {
+      async: false,
+    }) as string,
+  );
+  const all = (n: ContentNode): ContentNode[] => [n, ...n.children.flatMap(all)];
+  const lists = all(tree).filter((n) => n.tag === "ol" || n.tag === "ul");
+  const questions = lists[0].children.filter((n) => n.tag === "li");
+  expect(questions).toHaveLength(12);
+  for (const [i, question] of questions.entries()) {
+    const paragraphs = question.children.filter((n) => n.tag === "p");
+    expect(paragraphs.slice(0, 3).map(nodeText)).toEqual([
+      `Question ${i + 1} — café a+b?`,
+      "First [resource]",
+      "Second *resource*",
+    ]);
+    expect(
+      all(paragraphs[0])
+        .find((n) => n.tag === "em")!
+        .children.map(nodeText)
+        .join(""),
+    ).toBe("café");
+    expect(
+      all(paragraphs[0])
+        .find((n) => n.tag === "code")!
+        .children.map(nodeText)
+        .join(""),
+    ).toBe("a+b");
+    expect(nodeText(question)).not.toMatch(new RegExp(`Question (?!${i + 1} —)\\d+`));
+  }
+  const nested = questions[0].children.find((n) => n.tag === "ul")!;
+  expect(
+    all(nested)
+      .filter((n) => n.tag === "ol")
+      .map((n) => n.children.filter((c) => c.tag === "li").map(nodeText)),
+  ).toEqual([["Deep A", "Deep B"]]);
+  expect(
+    questions[1].children
+      .filter((n) => n.tag === "ol")
+      .map((n) => n.children.filter((c) => c.tag === "li").map(nodeText)),
+  ).toEqual([
+    ["Left A", "Left B"],
+    ["Right A", "Right B"],
+  ]);
+  expect(questions[9].children.filter((n) => n.tag === "p").map(nodeText)).toContain(
+    "Another paragraph.",
+  );
+  expect(nodeText(all(questions[9]).find((n) => n.tag === "pre")!)).toContain(
+    "  alpha <beta>\n\n\nomega `ticks`",
+  );
+  expect(
+    all(questions[9])
+      .filter((n) => n.tag === "td")
+      .map(nodeText),
+  ).toEqual(["AB", "λ & café"]);
 });
 it("serves separate downloads and rejects invalid/private requests without teacher calls", async () => {
   let calls = 0;
