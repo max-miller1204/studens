@@ -28,6 +28,7 @@ const client = randomUUID();
 let backend: Backend | undefined;
 let connected = false;
 let start: Promise<unknown> | undefined;
+const pending = new Set<Promise<void>>();
 function write(message: unknown): void {
   process.stdout.write(`${JSON.stringify(message)}\n`);
 }
@@ -53,7 +54,7 @@ lines.on("line", (line) => {
     write({ jsonrpc: "2.0", id: null, error: { code: -32700, message: "Parse error" } });
     return;
   }
-  void (async () => {
+  const request = (async () => {
     if (message.method === "initialize") {
       const configured = process.env.PI_CLASSROOM_TEACHER;
       if (
@@ -74,6 +75,7 @@ lines.on("line", (line) => {
       return;
     }
     // Status and stop must not start a stopped service.
+    let management = false;
     if (
       message.method === "tools/call" &&
       message.params?.name === "classroom_service" &&
@@ -85,6 +87,7 @@ lines.on("line", (line) => {
         const phone = new PhoneAccess();
         const tailnet =
           message.params.arguments.action === "status" ? await phone.status() : await phone.stop();
+        if (message.params.arguments.action === "stop") connected = false;
         write({
           jsonrpc: "2.0",
           id: message.id,
@@ -95,18 +98,33 @@ lines.on("line", (line) => {
         });
         return;
       }
+      management = true;
     }
-    await attach();
+    // A live status probe already found the owner. Do not restart it if it exits
+    // between that probe and the management request.
+    if (management) connected = true;
+    else await attach();
     const response = await control("/rpc", { client, backend, message });
+    if (
+      message.params?.name === "classroom_service" &&
+      message.params?.arguments?.action === "stop" &&
+      !response?.error &&
+      response?.result?.isError === false
+    )
+      connected = false;
     if (response) write(response);
   })().catch((err) => {
     console.error("[classroom] MCP request failed", err);
     if (message.id !== undefined && message.id !== null)
       write({ jsonrpc: "2.0", id: message.id, error: { code: -32603, message: err.message } });
   });
+  pending.add(request);
+  void request.finally(() => pending.delete(request));
 });
 lines.on("close", () => {
   void (async () => {
+    // stdin can close before an accepted stop has returned its acknowledgement.
+    await Promise.all(pending);
     if (start) await start;
     if (connected) await control("/disconnect", { client });
   })()

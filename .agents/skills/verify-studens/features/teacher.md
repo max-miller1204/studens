@@ -36,6 +36,17 @@ It also receives replies while reading before and after the quiz. The notice mus
 
 The service fixture checks failure, retry, MCP disconnect and reconnect, request isolation between lessons, and teacher drafts. Inspect `pi-panel/pi-panel.json` and service state evidence.
 
+For MCP connection cleanup, run `npx vitest run test/mcp-stdio-lifecycle.test.ts test/service-process.test.ts`.
+The actual launcher/service checks use both Codex and Claude client identities: discovery,
+status and stop leave a stopped service stopped; start serves HTTP; acknowledged stop
+followed by stdin close must exit without a detach error. A refused stop keeps its
+specific error and leaves HTTP live after client exit. A held fixture teacher keeps
+running and queued requests intact across live detach, then saves each grade once.
+The separate private-control boundary checks delayed stop replies at EOF, tool/RPC/
+transport failures, an owner lost between the management probe and request, and an
+unexpected missing socket on detach. Errors stay visible and never trigger a retry
+or management autostart. Boundary fixtures prove lifecycle ordering, not inference.
+
 The service fixture also submits a quiz whose teacher supplies a forbidden total score. The score-free operation must reject it. The fixture checks the visible error and the absence of a saved grade. `Retry request` must request one corrected plan with no total score. Reload must show the calculated grade. Inspect `service/rejected-grade.json`, `service/retried-grade.json`, and `service/grading-turns.json`. The grading turns must each permit exactly one grade call. Local recovery tests keep the score checks for older saved plans.
 
 The resume fixtures use a saved review with an empty panel or an unanswered saved reply. They check the explicit handoff, panel link, reply recovery, message order, reload, and unchanged assessment and evidence files for Pi, Claude, and Codex. Repeated handoffs must reuse the request. Inspect `resume/`. The real Pi and service host drives also resume a historical 67% review from initiating chat. They check the saved grade and teacher identity.
@@ -60,6 +71,8 @@ archive. Run `npm run audit` inside that production-only archive too; verify its
 actual SDK, undici, and brace-expansion manifests, rather than trusting edited
 lock metadata. Development-only packages must be absent. Stop through the management
 tool and remove owned scratch roots. No model turn or account edit is needed.
+Wait for explicit stop to remove the owned socket before closing launcher stdin;
+require exit 0 without `[classroom] detach failed`. Preserve unrelated warnings.
 Record actual Node separately from the declared minimum, now 22.19.0.
 Record the initiating Pi CLI separately from the dedicated SDK: `npm run verify -- pi`
 uses the checkout's local CLI on npm's PATH. The patched dependency path is proven

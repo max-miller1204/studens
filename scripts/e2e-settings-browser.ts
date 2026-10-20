@@ -80,6 +80,8 @@ require('node:readline').createInterface({input:process.stdin}).on('line',line=>
     teacher.connect(async () => {});
     teacher.attach("rust", "codex");
     const base = await server.start(0);
+    const originalPort = server.getPort();
+    const requestedPort = originalPort === 43567 ? 43568 : 43567;
     await playwright(session, f.root, "open", `${base}/c/rust`);
     opened = true;
     await playwrightCode(
@@ -98,7 +100,7 @@ require('node:readline').createInterface({input:process.stdin}).on('line',line=>
       await page.getByLabel('Tone',{exact:true}).fill('Direct and encouraging');
       await page.getByRole('button',{name:'Save preferences',exact:true}).click();
       await page.getByRole('status').filter({hasText:'Preferences saved'}).waitFor();
-      await page.getByLabel('Local port',{exact:true}).fill('43567');
+      await page.getByLabel('Local port',{exact:true}).fill(${JSON.stringify(String(requestedPort))});
       await page.getByRole('button',{name:'Save connection settings',exact:true}).click();
       await page.getByRole('status').filter({hasText:'local port applies after'}).waitFor();
       await page.reload();
@@ -183,7 +185,14 @@ require('node:readline').createInterface({input:process.stdin}).on('line',line=>
     await teacher.idle();
     if (Array.from(seen).length !== 3 || seen[2] !== null)
       throw new Error("Explicit retry failed to use configured default.");
-    if (readConfig().port !== 43567 || server.getPort() === 43567)
+    const savedPort = readConfig().port;
+    const currentPort = server.getPort();
+    if (artifacts)
+      fs.writeFileSync(
+        path.join(artifacts, "settings-ports.json"),
+        JSON.stringify({ originalPort, requestedPort, savedPort, currentPort }, null, 2),
+      );
+    if (savedPort !== requestedPort || currentPort !== originalPort)
       throw new Error("Saved port was incorrectly applied to running listener.");
     if (!(readConfig() as any).unrelated.keep) throw new Error("Unrelated configuration lost.");
     if (learnerPreferences("algebra").values.pace)
@@ -206,6 +215,8 @@ require('node:readline').createInterface({input:process.stdin}).on('line',line=>
             state: readTeacherState("rust"),
             preferences: learnerPreferences("rust"),
             config: readConfig(),
+            originalPort,
+            requestedPort,
             currentPort: server.getPort(),
           },
           null,
