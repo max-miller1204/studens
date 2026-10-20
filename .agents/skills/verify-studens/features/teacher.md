@@ -77,6 +77,16 @@ load no external resources, expose only the plan tool, retain model/thinking set
 and preserve configuration/auth bytes. It uses no model turn or real account and
 keeps package resolution enabled, so offline mode cannot hide a discovery failure.
 
+For Pi request-envelope changes, run
+`npx vitest run test/pi-teacher-envelope.test.ts`. This actual-SDK fixture reopens
+one saved conversation through lesson, refill, and ordinary requests. It inspects
+the serialized provider transcript for the active schema and request text, permits
+an ordinary `calls: []` reply only with the required outer fields, and requires
+research tools to disappear after the explicit lesson. Only the provider stream
+and auth preflight are controlled; it makes no real model or network call. A real
+failed request still requires one explicit browser retry after an input correction;
+a passing fixture does not erase its rejected output or prove why it failed.
+
 For a changed real Pi path, run `npm run verify -- pi`. For shared service or prompt changes, run `npm run verify -- claude`, then `npm run verify -- codex`. Add `--artifacts <directory>` to retain host evidence. These drives ask a question, submit a wrong answer, and reply in the panel. They check that the quiz score remains unchanged.
 
 The service reply fixture reports no help. The drives require the actual reply and reported assistance in a saved retrieval check. They require a linked learning record and keep immediate correction outside retained evidence. Inspect `stored-teacher-state.json` and the retained `classroom/` files.

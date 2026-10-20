@@ -205,6 +205,26 @@ export function observePiTeacherRequest(
   });
 }
 
+/** Repeat the current canonical envelope at the request boundary, after older formats. */
+export function piTeacherRequestPrompt(
+  prompt: string,
+  schema: Record<string, unknown>,
+  research = false,
+): string {
+  const properties = schema.properties as Record<string, unknown> | undefined;
+  const required = schema.required;
+  const canonical =
+    properties &&
+    Array.isArray(required) &&
+    ["calls", "message", "learning_record", "notes_markdown"].every(
+      (name) => Object.hasOwn(properties, name) && required.includes(name),
+    );
+  const envelope = canonical
+    ? `\n\nCURRENT submit_teacher_plan outer envelope and field constraints for this request:\n${JSON.stringify(schema)}\nInclude every required top-level field. When the current schema permits calls: [], a prose-only reply still needs its actual learner-facing message and every other required field. Use learning_record: null when no learning record qualifies, and notes_markdown: "" when there is no note. Do not omit these fields. Follow this current envelope rather than an earlier lesson or refill response format.`
+    : "";
+  return `${prompt}${research ? "\n\nFor public web research use read_lesson_source. Classroom resources are supplied above. Return the typed lesson data through submit_teacher_plan; it does not publish directly." : ""}${envelope}\n\nReturn your complete structured result by calling submit_teacher_plan exactly once. Do not answer the learner outside that plan. End your turn after the tool accepts it.`;
+}
+
 export async function runPi(
   identity: TeacherIdentity,
   prompt: string,
@@ -312,9 +332,7 @@ export async function runPi(
       selectedModel: selected,
       thinkingLevel: session.thinkingLevel,
     });
-    await session.prompt(
-      `${prompt}${research ? "\n\nFor public web research use read_lesson_source. Classroom resources are supplied above. Return the typed lesson data through submit_teacher_plan; it does not publish directly." : ""}\n\nReturn your complete structured result by calling submit_teacher_plan exactly once. Do not answer the learner outside that plan. End your turn after the tool accepts it.`,
-    );
+    await session.prompt(piTeacherRequestPrompt(prompt, schema, research));
     loadout.throwFailure();
     if (timedOut) throw new Error("Pi teacher timed out after 180 seconds. Retry explicitly.");
     if (signal?.aborted) throw new Error("Pi teacher request was interrupted. Retry explicitly.");
