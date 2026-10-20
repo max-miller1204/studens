@@ -12,6 +12,7 @@ import {
 import { isContractId, parseReviewKey, questionErrors } from "../assets/runtime/quiz.mjs";
 import {
   DEFAULT_REVIEW_SIZE,
+  findReviewItem,
   isDue,
   MAX_REVIEW_SIZE,
   reviewTopic,
@@ -25,6 +26,8 @@ import { parseRubric } from "./rubric.ts";
 import { parseTeachingPlan } from "./teaching-plan.ts";
 import * as store from "./store.ts";
 import { assembleReview, lessonPools, selectVariant } from "./review-pool.ts";
+import { withReviewEdit } from "./review-lock.ts";
+import { classroomWorkload, pickDailyItems } from "./review-workload.ts";
 import type { PreparedVariant } from "./review-variants.ts";
 
 export type ReviewOwner = "pi" | "service";
@@ -121,14 +124,16 @@ export function updateReview(
   status: ReviewSession["status"],
   error?: string,
 ): void {
-  const requests = reviewSessions(session.classroom);
-  const request = requests.find((r) => r.id === session.id);
-  if (!request) throw new Error("The review request no longer exists.");
-  request.status = status;
-  if (status === "queued" || status === "running") request.ownerPid = process.pid;
-  if (error) request.error = error;
-  else delete request.error;
-  save(session.classroom, requests);
+  return withReviewEdit(() => {
+    const requests = reviewSessions(session.classroom);
+    const request = requests.find((r) => r.id === session.id);
+    if (!request) throw new Error("The review request no longer exists.");
+    request.status = status;
+    if (status === "queued" || status === "running") request.ownerPid = process.pid;
+    if (error) request.error = error;
+    else delete request.error;
+    save(session.classroom, requests);
+  });
 }
 export function currentReview(classroom: string): ReviewSession | null {
   return reviewSessions(classroom).at(-1) ?? null;
@@ -148,6 +153,15 @@ export function startReview(
   limit = DEFAULT_REVIEW_SIZE,
   options: { topic?: string; early?: boolean } = {},
 ): { session: ReviewSession; added: boolean } {
+  return withReviewEdit(() => startReviewLocked(classroom, id, owner, limit, options));
+}
+function startReviewLocked(
+  classroom: string,
+  id: string,
+  owner: ReviewOwner,
+  limit: number,
+  options: { topic?: string; early?: boolean },
+) {
   if (!store.readClassroom(classroom)) throw new Error(`No such classroom: ${classroom}.`);
   if (!Number.isInteger(limit) || limit < 3 || limit > MAX_REVIEW_SIZE)
     throw new Error(`Review size must be a whole number from 3 to ${MAX_REVIEW_SIZE}.`);
@@ -174,7 +188,13 @@ export function planReview(
   id: string,
   owner: ReviewOwner,
   limit = DEFAULT_REVIEW_SIZE,
-  options: { topic?: string; early?: boolean } = {},
+  options: {
+    topic?: string;
+    early?: boolean;
+    at?: number;
+    keys?: string[];
+    replaceReservation?: boolean;
+  } = {},
 ): ReviewSession {
   if (!store.readClassroom(classroom)) throw new Error(`No such classroom: ${classroom}.`);
   if (!Number.isInteger(limit) || limit < 3 || limit > MAX_REVIEW_SIZE)
@@ -184,7 +204,7 @@ export function planReview(
   if (options.topic !== undefined && (typeof options.topic !== "string" || !options.topic))
     throw new Error("Choose an existing review topic.");
   const requests = reviewSessions(classroom);
-  const at = Date.now();
+  const at = options.at ?? Date.now();
   const active = store.reviewItems(classroom).filter((item) => item.retiredAt === undefined);
   if (options.topic !== undefined && !active.some((item) => reviewTopic(item).id === options.topic))
     throw new Error("This review topic is no longer active. Reload and choose a topic.");
@@ -192,34 +212,27 @@ export function planReview(
     options.topic === undefined
       ? active
       : active.filter((item) => reviewTopic(item).id === options.topic);
-  const pools = new Map<string, PreparedVariant[]>();
-  for (const lesson of new Set(items.map((item) => item.lesson))) {
-    const source = store.readLesson(classroom, lesson);
-    for (const [key, pool] of lessonPools(classroom, lesson, source?.reviewVariantContract === 1))
-      pools.set(`${lesson}/${key}`, pool);
-  }
-  const itemPools = new Map<string, PreparedVariant[]>();
-  for (const item of items) {
-    // Objective schedules retain their original question links. Select a prepared
-    // probe through those links while keeping the objective as the review identity.
-    const keys = item.questionKeys?.length
-      ? item.questionKeys
-      : [`${item.lesson}/${item.quizId}/${item.questionId}`];
-    for (const key of keys) {
-      const pool = pools
-        .get(key)
-        ?.filter(
-          (variant) => item.progress !== "transfer-needed" || variant.plan.task === "transfer",
-        );
-      if (pool?.length) {
-        itemPools.set(item.key, pool);
-        break;
-      }
-    }
-  }
-  const eligible = items.filter((item) => itemPools.has(item.key));
-  const picked = pickReviewItems(eligible, at, limit, options.early);
+  const candidates = options.keys
+    ? items.filter((item) => options.keys!.includes(item.key))
+    : items;
+  const { eligible, itemPools } = preparedReviewItems(classroom, candidates);
+  const budget = classroomWorkload(
+    classroom,
+    active,
+    at,
+    options.replaceReservation ? id : undefined,
+  );
+  const picked = pickDailyItems(eligible, at, limit, budget, options.early);
   if (!picked.length) {
+    if (
+      budget.remaining === 0 ||
+      eligible.some(
+        (item) => budget.reservedKeys.includes(item.key) && (options.early || isDue(item, at)),
+      )
+    )
+      throw new Error(
+        `Today's shared review allowance is reserved (${budget.used}/${budget.allowance}; cap ${budget.cap}). Continue saved classroom or daily reviews. This allowance covers all classrooms. The next workload window starts ${new Date(budget.nextWindowAt).toISOString()}; overdue dates are unchanged.`,
+      );
     const selectable = (item: ReviewItem) =>
       !item.needsReteach && (options.early || isDue(item, at));
     if (items.some(selectable) && !eligible.some(selectable))
@@ -269,37 +282,73 @@ export function planReview(
   return session;
 }
 
+/** The same private variant eligibility for classroom and root daily selection. */
+export function preparedReviewItems(classroom: string, items: ReviewItem[]) {
+  const pools = new Map<string, PreparedVariant[]>();
+  for (const lesson of new Set(items.map((item) => item.lesson))) {
+    const source = store.readLesson(classroom, lesson);
+    for (const [key, pool] of lessonPools(classroom, lesson, source?.reviewVariantContract === 1))
+      pools.set(`${lesson}/${key}`, pool);
+  }
+  const itemPools = new Map<string, PreparedVariant[]>();
+  for (const item of items) {
+    // Objective schedules retain their original question links. Select a prepared
+    // probe through those links while keeping the objective as the review identity.
+    const keys = item.questionKeys?.length
+      ? item.questionKeys
+      : [`${item.lesson}/${item.quizId}/${item.questionId}`];
+    for (const key of keys) {
+      const pool = pools
+        .get(key)
+        ?.filter(
+          (variant) => item.progress !== "transfer-needed" || variant.plan.task === "transfer",
+        );
+      if (pool?.length) {
+        itemPools.set(item.key, pool);
+        break;
+      }
+    }
+  }
+  const eligible = items.filter((item) => itemPools.has(item.key));
+  return { eligible, itemPools };
+}
+
 /** Recheck through the canonical picker when a saved group has not been published. */
 export function plannedReviewEligible(session: ReviewSession): boolean {
+  const current = store.reviewItems(session.classroom);
   const eligible = new Set(
     pickReviewItems(
-      store.reviewItems(session.classroom),
+      current,
       Date.now(),
       Number.MAX_SAFE_INTEGER,
       session.options?.early ?? false,
     ).map((item) => item.key),
   );
-  return session.items.every((item) => eligible.has(item.key));
+  return session.items.every((item) =>
+    eligible.has(findReviewItem(current, item.key)?.key ?? item.key),
+  );
 }
 
 /** Commit a previously saved daily selection, refusing competing classroom work. */
 export function savePlannedReview(session: ReviewSession): ReviewSession {
-  const requests = reviewSessions(session.classroom);
-  const existing = requests.find((request) => request.id === session.id);
-  if (existing) return existing;
-  if (requests.some(resumableReview))
-    throw new Error(
-      "Another unfinished review exists in this classroom. Finish it, then retry this group.",
-    );
-  if (!plannedReviewEligible(session))
-    throw new Error(
-      "Daily selections are no longer due or eligible. Retry this classroom to refresh its unstarted selection.",
-    );
-  if (!session.document) throw new Error("The saved daily review document is missing.");
-  validateReview(session, session.document);
-  requests.push(session);
-  save(session.classroom, requests);
-  return session;
+  return withReviewEdit(() => {
+    const requests = reviewSessions(session.classroom);
+    const existing = requests.find((request) => request.id === session.id);
+    if (existing) return existing;
+    if (requests.some(resumableReview))
+      throw new Error(
+        "Another unfinished review exists in this classroom. Finish it, then retry this group.",
+      );
+    if (!plannedReviewEligible(session))
+      throw new Error(
+        "Daily selections are no longer due or eligible. Retry this classroom to refresh its unstarted selection.",
+      );
+    if (!session.document) throw new Error("The saved daily review document is missing.");
+    validateReview(session, session.document);
+    requests.push(session);
+    save(session.classroom, requests);
+    return session;
+  });
 }
 export function publicReview(session: ReviewSession | null): unknown {
   if (!session) return null;

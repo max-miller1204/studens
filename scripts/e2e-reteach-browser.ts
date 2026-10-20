@@ -141,6 +141,8 @@ export async function driveReteach(
   )
     throw new Error("Re-teaching or panel reply altered original assessment");
   const item = store.reviewItems("rust").find((i) => i.lesson === lesson)!;
+  if (!item.needsReteach)
+    throw new Error("Assisted re-teaching cleared the unresolved review pause");
   if (
     item.progress === "retained-evidence" ||
     item.delayedSuccesses ||

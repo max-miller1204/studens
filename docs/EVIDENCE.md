@@ -66,17 +66,111 @@ The UI says retained evidence, not mastery. A reflection or confidence rating is
 
 ## P5: Space for a retention goal
 
-**Source:** [Cepeda et al. (2008)](https://pubmed.ncbi.nlm.nih.gov/19076480/).
+**Sources:** [Cepeda et al. (2008)](https://pubmed.ncbi.nlm.nih.gov/19076480/),
+[FSRS algorithm, FSRS-4.5 and inherited v4 equations](https://github.com/open-spaced-repetition/awesome-fsrs/wiki/The-Algorithm),
+[official TypeScript implementation](https://github.com/open-spaced-repetition/ts-fsrs),
+[FSRS class documentation](https://open-spaced-repetition.github.io/ts-fsrs/classes/FSRS.html).
+Algorithm sources checked 2026-10-19: wiki revision `7bcf7dc343fc81d0fc55db2705c8b8fe85c2daa5`
+(page edited July 28, 2026); TypeScript repository `3bc3c5505a49484f6077f094d4f13ad7200f82b8`.
+The current library and algorithm versions differ. Studens pins an adaptation of
+**FSRS-4.5**, not the current library defaults. No implementation code is copied,
+no dependency is added, and the package still requires no build.
 
 **Finding:** In fact learning, useful spacing depended on the later retention interval.
-**Limits:** No universal interval formula follows for every skill or learner.
-**Behavior:** Derive schedules from history. Require actual elapsed time and independent
-retrieval before extending an interval. An early success does not postpone a due review.
-**Choices:** Keep 1, 3, 7, 21, and 60 days as an auditable base schedule. Cap an interval
-at one quarter of an optional retention duration, with a one-day minimum. This cap
-is a heuristic to evaluate. No goal means no cap. Never invent a deadline.
-**Verify:** Deterministic replay, early/late attempts, assistance, and goal cases.
-Human pilots compare delayed outcomes and workload across policies.
+FSRS models difficulty, stability and elapsed time rather than fixed boxes.
+**Limits:** Neither source supplies a universal formula for every skill or learner.
+This adaptation is not upstream-compatible FSRS, fitted personalization, a calibrated
+recall probability, or evidence of improved human learning.
+
+**Behavior:** `elapsed-independent-v1` remains the evidence boundary. Replay saved
+latest grade revisions, first feedback times and linked checks, never the current
+plan or model narrative. Regrading is not another exposure. Same-attempt objective
+probes use their weakest credit and independence. Only full independent retrieval
+on or after the due time, at least 24 actual hours after the latest feedback/check,
+can grow stability and extend the interval. Explicitly selected early reviews never
+postpone their saved original due date, even if answered later. Replay also honors
+the due-time cap in immutable selections created under the earlier scheduler. Supported, unknown,
+and immediate success cannot grow memory. Incomplete work resets delayed evidence;
+three unresolved misses pause review for re-teaching. A supported or unknown-independence success cannot
+resolve a paused item, including historical questions with no objective snapshot.
+Saved assistance/support can resolve an independently demonstrated gap while the
+historical objective context and retention claim remain unknown. Historical context stays unknown. Confidence and
+self-ratings have no scheduling input; confidence may shape feedback only.
+
+**Memory choices (`studens-fsrs45-v1`):** Start stability S at 1 day and difficulty D
+at 5.1618. Use the published 4.5 parameters, frozen in `src/review-memory.ts`:
+`[0.4872,1.4003,3.7145,13.8206,5.1618,1.2298,0.8975,0.031,1.6474,0.1367,1.0461,2.1072,0.0793,0.3246,1.587,0.2272,2.8755]`.
+For eligible full retrieval, use the 4.5 curve R=(1+19t/(81S))^-0.5 and inherited
+successful-recall equation with G=3, using actual elapsed days t, including overdue
+time. R is an internal calculation, not a learner-facing recall estimate. Difficulty
+uses v4 mean reversion toward 5.1618. The interval at nominal 0.9 is S, with a one-day
+minimum, interval milliseconds rounded upward, and no fuzz or randomness. Clamp S to 0.25..3650 days and D to 1..10.
+Zero credit uses the inherited forgetting equation, limited to the old S, and raises
+D by 2×0.8975. **Fractional credit is a Studens product mapping:** for 0<c<1,
+S becomes S×(0.85+0.1c), and D rises by 0.5×(1-c). This is a 5..15% setback,
+not upstream Hard (which describes successful recall), not another grade, and not
+a validated optimal mapping. Legacy missing credit is binary. Intervals after
+incomplete work use the resulting S with the one-day minimum. The optional retention
+duration still caps each interval at floor(duration/4), minimum one day. This is a
+heuristic limit, not a deadline. Never invent a learner deadline. The legacy `box`
+field is diagnostic only; it no longer determines any date.
+
+**Workload choices:** Across the entire classrooms root and UTC calendar day, cap new selections at 12
+(the existing maximum review size). After a day with no completed review cards,
+allow 5 (the existing default size). Today's allowance is min(12, 5 + distinct cards
+first graded yesterday). Missed days accumulate no allowance. Failed, published,
+and unstarted saved daily groups reserve their cards before writes; unfinished older
+plans continue to reserve them across midnight. Completed selections still consume
+their selection day's slots, even when their evidence remains unknown or a miss.
+Classroom, daily, topic and early-review entry points share this single budget and root
+transaction lock. Reload/recovery reuse plans; no old attempt or saved batch is
+rewritten to spread dates. Canonical aliases share a reservation; original saved cards still count separately toward workload. Already saved larger batches are grandfathered and may
+exceed a newly derived allowance; they can finish, but consume all available slots.
+This is a workload cap, not evidence of forgetting, an implicit grade change, or a
+scientifically optimal workload. Namespace card identities by classroom, so identical
+lesson keys in different subjects are separate cards. A card is one item in one
+saved review, and its first grade alone counts toward the next day's allowance;
+regrades and linked chat checks grant no extra slots. Classroom teachers and plans
+remain separate even though their new selections consume a shared root budget.
+
+Due counts include deferred and reserved items; pausing and retirement keep their
+existing exclusions. The daily landing shows root totals and classroom Progress shows
+local due slots against the shared allowance. Due dates stay separate from
+new-selection slots, reserved/used slots, deferred work and the next UTC workload
+window. That window is the earliest budget reset, not a guaranteed review date.
+A prepared private variant is still required; a slot does not promise a usable variant.
+
+For the all-topic daily picker, make one queue per classroom and per saved objective
+group/objective/historical lesson topic. Order classroom and topic queues by their
+latest saved selection time (never selected first), breaking ties by stable identifier.
+Round-robin one card per classroom, and one per topic within each classroom, up to
+the single remaining allowance. Keep the existing alphabetical classroom navigation
+order after selection; save every selected group together before publishing one.
+Individual classroom and explicit topic/early choices may direct remaining slots;
+they cannot obtain another allowance. Within a topic, order by max(due time, latest
+feedback/check), then stable key, with existing related-strategy interleaving.
+Recently checked unknown/assisted items cannot continually jump untouched backlog.
+With finite eligible classroom/topic queues and continued completion of saved groups,
+least-recent selection prevents systematic first-classroom/topic starvation. No
+progress is promised without completions, under an infinite influx of older/never
+selected work, while paused/retired, without prepared variants, or when the learner
+deliberately keeps choosing other classrooms/topics. No due date is changed by smoothing.
+
+**Migration/rollback:** All new memory/workload state is derived, with no write-back
+migration of grades/history. Read-only replay recalculates old due dates under this
+versioned policy. Saved selections/documents remain fixed. Reverting code restores
+the former derived dates; assessment files and historical aliases remain intact.
+
+**Verify:** Deterministic replay, elapsed and UTC boundaries, revisions/aliases,
+partial/zero/full and confidence invariance, assistance, early review, retention caps,
+restart/reload and shared reservations. Current corrective prompts carry code-owned
+reply and feedback/check timestamps. New panel checks save their host-owned
+`answeredAt` separately from the check/feedback write time `at`, so queued teacher
+latency cannot turn an immediate answer into delayed retrieval. Old checks retain
+their saved `at` as their only available timing, with no history migration. The
+previous selected exposure's elapsedDays
+is not the current correction's delay. Free-form records cannot override those times.
+Human pilots must compare delayed outcomes and workload across policies.
 
 ## P6: Interleave related methods
 

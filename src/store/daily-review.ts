@@ -3,7 +3,15 @@ import * as fs from "node:fs";
 import { randomUUID } from "node:crypto";
 import { isValidSlug, lessonUrl, privateStatePath } from "../paths.ts";
 import type { ReviewOwner, ReviewSession } from "../review-session.ts";
-import { planReview, resumableReview, reviewSessions, validateReview } from "../review-session.ts";
+import {
+  planReview,
+  resumableReview,
+  reviewSessions,
+  validateReview,
+  preparedReviewItems,
+} from "../review-session.ts";
+import { withReviewEdit } from "../review-lock.ts";
+import { rootWorkload, rootReservations, pickAcrossClassrooms } from "../review-workload.ts";
 import { summarize } from "../review.ts";
 import { listClassrooms } from "./classrooms.ts";
 import { reviewItems } from "./review.ts";
@@ -79,32 +87,9 @@ export function dailyReviews(): DailyReview[] {
   return value.requests;
 }
 
-/** Match folder/control edits: no waiting or automatic stale-lock removal. */
-function withDailyEdit<T>(edit: () => T): T {
-  fs.mkdirSync(privateStatePath("."), { recursive: true });
-  const lock = privateStatePath(".daily-reviews.lock");
-  let descriptor: number;
-  try {
-    descriptor = fs.openSync(lock, "wx", 0o600);
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "EEXIST")
-      throw new Error(
-        `Another server has locked daily review edits. Retry after it finishes. If a server stopped during a save, remove ${lock} before retrying.`,
-      );
-    throw error;
-  }
-  try {
-    fs.writeFileSync(descriptor, `${process.pid}\n`);
-    return edit();
-  } finally {
-    fs.closeSync(descriptor);
-    fs.unlinkSync(lock);
-  }
-}
-
 /** Reload under the root lock so another host's completed edit cannot be overwritten. */
 export function editDailyReview(id: string, edit: (request: DailyReview) => void): DailyReview {
-  return withDailyEdit(() => {
+  return withReviewEdit(() => {
     const request = dailyReviews().find((request) => request.id === id);
     if (!request) throw new Error("This daily review no longer exists.");
     edit(request);
@@ -148,7 +133,7 @@ export function startDailyReview(
   owner: ReviewOwner,
   authorize?: (group: DailyGroup) => void,
 ): DailyReview {
-  return withDailyEdit(() => createDailyReview(id, owner, authorize));
+  return withReviewEdit(() => createDailyReview(id, owner, authorize));
 }
 function createDailyReview(
   id: string,
@@ -164,27 +149,53 @@ function createDailyReview(
     if (active !== -1) authorize?.(existing.groups[active]);
     return existing;
   }
-  const due = dailyDue();
+  const at = Date.now();
+  const due = dailyDue(at);
+  const classrooms = listClassrooms().sort((a, b) => a.name.localeCompare(b.name));
+  const pending = new Map(
+    classrooms.map((c) => [c.name, [...reviewSessions(c.name)].reverse().find(resumableReview)]),
+  );
+  const budget = rootWorkload(at);
+  const candidates = classrooms
+    .filter((c) => !pending.get(c.name) && due[c.name] > 0)
+    .map((c) => ({
+      classroom: c.name,
+      items: preparedReviewItems(c.name, reviewItems(c.name)).eligible,
+    }));
+  const selected = pickAcrossClassrooms(candidates, at, budget, rootReservations());
   const groups: DailyGroup[] = [];
-  for (const classroom of listClassrooms().sort((a, b) => a.name.localeCompare(b.name))) {
-    const pending = [...reviewSessions(classroom.name)].reverse().find(resumableReview);
-    if (!pending && !due[classroom.name]) continue;
+  // Keep the existing classroom navigation order; fairness determines membership
+  // and allocations before these complete plans are saved together.
+  const order = classrooms
+    .filter((c) => pending.get(c.name) || selected.has(c.name))
+    .map((c) => c.name);
+  for (const name of order) {
+    const classroom = classrooms.find((c) => c.name === name)!;
     try {
-      const plan = pending ?? planReview(classroom.name, randomUUID(), owner);
-      // Published reviews may be opened across hosts; unpublished work keeps its owner.
+      const picks = selected.get(name);
+      const plan =
+        pending.get(name) ??
+        planReview(name, randomUUID(), owner, 12, { at, keys: picks!.map((item) => item.key) });
       if (plan.status !== "done" && plan.owner !== owner)
         throw new Error(
           `This review belongs to ${plan.owner}. Open that classroom host to continue.`,
         );
-      const group = { classroom: classroom.name, title: classroom.title, plan };
+      const group = { classroom: name, title: classroom.title, plan };
       authorize?.(group);
       groups.push(group);
     } catch (error) {
       throw new Error(`${classroom.title}: ${(error as Error).message}`);
     }
   }
-  if (!groups.length) throw new Error("No questions are due across classrooms.");
-  const request = { id, owner, at: Date.now(), groups };
+  if (!groups.length)
+    throw new Error(
+      Object.values(due).some((count) => count > 0)
+        ? budget.remaining === 0
+          ? "Due questions remain, but today's shared review allowance is reserved across classrooms. Continue saved reviews or return after the next UTC workload window. Due dates are unchanged."
+          : "No prepared variants for the due questions. Prepare private review pools in their original lessons, then retry."
+        : "No questions are due across classrooms.",
+    );
+  const request = { id, owner, at, groups };
   saveDailyReview(request);
   return request;
 }
