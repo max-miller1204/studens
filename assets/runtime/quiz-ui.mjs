@@ -1,5 +1,6 @@
 /** Hydrate quiz controls, collect answers, and restore attempts, grades, and drafts. */
 import { createGradeDisputes } from "./grade-disputes.mjs";
+import { createExpectedAnswers } from "./expected-answers.mjs";
 import { gradePointsNotice, gradeSummary, questionGradeLabel, questionOutcome } from "./grade.mjs";
 import { normalizeText } from "./anchor.mjs";
 import { diagramSource } from "./diagrams.mjs";
@@ -26,6 +27,7 @@ import { enhanceCode, collectCode, restoreCode, lockCode } from "./code-ui.mjs";
 export function createQuizzes({ config, drafts, placeTeacherPanel }) {
   const { scheduleDraft, flushDraft } = drafts;
   const disputes = createGradeDisputes(config);
+  const expectedAnswers = createExpectedAnswers(config);
   /** Elements inside a question. */
   function own(question, selector) {
     return [...question.querySelectorAll(selector)];
@@ -622,7 +624,7 @@ export function createQuizzes({ config, drafts, placeTeacherPanel }) {
     for (const field of form.querySelectorAll(
       ".cl-q input, .cl-q textarea, .cl-q select, .cl-q button",
     )) {
-      if (!field.closest(".cl-disputes")) field.disabled = locked;
+      if (!field.closest(".cl-disputes, .cl-expected")) field.disabled = locked;
     }
     for (const question of form.querySelectorAll('.cl-q[data-type="code"]'))
       lockCode(question, locked);
@@ -774,6 +776,7 @@ export function createQuizzes({ config, drafts, placeTeacherPanel }) {
     ) {
       disputes.history(form, state.history ?? [grade]);
       disputes.render(form, state);
+      expectedAnswers.apply(form, state);
       return;
     }
     if (attempts < Number(form.dataset.activeAttempt ?? "0")) return;
@@ -805,6 +808,7 @@ export function createQuizzes({ config, drafts, placeTeacherPanel }) {
 
     const attemptNote = attempts > 1 ? ` · attempt ${attempts}` : "";
     if (!grade) {
+      expectedAnswers.apply(form, state);
       setQuizState(form, "submitted");
       setQuizStatus(
         form,
@@ -819,6 +823,7 @@ export function createQuizzes({ config, drafts, placeTeacherPanel }) {
     renderGrade(form, grade);
     disputes.history(form, state.history ?? [grade]);
     disputes.render(form, state);
+    expectedAnswers.apply(form, state);
   }
 
   function renderGrade(form, grade) {
@@ -1012,7 +1017,15 @@ export function createQuizzes({ config, drafts, placeTeacherPanel }) {
     // A submitted or graded quiz keeps the answers it was sent with.
     else if (form.dataset.state === "fresh") restoreQuizDraft(form, value);
   }
-  return { hydrateQuizzes, applyQuizState, restoreDraft, updateTeacher: disputes.updateTeacher };
+  return {
+    hydrateQuizzes,
+    applyQuizState,
+    restoreDraft,
+    updateTeacher(state) {
+      disputes.updateTeacher(state);
+      expectedAnswers.updateTeacher();
+    },
+  };
 }
 
 export function quizForms() {

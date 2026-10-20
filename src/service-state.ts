@@ -50,6 +50,8 @@ export interface TeacherMessage {
   role: "learner" | "teacher";
   text: string;
   at: number;
+  /** Server-selected panel task this learner actually replied to; absent historically. */
+  replyTo?: string;
 }
 export interface TeacherState {
   version: 1;

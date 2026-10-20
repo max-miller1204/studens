@@ -23,6 +23,8 @@ export interface QuizSubmission {
   submittedAt: number;
   /** The private rubric bytes when this attempt was saved. Absent in older attempts. */
   rubricDigest?: string;
+  /** Private original page identity for expected-answer labels and question types. */
+  answerSourceDigest?: string;
   assessmentContract?: 1;
   /** Private criterion definitions fixed when this attempt was submitted. */
   rubricCriteria?: Record<string, RubricCriterion[]>;
