@@ -4,7 +4,7 @@ import * as path from "node:path";
 import * as net from "node:net";
 import * as readline from "node:readline";
 import { pathToFileURL } from "node:url";
-import { execFile, spawn } from "node:child_process";
+import { execFile, spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { promisify } from "node:util";
 import { afterEach, beforeEach, expect, it } from "vitest";
 import {
@@ -20,10 +20,18 @@ import { currentReview } from "../src/review-session.ts";
 import { readTeacherState } from "../src/service-state.ts";
 import * as store from "../src/store.ts";
 import { _overrideClassroomsDir, packageRoot } from "../src/paths.ts";
-import { control, ensureService, serviceStatus } from "../src/service-client.ts";
+import { control, ensureService, servicePaths, serviceStatus } from "../src/service-client.ts";
+import {
+  readOwnedService,
+  serviceOwnerExited,
+  type ServiceOwner,
+} from "./service-process-owner.ts";
 
 let f: Fixture, env: NodeJS.ProcessEnv, originalPort: string | undefined;
+let acknowledgedStop: ServiceOwner | undefined;
+const mcpChildren = new Map<ChildProcessWithoutNullStreams, Promise<void>>();
 beforeEach(async () => {
+  acknowledgedStop = undefined;
   f = makeFixture();
   seedClassroom(f);
   f.write("rust/001-ownership/quiz/key.json", '{"q1":"dropped"}');
@@ -94,11 +102,34 @@ lines.on('line', line => {
 });
 afterEach(async () => {
   _overrideClassroomsDir(f.root);
-  if ((await serviceStatus()).running) await control("/stop", {});
-  await new Promise((r) => setTimeout(r, 200));
-  if (originalPort === undefined) delete process.env.PI_CLASSROOM_SERVICE_PORT;
-  else process.env.PI_CLASSROOM_SERVICE_PORT = originalPort;
-  f.cleanup();
+  const paths = servicePaths();
+  try {
+    for (const child of mcpChildren.keys()) child.stdin.end();
+    await Promise.all(mcpChildren.values());
+    mcpChildren.clear();
+    const owner = readOwnedService(paths.lock, {
+      packageRoot: packageRoot(),
+      port: Number(env.PI_CLASSROOM_SERVICE_PORT),
+    });
+    if (owner) {
+      // Cleanup also runs after a failed assertion or an acknowledged stop.
+      // Signal only this fixture's recorded owner; never probe its closing listener.
+      if (acknowledgedStop?.pid !== owner.pid) {
+        try {
+          process.kill(owner.pid, "SIGTERM");
+        } catch (error) {
+          if ((error as NodeJS.ErrnoException).code !== "ESRCH") throw error;
+        }
+      }
+      await waitFor(async () => serviceOwnerExited(owner, paths));
+    }
+    expect(fs.existsSync(paths.socket)).toBe(false);
+    // Retain scratch evidence if teardown fails.
+    f.cleanup();
+  } finally {
+    if (originalPort === undefined) delete process.env.PI_CLASSROOM_SERVICE_PORT;
+    else process.env.PI_CLASSROOM_SERVICE_PORT = originalPort;
+  }
 });
 function client() {
   const child = spawn(process.execPath, [path.join(packageRoot(), "mcp/launch.mjs")], {
@@ -117,6 +148,7 @@ function client() {
     pending.delete(m.id);
   });
   const exited = new Promise<void>((r) => child.on("close", () => r()));
+  mcpChildren.set(child, exited);
   return {
     child,
     exited,
@@ -153,14 +185,24 @@ it.each(["codex", "claude"])(
       });
       const status = JSON.parse(response.result.content[0].text);
       expect(status.root).toBe(f.root);
+      expect(status.packageRoot).toBe(packageRoot());
+      expect(status.port).toBe(Number(env.PI_CLASSROOM_SERVICE_PORT));
+      expect(readOwnedService(servicePaths().lock, status)?.pid).toBe(status.pid);
       expect((await fetch(status.url)).status).toBe(200);
       const stopped = await c.call("tools/call", {
         name: "classroom_service",
         arguments: { action: "stop" },
       });
+      if (
+        stopped.result?.isError === false &&
+        JSON.parse(stopped.result.content[0].text).stopping === true
+      )
+        acknowledgedStop = status;
       expect(stopped.result.isError).toBe(false);
       expect(JSON.parse(stopped.result.content[0].text).stopping).toBe(true);
-      await waitFor(async () => !(await serviceStatus()).running);
+      // The ACK precedes listener teardown. A new connection during close can reset.
+      await waitFor(async () => serviceOwnerExited(status, servicePaths()));
+      expect((await serviceStatus()).running).toBe(false);
     } finally {
       c.child.stdin.end();
       await c.exited;
