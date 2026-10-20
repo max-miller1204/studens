@@ -10,9 +10,40 @@ import { AnswerError, parseAnswers } from "../quiz.ts";
 import { reviewSessions } from "../review-session.ts";
 import { parseRubric } from "../rubric.ts";
 import * as store from "../store.ts";
+import { expectedAnswers } from "../expected-answers.ts";
+import { readPublicState, publicStateError } from "../public-state-errors.ts";
 import { parseTeachingPlan } from "../teaching-plan.ts";
 import { hooks } from "./hooks.ts";
 import { readJsonBody, sendJson } from "./http.ts";
+
+export function handleExpectedAnswers(res: http.ServerResponse, url: URL): void {
+  const classroom = url.searchParams.get("classroom");
+  const lesson = url.searchParams.get("lesson");
+  const quizId = url.searchParams.get("quizId");
+  const submissionId = url.searchParams.get("submissionId");
+  if (!isValidSlug(classroom) || !isValidSlug(lesson) || !isContractId(quizId) || !submissionId)
+    return sendJson(res, { error: "Select an existing lesson, quiz, and saved attempt." }, 400);
+  try {
+    if (
+      !readPublicState("lesson identity, publication requests and assessment history", () =>
+        store.readLesson(classroom, lesson),
+      )
+    )
+      return sendJson(res, { error: "Unknown lesson." }, 404);
+    const current = readPublicState("saved quiz attempts and grades", () =>
+      store.latestQuizStates(classroom, lesson).find((s) => s.quizId === quizId),
+    );
+    if (!current || current.submission.id !== submissionId)
+      return sendJson(
+        res,
+        { error: "This saved attempt is stale or unknown. Reload the lesson." },
+        409,
+      );
+    sendJson(res, { submissionId, questions: expectedAnswers(current.submission) });
+  } catch (error) {
+    sendJson(res, { error: publicStateError(error) }, 500);
+  }
+}
 
 export async function handleQuizSubmit(
   req: http.IncomingMessage,

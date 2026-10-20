@@ -381,6 +381,16 @@ Do not treat a score or an explanation as proof that they learned the idea. If t
 ask to skip the check, record the unresolved gap in notes. Ask for their agreement
 before starting another lesson.
 
+The locked answer shows its original expected answer and full/partial credit rubric
+when the server can prove availability. Correct original answers and graded pretests
+need no corrective check. An original check/review miss stays private until a validated
+corrective check is linked to the actual reply to this attempt's panel task and the
+exact question. An unrelated reply, old check, dispute revision or shared objective
+without a unique question identity cannot release it. Historical attempts without
+fixed source identity explain why the answer is unavailable. Changed or missing
+original files require restoration and explicit retry. Revealing or reloading an
+answer supplies no new learning evidence or points.
+
 ### Pretests
 
 A pretest uses `data-kind="pretest"` before instruction. Ask prequestions about
