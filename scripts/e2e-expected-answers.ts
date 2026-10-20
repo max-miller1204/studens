@@ -1,7 +1,6 @@
 /** Fixture plans prove the learner/HTTP/persistence boundary, not model semantics. */
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { randomUUID } from "node:crypto";
 import { makeFixture, seedClassroom, lessonHtml } from "../test/helpers.ts";
 import { codeQuestion, codeRubric, source, exercise } from "../test/code-fixture.ts";
 import { TeacherService } from "../src/teacher-service.ts";
