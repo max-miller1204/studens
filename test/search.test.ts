@@ -123,6 +123,41 @@ describe("public classroom search", () => {
     writeGradedAttempt({ at: 1, kind: "pretest", quizId: "predict", answers: [], correct: {} });
     expect(searchClassrooms("GATED_CANARY").total).toBe(1);
   });
+  it("guards published review pretest histories at their canonical private location", () => {
+    const id = randomUUID(),
+      lesson = `review-${id}`,
+      relative = `rust/.reviews/${lesson}`;
+    f.write(
+      "rust/.reviews.json",
+      JSON.stringify({
+        version: 1,
+        requests: [
+          {
+            id,
+            classroom: "rust",
+            lesson,
+            owner: "service",
+            ownerPid: process.pid,
+            at: 1,
+            status: "done",
+            items: [{ key: "001-ownership/check-1/q1" }],
+          },
+        ],
+      }),
+    );
+    f.write(`${relative}/lesson.json`, JSON.stringify({ kind: "review", title: "Review" }));
+    f.write(
+      `${relative}/lesson.html`,
+      lessonHtml(
+        "Review",
+        '<form class="cl-quiz" data-quiz-id="predict" data-kind="pretest"><p>Predict first.</p></form><template data-cl-after-pretest="predict"><p>REVIEW_GATED_CANARY</p></template>',
+      ),
+    );
+    const trap = f.write("private-history.json", JSON.stringify({ private: "PRIVATE_CANARY" }));
+    fs.mkdirSync(path.join(f.root, relative, "quiz/submissions"), { recursive: true });
+    fs.symlinkSync(trap, path.join(f.root, relative, "quiz/submissions/trap.json"));
+    expect(() => searchClassrooms("Predict")).toThrow("invalid pretest gate or saved history");
+  });
   it("withholds unfinished publications and their metadata", () => {
     publicSources();
     saveLessonRequests("rust", [

@@ -232,6 +232,66 @@ export async function verifySearchBrowser(artifacts: string | null): Promise<voi
       probes.push({ route, status: response.status });
     }
     report.probes = probes;
+    f.write(
+      "math/learning-records/pagination.md",
+      Array.from({ length: 90 }, (_, i) => `Paragraph ${i} with paginated needle.\n\n`).join(""),
+    );
+    const paginationHashes = hashes(f.root);
+    report.pagination = await playwrightCode(
+      session,
+      out,
+      `async page=>{await page.goto(${JSON.stringify(base + "/search?q=paginated+needle")});await page.getByRole('status').filter({hasText:'90 matching results'}).waitFor();if(await page.locator('.cl-search-results li').count()!==40)throw new Error('First page not bounded');await page.getByRole('link',{name:'Next results',exact:true}).click();if(await page.locator('.cl-search-results').getAttribute('start')!=='41')throw new Error('Second page offset');await page.getByRole('link',{name:'Next results',exact:true}).click();if(await page.locator('.cl-search-results li').count()!==10||await page.getByRole('link',{name:'Next results',exact:true}).count())throw new Error('Last page incomplete');await page.getByRole('link',{name:'Previous results',exact:true}).click();if(await page.getByRole('searchbox').inputValue()!=='paginated needle')throw new Error('Page query lost');await page.getByRole('searchbox').fill('');await page.getByRole('button',{name:'Search',exact:true}).click();await page.getByRole('status').filter({hasText:'Enter a word'}).waitFor();return {total:90,pages:[40,40,10],nextPrevious:true,clearToEmpty:true};}`,
+    );
+    readonly(paginationHashes, "pagination");
+    const reviewId = randomUUID(),
+      review = `review-${reviewId}`,
+      reviewRelative = `rust/.reviews/${review}`;
+    f.write(
+      "rust/.reviews.json",
+      JSON.stringify({
+        version: 1,
+        requests: [
+          {
+            id: reviewId,
+            classroom: "rust",
+            lesson: review,
+            owner: "service",
+            ownerPid: process.pid,
+            at: 1,
+            status: "done",
+            items: [{ key: "001-ownership/search-check/q1" }],
+          },
+        ],
+      }),
+    );
+    f.write(`${reviewRelative}/lesson.json`, JSON.stringify({ kind: "review", title: "Review" }));
+    f.write(
+      `${reviewRelative}/lesson.html`,
+      lessonHtml(
+        "Review",
+        '<form class="cl-quiz" data-quiz-id="review-pretest" data-kind="pretest"><p>Predict review first.</p></form><template data-cl-after-pretest="review-pretest"><p>REVIEW_SEARCH_CANARY</p></template>',
+      ),
+    );
+    const historySecret = f.write(
+      "private-review-history.json",
+      JSON.stringify({ private: "PRIVATE_SEARCH_CANARY" }),
+    );
+    const historyLink = path.join(f.root, reviewRelative, "quiz/submissions/trap.json");
+    fs.mkdirSync(path.dirname(historyLink), { recursive: true });
+    fs.symlinkSync(historySecret, historyLink);
+    const historyHashes = hashes(f.root);
+    report.reviewHistoryError = await playwrightCode(
+      session,
+      out,
+      `async page=>{const r=await page.goto(${JSON.stringify(base + "/search?q=Predict+review")});if(r.status()!==500)throw new Error('Review history symlink was read');await page.getByRole('alert').filter({hasText:'invalid pretest gate or saved history'}).waitFor();if((await page.content()).includes('PRIVATE_SEARCH_CANARY'))throw new Error('Private history leaked');return {status:r.status(),safeError:true};}`,
+    );
+    readonly(historyHashes, "review-history");
+    fs.unlinkSync(historyLink);
+    report.reviewHistoryRetry = await playwrightCode(
+      session,
+      out,
+      `async page=>{await page.getByRole('heading',{name:'Cannot load search',exact:true}).waitFor();await page.getByRole('link',{name:'Retry search',exact:true}).click();await page.getByRole('status').filter({hasText:'1 matching result'}).waitFor();await page.getByRole('searchbox').fill('REVIEW_SEARCH_CANARY');await page.getByRole('button',{name:'Search',exact:true}).click();await page.getByRole('status').filter({hasText:'No results'}).waitFor();return {explicitRetry:true,gateWithheld:true};}`,
+    );
     const annotations = fs.readFileSync(
       path.join(f.root, "rust/001-ownership/annotations.json"),
       "utf8",

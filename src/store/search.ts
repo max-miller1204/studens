@@ -120,10 +120,11 @@ function guardPretests(relative: string): void {
   }
 }
 function stage(classroom: string, lesson: string, html: string): ReturnType<typeof stageLesson> {
+  const relative = `${classroom}/${isStoredReview(lesson) ? ".reviews/" : ""}${lesson}`;
   try {
     let staged = stageLesson(html, new Set());
     if (staged.pendingPretests.length) {
-      guardPretests(`${classroom}/${lesson}`);
+      guardPretests(relative);
       staged = stageLesson(
         html,
         new Set(
@@ -135,7 +136,7 @@ function stage(classroom: string, lesson: string, html: string): ReturnType<type
     }
     return staged;
   } catch {
-    return failure(`${classroom}/${lesson}`, "invalid pretest gate or saved history");
+    return failure(relative, "invalid pretest gate or saved history");
   }
 }
 function threads(relative: string): Annotation[] {

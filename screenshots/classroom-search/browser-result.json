@@ -2,57 +2,57 @@
   "public": {
     "links": [
       {
-        "url": "http://127.0.0.1:41837/c/math/001-ownership#cl-search-c85f3eb682660b1cbabb6c23-0",
+        "url": "http://127.0.0.1:34845/c/math/001-ownership#cl-search-c85f3eb682660b1cbabb6c23-0",
         "title": "Ownership",
         "kind": "Mathematics · Lesson"
       },
       {
-        "url": "http://127.0.0.1:41837/c/math/001-ownership#cl-question-c950604d-f19f-42af-945c-448d7b082877",
+        "url": "http://127.0.0.1:34845/c/math/001-ownership#cl-question-bd6eaad2-0e93-4ea1-a966-660a8e971d9f",
         "title": "Borrow checker vector question?",
         "kind": "Mathematics · Question thread"
       },
       {
-        "url": "http://127.0.0.1:41837/search/source?classroom=math&type=glossary&term=Borrow%20checker%20analogy#cl-search-177d0ab93ea66e101b4a9bb4-0",
+        "url": "http://127.0.0.1:34845/search/source?classroom=math&type=glossary&term=Borrow%20checker%20analogy#cl-search-177d0ab93ea66e101b4a9bb4-0",
         "title": "Borrow checker analogy",
         "kind": "Mathematics · Glossary term"
       },
       {
-        "url": "http://127.0.0.1:41837/doc/math/learning-records/0001-vectors.md#cl-search-2892fa62476a5442749dd84a-0",
+        "url": "http://127.0.0.1:34845/doc/math/learning-records/0001-vectors.md#cl-search-2892fa62476a5442749dd84a-0",
         "title": "0001-vectors.md",
         "kind": "Mathematics · Learning record"
       },
       {
-        "url": "http://127.0.0.1:41837/c/rust/001-ownership#cl-search-aee82d8d9cf7260e27b60e2b-0",
+        "url": "http://127.0.0.1:34845/c/rust/001-ownership#cl-search-aee82d8d9cf7260e27b60e2b-0",
         "title": "Ownership",
         "kind": "Rust · Lesson"
       },
       {
-        "url": "http://127.0.0.1:41837/c/rust/001-ownership#cl-search-08d561994513a7ca8981255e-0",
+        "url": "http://127.0.0.1:34845/c/rust/001-ownership#cl-search-08d561994513a7ca8981255e-0",
         "title": "Ownership",
         "kind": "Rust · Lesson"
       },
       {
-        "url": "http://127.0.0.1:41837/c/rust/001-ownership#cl-search-08d561994513a7ca8981255e-1",
+        "url": "http://127.0.0.1:34845/c/rust/001-ownership#cl-search-08d561994513a7ca8981255e-1",
         "title": "Ownership",
         "kind": "Rust · Lesson"
       },
       {
-        "url": "http://127.0.0.1:41837/c/rust/001-ownership#cl-question-9b6f4bbb-f568-4f71-80ba-68435ba9d0af",
+        "url": "http://127.0.0.1:34845/c/rust/001-ownership#cl-question-d14d6883-ba99-4657-a69a-2ea925924650",
         "title": "Why does the borrow checker reject café?",
         "kind": "Rust · Question thread"
       },
       {
-        "url": "http://127.0.0.1:41837/c/rust/001-ownership#cl-question-a1007de3-0135-4501-b354-da6e3bd9a919",
+        "url": "http://127.0.0.1:34845/c/rust/001-ownership#cl-question-661b8199-ab63-4b6c-b5a7-cb3486ccb221",
         "title": "Borrow checker orphan context?",
         "kind": "Rust · Question thread"
       },
       {
-        "url": "http://127.0.0.1:41837/search/source?classroom=rust&type=glossary&term=Borrow%20checker#cl-search-e89869ab916ab33e6831a103-0",
+        "url": "http://127.0.0.1:34845/search/source?classroom=rust&type=glossary&term=Borrow%20checker#cl-search-e89869ab916ab33e6831a103-0",
         "title": "Borrow checker",
         "kind": "Rust · Glossary term"
       },
       {
-        "url": "http://127.0.0.1:41837/doc/rust/learning-records/0001-borrow.md#cl-search-03a9e71a7b59b32adb76bb21-0",
+        "url": "http://127.0.0.1:34845/doc/rust/learning-records/0001-borrow.md#cl-search-03a9e71a7b59b32adb76bb21-0",
         "title": "0001-borrow.md",
         "kind": "Rust · Learning record"
       }
@@ -122,6 +122,20 @@
       "status": 404
     }
   ],
+  "pagination": {
+    "total": 90,
+    "pages": [40, 40, 10],
+    "nextPrevious": true,
+    "clearToEmpty": true
+  },
+  "reviewHistoryError": {
+    "status": 500,
+    "safeError": true
+  },
+  "reviewHistoryRetry": {
+    "explicitRetry": true,
+    "gateWithheld": true
+  },
   "deletedCard": {
     "honestDeletedCard": true
   },

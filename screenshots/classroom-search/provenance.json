@@ -2,7 +2,7 @@
   "originalBase": "5cb7dce13aef01364d3f5b5ffe5a8f4d93075927",
   "reviewBase": "67092d07d143050caa6648de5a8280164ce05f96",
   "afterCaptureSource": "2bb31a5bb0c4f836b986a52010f9000546a1e915",
-  "afterSourceLimit": "Final additions reject malformed tag attributes and preserve ordering for trailing direct prose. Neither changes the seeded matched landing/result views. Exact-head replay compares image bytes.",
+  "afterSourceLimit": "Final additions reject malformed tag attributes, preserve ordering for trailing direct prose, and guard pretest history at the canonical stored-review location. These do not change the seeded matched landing/result views. Exact-head replay compares image bytes.",
   "runtime": "Node 24.22.0",
   "declaredMinimum": "Node >=22.19.0 (exact minimum not tested)",
   "viewports": {
@@ -32,5 +32,10 @@
     "original-base/before-mobile-light.png": "17744bd8ddb817bb0bc0e90239858b2514cfbb6910937cde1f21f2e68225e792",
     "results-desktop-light.png": "0ff6d5f1a7670d7c1a4b77a8f882954cfba0290089f12777f3585d78cb715d8f",
     "results-mobile-dark.png": "db0cb3c8c1dcf22573c4d0f1f49347edce198c84a5cad903ef5c48154a0eca03"
+  },
+  "focusedBrowserReport": {
+    "sourceBase": "c0d786ef6871fe1ef4d34bd3be3be40fea09a8a2",
+    "changes": "Canonical stored-review pretest history guard and portable pagination/history probes.",
+    "rawRun": "/tmp/studens-search30/browser-history-final"
   }
 }
