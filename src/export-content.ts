@@ -88,8 +88,19 @@ export function safeContent(source: string, link: ResourceLink): string {
 export function portableMarkdown(source: string): string {
   const tree = contentTree(source);
   const escape = (s: string) => s.replace(/([\\`*_{}\[\]<>#+.!|~=\-])/g, "\\$1");
-  const render = (n: ContentNode, depth = 0): string => {
-    const body = () => n.children.map((c) => render(c, depth)).join("");
+  const render = (n: ContentNode): string => {
+    const body = () => {
+      let previous = "";
+      return n.children
+        .map((c) => {
+          // Adjacent lists of the same type need a block boundary to avoid merging.
+          const boundary =
+            c.tag === previous && ["ul", "ol"].includes(c.tag) ? "\n\n<!-- -->\n\n" : "";
+          if (c.kind !== "text" || c.text.trim()) previous = c.tag;
+          return boundary + render(c);
+        })
+        .join("");
+    };
     if (n.kind === "text") return escape(n.text);
     if (n.attrs.get("class") === "cl-export-math") {
       const tex = n.attrs.get("data-tex") ?? "";
@@ -134,14 +145,16 @@ export function portableMarkdown(source: string): string {
         "\n\n" +
         n.children
           .filter((c) => c.tag === "li")
-          .map(
-            (c, i) =>
-              `${"  ".repeat(depth)}${n.tag === "ol" ? `${i + 1}.` : "-"} ${c.children
-                .map((x) => render(x, depth + 1))
-                .join("")
+          .map((c, i) => {
+            const marker = n.tag === "ol" ? `${i + 1}. ` : "- ";
+            // CommonMark continuations align after this marker; parents indent nested lists once.
+            return (
+              marker +
+              render(c)
                 .trim()
-                .replace(/\n/g, "\n  ")}`,
-          )
+                .replace(/\n/g, "\n" + " ".repeat(marker.length))
+            );
+          })
           .join("\n") +
         "\n\n"
       );

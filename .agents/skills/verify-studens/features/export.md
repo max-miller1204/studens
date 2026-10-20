@@ -74,8 +74,11 @@ This controlled fixture submits a real diagnostic, releases its original templat
 then grades choice/multi/order/match/locate answers through lesson controls. Inspect
 `learner.json`, `graded-{off,on}.{md,apkg,pdf}` and `graded-on-print.png`.
 Inspect `*-downloads.json`, `*-markdown-reading.json` and `*-reading.png` for
-the exact public choice/multi labels and non-overlapping text geometry. The source
-uses adjacent labels with no intervening whitespace. Rasterize an actual downloaded
+the exact public choice/multi labels and non-overlapping text geometry. Checks
+also require seven distinct ordered question items, options inside their original
+question, and original nested order/match lists in print, rendered Markdown and
+imported reading cards. Inspect `*-markdown-reading.png` for focused question boundaries.
+The fixture uses adjacent labels with no intervening whitespace. Rasterize an actual downloaded
 PDF with `pdftoppm -f 2 -singlefile -scale-to 1500 -png <graded-on.pdf> <page-prefix>`
 and inspect its reading page; expected-answer blocks alone do not prove option readability.
 Two controlled teacher turns create an exact corrective task/reply/check, unlocking

@@ -17,7 +17,23 @@ const sha = (b: string | Buffer) => createHash("sha256").update(b).digest("hex")
 // The same public reading must remain distinguishable in print, Markdown and imported cards.
 const optionReadingProbe = `async page => page.evaluate(() => {
   const pairs = [['New owner — café λ','Old binding'],['First resource','Second resource']];
-  return pairs.map(labels => {
+  const prompts = ['Who releases the resource?','Select both resources','Arrange the saved steps','Connect the public labels','Locate the released passage','Calculate the new case','A still locked neighbor'];
+  const anchor = [...document.querySelectorAll('p')].find(p => p.textContent.trim() === prompts[0]);
+  const list = anchor?.closest('li')?.parentElement;
+  if(list?.tagName !== 'OL') throw new Error('Question prompts lost ordered-list ownership');
+  const questions = [...list.children].filter(n => n.tagName === 'LI');
+  if(questions.length !== prompts.length) throw new Error('Expected seven distinct question items; got '+questions.length);
+  const ownership = questions.map((q,i) => {
+    const first = q.querySelector(':scope > p');
+    if(first?.textContent.trim() !== prompts[i]) throw new Error('Question prompt joined another block: '+prompts[i]);
+    const publicBlocks = [...q.children].filter(n => ['P','DIV'].includes(n.tagName)).map(n => n.textContent.trim());
+    if(i < 2 && pairs[i].some(label => !publicBlocks.includes(label))) throw new Error('Option escaped its question or joined its next prompt');
+    const nested = [...q.querySelectorAll(':scope > ol')].map(n => [...n.children].filter(c => c.tagName === 'LI').map(c => c.textContent.trim()));
+    const expected = i === 2 ? [['Allocate','Release']] : i === 3 ? [['Resource','Scope'],['Lifetime','New binding']] : [];
+    if(JSON.stringify(nested) !== JSON.stringify(expected)) throw new Error('Nested list lost question ownership');
+    return {prompt:first.textContent.trim(),publicBlocks,nested};
+  });
+  const ranges = pairs.map(labels => {
     const boxes = labels.map(label => {
       const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
       let node; while(node = walker.nextNode()) {
@@ -32,6 +48,7 @@ const optionReadingProbe = `async page => page.evaluate(() => {
     if(!(b.y >= a.y+a.height || (b.x > a.x+a.width+0.5 && b.y === a.y))) throw new Error('Public option boundaries join or overlap');
     return boxes;
   });
+  return {ownership,ranges};
 })`;
 const hashes = (root: string) =>
   Object.fromEntries(
@@ -181,7 +198,7 @@ export async function verifyExportTemplateBrowser(artifacts: string | null): Pro
         await playwrightCode(
           session,
           out,
-          `async page=>{const readings=[];for(const consent of ['off','on']){await page.goto('file://'+${JSON.stringify(out + "/" + phase)}+'-'+consent+'.html');readings.push({consent,boundaries:await (${optionReadingProbe})(page)});}await page.screenshot({path:${JSON.stringify(out + "/" + phase + "-markdown.png")},fullPage:true});return {rendered:true,readings};}`,
+          `async page=>{const readings=[];for(const consent of ['off','on']){await page.goto('file://'+${JSON.stringify(out + "/" + phase)}+'-'+consent+'.html');readings.push({consent,boundaries:await (${optionReadingProbe})(page)});await page.getByText('Released teaching',{exact:true}).scrollIntoViewIfNeeded();await page.screenshot({path:${JSON.stringify(out + "/" + phase)}+'-'+consent+'-markdown-reading.png'});}await page.screenshot({path:${JSON.stringify(out + "/" + phase + "-markdown.png")},fullPage:true});return {rendered:true,readings};}`,
         ),
       );
       return result;
