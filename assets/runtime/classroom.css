@@ -2198,3 +2198,43 @@ figure:has(> .cl-diagram) figcaption {
   color: var(--cl-text-muted);
   margin-bottom: 0;
 }
+/* Runnable code questions keep source, public examples and feedback readable on phones. */
+.cl-q textarea.cl-code-source {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  tab-size: 2;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.cl-code-runner {
+  min-width: 0;
+  margin-top: 0.75rem;
+}
+.cl-code-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+.cl-code-runner pre,
+.cl-code-results li {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  max-width: 100%;
+}
+.cl-code-status {
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+.cl-code-runner pre {
+  max-height: 18rem;
+  overflow: auto;
+}
+.cl-code-results {
+  padding-left: 1.5rem;
+}
+.cl-code-results li {
+  margin: 0.5rem 0;
+  font-size: 0.9rem;
+}

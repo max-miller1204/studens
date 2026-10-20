@@ -27,7 +27,7 @@ export async function verifyClosedBrowser(artifacts: string | null): Promise<voi
       contract.indexOf('<form class="cl-quiz" data-quiz-id="check-1" data-title='),
       contract.indexOf("</form>") + 7,
     )
-    .replace(/\s*<li class="cl-q" data-question-id="q[45]"[\s\S]*?<\/li>/g, "")
+    .replace(/\s*<li\s+class="cl-q"\s+data-question-id="q(?:4|5|11)"[\s\S]*?<\/li>/g, "")
     .replace('data-title="Check on learning"', 'data-title="Closed pretest" data-kind="pretest"');
   fixture.write(
     "rust/001-ownership/lesson.json",

@@ -15,6 +15,7 @@ import {
 } from "./lesson-dom.mjs";
 import { draftStatus } from "./drafts.mjs";
 import { practiceErrors, practiceFeedback } from "./practice.mjs";
+import { enhanceCode, collectCode, restoreCode, lockCode } from "./code-ui.mjs";
 
 /**
  * The quiz contract lives in assets/templates/quiz.html. A form that breaks it is
@@ -64,6 +65,8 @@ export function createQuizzes({ config, drafts, placeTeacherPanel }) {
         "input[type=text]:not([data-blank]):not(.cl-number):not(.cl-unit), input:not([type]):not([data-blank]):not(.cl-number):not(.cl-unit)",
       ),
       textareas: count("textarea"),
+      code: question.getAttribute("data-code"),
+      codeEditors: count("label textarea.cl-code-source"),
       numbers: count("input.cl-number"),
       units: count(".cl-unit"),
       unitValues,
@@ -271,6 +274,9 @@ export function createQuizzes({ config, drafts, placeTeacherPanel }) {
         ["sure", "Sure"],
       ]);
     switch (question.dataset.type) {
+      case "code":
+        enhanceCode(question);
+        break;
       case "numeric":
         for (const input of question.querySelectorAll("input.cl-number")) {
           input.setAttribute("inputmode", "decimal");
@@ -437,6 +443,13 @@ export function createQuizzes({ config, drafts, placeTeacherPanel }) {
     };
 
     switch (type) {
+      case "code": {
+        const result = collectCode(question);
+        if (result.invalid || result.missing) return result;
+        answer.value = result.value;
+        answer.code = result.code;
+        break;
+      }
       case "choice": {
         const chosen = own(question, "input[type=radio]").find((input) => input.checked);
         if (!chosen) return { missing: true };
@@ -611,6 +624,8 @@ export function createQuizzes({ config, drafts, placeTeacherPanel }) {
     )) {
       if (!field.closest(".cl-disputes")) field.disabled = locked;
     }
+    for (const question of form.querySelectorAll('.cl-q[data-type="code"]'))
+      lockCode(question, locked);
     for (const segment of form.querySelectorAll(".cl-segment")) {
       segment.setAttribute("tabindex", locked ? "-1" : "0");
     }
@@ -661,6 +676,9 @@ export function createQuizzes({ config, drafts, placeTeacherPanel }) {
       own(question, selector).find((input) => input.value === value);
 
     switch (answer.type) {
+      case "code":
+        restoreCode(question, answer);
+        break;
       // Answers saved before question types were enforced: one entry for each ticked box.
       case undefined:
         for (const entry of group) {
@@ -898,6 +916,7 @@ export function createQuizzes({ config, drafts, placeTeacherPanel }) {
         return checked.length > 0 ? { checked } : null;
       }
       case "term":
+      case "code":
       case "short": {
         const field = own(question, "textarea, input[type=text], input:not([type])")[0];
         return field.value ? { text: field.value } : null;

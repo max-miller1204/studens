@@ -118,6 +118,14 @@ Mermaid and Temml are vendored with licenses and versions. Update them through
 before text indexing. Skip generated diagram/MathML nodes in highlights and send
 source notation to grading. Answers and feedback render Markdown server-side.
 
+Runnable `code` answers use the pinned browser QuickJS WASM interpreter after an
+explicit Run. Each disposable worker gives its guest VM no browser objects, host
+functions or module loader, with time/memory/output limits. Public test outcomes
+are debugging context. Submit saves exact source and public inputs with the normal
+immutable attempt; the teacher assesses source under private declared criteria.
+No learner source executes on the host, and Run grants no learning evidence or
+points. See [code exercises](CODE-EXERCISES.md) for the authoring and isolation contract.
+
 ## State invariants
 
 - **Requests are sequential and durable per classroom.** Save each plan before writes.

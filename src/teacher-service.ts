@@ -764,6 +764,7 @@ export class TeacherService {
     if (r.kind === "quiz" && !fs.existsSync(rubric))
       throw new Error("Private quiz rubric is missing. Write quiz/key.json before grading.");
     const privateRubric = fs.existsSync(rubric) ? fs.readFileSync(rubric, "utf8") : null;
+    let codeRecordReferences = "";
     if (r.kind === "quiz") {
       const submission = store.findSubmission(r.target);
       if (!submission) throw new Error("The submitted quiz no longer exists.");
@@ -773,6 +774,11 @@ export class TeacherService {
           "The private rubric changed after submission. Restore it before teacher work.",
         );
       r.planRubricDigest = digest;
+      const forms = submission.answers
+        .filter((answer) => answer.type === "code")
+        .map((answer) => `${submission.quizId}/${answer.questionId}`);
+      if (forms.length)
+        codeRecordReferences = `Code question citation reference forms for this immutable submission: ${JSON.stringify(forms)}. These are reference forms, not an eligibility grant. An optional learning_record may cite a code question only when it is fully credited and supported by the saved source, using the exact quizId/questionId form. Do not infer independence, retention or mastery from these references or browser results. A learning_record is unnecessary for grading; return learning_record=null when no supported record is being written.`;
     }
     const classroomDocs = store.listClassroomDocs(r.classroom).map((file) => ({
       file,
@@ -824,7 +830,7 @@ export class TeacherService {
       .filter((t) => contract.operations.includes(t.name));
     return dedicatedTeacherPrompt(
       r.id,
-      `Current request kind: ${r.kind}. ${contract.required ? "Return exactly one call from the tool definitions." : contract.operations.length ? "Return only retrieval calls supported by this learner reply. Otherwise return calls=[]." : "Return calls=[]."}\n\n${r.prompt}`,
+      `Current request kind: ${r.kind}. ${contract.required ? "Return exactly one call from the tool definitions." : contract.operations.length ? "Return only retrieval calls supported by this learner reply. Otherwise return calls=[]." : "Return calls=[]."}\n\n${r.prompt}${codeRecordReferences ? `\n\n${codeRecordReferences}` : ""}`,
       context,
       defs.map((t) => {
         const parameters = structuredClone(t.parameters);

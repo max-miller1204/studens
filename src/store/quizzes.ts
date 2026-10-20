@@ -2,6 +2,8 @@ import { createHash, randomUUID } from "node:crypto";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { gradeClosed } from "../closed-grading.ts";
+import { validateCodeQuestions, bindCodeAnswers } from "../code-questions.ts";
+import { sameCodeJson } from "../../assets/runtime/code.mjs";
 import { lessonDir, submissionsDir } from "../paths.ts";
 import type { QuizKind } from "../quiz.ts";
 import { authoredVariants } from "../review-variants.ts";
@@ -40,6 +42,26 @@ export function createSubmission(
       "The private rubric changed after an earlier attempt. Restore the original rubric before submitting again.",
     );
   const page = readLesson(input.classroom, input.lesson);
+  const html = page ? fs.readFileSync(page.htmlPath, "utf8") : "";
+  if (input.answers.some((answer) => answer.type === "code")) validateCodeQuestions(html, page);
+  const boundAnswers = bindCodeAnswers(html, input.quizId, input.kind, input.answers);
+  for (const answer of boundAnswers.filter((a) => a.type === "code")) {
+    if (
+      previous.some(
+        (s) =>
+          s.quizId === input.quizId &&
+          s.answers.some(
+            (a) =>
+              a.questionId === answer.questionId &&
+              a.code &&
+              !sameCodeJson(a.code.exercise, answer.code!.exercise),
+          ),
+      )
+    )
+      throw new Error(
+        "Public code tests changed after an earlier attempt. Restore the original code exercise before submitting again.",
+      );
+  }
   if (page?.reviewVariantContract === 1)
     authoredVariants(
       fs.readFileSync(rubric, "utf8"),
@@ -60,7 +82,7 @@ export function createSubmission(
         )
       : undefined;
   const deterministicGrades = privateKey
-    ? input.answers.flatMap((answer) => {
+    ? boundAnswers.flatMap((answer) => {
         const entry = privateKey[input.quizId]?.[answer.questionId];
         if (!entry) throw new Error(`No rubric for ${input.quizId}/${answer.questionId}.`);
         const grade = gradeClosed(answer, entry);
@@ -77,7 +99,7 @@ export function createSubmission(
           fs.readFileSync(page.htmlPath, "utf8"),
         )
       : undefined;
-  const answers = input.answers.map((answer) => {
+  const answers = boundAnswers.map((answer) => {
     const { learning: ignored, ...saved } = answer;
     if (!teachingPlan) return saved;
     const q = teachingPlan.quizzes[input.quizId]?.questions[answer.questionId];

@@ -1,6 +1,8 @@
 import { verifyDisputesBrowser } from "./e2e-disputes-browser.ts";
 import { verifyReviewWorkload } from "./e2e-review-workload.ts";
 import { verifyCriteriaBrowser } from "./e2e-criteria-browser.ts";
+import { verifyCodeBrowser } from "./e2e-code-browser.ts";
+import { verifyCodeReview } from "./e2e-code-review.ts";
 import { verifySettingsBrowser } from "./e2e-settings-browser.ts";
 import { verifyReviewControls } from "./e2e-review-controls.ts";
 import { verifyDailyReview } from "./e2e-daily-review.ts";
@@ -45,6 +47,8 @@ const contract = fs
   .join("-->");
 const allTypes = contract
   .slice(contract.indexOf('<form class="cl-quiz"'), contract.indexOf("</form>") + 7)
+  // Preserve the legacy all-types fixture; code has a separate validated criterion assessment.
+  .replace(/<li\s+class="cl-q"\s+data-question-id="q11"[\s\S]*?<\/li>/g, "")
   .replace('data-quiz-id="check-1"', 'data-quiz-id="all-types"');
 const partialQuiz = `<form class="cl-quiz" data-quiz-id="partial" data-title="Partial credit regression"><ol class="cl-questions">${[1, 2, 3].map((i) => `<li class="cl-q" data-question-id="q${i}" data-type="short"><p class="cl-q-prompt">Explain idea ${i}.</p><textarea></textarea></li>`).join("")}</ol></form>`;
 const invalidOptionsQuiz = `<form class="cl-quiz" data-quiz-id="invalid-options" data-title="Invalid option values"><ol class="cl-questions">
@@ -397,6 +401,8 @@ await verifyReteachBrowser(artifacts ? path.join(artifacts, "reteach") : null);
 
 await verifyDisputesBrowser(artifacts ? path.join(artifacts, "disputes") : null);
 await verifyCriteriaBrowser(artifacts ? path.join(artifacts, "criteria") : null);
+await verifyCodeBrowser(artifacts ? path.join(artifacts, "code") : null);
+await verifyCodeReview(artifacts ? path.join(artifacts, "code-review") : null);
 await verifySettingsBrowser(artifacts ? path.join(artifacts, "settings") : null);
 await verifyNextLessonBrowser(artifacts ? path.join(artifacts, "next-lesson") : null);
 
