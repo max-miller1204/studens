@@ -1,5 +1,6 @@
 import { verifyMemoryMapBrowser } from "./e2e-memory-map-browser.ts";
 import { verifySearchBrowser } from "./e2e-search-browser.ts";
+import { verifyLearnerMarksBrowser } from "./e2e-learner-marks-browser.ts";
 import { verifyStepperPublication } from "./e2e-stepper-publication.ts";
 import { verifyDisputesBrowser } from "./e2e-disputes-browser.ts";
 import { verifyClassroomExportBrowser } from "./e2e-export-browser.ts";
@@ -434,3 +435,4 @@ await verifyActivityBrowser(artifacts ? path.join(artifacts, "activity") : null)
 await verifyMemoryMapBrowser(artifacts ? path.join(artifacts, "memory-map") : null);
 
 await verifyClassroomExportBrowser(artifacts ? path.join(artifacts, "export") : null);
+await verifyLearnerMarksBrowser(artifacts ? path.join(artifacts, "learner-marks") : null);

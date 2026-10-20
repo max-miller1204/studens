@@ -10,6 +10,7 @@ import {
   showErrors,
   textOf,
   detachMarkers,
+  detachLearnerMarks,
   setQuizStatus,
   cssEscape,
   escapeText,
@@ -30,13 +31,15 @@ export function createQuizzes({ config, drafts, placeTeacherPanel }) {
   const expectedAnswers = createExpectedAnswers(config);
   /** Elements inside a question. */
   function own(question, selector) {
-    return [...question.querySelectorAll(selector)];
+    return [...question.querySelectorAll(selector)].filter(
+      (el) => !el.closest(".cl-learner-marks"),
+    );
   }
 
   /** Summarise a question's markup as plain data, for `questionErrors`. */
   function questionShape(question, kind) {
     const ids = (selector, attribute) =>
-      [...question.querySelectorAll(selector)].map((el) => el.getAttribute(attribute) ?? "");
+      own(question, selector).map((el) => el.getAttribute(attribute) ?? "");
     const count = (selector) => own(question, selector).length;
     const unit = question.querySelector(".cl-unit");
     // null means editable text; a list contains the units the control can supply.
@@ -223,7 +226,7 @@ export function createQuizzes({ config, drafts, placeTeacherPanel }) {
       });
       if (practice) {
         const clearFeedback = (event) => {
-          if (event.target.closest(".cl-card-panel")) return;
+          if (event.target.closest(".cl-card-panel, .cl-learner-marks")) return;
           form.querySelectorAll(".cl-practice-feedback").forEach((node) => node.remove());
           setQuizStatus(form, "");
         };
@@ -232,7 +235,11 @@ export function createQuizzes({ config, drafts, placeTeacherPanel }) {
         continue;
       }
       const saveQuiz = (event) => {
-        if (form.dataset.state !== "fresh" || event.target.closest(".cl-card-panel")) return;
+        if (
+          form.dataset.state !== "fresh" ||
+          event.target.closest(".cl-card-panel, .cl-learner-marks")
+        )
+          return;
         scheduleDraft(
           `quiz:${form.dataset.quizId}`,
           () => quizDraft(form),
@@ -393,6 +400,7 @@ export function createQuizzes({ config, drafts, placeTeacherPanel }) {
    * the text is read, and both are put back before the browser can paint.
    */
   function stimulusText(element) {
+    const restoreNotes = detachLearnerMarks(element);
     const diagrams = [...element.querySelectorAll(".cl-diagram")];
     for (const diagram of diagrams) diagram.hidden = true;
     const restoreMath = swapMathForSource(element);
@@ -405,12 +413,14 @@ export function createQuizzes({ config, drafts, placeTeacherPanel }) {
     const sources = diagrams.map(
       (diagram) => `[diagram, Mermaid source:\n${diagramSource(diagram)}]`,
     );
+    restoreNotes();
     return [text, ...images, ...sources].filter(Boolean).join("\n");
   }
 
   /** A cloze passage as text, with each blank written as `[[<blank id>]]`. */
   function clozeText(element) {
     const clone = element.cloneNode(true);
+    for (const note of clone.querySelectorAll(".cl-learner-marks")) note.remove();
     for (const blank of clone.querySelectorAll("input[data-blank]")) {
       blank.replaceWith(document.createTextNode(`[[${blank.dataset.blank}]]`));
     }
@@ -624,7 +634,7 @@ export function createQuizzes({ config, drafts, placeTeacherPanel }) {
     for (const field of form.querySelectorAll(
       ".cl-q input, .cl-q textarea, .cl-q select, .cl-q button",
     )) {
-      if (!field.closest(".cl-disputes, .cl-expected")) field.disabled = locked;
+      if (!field.closest(".cl-disputes, .cl-expected, .cl-learner-marks")) field.disabled = locked;
     }
     for (const question of form.querySelectorAll('.cl-q[data-type="code"]'))
       lockCode(question, locked);
@@ -646,12 +656,12 @@ export function createQuizzes({ config, drafts, placeTeacherPanel }) {
 
   /** Clear displayed answers before restoring a saved attempt. */
   function clearQuizAnswers(form) {
-    for (const input of form.querySelectorAll(".cl-q input")) {
+    for (const input of own(form, ".cl-q input")) {
       if (input.type === "radio" || input.type === "checkbox") input.checked = false;
       else input.value = "";
       input.removeAttribute("aria-invalid");
     }
-    for (const field of form.querySelectorAll(".cl-q textarea, .cl-q select")) field.value = "";
+    for (const field of own(form, ".cl-q textarea, .cl-q select")) field.value = "";
     for (const segment of form.querySelectorAll(".cl-segment")) {
       segment.setAttribute("aria-pressed", "false");
     }

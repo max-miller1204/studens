@@ -11,6 +11,7 @@ import { createReviewScreen } from "./review-screen.mjs";
 import { createCards } from "./cards.mjs";
 import { createDrafts } from "./drafts.mjs";
 import { createHighlights } from "./highlights.mjs";
+import { createLearnerMarks } from "./learner-marks.mjs";
 import { createQuizzes } from "./quiz-ui.mjs";
 import { createReflections } from "./reflections.mjs";
 import { createGlossary } from "./glossary-ui.mjs";
@@ -32,7 +33,8 @@ function readConfig() {
 const contentRoot = resolveContentRoot();
 const drafts = createDrafts(config);
 const cards = createCards({ config, contentRoot, drafts });
-const highlights = createHighlights({ config, contentRoot, drafts, cards });
+const learnerMarks = createLearnerMarks({ config, contentRoot });
+const highlights = createHighlights({ config, contentRoot, drafts, cards, learnerMarks });
 const teacher = createTeacherPanel({ config, contentRoot, drafts });
 const quizzes = createQuizzes({ config, drafts, placeTeacherPanel: teacher.placeTeacherPanel });
 const reflections = createReflections({ config, drafts });
@@ -56,6 +58,7 @@ function init() {
 
   initFaded(contentRoot);
   initSteppers(contentRoot);
+  learnerMarks.init();
   highlights.init();
   quizzes.hydrateQuizzes();
   review = createReviewScreen({
