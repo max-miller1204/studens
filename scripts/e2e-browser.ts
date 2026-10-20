@@ -1,3 +1,4 @@
+import { verifyMemoryMapBrowser } from "./e2e-memory-map-browser.ts";
 import { verifySearchBrowser } from "./e2e-search-browser.ts";
 import { verifyLearnerMarksBrowser } from "./e2e-learner-marks-browser.ts";
 import { verifyStepperPublication } from "./e2e-stepper-publication.ts";
@@ -430,6 +431,8 @@ await verifyStepperBrowser(artifacts ? path.join(artifacts, "stepper") : null);
 await verifyStepperPublication(artifacts ? path.join(artifacts, "stepper-publication") : null);
 
 await verifyActivityBrowser(artifacts ? path.join(artifacts, "activity") : null);
+
+await verifyMemoryMapBrowser(artifacts ? path.join(artifacts, "memory-map") : null);
 
 await verifyClassroomExportBrowser(artifacts ? path.join(artifacts, "export") : null);
 await verifyLearnerMarksBrowser(artifacts ? path.join(artifacts, "learner-marks") : null);

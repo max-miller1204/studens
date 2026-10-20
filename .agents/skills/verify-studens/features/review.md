@@ -1,11 +1,15 @@
 # Start a review
 
-Start a daily review from Classrooms or a spaced review from classroom Progress. Pi, Claude Code, and Codex assemble
+Start a daily review from Classrooms or a spaced review from the classroom memory map. Pi, Claude Code, and Codex assemble
 prepared private variants without a model turn. The selected questions, keys, and
 plan are saved before publication. Existing in-flight authoring requests retain
 their original host and recovery behavior.
 
 ## Sub-features
+
+- Read per-objective evidence strength, latest answer time/context/credit, open or resolved gaps, and next due time. Older question identities keep original lesson links.
+- Expand **Why is this due?** for the replayed schedule reason, saved source, evidence counts and explicitly estimated stability/difficulty.
+- Read fourteen UTC saved-due dates visually or in a keyboard-accessible table; compare today’s backlog with the actual shared allowance and deferred count.
 
 - Choose Quick 3 through 12 items, a classroom, and a topic from saved objective groups (historical questions use their original lesson).
 - Show the total due across all classrooms, including classrooms in folders.
@@ -45,7 +49,7 @@ unfinished daily batch can still be continued.
 For a single classroom:
 
 1. Open a classroom with due check questions and prepared private pools.
-2. Choose `Review size` and `Topic` in Progress, then select `Start review`. Enable
+2. Choose `Review size` and `Topic` in the memory map, then select `Start review`. Enable
    `Review early anyway` to include items before their due date. Options survive reload;
    the ready review preserves its selection and original item identities.
 3. If publication fails, read the specific error and select `Retry review` after
@@ -55,7 +59,7 @@ For a single classroom:
    answer on this screen. Failed teacher work requires `Retry request`.
 5. Reload during an unfinished review. The current card, saved draft, earlier grades,
    and original schedule must be preserved. `Continue review` resumes the unfinished
-   session from classroom Progress.
+   session from the classroom memory map.
 6. On a card, select `Flag bad question`. Describe the problem in the prefilled
    teacher reply, then select `Send reply`. The report includes the original key and
    displayed question. Reload preserves the report and any failed request; use
@@ -66,7 +70,7 @@ For a single classroom:
    use `Retry item action` after resolving a lock, or reload after a stale-tab error.
 8. Open `Review history` from the classroom or review screen. Reviews appear here,
    with answered counts, and stay out of Lessons. Open an older numbered review link.
-9. For an item with three unresolved misses, select `Open short re-teach` in Progress,
+9. For an item with three unresolved misses, select `Open short re-teach` in the memory map,
    then `Start short re-teach` on the lesson page. Read the explanation and reply there.
    A failure keeps its specific error after reload and requires `Retry request`.
    A message interrupted before queuing offers `Retry short re-teach`.
@@ -74,6 +78,23 @@ For a single classroom:
 ## Driving it with playwright-cli
 
 Run `npm run verify -- browser --artifacts /tmp/studens-review-browser`.
+
+The memory-map drive uses production saved-attempt replay and isolated Pi, Claude
+and Codex service-owner fixtures. No model connection is claimed. Inspect
+`memory-map/<owner>/result.json`, `source-before.json` and `read-only-hashes.json`.
+It compares every row’s latest answer time and expanded schedule reason to replay,
+and table counts to fourteen saved UTC due dates. It follows legacy original lesson
+links and the course map, uses Enter for explanations/table, and captures 1280×900
+and 390×844 in both themes, including long unbroken objective text. Reads make no
+non-GET/HEAD requests and leave classroom hashes unchanged. An explicit native
+retire/restore and prepared closed review correction update the map after reload;
+restart retains one grade. Malformed saved timing gives a specific error and explicit
+**Retry loading review state** after correction; private inputs remain 404.
+The focused command is
+`node --input-type=module -e 'import {verifyMemoryMapBrowser} from "./scripts/e2e-memory-map-browser.ts";await verifyMemoryMapBrowser("/tmp/studens-memory-map")'`.
+Owner attachment happens before the fixture histories are seeded, so this drive
+isolates read projection from startup maintenance/refill work. It does not verify
+teacher maintenance or model behavior; select the existing host targets for those.
 
 The review fixtures check Pi and the service. They cover zero model turns during
 assembly, legacy pool absence, a publication conflict and explicit retry, reload,
@@ -141,7 +162,7 @@ page, empty due work, malformed daily state, and private routes. Inspect
 `selected-before-progress.json`, and `partial-failure.json`. The service fixture
 keeps Biology on Claude and Rust on Codex; these fixture teachers prove routing,
 not real model access. Contract tests additionally reject foreign ownership and
-competing unfinished reviews. Daily selections use the same prepared-variant boundary as classroom Progress and one root-wide allowance. The daily fixtures
+competing unfinished reviews. Daily selections use the same prepared-variant boundary as the classroom memory map and one root-wide allowance. The daily fixtures
 also use predeclared private criteria, require the saved publication contract,
 render the code-owned closed allocation, and verify criterion/timing snapshots
 remain private. Daily contracts additionally reuse an existing early judgment
@@ -154,6 +175,10 @@ actions must leave the owning host's saved errors and progress unchanged. A
 published classroom review still opens across hosts. A delayed landing start after
 the first classroom is graded must leave the next group planned until its explicit
 `Start <classroom> review` control is used.
+
+Replayed item fields also enter the dedicated teacher context as a complete array.
+Changes to those fields require the real Pi, Claude and Codex targets even though
+viewing the memory map itself must remain inference-free.
 
 For service or shared prompt changes, select the real Claude and Codex drives from
 the project skill. Each opens a prepared closed review, submits a miss, checks its
