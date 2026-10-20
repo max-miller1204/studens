@@ -1,3 +1,5 @@
+import { StateReadError, stateReadError } from "../state-errors.ts";
+import { invalidateActivity } from "../server/events.ts";
 /** Private browser lesson requests. Never expose authoring documents over HTTP. */
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -39,7 +41,7 @@ export function lessonRequests(classroom: string): LessonRequest[] {
   try {
     const target = file(classroom);
     if (fs.existsSync(target) && !safeStaticFile(classroomDir(classroom), path.basename(target)))
-      throw new Error("Lesson request state cannot be a symlink.");
+      throw new StateReadError("Lesson request state cannot be a symlink.");
     const state = JSON.parse(fs.readFileSync(file(classroom), "utf8"));
     if (
       state.version !== 1 ||
@@ -63,7 +65,7 @@ export function lessonRequests(classroom: string): LessonRequest[] {
     return state.requests;
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === "ENOENT") return [];
-    throw error;
+    throw stateReadError(`lesson request state ${classroom}/.lesson-requests.json`, error);
   }
 }
 export function saveLessonRequests(classroom: string, requests: LessonRequest[]): void {
@@ -73,7 +75,7 @@ export function saveLessonRequests(classroom: string, requests: LessonRequest[])
   for (const candidate of [target, `${target}.tmp`]) {
     try {
       if (fs.lstatSync(candidate).isSymbolicLink())
-        throw new Error("Lesson request state cannot be a symlink.");
+        throw new StateReadError("Lesson request state cannot be a symlink.");
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
     }
@@ -82,6 +84,7 @@ export function saveLessonRequests(classroom: string, requests: LessonRequest[])
     mode: 0o600,
   });
   fs.renameSync(`${target}.tmp`, target);
+  invalidateActivity(classroom);
 }
 export function updateLessonRequest(
   request: LessonRequest,

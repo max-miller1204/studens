@@ -6,6 +6,7 @@ import { verifyCodeReview } from "./e2e-code-review.ts";
 import { verifySettingsBrowser } from "./e2e-settings-browser.ts";
 import { verifyReviewControls } from "./e2e-review-controls.ts";
 import { verifyDailyReview } from "./e2e-daily-review.ts";
+import { verifyActivityBrowser } from "./e2e-activity-browser.ts";
 import { verifyReviewCards } from "./e2e-review-cards.ts";
 import { verifyReteachBrowser } from "./e2e-reteach-browser.ts";
 import { verifyNextLessonBrowser } from "./e2e-next-lesson-browser.ts";
@@ -16,6 +17,7 @@ import { verifyFoldersBrowser } from "./e2e-folders-browser.ts";
 import { verifyCourseMapBrowser } from "./e2e-course-map-browser.ts";
 import { verifyResumeBrowser } from "./e2e-resume-browser.ts";
 import { verifyCardBrowser } from "./e2e-card-browser.ts";
+import { verifyQuestionErrorsBrowser } from "./e2e-question-errors-browser.ts";
 import { verifyReviewBrowser } from "./e2e-review-browser.ts";
 /** Check browser state against the real HTTP server and grading tool. */
 import { browserRegression } from "./browser-regression.mjs";
@@ -228,10 +230,9 @@ try {
   const url = `${base}/c/rust/001-ownership?control=${address.port}${artifacts ? `&artifacts=${encodeURIComponent(artifacts)}` : ""}`;
   await playwright(session, fixture.root, "open", url);
   browserOpen = true;
-  const browserResult = await playwright(
+  const browserResult = await playwrightCode<{ dialogs: unknown[]; passed: string[] }>(
     session,
     fixture.root,
-    "run-code",
     `async page => {
       const highlightText = ${highlightText.toString()};
       const browserRegression = ${browserRegression.toString()};
@@ -289,7 +290,7 @@ try {
   )
     throw new Error("The reflection draft was not stored on disk before reload.");
   if (artifacts) {
-    fs.writeFileSync(path.join(artifacts, "browser-result.json"), browserResult);
+    fs.writeFileSync(path.join(artifacts, "browser-result.json"), JSON.stringify(browserResult));
     fs.writeFileSync(
       path.join(artifacts, "disk-draft-history.json"),
       JSON.stringify(draftHistory, null, 2),
@@ -356,6 +357,7 @@ try {
       JSON.stringify(
         {
           error: String(error),
+          browserDiagnostics: (error as { browserDiagnostics?: unknown }).browserDiagnostics,
           drafts: store.readDrafts("rust", "001-ownership"),
           annotations: store.listAnnotations("rust", "001-ownership"),
           reflections: store.listReflections("rust", "001-ownership"),
@@ -390,6 +392,7 @@ await verifyReviewBrowser(artifacts ? path.join(artifacts, "review") : null);
 if (artifacts) fs.mkdirSync(path.join(artifacts, "resume"), { recursive: true });
 await verifyResumeBrowser(artifacts ? path.join(artifacts, "resume") : null);
 await verifyCardBrowser(artifacts ? path.join(artifacts, "cards") : null);
+await verifyQuestionErrorsBrowser(artifacts ? path.join(artifacts, "question-errors") : null);
 
 await verifyFoldersBrowser(artifacts ? path.join(artifacts, "folders") : null);
 
@@ -411,3 +414,4 @@ await verifyDailyReview(artifacts ? path.join(artifacts, "daily-review") : null)
 await verifyPracticeBrowser(artifacts ? path.join(artifacts, "practice") : null);
 
 await verifyFadedBrowser(artifacts ? path.join(artifacts, "faded") : null);
+await verifyActivityBrowser(artifacts ? path.join(artifacts, "activity") : null);

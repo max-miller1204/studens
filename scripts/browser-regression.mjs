@@ -10,6 +10,9 @@ export async function browserRegression(page, highlightText) {
   };
   const observer = await page.context().newPage();
   const errors = [];
+  const dialogs = [];
+  for (const tab of [page, observer])
+    tab.on("dialog", (d) => dialogs.push({ type: d.type(), message: d.message(), url: tab.url() }));
   for (const tab of [page, observer]) tab.on("pageerror", (error) => errors.push(error.message));
   await observer.goto(page.url());
   await observer.evaluate(async () => {
@@ -571,11 +574,16 @@ export async function browserRegression(page, highlightText) {
     sentStimulus = route.request().postDataJSON().answers[0].stimulus;
     await route.abort();
   });
-  page.once("dialog", (dialog) => dialog.dismiss());
   const diagramQuiz = page.locator('form[data-quiz-id="diagram-check"]');
   await diagramQuiz.locator('input[type="text"]').fill("Owner");
   await diagramQuiz.getByRole("button", { name: "Submit for grading", exact: true }).click();
   for (let i = 0; i < 50 && sentStimulus === null; i++) await page.waitForTimeout(100);
+  await page.waitForFunction(() => {
+    const form = document.querySelector('form[data-quiz-id="diagram-check"]');
+    return (
+      form?.dataset.state === "fresh" && form.querySelector(".cl-quiz-status")?.textContent.trim()
+    );
+  });
   await page.unroute("**/api/quiz/submit");
   assert(
     sentStimulus ===
@@ -717,7 +725,9 @@ export async function browserRegression(page, highlightText) {
   await screenshot("math-reference");
   assert(errors.length === 0, `Browser errors: ${errors.join("; ")}`);
   await observer.close();
+  assert(dialogs.length === 0, `Unexpected native dialogs: ${JSON.stringify(dialogs)}`);
   return {
+    dialogs,
     passed: [
       "self-explanation Save and draft reload",
       "saved card follow-up draft reload",

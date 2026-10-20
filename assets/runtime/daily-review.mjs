@@ -140,6 +140,12 @@ export function initDailyReview(control) {
       busy = false;
     }
   });
+  window.addEventListener("cl-activity-retried", (event) => {
+    if (event.detail.kind === "daily" && (!id || event.detail.id === id)) {
+      navigate = true;
+      check();
+    }
+  });
   window.addEventListener("pagehide", () => {
     clearTimeout(timer);
     navigate = false;

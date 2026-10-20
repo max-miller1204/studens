@@ -7,6 +7,7 @@ The learner reads a lesson and asks about text without leaving the page.
 - Highlight lesson prose or a quiz question and its options.
 - Read a card answer and send a card follow-up.
 - Restore saved cards and unsent text after reload.
+- Keep rejected questions on the page with their specific error and an explicit resend.
 - Save an ungraded self-explanation and restore its text and draft after reload.
 - Open glossary definitions. Draw diagrams and math. Change the theme.
 
@@ -24,6 +25,17 @@ The learner reads a lesson and asks about text without leaving the page.
 Run `npm run verify -- browser --artifacts /tmp/studens-reading`.
 
 The suite selects text with the mouse. It uses `.cl-ask-pill`, `[data-cl-question]`, and `[data-cl-followup]`. It checks saved annotations, draft restoration, and card placement after the quiz question. Asking about an option must not select it. Sending a follow-up must not submit the quiz.
+
+The `question-errors/` fixture rejects the real ask and follow-up POSTs through the
+service ownership guard. Each specific HTTP error must appear in its form's alert,
+with the typed question and draft retained through reload. Rejection must leave the
+annotation bytes unchanged and wake no teacher. Keyboard submission while a response
+is held must not duplicate the POST. Restoring ownership does not resend; selecting
+`Ask your teacher` or the original card's `Ask` accepts exactly one request each.
+Immediate answer SSE must remain visible when the older pending HTTP response arrives.
+The original answer stays unchanged and no quiz or grade is created. Inspect
+`question-errors/result.json` and its matched mobile/light and desktop/dark errors.
+The fixture records native dialogs and requires none; it never dismisses one.
 
 The suite fills `form.cl-reflect textarea` and selects `Save`. Saved text must remain
 after reload; an unsent reflection draft must survive pretest release without waking
