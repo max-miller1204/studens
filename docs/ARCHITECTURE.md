@@ -31,6 +31,10 @@ provider catalog, and effective model settings. Configuration is read into memor
 retry, compaction, and cache warming are disabled for these service turns, without editing global
 settings. A single structured-output tool returns a plan to the service and cannot
 write learner data. Its persisted Pi session lives in the private service directory.
+Dedicated in-memory settings clear package, extension, skill, prompt, and theme
+sources before SDK resource resolution, which can install packages before applying
+loader flags. Account/provider/model/thinking settings are retained; global and
+project configuration files remain unchanged.
 Initiating Pi chat context, extensions, skills, and project context files are not
 inherited. The dedicated teacher receives saved classroom context and each durable
 request instead. Initiating chat remains the entry point for lesson authoring.

@@ -69,6 +69,14 @@ actual Pi classroom command and browser reply; require the same session, preserv
 old transcript bytes and completed requests, unchanged grade files, visible reload,
 and owned cleanup. Disable cache warming as well as retries and compaction.
 
+For Pi SDK resource/configuration changes, run
+`npx vitest run test/pi-teacher-resources.test.ts`. This actual-SDK loading contract
+configures global and project package/resource sentinels. Positive controls intercept
+the SDK installer before execution; dedicated loading must make zero install attempts,
+load no external resources, expose only the plan tool, retain model/thinking settings,
+and preserve configuration/auth bytes. It uses no model turn or real account and
+keeps package resolution enabled, so offline mode cannot hide a discovery failure.
+
 For a changed real Pi path, run `npm run verify -- pi`. For shared service or prompt changes, run `npm run verify -- claude`, then `npm run verify -- codex`. Add `--artifacts <directory>` to retain host evidence. These drives ask a question, submit a wrong answer, and reply in the panel. They check that the quiz score remains unchanged.
 
 The service reply fixture reports no help. The drives require the actual reply and reported assistance in a saved retrieval check. They require a linked learning record and keep immediate correction outside retained evidence. Inspect `stored-teacher-state.json` and the retained `classroom/` files.

@@ -109,7 +109,8 @@
   "images": "Matching base/after desktop/mobile light/dark UI captures are fixtures; the additional two captures are actual Pi runtime. See provenance.json.",
   "recipeChanges": [
     "Shared Pi target uses persistent service; lifecycle recovery/ownership/model-selection checks; Pi phone route drive; actual Pi reflection/card-follow-up steps.",
-    "Production dependency/launcher recipe inspects CI, runs npm ci/default verify/audit, compares actual installed versions, checks production-only real startup, and continues a historical Pi session."
+    "Production dependency/launcher recipe inspects CI, runs npm ci/default verify/audit, compares actual installed versions, checks production-only real startup, and continues a historical Pi session.",
+    "Actual SDK global/project resource-package sentinels prove zero installs and plan-only tools before account/model inference."
   ],
   "runtimePrerequisite": {
     "declaredMinimum": "22.19.0",
@@ -239,5 +240,17 @@
     "tests": 823,
     "files": 59,
     "verdict": "PASS"
+  },
+  "resourceIsolation": {
+    "finding": "SDK1.0.1 resolves configured packages before applying no-resource flags. Parent intercepted a user-scope install; no installer/network executed.",
+    "fix": "Dedicated in-memory packages/extensions/skills/prompts/themes are empty before actual SDK loading. Account/provider/model/thinking preserved. Shared piTeacherResources constructor is used by the adapter and loading contract; no offline fallback or global edits.",
+    "contract": "npx vitest run test/pi-teacher-resources.test.ts",
+    "verdict": "PASS",
+    "rawReceipt": "/tmp/studens-issue39/resource-isolation-contract-corrected-command.json",
+    "positiveControls": "Both configured global and project package sentinels reach the blocked SDK installer, then dedicated settings produce zero attempts; no installer/network/model executed.",
+    "observed": "No external extensions/skills/prompts/themes/context or tool escape; only submit_teacher_plan active. Global/project model and thinking selection retained and settings/auth bytes unchanged.",
+    "sourceHash": "4e7aef597041fdf2d9d13d6cf1e6861a9d29f34fee188cf2ea786dd14cd46e52",
+    "receiptReuse": "SDK dependencies/launcher/model-turn/queue code unchanged after85991d0; only unused package/resource filtering plus loader-constructor extraction. Patched real Pi/lifecycle, historical continuation and clean startup were sterile-config runs; parent explicitly permits reusing them after this proven boundary. No new inference or new bootstrap claimed for filtering alone.",
+    "retainedFailure": "First test used unsupported Vitest SSR import.meta.resolve before loading SDK; corrected to actual SDK file URL, retained logs and cleaned owned scratch fixture. Preliminary runPi probe stopped at unauthenticated model catalog and is not boundary proof."
   }
 }

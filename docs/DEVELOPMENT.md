@@ -27,7 +27,7 @@ and [brace-expansion advisory](https://github.com/juliangruber/brace-expansion/s
 The lock contains undici 8.10.2 and brace-expansion 5.0.12. Node remains 22.19+.
 Cache warming, automatic retries, and compaction are disabled for dedicated teacher
 turns. The initiating Pi CLI is a separate installation; fresh migration checks use
-checkout's local CLI 1.0.1 through npm's PATH. Earlier CLI/SDK 0.83.0 receipts describe their original source, not this
+the checkout's local CLI 1.0.1 through npm's PATH. Earlier CLI/SDK 0.83.0 receipts describe their original source, not this
 patched dependency boundary. Saved version 3 Pi conversations remain readable.
 
 ## Release versions

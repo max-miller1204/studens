@@ -13,7 +13,7 @@ import { privateStatePath, safeStaticFile } from "./paths.ts";
 import type { ModelCatalog } from "./teacher-models.ts";
 import type { TeacherIdentity } from "./teacher.ts";
 
-async function configuration(cwd: string) {
+export function piTeacherResources(cwd: string) {
   const source = SettingsManager.create(cwd, getAgentDir());
   const errors = source.drainErrors();
   if (errors.length)
@@ -24,7 +24,28 @@ async function configuration(cwd: string) {
     retry: { enabled: false, provider: { maxRetries: 0 } },
     compaction: { enabled: false },
     cacheWarming: "off",
+    // Resource discovery precedes the SDK loader flags and can install packages.
+    packages: [],
+    extensions: [],
+    skills: [],
+    prompts: [],
+    themes: [],
   });
+  const loader = new DefaultResourceLoader({
+    cwd,
+    agentDir: getAgentDir(),
+    settingsManager: settings,
+    noExtensions: true,
+    noSkills: true,
+    noPromptTemplates: true,
+    noThemes: true,
+    noContextFiles: true,
+  });
+  return { settings, loader };
+}
+
+async function configuration(cwd: string) {
+  const { settings, loader } = piTeacherResources(cwd);
   const runtime = await ModelRuntime.create({
     authPath: path.join(getAgentDir(), "auth.json"),
     modelsPath: path.join(getAgentDir(), "models.json"),
@@ -35,7 +56,7 @@ async function configuration(cwd: string) {
     throw new Error(
       "Pi has no configured provider/model. Select one in Pi, then retry explicitly.",
     );
-  return { runtime, settings, configuredModel: `${provider}/${id}` };
+  return { runtime, settings, loader, configuredModel: `${provider}/${id}` };
 }
 export async function piModels(cwd: string): Promise<ModelCatalog> {
   const { runtime, configuredModel } = await configuration(cwd);
@@ -57,7 +78,7 @@ export async function runPi(
   signal?: AbortSignal,
   active?: (model: string) => void,
 ): Promise<unknown> {
-  const { runtime, settings, configuredModel } = await configuration(cwd);
+  const { runtime, settings, loader, configuredModel } = await configuration(cwd);
   const selected = identity.requestedModel ?? configuredModel;
   const split = selected.indexOf("/");
   if (split < 1 || split === selected.length - 1)
@@ -95,16 +116,6 @@ export async function runPi(
     manager = SessionManager.open(manager.getSessionFile()!, dir, cwd);
     save(path.basename(manager.getSessionFile()!));
   }
-  const loader = new DefaultResourceLoader({
-    cwd,
-    agentDir: getAgentDir(),
-    settingsManager: settings,
-    noExtensions: true,
-    noSkills: true,
-    noPromptTemplates: true,
-    noThemes: true,
-    noContextFiles: true,
-  });
   await loader.reload();
   let output: unknown;
   let count = 0;
