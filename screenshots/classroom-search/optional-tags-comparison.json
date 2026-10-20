@@ -1,0 +1,57 @@
+[
+  {
+    "name": "base",
+    "root": "/home/maxmiller/studens",
+    "status": 200,
+    "firstVisible": true,
+    "secondVisible": true,
+    "sourceUnchanged": true,
+    "sourceFiles": {
+      "src/server.ts": "3d63fc1dc5dd9e08cccf6b68f2d097f843b1e447c1d59bccfd7e639039bb9adf",
+      "src/server/classrooms.ts": "527129b3da4380948e8cd4db7e3686eb6caa98b369e12957ee8434dbe51e34ef"
+    },
+    "modelCalls": 0
+  },
+  {
+    "name": "search-before",
+    "root": "/home/maxmiller/.t3/worktrees/studens/t3-67f9e2a1",
+    "status": 500,
+    "firstVisible": false,
+    "secondVisible": false,
+    "sourceUnchanged": true,
+    "sourceFiles": {
+      "src/server.ts": "78fd99b366f03bf951bc12dc7d77404eb78c212c652d6867bf8fd408dc453b5c",
+      "src/server/classrooms.ts": "79a0327821e3836745dd45dd865a685a33b65ed1ef66ae4f6b277d8fc1387e23",
+      "src/search-passages.ts": "727f15dca04e087c50ce80f31a10c071002e54b3afe3dcb32cc3b8b3e1514576"
+    },
+    "modelCalls": 0
+  },
+  {
+    "root": "/home/maxmiller/.t3/worktrees/studens/t3-67f9e2a1",
+    "status": 200,
+    "firstVisible": true,
+    "secondVisible": true,
+    "sourceUnchanged": true,
+    "sourceFiles": {
+      "src/server.ts": "78fd99b366f03bf951bc12dc7d77404eb78c212c652d6867bf8fd408dc453b5c",
+      "src/server/classrooms.ts": "79a0327821e3836745dd45dd865a685a33b65ed1ef66ae4f6b277d8fc1387e23",
+      "src/search-passages.ts": "658338b948af4975a7b2cd10ac52ba9414c89ae69bd768e882554c728cebd049"
+    },
+    "modelCalls": 0,
+    "name": "search-after-optional-repair"
+  },
+  {
+    "root": "/home/maxmiller/.t3/worktrees/studens/t3-67f9e2a1",
+    "status": 200,
+    "firstVisible": true,
+    "secondVisible": true,
+    "sourceUnchanged": true,
+    "sourceFiles": {
+      "src/server.ts": "78fd99b366f03bf951bc12dc7d77404eb78c212c652d6867bf8fd408dc453b5c",
+      "src/server/classrooms.ts": "79a0327821e3836745dd45dd865a685a33b65ed1ef66ae4f6b277d8fc1387e23",
+      "src/search-passages.ts": "85829ae3bbcab347dae340818ac92ac85f98c43fcf39fb7d2a3ce5bec7840de4"
+    },
+    "modelCalls": 0,
+    "name": "search-after-parse5"
+  }
+]
