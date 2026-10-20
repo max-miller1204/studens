@@ -156,6 +156,59 @@ it("keeps public option boundaries while preserving inline reading and dropping 
   expect(nodeText(contentTree(listed))).toBe("OneTwo");
   expect(portableMarkdown(listed)).toBe("- One\n- Two\n");
 });
+it("keeps generic and associated public control labels inside their original question", () => {
+  const controls = [
+    '<label>Size<input class="cl-number" type="text"></label><label>Unit<input class="cl-unit" type="text"></label>',
+    '<label>Size<input type="number"></label><label>Unit<input></label>',
+    '<label for="size">Size</label><input id="size"><label for="unit">Unit</label><select id="unit"><option>PRIVATE_OPTION</option></select>',
+    '<label>Size<textarea>PRIVATE_DRAFT</textarea></label><label for="unit">Unit</label><textarea id="unit">PRIVATE_DRAFT</textarea>',
+  ];
+  for (const control of controls) {
+    const html = safeContent(
+      `<ol><li><p>Quantity?</p>${control}</li><li><p>Neighbor?</p></li></ol>`,
+      () => null,
+    );
+    expect(html).not.toMatch(/input|textarea|select|option|label|PRIVATE_|class=|id=/);
+    const tree = contentTree(
+      new Marked().parse(portableMarkdown(html), { async: false }) as string,
+    );
+    const all = (n: ContentNode): ContentNode[] => [n, ...n.children.flatMap(all)];
+    const questions = all(tree)
+      .find((n) => n.tag === "ol")!
+      .children.filter((n) => n.tag === "li");
+    expect(questions).toHaveLength(2);
+    expect(questions.map(nodeText)).toEqual([
+      expect.stringMatching(/Quantity\?\s+Size\s+Unit/),
+      expect.stringContaining("Neighbor?"),
+    ]);
+    expect(
+      questions[0].children.filter((n) => n.tag === "p").map((n) => nodeText(n).trim()),
+    ).toEqual(["Quantity?", "Size", "Unit"]);
+  }
+  const inline = 'a<label for="missing"><em>b</em></label><code>c</code>d';
+  expect(safeContent(inline, () => null)).toBe("a<em>b</em><code>c</code>d");
+  expect(
+    safeContent(
+      'a<label for="x"><em>b</em></label><template><input id="x"></template><code>c</code>d',
+      () => null,
+    ),
+  ).toBe("a<em>b</em><code>c</code>d");
+  expect(
+    safeContent(
+      'a<label for="x"><em>b</em></label><input id="x" hidden><code>c</code>d',
+      () => null,
+    ),
+  ).toBe("a<em>b</em><code>c</code>d");
+  for (const hidden of [
+    '<input type="hidden">',
+    "<span hidden><input></span>",
+    "<template><input></template>",
+  ]) {
+    expect(safeContent(`a<label><em>b</em>${hidden}</label><code>c</code>d`, () => null)).toBe(
+      "a<em>b</em><code>c</code>d",
+    );
+  }
+});
 it("round-trips question ownership, continuation blocks and nested lists through Markdown", () => {
   const source = `<ol>${Array.from(
     { length: 12 },
