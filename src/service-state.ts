@@ -1,3 +1,4 @@
+import { StateReadError, stateReadError } from "./state-errors.ts";
 /** Durable requests and teacher ownership. This file is never served as an asset. */
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -73,7 +74,7 @@ export function readTeacherState(classroom: string): TeacherState | null {
       ) ||
       !Array.isArray(state.messages)
     )
-      throw new Error(`Invalid teacher state for ${classroom}.`);
+      throw new StateReadError(`Invalid teacher state for ${classroom}.`);
     if (state.identity.requestedModel !== undefined) modelSelection(state.identity.requestedModel);
     if (
       state.identity.selectionRevision !== undefined &&
@@ -84,7 +85,7 @@ export function readTeacherState(classroom: string): TeacherState | null {
     return state;
   } catch (err) {
     if ((err as NodeJS.ErrnoException).code === "ENOENT") return null;
-    throw err;
+    throw stateReadError(`teacher state ${classroom}/.teacher.json`, err);
   }
 }
 export function saveTeacherState(classroom: string, state: TeacherState): void {

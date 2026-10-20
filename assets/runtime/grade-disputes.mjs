@@ -5,6 +5,28 @@ import { questionGradeLabel } from "./grade.mjs";
 export function createGradeDisputes(config) {
   let saved = [];
   const states = new Map();
+  function disputeFragment() {
+    try {
+      const id = decodeURIComponent(location.hash.slice(1));
+      return id.startsWith("cl-dispute-") ? id : null;
+    } catch {
+      return null;
+    }
+  }
+  let pendingFragment = disputeFragment();
+  function revealFragment() {
+    if (!pendingFragment) return;
+    const target = document.getElementById(pendingFragment);
+    if (!target?.classList.contains("cl-dispute")) return;
+    // The browser could not scroll before the saved history arrived. Consume
+    // this navigation once; normal state refreshes must leave the reader alone.
+    pendingFragment = null;
+    target.scrollIntoView({ block: "center" });
+  }
+  window.addEventListener("hashchange", () => {
+    pendingFragment = disputeFragment();
+    revealFragment();
+  });
   function updateTeacher(teacher) {
     saved = teacher?.disputes ?? [];
     for (const [form, state] of states) render(form, state);
@@ -50,6 +72,7 @@ export function createGradeDisputes(config) {
         const item = document.createElement("div");
         item.className = "cl-dispute";
         item.dataset.disputeId = d.id;
+        item.id = `cl-dispute-${d.id}`;
         const title = document.createElement("p");
         const labels = {
           accepted: "Credit revised",
@@ -143,6 +166,7 @@ export function createGradeDisputes(config) {
       composer.append(toggle, hint, label, send, error);
       section.append(composer);
     }
+    revealFragment();
   }
   function history(form, grades = []) {
     form.querySelector(".cl-grade-history")?.remove();

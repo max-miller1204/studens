@@ -1,3 +1,5 @@
+import { stateReadError } from "./state-errors.ts";
+import { invalidateActivity } from "./server/events.ts";
 /** Save browser review requests and publish only complete review documents. */
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -108,7 +110,7 @@ export function reviewSessions(classroom: string): ReviewSession[] {
     return saved.requests;
   } catch (err) {
     if ((err as NodeJS.ErrnoException).code === "ENOENT") return [];
-    throw err;
+    throw stateReadError(`review request state ${classroom}/.reviews.json`, err);
   }
 }
 function save(classroom: string, requests: ReviewSession[]): void {
@@ -118,6 +120,7 @@ function save(classroom: string, requests: ReviewSession[]): void {
     mode: 0o600,
   });
   fs.renameSync(`${target}.tmp`, target);
+  invalidateActivity(classroom);
 }
 export function updateReview(
   session: ReviewSession,

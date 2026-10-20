@@ -1,4 +1,5 @@
 /** The lesson entry point: compose feature modules and dispatch saved state and SSE. */
+import { initTeacherActivity } from "./teacher-activity.mjs";
 import { draftId, draftKind } from "./draft.mjs";
 import { initDiagrams } from "./diagrams.mjs";
 import { initLinks } from "./links.mjs";
@@ -44,6 +45,7 @@ function init() {
   document.body.classList.add("cl-lesson-page");
 
   buildHeader();
+  initTeacherActivity(config.classroom);
   // After buildHeader: the toggle it wires up is the button the header just created.
   initTheme();
   initLinks();

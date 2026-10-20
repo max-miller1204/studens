@@ -303,7 +303,7 @@ export async function verifyDailyReview(artifacts: string | null): Promise<void>
       conflict = false;
       fs.unlinkSync(path.join(lessonDir("rust", currentReview("rust")!.lesson), "lesson.html"));
       await code(`
-        await page.getByRole('button',{name:'Retry Rust review',exact:true}).click();
+        await page.locator('.cl-teacher-activity').getByRole('button',{name:/^Retry activity: Preparing your daily review/}).click();
         await page.waitForFunction(()=>document.querySelector('[data-review-active="true"]')?.dataset.state==='fresh');
         for(let i=0;i<2;i++){
           await page.locator('form.cl-quiz:visible input[value="owner"]').check();

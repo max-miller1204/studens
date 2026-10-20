@@ -1,3 +1,5 @@
+import { stateReadError } from "../state-errors.ts";
+import { invalidateActivity } from "../server/events.ts";
 /** Durable cross-classroom selections. Classroom assessment history remains separate. */
 import * as fs from "node:fs";
 import { randomUUID } from "node:crypto";
@@ -34,13 +36,20 @@ export interface DailyReview {
 }
 
 export function dailyReviews(): DailyReview[] {
+  try {
+    return readDailyReviews();
+  } catch (error) {
+    throw stateReadError("daily review state .daily-reviews.json", error);
+  }
+}
+function readDailyReviews(): DailyReview[] {
   const file = privateStatePath(".daily-reviews.json");
   let value;
   try {
     value = JSON.parse(fs.readFileSync(file, "utf8"));
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === "ENOENT") return [];
-    throw new Error(`Cannot read daily review state: ${(error as Error).message}`);
+    throw stateReadError("daily review state .daily-reviews.json", error);
   }
   if (
     value?.version !== 1 ||
@@ -106,6 +115,7 @@ export function saveDailyReview(request: DailyReview): void {
   const temporary = privateStatePath(".daily-reviews.json.tmp");
   fs.writeFileSync(temporary, JSON.stringify({ version: 1, requests }, null, 2), { mode: 0o600 });
   fs.renameSync(temporary, privateStatePath(".daily-reviews.json"));
+  for (const group of request.groups) invalidateActivity(group.classroom);
 }
 
 export function groupSession(group: DailyGroup): ReviewSession | undefined {

@@ -221,7 +221,7 @@ ${progressSection(data)}
 <p><a href="/c/${encodeURIComponent(classroom.name)}/course-map">Course map</a> · <a href="/c/${encodeURIComponent(classroom.name)}/reviews">Review history</a> · <a href="/c/${encodeURIComponent(classroom.name)}/settings">Settings</a></p>
 <section class="cl-section">
   <h2 class="cl-section-title">Lessons</h2>
-  <div class="cl-next-lesson" data-cl-next-lesson="${escapeHtml(classroom.name)}">
+  <div id="cl-next-lesson" class="cl-next-lesson" data-cl-next-lesson="${escapeHtml(classroom.name)}">
     <label for="cl-next-topic">What would you like to learn next? <span>(optional)</span></label>
     <textarea id="cl-next-topic" rows="2" maxlength="2000" placeholder="Let your teacher choose, or suggest a topic"></textarea>
     <div class="cl-next-actions"><button type="button" class="cl-button" data-cl-next-start disabled>Next lesson</button><a data-cl-next-open hidden>Open lesson</a></div>
@@ -309,7 +309,7 @@ function progressSection(data: ClassroomPageData): string {
   ${(data.progress.reteach ?? []).map((item) => `<p class="cl-progress-note">Review paused after repeated misses: ${escapeHtml(item.prompt)} <a href="/c/${escapeHtml(data.classroom.name)}/${escapeHtml(item.lesson)}#cl-reteach">Open short re-teach</a></p>`).join("")}
   ${
     review.total > 0
-      ? `<div class="cl-review-start" data-cl-review="${escapeHtml(data.classroom.name)}" data-due="${review.due}" data-review-size="${DEFAULT_REVIEW_SIZE}">
+      ? `<div id="cl-review" class="cl-review-start" data-cl-review="${escapeHtml(data.classroom.name)}" data-due="${review.due}" data-review-size="${DEFAULT_REVIEW_SIZE}">
     <div class="cl-review-options">
     <label>Review size<select data-cl-review-size>${Array.from(
       { length: MAX_REVIEW_SIZE - 2 },

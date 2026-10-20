@@ -22,6 +22,12 @@ export function createCards({ config, contentRoot, drafts }) {
     }
   }
   const minimised = loadMinimised();
+  window.addEventListener("hashchange", () => {
+    const id = window.location.hash.slice("#cl-question-".length);
+    if (!window.location.hash.startsWith("#cl-question-") || !cards.has(id)) return;
+    openCard(id);
+    cards.get(id).panel.scrollIntoView({ block: "start" });
+  });
   function renderCard(annotation, mark) {
     const existing = cards.get(annotation.id);
     const marks = document.querySelectorAll(`mark[data-annotation-id="${annotation.id}"]`);
@@ -46,14 +52,18 @@ export function createCards({ config, contentRoot, drafts }) {
     cards.set(annotation.id, { annotation, panel, badge, mark: anchorMark });
 
     // A freshly asked question opens; a restored one respects the saved state.
-    if (minimised.has(annotation.id)) minimiseCard(annotation.id);
+    if (minimised.has(annotation.id) && window.location.hash !== `#cl-question-${annotation.id}`)
+      minimiseCard(annotation.id);
     else openCard(annotation.id);
+    if (window.location.hash === `#cl-question-${annotation.id}`)
+      panel.scrollIntoView({ block: "start" });
   }
 
   function createPanel(annotationId, mark) {
     const panel = document.createElement("div");
     panel.className = "cl-card-panel cl-card-inline";
     panel.dataset.annotationId = annotationId;
+    panel.id = `cl-question-${annotationId}`;
     panel.hidden = true;
     panel.innerHTML = `
     <div class="cl-card-head">
@@ -158,9 +168,10 @@ export function createCards({ config, contentRoot, drafts }) {
     const field = form.querySelector("[data-cl-followup]");
     const submit = form.querySelector('button[type="submit"]');
     const question = field.value.trim();
-    if (!question) return;
+    if (!question || submit.disabled) return;
 
     submit.disabled = true;
+    showDraftError(form, "");
     await flushDraft(`followup:${annotationId}`);
     try {
       const response = await fetch(
@@ -175,15 +186,27 @@ export function createCards({ config, contentRoot, drafts }) {
           }),
         },
       );
-      if (!response.ok) throw new Error(await response.text());
       const annotation = await response.json();
+      if (!response.ok)
+        throw new Error(
+          typeof annotation.error === "string"
+            ? annotation.error
+            : `Follow-up request failed (${response.status}).`,
+        );
       field.value = "";
-      renderCard(annotation, cards.get(annotationId)?.mark ?? null);
+      const current = cards.get(annotationId);
+      const incoming = annotation.followUps?.at(-1);
+      const saved = current?.annotation.followUps?.find((turn) => turn.id === incoming?.id);
+      // A saved answer (or a later turn) may arrive over SSE before this
+      // request's pending HTTP snapshot. Keep that newer conversation visible.
+      const newer =
+        saved &&
+        (saved.status !== "pending" ||
+          current.annotation.followUps.length > annotation.followUps.length);
+      renderCard(newer ? current.annotation : annotation, current?.mark ?? null);
     } catch (err) {
       console.error("[classroom] follow-up failed", err);
-      alert(
-        "Could not reach your teacher. Is the session that started the classroom still running?",
-      );
+      showDraftError(form, `${err.message} Your question is kept. Select Ask to send it again.`);
     } finally {
       submit.disabled = false;
     }
