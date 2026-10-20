@@ -457,3 +457,80 @@ it("preserves retirement and the early cap while replaying a revised original ex
   expect(revised.dueAt).toBeLessThanOrEqual(item.dueAt);
   expect(fs.readFileSync(`${f.root}/rust/.review-controls.json`, "utf8")).toBe(controls);
 });
+
+it("revises a completed review without another completion or edits to a saved daily plan", async () => {
+  const { submission, grade } = seed();
+  const lesson = "002-review";
+  for (const file of ["lesson.html", "lesson.json", "quiz/key.json"])
+    f.write(
+      `rust/${lesson}/${file}`,
+      fs.readFileSync(`${f.root}/rust/001-ownership/${file}`, "utf8"),
+    );
+  const items = store.reviewItems("rust");
+  const review = store.createSubmission({
+    ...submission,
+    lesson,
+    kind: "review",
+    answers: submission.answers.map((a) => ({
+      ...a,
+      reviewOf: `001-ownership/check/${a.questionId}`,
+    })),
+  });
+  const firstGrade = applyGrade(review, {
+    score: grade.score,
+    questions: grade.questions,
+    feedbackMarkdown: "Original review grade",
+  });
+  const selected = {
+    id: randomUUID(),
+    classroom: "rust",
+    lesson,
+    owner: "service",
+    ownerPid: process.pid,
+    at: review.submittedAt,
+    items,
+    status: "done",
+  };
+  f.write("rust/.reviews.json", JSON.stringify({ version: 1, requests: [selected] }));
+  const dailyBytes = JSON.stringify({
+    version: 1,
+    requests: [
+      {
+        id: randomUUID(),
+        at: selected.at,
+        owner: "service",
+        groups: [{ classroom: "rust", title: "Rust", plan: selected }],
+      },
+    ],
+  });
+  f.write(".daily-reviews.json", dailyBytes);
+  const { rootReservations, rootWorkload } = await import("../src/review-workload.ts");
+  const originalReservations = rootReservations();
+  const beforeAllowance = rootWorkload(firstGrade.gradedAt + DAY_MS).allowance;
+  const t = teacher(async () => plan("review-dispute"));
+  t.dispute({
+    ...location,
+    lesson,
+    id: "review-dispute",
+    quizId: "check",
+    submissionId: review.id,
+    questionId: "q",
+    gradedAt: firstGrade.gradedAt,
+    reason: "The original review answer already averaged the squares.",
+  });
+  await t.idle();
+  expect(readTeacherState("rust")!.requests.at(-1)).toMatchObject({
+    kind: "dispute",
+    status: "done",
+  });
+  expect(store.listGrades("rust", lesson)).toHaveLength(2);
+  expect(rootReservations()).toEqual(originalReservations);
+  expect(rootWorkload(firstGrade.gradedAt + DAY_MS).allowance).toBe(beforeAllowance);
+  expect(fs.readFileSync(`${f.root}/.daily-reviews.json`, "utf8")).toBe(dailyBytes);
+  expect(
+    store
+      .reviewEvents("rust")
+      .filter((e) => e.attemptId === review.id)
+      .every((e) => e.at === review.submittedAt && e.feedbackAt === firstGrade.gradedAt),
+  ).toBe(true);
+});

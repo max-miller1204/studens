@@ -222,6 +222,14 @@ it("ignores model reroutes from a stale turn in the same resumed thread", async 
 
 it("disables inherited MCP servers, plugins, shell and research on dedicated Codex turns", async () => {
   await runStructured({ backend: "codex" }, "Resolve a grade dispute", f.root, () => {}, schema);
+  expect(messages().find((m) => m.backend === "codex" && m.args).args).toEqual([
+    "app-server",
+    "--stdio",
+    "--disable",
+    "apps",
+    "--disable",
+    "plugins",
+  ]);
   const start = messages().find((m) => m.method === "thread/start");
   expect(start.params).toMatchObject({
     sandbox: "read-only",
@@ -229,7 +237,7 @@ it("disables inherited MCP servers, plugins, shell and research on dedicated Cod
     config: {
       mcp_servers: { inherited: { enabled: false } },
       web_search: "disabled",
-      features: { shell_tool: false, plugins: false },
+      features: { shell_tool: false, plugins: false, apps: false },
     },
   });
 });

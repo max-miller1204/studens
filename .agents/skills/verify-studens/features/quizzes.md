@@ -104,7 +104,17 @@ retirement without another exposure or learning record.
 
 ## Gotchas
 
-The fixture grading tool proves page and storage behavior. It does not prove model grading quality. API attempts from older clients are checked separately from the learner's locked quiz controls. The `feedback claude` and `feedback codex` targets combine a saved closed answer with judgment questions. They require the model to omit the closed question and verify the final score from merged point allocations. Immediate correct answers do not prove retention.
+The fixture grading tool proves page and storage behavior. It does not prove model grading quality. API attempts from older clients are checked separately from the learner's locked quiz controls. The `feedback claude` and `feedback codex` targets combine a saved closed answer with judgment questions. They require the model to omit the closed question and verify the final score from merged point allocations. The uncertain-answer explanation check reads only that question's visible feedback
+and criterion feedback, matching the learner's rendered verdict. It excludes labels,
+descriptions and neighboring answers. For a causal checker repair, use
+`node scripts/e2e-feedback.ts claude /tmp/studens-feedback-replay /absolute/path/to/retained-plan.json`.
+This explicit mode makes no model request, reconstructs a scratch attempt with the
+original plan id, and keeps every point, criterion and machine-merge assertion.
+Inspect `claude-feedback-report.json` for `kind: saved-model-plan-replay`,
+`inference: false`, the exact input hash and both visible criterion explanations.
+The desktop/mobile captures prove their rendering. Preserve the original failed run;
+a replay is neither fresh inference nor recovery of its deleted fixture.
+Immediate correct answers do not prove retention.
 
 Practice feedback is public teaching content, not a graded key. Open reasoning is
 not machine checked; use a reflection or local solution reveal. Practice has no

@@ -5,6 +5,17 @@ import { claudeModels } from "./teacher-models.ts";
 import type { ModelCatalog, ModelChoice } from "./teacher-models.ts";
 import { TeacherDeadline } from "./teacher-deadline.ts";
 
+/** Process-wide discovery precedes per-thread settings; keep apps and plugins off at both boundaries. */
+export const CODEX_TEACHER_ARGS = [
+  "app-server",
+  "--stdio",
+  "--disable",
+  "apps",
+  "--disable",
+  "plugins",
+];
+export const CODEX_TEACHER_FEATURES = { shell_tool: false, plugins: false, apps: false };
+
 export type Backend = "codex" | "claude" | "pi";
 export interface TeacherIdentity {
   backend: Backend;
@@ -290,7 +301,7 @@ async function runCodex(
   saveActiveModel?: (model: string) => void,
   catalogOnly = false,
 ): Promise<unknown> {
-  const child = spawn("codex", ["app-server", "--stdio"], {
+  const child = spawn("codex", CODEX_TEACHER_ARGS, {
     cwd,
     stdio: ["pipe", "pipe", "pipe"],
     signal,
@@ -448,7 +459,7 @@ async function runCodex(
           Object.keys(settings.config?.mcp_servers ?? {}).map((name) => [name, { enabled: false }]),
         ),
         web_search: "disabled",
-        features: { shell_tool: false, plugins: false },
+        features: CODEX_TEACHER_FEATURES,
       },
     };
     const result = identity.sessionId

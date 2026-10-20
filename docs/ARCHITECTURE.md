@@ -40,8 +40,10 @@ inherited. The dedicated teacher receives saved classroom context and each durab
 request instead. Initiating chat remains the entry point for lesson authoring.
 
 Codex dedicated turns use a read-only sandbox with shell and research disabled.
-Explicitly disable every configured MCP server and plugin discovery: an empty MCP map
-alone can merge with inherited servers. Claude dedicated turns use no tools and a
+Explicitly disable every configured MCP server, apps and plugin discovery. Disable
+apps and plugins at process startup as well as in thread settings: per-thread flags
+alone leave the native app catalog available, and an empty MCP map can merge with
+inherited servers. Claude dedicated turns use no tools and a
 strict empty MCP configuration. Pi exposes only its plan-return tool.
 
 One service owns one classrooms root and stable loopback port. Each classroom has
