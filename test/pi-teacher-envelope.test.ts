@@ -4,13 +4,14 @@ import { expect, it, vi } from "vitest";
 import { createAgentSession, ModelRuntime, SessionManager } from "@earendil-works/pi-coding-agent";
 import type { AgentSession } from "@earendil-works/pi-coding-agent";
 import { createAssistantMessageEventStream } from "@earendil-works/pi-ai";
-import type { AssistantMessage, Tool, TranscriptContext } from "@earendil-works/pi-ai";
+import type { AssistantMessage, Tool, TranscriptContext, ToolCall } from "@earendil-works/pi-ai";
 import {
   observePiTeacherRequest,
   piTeacherRequestPrompt,
   piTeacherResources,
   piTeacherTools,
 } from "../src/pi-teacher.ts";
+import { passageAnswerPlan } from "../src/passage-answer.ts";
 import { parseModelPlan, planSchema } from "../src/teacher.ts";
 import { simpleLessonOutput } from "./lesson-output-fixture.ts";
 import { makeFixture } from "./helpers.ts";
@@ -44,43 +45,50 @@ it("sends the current canonical envelope and tool scope after lesson/refill hist
     fs.mkdirSync(path.dirname(file), { recursive: true });
     fs.writeFileSync(file, JSON.stringify(manager.getHeader()) + "\n");
     let id: string | undefined;
-    for (const phase of ["lesson", "refill", "chat", "dispute"] as const) {
-      const schema = planSchema(
+    for (const phase of ["lesson", "ask", "follow-up", "refill", "chat", "dispute"] as const) {
+      const schema: { properties: Record<string, unknown>; required: string[] } = planSchema(
         phase === "lesson"
           ? { operations: ["publish_lesson"], required: true, research: true }
-          : phase === "refill"
-            ? { operations: ["save_review_variants"], required: true }
-            : phase === "dispute"
-              ? { operations: ["resolve_grade_dispute"], required: true, messageRequired: true }
-              : {
-                  operations: ["record_retrieval_check"],
-                  messageRequired: true,
-                  notesAllowed: true,
-                },
+          : phase === "ask" || phase === "follow-up"
+            ? { operations: ["answer_lesson_question"], required: true, response: "passage-answer" }
+            : phase === "refill"
+              ? { operations: ["save_review_variants"], required: true }
+              : phase === "dispute"
+                ? { operations: ["resolve_grade_dispute"], required: true, messageRequired: true }
+                : {
+                    operations: ["record_retrieval_check"],
+                    messageRequired: true,
+                    notesAllowed: true,
+                  },
       );
-      const output =
+      const output: ToolCall["arguments"] =
         phase === "lesson"
           ? simpleLessonOutput
-          : phase === "refill"
+          : phase === "ask" || phase === "follow-up"
             ? {
-                calls: [{ name: "save_review_variants", arguments_json: "{}" }],
-                message: "",
-                learning_record: null,
-                notes_markdown: "",
+                annotation_id: "exact-annotation",
+                answer_markdown: 'Quoted "λ"\n\n```rust\nlet x = "🦀";\n```\nC:\\temp',
               }
-            : phase === "dispute"
+            : phase === "refill"
               ? {
-                  calls: [{ name: "resolve_grade_dispute", arguments_json: "{}" }],
-                  message: "Controlled dispute explanation.",
+                  calls: [{ name: "save_review_variants", arguments_json: "{}" }],
+                  message: "",
                   learning_record: null,
                   notes_markdown: "",
                 }
-              : {
-                  calls: [],
-                  message: "A controlled prose-only reply.",
-                  learning_record: null,
-                  notes_markdown: "",
-                };
+              : phase === "dispute"
+                ? {
+                    calls: [{ name: "resolve_grade_dispute", arguments_json: "{}" }],
+                    message: "Controlled dispute explanation.",
+                    learning_record: null,
+                    notes_markdown: "",
+                  }
+                : {
+                    calls: [],
+                    message: "A controlled prose-only reply.",
+                    learning_record: null,
+                    notes_markdown: "",
+                  };
       const scope = new AbortController(),
         loadout = piTeacherTools(schema, phase === "lesson", scope.signal);
       const priorBytes = fs.readFileSync(file);
@@ -164,6 +172,12 @@ it("sends the current canonical envelope and tool scope after lesson/refill hist
       if (phase === "lesson") expect(text).not.toContain(JSON.stringify(schema));
       else expect(text).toContain(JSON.stringify(schema));
       expect(fs.readFileSync(file).subarray(0, priorBytes.length)).toEqual(priorBytes);
+      if (phase === "ask" || phase === "follow-up") {
+        expect(schema.required).toEqual(["annotation_id", "answer_markdown"]);
+        expect(passageAnswerPlan(loadout.result()).calls).toHaveLength(1);
+        expect([...active.keys()]).toEqual(["submit_teacher_plan"]);
+        expect(text).not.toContain("For public web research use read_lesson_source");
+      }
       if (phase === "chat") {
         expect(schema.required).toEqual(["calls", "message", "learning_record", "notes_markdown"]);
         expect(schema.properties.calls).toEqual(expect.objectContaining({ minItems: 0 }));
