@@ -4,6 +4,7 @@ import { verifyLearnerMarksBrowser } from "./e2e-learner-marks-browser.ts";
 import { verifyStepperPublication } from "./e2e-stepper-publication.ts";
 import { verifyDisputesBrowser } from "./e2e-disputes-browser.ts";
 import { verifyClassroomExportBrowser } from "./e2e-export-browser.ts";
+import { verifyExportTemplateBrowser } from "./e2e-export-template-browser.ts";
 import { verifyExpectedAnswers } from "./e2e-expected-answers.ts";
 import { verifyReviewWorkload } from "./e2e-review-workload.ts";
 import { verifyCriteriaBrowser } from "./e2e-criteria-browser.ts";
@@ -437,4 +438,5 @@ await verifyActivityBrowser(artifacts ? path.join(artifacts, "activity") : null)
 await verifyMemoryMapBrowser(artifacts ? path.join(artifacts, "memory-map") : null);
 
 await verifyClassroomExportBrowser(artifacts ? path.join(artifacts, "export") : null);
+await verifyExportTemplateBrowser(artifacts ? path.join(artifacts, "export-template") : null);
 await verifyLearnerMarksBrowser(artifacts ? path.join(artifacts, "learner-marks") : null);

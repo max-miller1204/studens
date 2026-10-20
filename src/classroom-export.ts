@@ -297,7 +297,7 @@ export function projectClassroom(
             result.omissions.push(`${lessonTitle}: expected answer ${id} is not yet available.`);
             continue;
           }
-          const reading = expectedReading(html, state.quizId, id, answer);
+          const reading = expectedReading(staged.html, state.quizId, id, answer);
           candidates.push({
             relative: relativeHtml,
             source,
