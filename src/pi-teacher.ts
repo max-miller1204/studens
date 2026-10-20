@@ -192,7 +192,10 @@ export function observePiTeacherRequest(
       const detail = result.content
         ?.filter((part) => part.type === "text")
         .map((part) => part.text ?? "")
-        .join("\n");
+        .join("\n")
+        // SDK AJV diagnostics append the complete private plan arguments.
+        // Keep that dump in SDK history, never in the learner-visible error.
+        .split("\n\nReceived arguments:")[0];
       fail(
         new Error(
           `Pi teacher tool ${event.toolName} failed: ${detail || "native SDK tool failure"} Retry explicitly.`,

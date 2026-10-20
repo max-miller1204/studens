@@ -78,7 +78,7 @@ it.each(["invalid", "unknown"])(
                           type: "toolCall" as const,
                           id: "bad",
                           name: kind === "unknown" ? "unregistered_tool" : "submit_teacher_plan",
-                          arguments: {},
+                          arguments: { secret: "private-answer-sentinel" },
                         },
                       ]
                     : []),
@@ -135,12 +135,19 @@ it.each(["invalid", "unknown"])(
           ? /Validation failed.*submit_teacher_plan/s
           : /unregistered_tool not found/;
       expect(() => first.result()).toThrow(expected);
-      expect(saved).toEqual(kind === "invalid" ? [{}] : []);
+      expect(saved).toEqual(kind === "invalid" ? [{ secret: "private-answer-sentinel" }] : []);
+      try {
+        first.result();
+      } catch (error) {
+        expect(String(error)).not.toContain("private-answer-sentinel");
+        expect(String(error)).not.toContain("Received arguments:");
+      }
       expect(session.messages.some((m) => m.role === "toolResult" && m.isError)).toBe(true);
       expect(
         session.messages.some((m) => m.role === "toolResult" && m.toolCallId === "valid"),
       ).toBe(false);
       const failedBytes = fs.readFileSync(file, "utf8");
+      expect(failedBytes).toContain("private-answer-sentinel");
       expect(failedBytes).toContain(kind === "invalid" ? "Validation failed" : "not found");
       unsubscribe();
       unsubscribe = undefined;
