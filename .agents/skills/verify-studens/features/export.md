@@ -7,6 +7,7 @@ The learner takes saved public classroom material into Anki, print, or Markdown.
 - Download a real `.apkg` deck and portable Markdown; open a printable classroom.
 - Keep public documents, notes, learning records, released lessons, glossary and question threads.
 - Preserve Unicode, code line breaks, formulas, Mermaid source and referenced public media.
+- Keep adjacent public radio/checkbox labels separately readable after controls are removed, including inline emphasis and exact Unicode.
 - Keep inline and referenced static SVG labels, nested positioned text spans and exact Unicode; omit hidden and active SVG content.
 - Exclude private keys/plans/variants/drafts/teacher/recovery files and unreleased teaching.
 - Include only already-unlocked expected answers after explicit, off-by-default selection.
@@ -72,10 +73,18 @@ node --input-type=module -e 'import("./scripts/e2e-export-template-browser.ts").
 This controlled fixture submits a real diagnostic, releases its original template,
 then grades choice/multi/order/match/locate answers through lesson controls. Inspect
 `learner.json`, `graded-{off,on}.{md,apkg,pdf}` and `graded-on-print.png`.
+Inspect `*-downloads.json`, `*-markdown-reading.json` and `*-reading.png` for
+the exact public choice/multi labels and non-overlapping text geometry. The source
+uses adjacent labels with no intervening whitespace. Rasterize an actual downloaded
+PDF with `pdftoppm -f 2 -singlefile -scale-to 1500 -png <graded-on.pdf> <page-prefix>`
+and inspect its reading page; expected-answer blocks alone do not prove option readability.
 Two controlled teacher turns create an exact corrective task/reply/check, unlocking
 one numeric miss while a neighboring miss stays locked. Inspect `corrected-*`,
 `*-read-only.json`, `official-import/report.json` and `answer-card.png`. The answer
-cards must use original public labels, preserve GUIDs on reimport and contain no
+and four `*-reading-card.png` captures come from official imported `card.answer()`
+HTML; `card-browser-report.json` checks choice/multi geometry with answers off/on
+before and after correction. Distinct labels must have a visible gap or separate lines.
+Answer cards must use original public labels, preserve GUIDs on reimport and contain no
 private keys, internal option identities, unreleased neighbor or nested inert content.
 Read inventories cover sources, attempts/grades, teacher state, reviews/schedules and
 an unrelated classroom, allowing only deliberate fixture-owner changes. Export reads

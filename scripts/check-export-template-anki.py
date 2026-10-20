@@ -36,6 +36,8 @@ for phase in ['graded', 'corrected']:
             assert c.db.scalar('select count(*) from revlog') == 0
             assert all(c.get_card(i).reps == 0 for i in c.find_cards(''))
             assert all(c.decks.name(c.get_card(i).did).endswith('(gates)') for i in c.find_cards(''))
+            reading = next(c.get_card(i) for i in c.find_cards('') if 'Who releases the resource?</p>' in c.get_note(c.get_card(i).nid).fields[1])
+            (work / (stem + '-reading-card.html')).write_text('<!doctype html><meta charset="utf-8"><style>body{font:18px/1.5 sans-serif;padding:2rem}</style>' + reading.answer())
             with zipfile.ZipFile(package) as z:
                 media = json.loads(z.read('media'))
                 for key, name in media.items():

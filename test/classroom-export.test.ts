@@ -124,6 +124,36 @@ it("reconstructs inert markup and Markdown with code, optional list endings and 
   expect(md).toContain("one\n\nthree `ticks`");
   expect(md).toContain("**this**");
 });
+it("keeps public option boundaries while preserving inline reading and dropping source attributes", () => {
+  const inline = "<p>Read <em>this</em><strong>now</strong>, <code>a+b</code>! café λ.</p>";
+  const label = (type: string, text: string) =>
+    `<label class="PRIVATE_CLASS" onclick="bad()"><span><input type="${type}" value="PRIVATE_KEY"></span>${text}</label>`;
+  for (const type of ["radio", "checkbox"]) {
+    const html = safeContent(
+      inline + label(type, "New <em>owner</em> — café λ") + label(type, "Old binding"),
+      () => null,
+    );
+    expect(html).toBe(
+      inline +
+        "<div><span></span>New <em>owner</em> — café λ</div><div><span></span>Old binding</div>",
+    );
+    const md = portableMarkdown(html);
+    expect(md.startsWith(portableMarkdown(inline))).toBe(true);
+    expect(md).toMatch(/New \*owner\* — café λ\n\s*\nOld binding/);
+    expect(html).not.toMatch(/label|input|PRIVATE|onclick/);
+  }
+  // Ordinary labels and inline neighbors are not option blocks.
+  expect(safeContent("a<label><em>b</em></label><code>c</code>d", () => null)).toBe(
+    "a<em>b</em><code>c</code>d",
+  );
+  // The standard template already puts labels in list items; retain that structure.
+  const listed = safeContent(
+    `<ul><li>${label("radio", "One")}</li><li>${label("radio", "Two")}</li></ul>`,
+    () => null,
+  );
+  expect(nodeText(contentTree(listed))).toBe("OneTwo");
+  expect(portableMarkdown(listed)).toBe("- One\n- Two\n");
+});
 it("serves separate downloads and rejects invalid/private requests without teacher calls", async () => {
   let calls = 0;
   server.setHooks({

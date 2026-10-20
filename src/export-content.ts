@@ -42,6 +42,10 @@ export function nodeText(node: ContentNode): string {
 }
 export type ResourceLink = (value: string, media: boolean) => string | null;
 export function safeContent(source: string, link: ResourceLink): string {
+  const hasOption = (n: ContentNode): boolean =>
+    (n.tag === "input" &&
+      ["radio", "checkbox"].includes(n.attrs.get("type")?.toLowerCase() ?? "")) ||
+    n.children.some(hasOption);
   const render = (n: ContentNode, literal = false): string => {
     if (n.kind === "text") return literal ? escapeHtml(n.text) : mathText(n.text);
     if (n.attrs.has("hidden") || n.attrs.get("aria-hidden") === "true") return "";
@@ -60,6 +64,8 @@ export function safeContent(source: string, link: ResourceLink): string {
     if (n.attrs.has("data-cl-stepper") || classes.includes("cl-stepper"))
       return `<p><em>Interactive widget omitted. Open the source lesson to use its controls.</em></p>`;
     if (n.tag === "svg") return staticSvg(n);
+    // Dropping controls must not join neighboring public option labels.
+    if (n.tag === "label" && hasOption(n)) return `<div>${children()}</div>`;
     if (!allowed.has(n.tag)) return children();
     if (n.tag === "a") {
       const href = link(n.attrs.get("href") ?? "", false);

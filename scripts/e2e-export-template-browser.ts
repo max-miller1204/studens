@@ -14,6 +14,25 @@ import * as store from "../src/store.ts";
 import * as server from "../src/server.ts";
 import { playwright, playwrightCode } from "./playwright.ts";
 const sha = (b: string | Buffer) => createHash("sha256").update(b).digest("hex");
+// The same public reading must remain distinguishable in print, Markdown and imported cards.
+const optionReadingProbe = `async page => page.evaluate(() => {
+  const pairs = [['New owner — café λ','Old binding'],['First resource','Second resource']];
+  return pairs.map(labels => {
+    const boxes = labels.map(label => {
+      const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+      let node; while(node = walker.nextNode()) {
+        const start = node.textContent.indexOf(label);if(start < 0) continue;
+        const range = document.createRange();range.setStart(node,start);range.setEnd(node,start+label.length);
+        const r = range.getBoundingClientRect();
+        if(r.width > 0 && r.height > 0) return {text:range.toString(),x:r.x,y:r.y,width:r.width,height:r.height};
+      }
+      throw new Error('Public option is not separately readable: '+label);
+    });
+    const [a,b] = boxes;
+    if(!(b.y >= a.y+a.height || (b.x > a.x+a.width+0.5 && b.y === a.y))) throw new Error('Public option boundaries join or overlap');
+    return boxes;
+  });
+})`;
 const hashes = (root: string) =>
   Object.fromEntries(
     fs
@@ -100,7 +119,9 @@ export async function verifyExportTemplateBrowser(artifacts: string | null): Pro
           if(/CANARY|key-(choice|multi|order|left|right|segment)|731987654/.test(html))throw new Error('Print leaked private or inert content');
           if((await print.getByRole('heading',{name:'Expected answer',exact:true}).count()>0)!==answers)throw new Error('Print answer consent mismatch');
           if(answers){await print.getByText('New owner — café λ',{exact:true}).last().waitFor();await print.getByText('Resource → New binding',{exact:false}).waitFor();}
-          if(await print.locator('form,input,button').count())throw new Error('Print retained controls');await print.emulateMedia({media:'print'});await print.pdf({path:prefix+'.pdf',format:'A4',printBackground:true,outline:true});await print.close();
+          if(await print.locator('form,input,button').count())throw new Error('Print retained controls');await print.emulateMedia({media:'print'});await print.pdf({path:prefix+'.pdf',format:'A4',printBackground:true,outline:true});
+          const boundaries=await (${optionReadingProbe})(print);outputs.push({answers,format:'print',boundaries});
+          await print.emulateMedia({media:'screen'});await print.getByText('Released teaching',{exact:true}).scrollIntoViewIfNeeded();await print.screenshot({path:prefix+'-reading.png'});await print.close();
           for(const [label,ext] of [['Download Markdown','md'],['Download Anki deck','apkg']]){const pending=page.waitForEvent('download');await page.getByRole('button',{name:label,exact:true}).click();const d=await pending;await d.saveAs(prefix+'.'+ext);if(await d.failure())throw new Error(await d.failure());outputs.push({answers,ext,file:prefix+'.'+ext});}
         }
         await page.reload();if(await page.getByRole('checkbox',{name:'Include answers already unlocked in Studens',exact:true}).isChecked())throw new Error('Consent survived reload');return outputs;
@@ -155,10 +176,13 @@ export async function verifyExportTemplateBrowser(artifacts: string | null): Pro
           `<!doctype html><meta charset="utf-8"><style>body{font:18px/1.5 sans-serif;padding:2rem}pre{white-space:pre-wrap}</style>${renderMarkdown(md)}`,
         );
       }
-      await playwrightCode(
-        session,
-        out,
-        `async page=>{await page.goto('file://'+${JSON.stringify(out + "/" + phase + "-on.html")});await page.getByText('New owner — café λ',{exact:true}).last().waitFor();await page.screenshot({path:${JSON.stringify(out + "/" + phase + "-markdown.png")},fullPage:true});return {rendered:true};}`,
+      save(
+        phase + "-markdown-reading",
+        await playwrightCode(
+          session,
+          out,
+          `async page=>{const readings=[];for(const consent of ['off','on']){await page.goto('file://'+${JSON.stringify(out + "/" + phase)}+'-'+consent+'.html');readings.push({consent,boundaries:await (${optionReadingProbe})(page)});}await page.screenshot({path:${JSON.stringify(out + "/" + phase + "-markdown.png")},fullPage:true});return {rendered:true,readings};}`,
+        ),
       );
       return result;
     };
@@ -240,7 +264,12 @@ export async function verifyTemplateImportedCardBrowser(out: string): Promise<vo
   const files = new Set(fs.readdirSync(out));
   const listener = http.createServer((req, res) => {
     const file = (req.url ?? "").slice(1);
-    if (!files.has(file) || !/^(answer-card\.html|_studens-mermaid\.min\.js)$/.test(file)) {
+    if (
+      !files.has(file) ||
+      !/^(answer-card\.html|(?:graded|corrected)-(?:off|on)-reading-card\.html|_studens-mermaid\.min\.js)$/.test(
+        file,
+      )
+    ) {
       res.writeHead(404);
       res.end();
       return;
@@ -265,7 +294,9 @@ export async function verifyTemplateImportedCardBrowser(out: string): Promise<vo
       const answer=page.locator('pre');await answer.waitFor();const text=await answer.innerText();if(text!=='New owner — café λ')throw new Error('Official imported answer lost original label');
       const box=await answer.boundingBox();if(!box||box.width<=0||box.height<=0)throw new Error('Imported answer did not render');
       if(/CANARY|key-choice/.test(await page.locator('body').innerText()))throw new Error('Private identity in imported answer');
-      await page.screenshot({path:${JSON.stringify(path.join(out, "answer-card.png"))},fullPage:true});return {text,box,scope:'Official core card.answer HTML in Chromium; no Anki desktop/mobile UI'};
+      await page.screenshot({path:${JSON.stringify(path.join(out, "answer-card.png"))},fullPage:true});
+      const readings=[];for(const phase of ['graded','corrected'])for(const consent of ['off','on']){const stem=phase+'-'+consent;await page.goto(${JSON.stringify(`http://127.0.0.1:${port}/`)}+stem+'-reading-card.html');readings.push({stem,boundaries:await (${optionReadingProbe})(page)});await page.screenshot({path:${JSON.stringify(out + "/")}+stem+'-reading-card.png',fullPage:true});}
+      return {text,box,readings,scope:'Official core card.answer HTML in Chromium; no Anki desktop/mobile UI'};
     }`,
     );
     fs.writeFileSync(path.join(out, "card-browser-report.json"), JSON.stringify(result, null, 2));
