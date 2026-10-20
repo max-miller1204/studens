@@ -1,0 +1,370 @@
+{
+  "base": "67092d07d143050caa6648de5a8280164ce05f96",
+  "afterSource": {
+    "base": "67092d07d143050caa6648de5a8280164ce05f96",
+    "head": "269973315a22dd80358f30a601bbb4fb7cbf79ab",
+    "tree": "a5103b30671f23d6ba93542e1f60ed311551a0c0",
+    "range": "67092d07d143050caa6648de5a8280164ce05f96..269973315a22dd80358f30a601bbb4fb7cbf79ab",
+    "commitCount": 3,
+    "recordedAt": "2026-10-20T06:28:11.910008+00:00",
+    "gate": "/tmp/studens-issue26-20261020/verify-integrated",
+    "scope": "Change: memory map read projection and additive shared teacher input field; real pi/claude/codex gates required",
+    "files": {
+      ".agents/skills/verify-studens/features/README.md": "eaff9520372dffb62860cc06b41de637759c37bd81c6e720150221f1499304f0",
+      ".agents/skills/verify-studens/features/review.md": "1aef5dda5b125e6282be494f219c89868957115a612dfb2b7ba5c14802f862ae",
+      "assets/runtime/classroom.css": "787288f81b0307400ffe7743d98097303bab9871b85a5751ad16f500896d4de2",
+      "docs/EVIDENCE.md": "b2156444a3af05872d1eb8d170e8fd4f41397be1eece2198d099e1073e5cc61f",
+      "scripts/e2e-browser.ts": "a5962c280d0738e7929e277fb054c562442dfadb5ae7c35622787933f7df19e0",
+      "scripts/e2e-memory-map-browser.ts": "56937b8ddf7268c4d29f5c426af8361828369696716881428d426353902da8e7",
+      "src/memory-map.ts": "30962b255957dc02cf2938c18c8cc25966790a1b4065ba683b7b3b146ed353e0",
+      "src/pages.ts": "7ee1095e35b419fbc8b3428fd8c3ef9aa90936a864ff2908e12201abb1b547de",
+      "src/review-session.ts": "f4df0714ad4f71989d43a95e0e0881584979ffd1fdb77924fac4e2a118ba3bc8",
+      "src/review.ts": "8d403841f9ce18aaf1a99affa8a137bcc1b036b68d2ddcc24d32dc5d143ae0a3",
+      "src/server/course-map.ts": "811f58349975b9aa7ed98926f0404eca83f17776d1d2acb7f2bc58e9ef76a522",
+      "test/memory-map-fixture.ts": "0b8e815299fbcc653952aa192ac8ee3a3b87a0a4f50c7a67dfdc2888ff2de3cb",
+      "test/memory-map.test.ts": "7c4b705ac437153e28dd972b0c831297d8dd0fa29ae0325a57a01213555f18ab",
+      "test/server.test.ts": "960dafbb5348832e1468b6212a70f72d6d1503f6741d8042abc00a018e736af5"
+    }
+  },
+  "scopeVerdict": "FAIL: required Pi and Codex native targets failed; successful UI/default scope does not cancel them.",
+  "actualNode": "v24.22.0",
+  "declaredNodeMinimum": "22.19.0",
+  "dependencyChanges": false,
+  "bootstrapChanges": false,
+  "productionFirstStartClaim": false,
+  "savedFixtureClockUTC": "2026-10-20T12:00:00.000Z",
+  "matchingReplay": {
+    "base": "67092d07d143050caa6648de5a8280164ce05f96",
+    "after": "269973315a22dd80358f30a601bbb4fb7cbf79ab",
+    "items": 8,
+    "everyOriginalReplayFieldEqual": true,
+    "addedFieldOnly": "gapOpen",
+    "scope": "Matching Rust history; baseline has Rust and empty classrooms, after also seeds unrelated many/long/future fixtures. Actual shown Rust allowance/cap/used/deferred equal. Baseline push hooks and after service-fixture hooks both show no pending teacher. Neither calls a model."
+  },
+  "mediaDriver": {
+    "baseDriver": "scripts/e2e-memory-map-browser.ts",
+    "derivedSHA256": "064c8b85df491866ce2f9d4d8393d5cb1ac6ad2f0079560dbfa6af1dd5efa6ff",
+    "changes": [
+      "Pi fixture owner only for media",
+      "Absolute imports into current frozen checkout",
+      "Scroll top before all screenshots"
+    ],
+    "reason": "Integrated correction screenshot had sticky header within full-page image from prior scroll position; refresh media on frozen source without repeating default/model targets.",
+    "productSourceChanged": false
+  },
+  "inspection": "All twelve published PNG files visually inspected before commit. Full-page height reflects expanded per-objective evidence. Closed disclosures in paired captures; correction includes explicit accepted events and expanded reason.",
+  "defaultGate": {
+    "target": "local",
+    "verdict": "PASS",
+    "revision": "269973315a22dd80358f30a601bbb4fb7cbf79ab",
+    "changes": "",
+    "results": [
+      {
+        "command": ["npm", "run", "version:check"],
+        "exitCode": 0
+      },
+      {
+        "command": ["npm", "run", "format:check"],
+        "exitCode": 0
+      },
+      {
+        "command": ["npm", "run", "check"],
+        "exitCode": 0
+      },
+      {
+        "command": ["npm", "run", "test"],
+        "exitCode": 0
+      },
+      {
+        "command": [
+          "/home/maxmiller/.local/share/mise/installs/node/24.22.0/bin/node",
+          "scripts/e2e-browser.ts",
+          "/tmp/studens-issue26-20261020/verify-integrated/browser"
+        ],
+        "exitCode": 0
+      }
+    ]
+  },
+  "nativeGates": {
+    "pi": {
+      "target": "pi",
+      "verdict": "FAIL",
+      "error": "Error: pi failed with exit code 1. See /tmp/studens-issue26-20261020/real-pi-integrated.",
+      "revision": "269973315a22dd80358f30a601bbb4fb7cbf79ab",
+      "changes": "",
+      "results": [
+        {
+          "command": [
+            "/home/maxmiller/.local/share/mise/installs/node/24.22.0/bin/node",
+            "scripts/e2e-pi.ts",
+            "/tmp/studens-issue26-20261020/real-pi-integrated/pi"
+          ],
+          "exitCode": 1
+        }
+      ]
+    },
+    "claude": {
+      "target": "claude",
+      "verdict": "PASS",
+      "revision": "269973315a22dd80358f30a601bbb4fb7cbf79ab",
+      "changes": "",
+      "results": [
+        {
+          "command": [
+            "/home/maxmiller/.local/share/mise/installs/node/24.22.0/bin/node",
+            "scripts/e2e.ts",
+            "claude",
+            "/tmp/studens-issue26-20261020/real-claude-integrated/claude"
+          ],
+          "exitCode": 0
+        }
+      ]
+    },
+    "codex": {
+      "target": "codex",
+      "verdict": "FAIL",
+      "error": "Error: codex failed with exit code 1. See /tmp/studens-issue26-recovery-20261020/real-codex.",
+      "revision": "269973315a22dd80358f30a601bbb4fb7cbf79ab",
+      "changes": "",
+      "results": [
+        {
+          "command": [
+            "/home/maxmiller/.local/share/mise/installs/node/24.22.0/bin/node",
+            "scripts/e2e.ts",
+            "codex",
+            "/tmp/studens-issue26-recovery-20261020/real-codex/codex"
+          ],
+          "exitCode": 1
+        }
+      ]
+    }
+  },
+  "nativeFailureDetails": {
+    "pi": "Next lesson research requested file: sources; public HTTP(S)-only reader rejected them. No plan/writes, affected context/lifecycle not reached. Shared guidance issue #88 is separately tracked. No reroll.",
+    "codex": {
+      "verdict": "FAIL",
+      "exitCode": 1,
+      "source": "269973315a22dd80358f30a601bbb4fb7cbf79ab",
+      "model": "gpt-6-luna",
+      "effort": "low",
+      "stoppedAt": "Machine dispute after successful original judgment dispute revision",
+      "error": "codex model configured default dispute request dispute:f50c222e-2171-4a58-b033-ac305e9d6e60 in rust/997-grade-dispute: The resolution does not belong to this dispute or has invalid arguments.",
+      "expectedDisputeId": "f50c222e-2171-4a58-b033-ac305e9d6e60",
+      "actualDisputeId": "dispute:f50c222e-2171-4a58-b033-ac305e9d6e60",
+      "cause": "Model returned the request id with dispute: prefix in dispute_id, while validator requires raw saved dispute.id. Prefix mismatch; correct rejection. No validator relaxation or retry.",
+      "planValidated": false,
+      "applied": 0,
+      "judgmentDisputeDone": true,
+      "machineDisputeCompletionVerified": false,
+      "finalCompletionLogReached": false,
+      "sourcePaths": ["src/grade-dispute.ts:194", "src/grade-dispute.ts:152"],
+      "rawTeacher": "/tmp/studens-issue26-recovery-20261020/real-codex/codex/classroom/.teacher.json",
+      "rawFailure": "/tmp/studens-issue26-recovery-20261020/real-codex/codex/disputes/failed-exact.json",
+      "scope": "Independent host gate failed; no causal claim that memory map caused model ID error. Pi context/lifecycle remains unverified due original research stop.",
+      "doctorAfterFailure": "PASS",
+      "retryAttempted": false,
+      "modelSubstitution": false
+    }
+  },
+  "semanticReview": {
+    "claude": {
+      "nativeVerdict": "PASS",
+      "quizTask": "Fresh function example, answerable, no supplied answer.",
+      "resumeTask": "Fresh loop-local String example, answerable, no supplied answer.",
+      "reteach": "Complete explanation, worked move example, new Vec ownership question. Assisted response correctly does not resolve independent gap.",
+      "qualityLimit": "Immediate learner answer explained rule without explicitly solving function case. Teacher record notes this limit and requests case-specific follow-up; zero delayed retention. No human-learning evaluation."
+    },
+    "codex": {
+      "nativeVerdict": "FAIL",
+      "quizTask": "Fresh function-local String example, answerable without supplied answer.",
+      "resumeTask": "New draft String/function example, answerable without supplied answer. Similar to earlier task; limited example variety.",
+      "reteach": "Complete explanation, worked move example, fresh local String question. Assisted rule-level answer acknowledged without retention claim.",
+      "qualityLimit": "Immediate learner response gives inner-block explanation rather than exact function example; accepted record supports rule only, zero delayed retention. Machine-dispute ID mismatch rejected; no completion claim."
+    }
+  },
+  "audit": {
+    "command": "npm run audit",
+    "exitCode": 0,
+    "installedProductionVersionsVerified": 123,
+    "productionVulnerabilities": 0,
+    "unchangedDevelopmentInstallFindings": {
+      "total": 7,
+      "moderate": 3,
+      "high": 2,
+      "critical": 2
+    }
+  },
+  "ownerFixtures": {
+    "pi": {
+      "readWrites": 0,
+      "teacherTurns": 0,
+      "pageErrors": 0,
+      "equalHashedFiles": 63,
+      "nativeClosedGradeCount": 1,
+      "restartPreserved": true,
+      "malformedExplicitRetry": true,
+      "privateStatuses": [
+        {
+          "route": "/c/rust/001-ownership/quiz/plan.json",
+          "status": 404
+        },
+        {
+          "route": "/c/rust/.teacher.json",
+          "status": 404
+        },
+        {
+          "route": "/static/../quiz/plan.json",
+          "status": 404
+        }
+      ],
+      "linkedReplyTime": true,
+      "delayedSuccessesAfterLinkedReply": 0,
+      "linkedDueUnchanged": true,
+      "correctionStrength": "Strength of evidence\nIndependent success \u00b7 more evidence needed",
+      "rawReport": "/tmp/studens-issue26-20261020/verify-integrated/browser/memory-map/pi/result.json"
+    },
+    "claude": {
+      "readWrites": 0,
+      "teacherTurns": 0,
+      "pageErrors": 0,
+      "equalHashedFiles": 63,
+      "nativeClosedGradeCount": 1,
+      "restartPreserved": true,
+      "malformedExplicitRetry": true,
+      "privateStatuses": [
+        {
+          "route": "/c/rust/001-ownership/quiz/plan.json",
+          "status": 404
+        },
+        {
+          "route": "/c/rust/.teacher.json",
+          "status": 404
+        },
+        {
+          "route": "/static/../quiz/plan.json",
+          "status": 404
+        }
+      ],
+      "linkedReplyTime": true,
+      "delayedSuccessesAfterLinkedReply": 0,
+      "linkedDueUnchanged": true,
+      "correctionStrength": "Strength of evidence\nIndependent success \u00b7 more evidence needed",
+      "rawReport": "/tmp/studens-issue26-20261020/verify-integrated/browser/memory-map/claude/result.json"
+    },
+    "codex": {
+      "readWrites": 0,
+      "teacherTurns": 0,
+      "pageErrors": 0,
+      "equalHashedFiles": 63,
+      "nativeClosedGradeCount": 1,
+      "restartPreserved": true,
+      "malformedExplicitRetry": true,
+      "privateStatuses": [
+        {
+          "route": "/c/rust/001-ownership/quiz/plan.json",
+          "status": 404
+        },
+        {
+          "route": "/c/rust/.teacher.json",
+          "status": 404
+        },
+        {
+          "route": "/static/../quiz/plan.json",
+          "status": 404
+        }
+      ],
+      "linkedReplyTime": true,
+      "delayedSuccessesAfterLinkedReply": 0,
+      "linkedDueUnchanged": true,
+      "correctionStrength": "Strength of evidence\nIndependent success \u00b7 more evidence needed",
+      "rawReport": "/tmp/studens-issue26-20261020/verify-integrated/browser/memory-map/codex/result.json"
+    }
+  },
+  "media": {
+    "before-desktop-light.png": {
+      "sha256": "4b14f14c3603a313054aa2944860f207dc9a1cb02a6486c1aca4681d4bab8d2a",
+      "bytes": 146545,
+      "width": 1280,
+      "height": 1592,
+      "source": "/tmp/studens-issue26-recovery-20261020/before-canonical/desktop-light.png"
+    },
+    "after-desktop-light.png": {
+      "sha256": "af0b8ecd2bef948bbf8afe2b16df1055c4c85d49c1a296d9e78324ec3811b2af",
+      "bytes": 402577,
+      "width": 1280,
+      "height": 3946,
+      "source": "/tmp/studens-issue26-recovery-20261020/media/pi/after-desktop-light.png"
+    },
+    "before-desktop-dark.png": {
+      "sha256": "870c706261cbfdd143f39ba9c9c188be552a2c9f85cbafc2e38429fcb77fb6b6",
+      "bytes": 150031,
+      "width": 1280,
+      "height": 1592,
+      "source": "/tmp/studens-issue26-recovery-20261020/before-canonical/desktop-dark.png"
+    },
+    "after-desktop-dark.png": {
+      "sha256": "199427c854e572df9aa90af311514611d5fa55638aea500dcc33210fd8d16902",
+      "bytes": 410298,
+      "width": 1280,
+      "height": 3946,
+      "source": "/tmp/studens-issue26-recovery-20261020/media/pi/after-desktop-dark.png"
+    },
+    "before-mobile-light.png": {
+      "sha256": "e1cad5c91b0b165e3f52da2df0faed7172da4fed6624472d20553039cb7c84ab",
+      "bytes": 142999,
+      "width": 390,
+      "height": 2087,
+      "source": "/tmp/studens-issue26-recovery-20261020/before-canonical/mobile-light.png"
+    },
+    "after-mobile-light.png": {
+      "sha256": "2ebde4f24832e724a119ae4e299f827ca0f7637d28ce3a9c92d92a13f971ae82",
+      "bytes": 404112,
+      "width": 390,
+      "height": 5629,
+      "source": "/tmp/studens-issue26-recovery-20261020/media/pi/after-mobile-light.png"
+    },
+    "before-mobile-dark.png": {
+      "sha256": "226c37142702f51b8cf5c8e18d30349621bbfb2245653505dac71585b579a4ff",
+      "bytes": 146829,
+      "width": 390,
+      "height": 2087,
+      "source": "/tmp/studens-issue26-recovery-20261020/before-canonical/mobile-dark.png"
+    },
+    "after-mobile-dark.png": {
+      "sha256": "b82f5e33a9f29c460b7671c3affccb98fffccb1deb476ad8dfa2bb10fd321c5b",
+      "bytes": 412993,
+      "width": 390,
+      "height": 5629,
+      "source": "/tmp/studens-issue26-recovery-20261020/media/pi/after-mobile-dark.png"
+    },
+    "after-correction-mobile-dark.png": {
+      "sha256": "8f148f75f09d770cc863c99dcaa7f6985ade5aae73064385a88b083bdccddb69",
+      "bytes": 479928,
+      "width": 390,
+      "height": 6179,
+      "source": "/tmp/studens-issue26-recovery-20261020/media/pi/corrected.png"
+    },
+    "long-objective-mobile-light.png": {
+      "sha256": "2b548e4d6168266fe0a5249379194477467603675d359a43c6686a53b945a574",
+      "bytes": 212392,
+      "width": 390,
+      "height": 3025,
+      "source": "/tmp/studens-issue26-recovery-20261020/media/pi/long-390-light.png"
+    },
+    "empty-mobile-dark.png": {
+      "sha256": "d7b862f7a596803c24c388e56762c91b2937f4f30e2666fabb5577d976802930",
+      "bytes": 152528,
+      "width": 390,
+      "height": 2036,
+      "source": "/tmp/studens-issue26-recovery-20261020/media/pi/empty-mobile-dark.png"
+    },
+    "invalid-history-mobile-dark.png": {
+      "sha256": "11bfc4d070b5ee6a2d0b174e6526450f5df3a7e6c0864adb32753c9059279dbc",
+      "bytes": 31591,
+      "width": 390,
+      "height": 844,
+      "source": "/tmp/studens-issue26-recovery-20261020/media/pi/error.png"
+    }
+  },
+  "retainedHistory": "All original failures and historical captures remain outside repo under /tmp/studens-issue26-20261020. Recovery media-driver 404 and corrected export capture retained under /tmp/studens-issue26-recovery-20261020. No repeated native model target or fallback."
+}
