@@ -34,6 +34,7 @@ export async function driveRealNextLesson(
     "src/rubric.ts",
     "src/store/quizzes.ts",
     "src/teacher.ts",
+    "src/passage-answer.ts",
     "src/teacher-service.ts",
     "src/prompts.ts",
     "src/grade-dispute.ts",

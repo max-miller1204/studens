@@ -9,7 +9,7 @@ import { makeFixture, seedClassroom, lessonHtml } from "../test/helpers.ts";
 import { packageRoot } from "../src/paths.ts";
 import { control, ensureService, servicePaths, serviceStatus } from "../src/service-client.ts";
 import * as store from "../src/store.ts";
-import { readTeacherState } from "../src/service-state.ts";
+import { readTeacherState, saveTeacherState } from "../src/service-state.ts";
 import { playwright, playwrightCode } from "./playwright.ts";
 
 export async function verifyServiceBrowser(artifacts: string | null): Promise<void> {
@@ -25,6 +25,9 @@ export async function verifyServiceBrowser(artifacts: string | null): Promise<vo
     <form class="cl-quiz" data-quiz-id="draft"><ol class="cl-questions"><li class="cl-q" data-question-id="q1" data-type="short"><p class="cl-q-prompt">Who owns it?</p><textarea></textarea></li></ol></form>`,
     ),
   );
+  const passageMarkdown =
+    'The owner releases the value.\n\nQuoted "owner", path C:\\notes\\λ, and Unicode café 🦀.\n\n```rust\nlet owner = "🦀";\n```\n';
+  fixture.write("passage-answer.json", JSON.stringify(passageMarkdown));
   const bin = path.join(fixture.root, "bin");
   fixture.write("rust/001-ownership/quiz/key.json", '{"q1":"The owner."}');
   fs.mkdirSync(bin);
@@ -54,7 +57,7 @@ readline.createInterface({input:process.stdin}).on('line', line => {
   const quiz = /submission_id: "([^"]+)"/.exec(m.params.input[0].text);
   const calls = ask ? [{name:'answer_lesson_question',arguments_json:JSON.stringify({annotation_id:ask[1],answer_markdown:'The owner releases the value.'})}] : quiz ? [{name:'grade_quiz_answers',arguments_json:JSON.stringify({submission_id:quiz[1],...(m.params.input[0].text.includes('Previous teacher plan error:') ? {} : {score:10}),feedback_markdown:'Check the owner.',questions:[{question_id:'q1',correct:false,feedback:'Trace the owner.'}]})}] : [];
   send({id:m.id,result:{turn:{id:'browser-turn'}}});
-  send({method:'item/completed',params:{threadId:m.params.threadId,turnId:'browser-turn',item:{type:'agentMessage',text:JSON.stringify({calls,message:'What changes when the value moves?',learning_record:null,notes_markdown:''})}}});
+  send({method:'item/completed',params:{threadId:m.params.threadId,turnId:'browser-turn',item:{type:'agentMessage',text:JSON.stringify(ask ? {annotation_id:ask[1],answer_markdown:JSON.parse(fs.readFileSync(path.join(process.env.PI_CLASSROOMS_DIR,'passage-answer.json'),'utf8'))} : {calls,message:'What changes when the value moves?',learning_record:null,notes_markdown:''})}}});
   send({method:'turn/completed',params:{threadId:m.params.threadId,turn:{id:'browser-turn',status:'completed'}}});
  }
 });
@@ -267,6 +270,42 @@ readline.createInterface({input:process.stdin}).on('line', line => {
     snapshot("retried-request");
     const annotation = store.listAnnotations("rust", "001-ownership")[0];
     await browser(`
+      await page.locator('[data-cl-followup]').fill('How does moving change the owner?');
+      const response = page.waitForResponse(r => r.url().endsWith('/follow-up') && r.request().method() === 'POST');
+      await page.locator('.cl-card-panel').getByRole('button', {name:'Ask',exact:true}).click();
+      if ((await response).status() !== 201) throw new Error('Follow-up was refused.');
+      await page.waitForFunction(() => document.querySelectorAll('.cl-card-answer pre code').length === 2);
+      await page.reload();
+      await page.waitForFunction(() => document.querySelectorAll('.cl-card-answer pre code').length === 2);
+      ${shot("typed-passage-reload")}
+    `);
+    await wait("typed follow-up saved", () =>
+      readTeacherState("rust")!.requests.every((r) => r.status === "done"),
+    );
+    const answered = store.findAnnotation(annotation.id)!;
+    if (
+      answered.answerMarkdown !== passageMarkdown ||
+      answered.followUps?.[0].answerMarkdown !== passageMarkdown
+    )
+      throw new Error("Typed Markdown changed on disk.");
+    const passageRequests = readTeacherState("rust")!.requests;
+    if (passageRequests.map((r) => r.kind).join(",") !== "ask,follow-up")
+      throw new Error("Passage FIFO changed.");
+    for (const request of passageRequests) {
+      if (
+        !request.planValidated ||
+        request.applied !== 1 ||
+        JSON.parse(request.plan!.calls[0].arguments_json).answer_markdown !== passageMarkdown
+      )
+        throw new Error("Typed canonical plan was not validated and applied once.");
+      if (
+        JSON.stringify(request.modelOutput) !==
+        JSON.stringify({ annotation_id: annotation.id, answer_markdown: passageMarkdown })
+      )
+        throw new Error("Raw typed output was not saved.");
+    }
+    snapshot("typed-passage-reload");
+    await browser(`
       await page.locator('[data-cl-followup]').fill('Does moving change the owner?');
       await page.getByRole('textbox', {name:'Reply to your teacher', exact:true}).fill('I think the new variable owns it.');
     `);
@@ -308,7 +347,29 @@ readline.createInterface({input:process.stdin}).on('line', line => {
     `);
     snapshot("before-reconnect");
     await stopOwnedService();
+    const recovery = readTeacherState("rust")!;
+    const passageBeforeRecovery = JSON.stringify(store.findAnnotation(annotation.id));
+    const turnCountBeforeRecovery = JSON.parse(
+      fs.readFileSync(path.join(fixture.root, "mock-turns.json"), "utf8"),
+    ).length;
+    const recoveredRequest = recovery.requests.find((r) => r.kind === "follow-up")!;
+    recoveredRequest.status = "planned";
+    recoveredRequest.applied = 0;
+    saveTeacherState("rust", recovery);
     const after = await ensureService();
+    await wait(
+      "saved passage plan recovery",
+      () =>
+        readTeacherState("rust")!.requests.find((r) => r.id === recoveredRequest.id)!.status ===
+        "done",
+    );
+    if (
+      JSON.stringify(store.findAnnotation(annotation.id)) !== passageBeforeRecovery ||
+      JSON.parse(fs.readFileSync(path.join(fixture.root, "mock-turns.json"), "utf8")).length !==
+        turnCountBeforeRecovery
+    )
+      throw new Error("Saved passage recovery changed an answer or ran inference.");
+    snapshot("typed-passage-recovered");
     if (after.pid === before.pid || after.url !== before.url)
       throw new Error("Restart did not replace the service at its stable URL.");
     evidence("service-after", after);
@@ -392,7 +453,7 @@ readline.createInterface({input:process.stdin}).on('line', line => {
     const gradingTurns = JSON.parse(
       fs.readFileSync(path.join(fixture.root, "mock-turns.json"), "utf8"),
     ).filter((turn: any) =>
-      turn.schema.properties.calls.items.properties.name.enum?.includes("grade_quiz_answers"),
+      turn.schema.properties.calls?.items.properties.name.enum?.includes("grade_quiz_answers"),
     );
     if (
       gradingTurns.length !== 2 ||

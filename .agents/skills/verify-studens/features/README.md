@@ -5,7 +5,7 @@ Start with the shared [launch and doctor instructions](../SKILL.md). Each browse
 | Feature              | Recipe                             | Entry points                                                                                                                 |
 | -------------------- | ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
 | Group classrooms     | [folders.md](folders.md)           | Classrooms page, folders, move controls, reload, explicit retry                                                              |
-| Read and ask         | [reading.md](reading.md)           | Lesson/quiz text, selection actions, Saved marks, cards, glossary, diagrams, math, theme                                     |
+| Read and ask         | [reading.md](reading.md)           | Lesson/quiz text, Saved marks, typed card answers/follow-ups/reload/recovery, glossary, diagrams, math, theme                |
 | Step through states  | [step-through.md](step-through.md) | Lesson traces, computed input, local controls, diagrams/math, gates, offline, both themes                                    |
 | Answer quizzes       | [quizzes.md](quizzes.md)           | Quiz, runnable JavaScript and practice controls, pretest gate, disputes/history, reload, second tab                          |
 | Next lesson          | [next-lesson.md](next-lesson.md)   | Classroom page, optional topic, durable authoring, publication retry                                                         |
