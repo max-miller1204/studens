@@ -101,12 +101,14 @@ export function searchPassages(html: string): { html: string; passages: SearchPa
         text,
         attribute: node.attributeAt !== undefined,
       });
-      node.attributeAt = undefined;
     }
+    node.attributeAt = undefined;
     node.text = "";
   };
   const add = (text: string, offset: number) => {
     if (stack.some((n) => n.skip)) return;
+    if (/<!--|<\/?[a-z][\w:-]*(?:\s|>|\/)/i.test(text))
+      throw new Error("Malformed content tag or attribute.");
     const node = [...stack].reverse().find((n) => n.block)!;
     if (!node.text) node.start = offset;
     node.text += text;

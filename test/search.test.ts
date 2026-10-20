@@ -250,6 +250,18 @@ describe("inert canonical source anchors", () => {
         .some((p) => b.passages.some((q) => q.id === p.id)),
     ).toBe(false);
   });
+  it("rejects malformed attributes instead of indexing their bytes as prose", () => {
+    expect(() => searchPassages('<p title="ATTRIBUTE_CANARY>Visible.</p>')).toThrow(
+      "Malformed content tag or attribute",
+    );
+    expect(() => searchPassages("<!-- ATTRIBUTE_CANARY")).toThrow(
+      "Malformed content tag or attribute",
+    );
+  });
+  it("keeps trailing direct prose after its preceding nested passage", () => {
+    const result = searchPassages("<main><p>First.</p>Tail.</main>");
+    expect(result.passages.map((p) => p.text)).toEqual(["First.", "Tail."]);
+  });
   it("places anchors on existing text blocks without changing their children", () => {
     const result = searchPassages("<p data-math-prose>A move costs \\(O(1)\\) time.</p>");
     expect(result.html).toContain('data-math-prose id="cl-search-');

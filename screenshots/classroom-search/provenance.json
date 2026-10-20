@@ -1,0 +1,36 @@
+{
+  "originalBase": "5cb7dce13aef01364d3f5b5ffe5a8f4d93075927",
+  "reviewBase": "67092d07d143050caa6648de5a8280164ce05f96",
+  "afterCaptureSource": "2bb31a5bb0c4f836b986a52010f9000546a1e915",
+  "afterSourceLimit": "Final additions reject malformed tag attributes and preserve ordering for trailing direct prose. Neither changes the seeded matched landing/result views. Exact-head replay compares image bytes.",
+  "runtime": "Node 24.22.0",
+  "declaredMinimum": "Node >=22.19.0 (exact minimum not tested)",
+  "viewports": {
+    "desktop": [1280, 900],
+    "mobile": [390, 844]
+  },
+  "themes": ["light", "dark"],
+  "data": "Mathematics then Rust; one visible lesson each; same mission, emoji and zero due summary. After entry links into all four public domains in both classrooms.",
+  "control": "Repository playwright-cli headless harness; real loopback HTTP; fixture answer/grade boundaries only.",
+  "visualInspection": "All matched before/after captures plus results, error and edited-source screenshots inspected. No overflow or clipping in the search UI.",
+  "rawEvidence": "/tmp/studens-search30",
+  "files": {
+    "after-desktop-dark.png": "abb10ba06697975e31e4201fcf45227cffd2353ccda1cc01a0ce3344ccb2220a",
+    "after-desktop-light.png": "d1a0390cfc1d928f215adab3f33b4311466ea7a5867aac88daa79109ba4435a9",
+    "after-mobile-dark.png": "ad9bd2eb930b448eb96818a9151f6de74e16203e31373e36acbc28a8c851229a",
+    "after-mobile-light.png": "a3d0a3b607c13fb4b18966d06da6771d601c235ac96f2183006c821e41535353",
+    "before-desktop-dark.png": "bbe6a65f0e4e312c264660e55e089b020a434ac575ea8bce64154d0917e355fd",
+    "before-desktop-light.png": "f8208eee7041437051c68eee68436901ed7a40bb1bc1b77c5d23891406db4fe3",
+    "before-mobile-dark.png": "dd9f1443109c3bd49b9bd4c6fd6eedebfb36eb094e183c4d87c1968d47d9ce8c",
+    "before-mobile-light.png": "17744bd8ddb817bb0bc0e90239858b2514cfbb6910937cde1f21f2e68225e792",
+    "edited-passage.png": "85564d9ab4d7098bd807a7d00e16c33b918f7a4c051e16d2178ead0ca4496577",
+    "error.png": "f39343e0827ed4dc6c04babfc8242d7e20420ae50440c83413b4146a969eedba",
+    "no-results.png": "8f61b61c5161803c57e29949c283cdcbd225c305cce98281f0f97274545973a3",
+    "original-base/before-desktop-dark.png": "bbe6a65f0e4e312c264660e55e089b020a434ac575ea8bce64154d0917e355fd",
+    "original-base/before-desktop-light.png": "f8208eee7041437051c68eee68436901ed7a40bb1bc1b77c5d23891406db4fe3",
+    "original-base/before-mobile-dark.png": "dd9f1443109c3bd49b9bd4c6fd6eedebfb36eb094e183c4d87c1968d47d9ce8c",
+    "original-base/before-mobile-light.png": "17744bd8ddb817bb0bc0e90239858b2514cfbb6910937cde1f21f2e68225e792",
+    "results-desktop-light.png": "0ff6d5f1a7670d7c1a4b77a8f882954cfba0290089f12777f3585d78cb715d8f",
+    "results-mobile-dark.png": "db0cb3c8c1dcf22573c4d0f1f49347edce198c84a5cad903ef5c48154a0eca03"
+  }
+}
