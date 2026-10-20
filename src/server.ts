@@ -2,8 +2,8 @@ import { handleSearch } from "./server/search.ts";
 /**
  * server.ts — the in-process HTTP server behind /classroom.
  *
- * One loopback singleton per process. Pi starts it lazily and closes it on
- * session_shutdown. Claude Code and Codex run it in the persistent service.
+ * One loopback singleton per process, owned by the shared persistent service
+ * for Pi, Claude Code, and Codex.
  * Hooks route browser requests to the owner for each host.
  *
  * Routes:
@@ -53,11 +53,25 @@ export type { ServerHooks } from "./server/hooks.ts";
 export { pushEvent } from "./server/events.ts";
 export { contentTypeFor, splitPath } from "./server/http.ts";
 
-async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
+async function handleRequest(
+  req: http.IncomingMessage,
+  res: http.ServerResponse,
+  owner: http.Server,
+): Promise<void> {
   const url = new URL(req.url ?? "/", "http://127.0.0.1");
   const segments = splitPath(url.pathname);
   if (!segments) return sendNotFound(res, "Malformed URL");
 
+  if (
+    req.method === "GET" &&
+    segments.length === 2 &&
+    segments[0] === "api" &&
+    segments[1] === "events" &&
+    closingServers.has(owner)
+  ) {
+    res.setHeader("Connection", "close");
+    return sendJson(res, { error: "Classroom server is shutting down." }, 503);
+  }
   if (segments[0] === "api") return handleApi(req, res, segments.slice(1), url);
   if (req.method !== "GET") {
     res.writeHead(405, { Allow: "GET" });
@@ -83,6 +97,8 @@ async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse
   sendNotFound(res, `No such page: ${url.pathname}`);
 }
 
+// A replacement listener may start while the previous one is still draining.
+const closingServers = new WeakSet<http.Server>();
 let server: http.Server | null = null;
 let serverPort: number | null = null;
 let starting: Promise<string> | null = null;
@@ -102,7 +118,7 @@ export async function start(port?: number): Promise<string> {
 
   starting = new Promise((resolve, reject) => {
     const s = http.createServer((req, res) => {
-      void handleRequest(req, res).catch((err) => {
+      void handleRequest(req, res, s).catch((err) => {
         console.error("[classroom] request failed", err);
         if (hooks?.delivery === "service" && req.url?.startsWith("/api/") && !res.headersSent) {
           sendJson(res, { error: err instanceof Error ? err.message : String(err) }, 500);
@@ -145,6 +161,7 @@ export async function close(): Promise<void> {
   return new Promise((resolve) => {
     if (!server) return resolve();
     const s = server;
+    closingServers.add(s);
     server = null;
     serverPort = null;
     linkBase = null;
