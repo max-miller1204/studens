@@ -123,7 +123,10 @@ export async function ensureService(): Promise<any> {
         current.version !== version
       )
         throw new Error("A different service won startup ownership. Stop it explicitly.");
-      return current;
+      // A matching winner may be ready while our own child is still importing.
+      // Finish this start only after our child owns the service or has exited.
+      if (current.pid === child.pid || child.exitCode !== null || child.signalCode !== null)
+        return current;
     }
     if (child.exitCode !== null && !fs.existsSync(paths.lock))
       throw new Error(`Classroom service failed to start. Read ${paths.log}.`);
