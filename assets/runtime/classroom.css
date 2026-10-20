@@ -2053,3 +2053,93 @@ figure:has(> .cl-diagram) figcaption {
 .cl-practice .cl-quiz-status {
   flex: 1 1 12rem;
 }
+
+/* Course coverage uses readable objective-to-quiz connections in both themes. */
+.cl-course-map {
+  overflow-wrap: anywhere;
+}
+.cl-course-map h2 {
+  font-size: 1.4rem;
+  scroll-margin-top: 5rem;
+}
+.cl-map-mission {
+  margin-block: 2rem;
+  padding: clamp(1rem, 3vw, 1.5rem);
+  background: var(--cl-surface-2);
+  border: 1px solid var(--cl-border);
+  border-radius: var(--cl-radius);
+}
+.cl-map-mission h2 {
+  margin-top: 0;
+}
+.cl-map-mission-text {
+  line-height: 1.65;
+}
+.cl-map-mission-text h3 {
+  font-size: 1.15rem;
+}
+.cl-map-mission-text h4 {
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+}
+.cl-map-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+}
+.cl-map-edges {
+  display: grid;
+  gap: 1.25rem;
+  padding-inline-start: 1.25rem;
+}
+.cl-map-edges strong {
+  color: var(--cl-text-muted);
+}
+.cl-map-lessons,
+.cl-map-objectives,
+.cl-map-connections {
+  padding: 0;
+  list-style: none;
+}
+.cl-map-lessons {
+  display: grid;
+  gap: 1rem;
+}
+.cl-map-lesson {
+  padding: clamp(1rem, 3vw, 1.5rem);
+  border: 1px solid var(--cl-border);
+  border-radius: var(--cl-radius);
+  background: var(--cl-surface);
+}
+.cl-map-lesson h3 {
+  margin: 0 0 1rem;
+  font-size: 1.2rem;
+}
+.cl-map-objective {
+  border-inline-start: 2px solid var(--cl-border-strong);
+  padding-inline-start: 1rem;
+  margin-block: 1rem;
+  scroll-margin-top: 5rem;
+}
+.cl-map-objective > p {
+  margin: 0 0 0.75rem;
+}
+.cl-map-connections {
+  display: grid;
+  gap: 0.5rem;
+  color: var(--cl-text-muted);
+  font: 0.85rem/1.5 var(--cl-sans);
+}
+.cl-map-connections li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+}
+.cl-map-connections li > :first-child {
+  font-weight: 600;
+  color: var(--cl-text);
+}
+.cl-map-status {
+  color: var(--cl-text-muted);
+  margin-bottom: 0;
+}

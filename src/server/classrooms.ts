@@ -27,6 +27,7 @@ import { isDue, summarize } from "../review.ts";
 import * as store from "../store.ts";
 import { hooks } from "./hooks.ts";
 import { sendFile, sendHtml, sendNotFound } from "./http.ts";
+import { handleCourseMap } from "./course-map.ts";
 
 export function handleLanding(res: http.ServerResponse, url: URL): void {
   const classrooms = store.listClassrooms();
@@ -82,6 +83,9 @@ export function handleClassroomRoute(
   const [name] = rest;
   let [, second, ...tail] = rest;
   if (!isValidSlug(name)) return sendNotFound(res, "Unknown classroom");
+
+  // This read-only projection guards files before discovery or metadata reads.
+  if (second === "course-map" && !tail.length) return handleCourseMap(res, name);
 
   const classroom = store.readClassroom(name);
   if (!classroom) return sendNotFound(res, `Unknown classroom: ${name}`);
