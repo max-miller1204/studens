@@ -194,6 +194,15 @@ reopens its recorder around the owned service restart; it never reconnects or
 retries model work implicitly.
 
 For HTTP shutdown intake, run `npx vitest run test/server-lifecycle.test.ts`.
+An accepted preconnection with zero received and written bytes must not hold
+shutdown open: require the close promise to resolve before any client teardown.
+Shutdown started inside the connection event must also finish. A socket belongs
+only to its accepting listener; closing that listener must leave a replacement's
+unused socket able to send a request. Any received byte excludes a socket from
+this unused classification, including a one-byte partial header. Require that
+partial request and an active response to finish normally while unused neighbors
+close. Node 22.19's `closeIdleConnections()` alone does not reap the never-used case;
+run these contracts on the actual minimum runtime as well as the installed Node.
 The real-socket checks synchronize partial request headers with listener events,
 then complete the event request after shutdown starts. Require 503 with
 `Connection: close`, no event-stream registration, and shutdown without client

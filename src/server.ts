@@ -32,6 +32,7 @@ import { handleSearch } from "./server/search.ts";
  */
 
 import * as http from "node:http";
+import type { Socket } from "node:net";
 import * as store from "./store.ts";
 import { lessonUrl } from "./paths.ts";
 import { readConfig, resolveConfiguredPort } from "./config.ts";
@@ -99,6 +100,7 @@ async function handleRequest(
 
 // A replacement listener may start while the previous one is still draining.
 const closingServers = new WeakSet<http.Server>();
+const unusedConnections = new WeakMap<http.Server, Set<Socket>>();
 let server: http.Server | null = null;
 let serverPort: number | null = null;
 let starting: Promise<string> | null = null;
@@ -126,6 +128,17 @@ export async function start(port?: number): Promise<string> {
         }
         if (!res.headersSent) res.writeHead(500, { "Content-Type": "text/plain" });
         res.end("Internal error");
+      });
+    });
+    const unused = new Set<Socket>();
+    unusedConnections.set(s, unused);
+    s.on("connection", (socket) => {
+      unused.add(socket);
+      const forget = () => unused.delete(socket);
+      socket.once("data", forget);
+      socket.once("close", () => {
+        forget();
+        socket.removeListener("data", forget);
       });
     });
 
@@ -167,6 +180,13 @@ export async function close(): Promise<void> {
     linkBase = null;
     closeEvents();
     s.close(() => resolve());
+    // Node 22's closeIdleConnections does not reap a never-used preconnection.
+    // Only this listener's sockets with no bytes in either direction qualify.
+    // Check bytesRead too: the HTTP parser can consume data before our listener.
+    // Any partial header/body or active response keeps Node's normal close semantics.
+    for (const socket of unusedConnections.get(s)!) {
+      if (socket.bytesRead === 0 && socket.bytesWritten === 0) socket.destroy();
+    }
   });
 }
 
