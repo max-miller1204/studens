@@ -118,7 +118,6 @@ console.log(text &lt; &quot;z&quot;);</code></pre><pre class="mermaid">flowchart
     topic: "PRIVATE_TOPIC",
     owner: "codex",
     ownerPid: process.pid,
-    delivery: "service",
     at: 1,
     status: "queued",
     document: { private: "PRIVATE_REQUEST_DOCUMENT" },

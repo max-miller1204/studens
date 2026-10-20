@@ -243,7 +243,7 @@ export function handleClassroomRoute(
         classroomTitle: classroom.title,
         lessonTitle: lesson.title,
         baseUrl: baseUrl ?? "",
-        delivery: hooks?.delivery ?? "push",
+        delivery: hooks?.delivery,
         pendingPretests: staged.pendingPretests,
         reviewScreen: isStoredReview(second),
         prerequisites: prerequisites.links,

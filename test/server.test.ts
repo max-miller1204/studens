@@ -7,7 +7,8 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
-import { applyAnswer, applyGrade } from "../src/bridge.ts";
+import { applyAnswer } from "../src/answers.ts";
+import { applyGrade } from "../src/quiz-grading.ts";
 import * as server from "../src/server.ts";
 import * as store from "../src/store.ts";
 import { DAY_MS } from "../src/review.ts";

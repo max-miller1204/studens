@@ -66,7 +66,6 @@ export async function handleNextLesson(
         body.id,
         (body.topic as string | undefined)?.trim() ?? "",
         owner,
-        hooks.delivery === "service" ? "service" : undefined,
       );
       attempted = request;
       selected = request.id;

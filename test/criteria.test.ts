@@ -252,7 +252,6 @@ it("applies an interrupted saved criterion plan once without another model turn"
         status: "planned",
         at: 1,
         applied: 0,
-        planVersion: 2,
         planValidated: true,
         requestedModel: "original-selection",
         resolvedModel: "original-resolved",

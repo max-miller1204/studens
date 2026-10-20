@@ -13,7 +13,6 @@ import type { ReviewOwner } from "./review-session.ts";
 import { answerReviewKey, findReviewItem, type ReviewItem } from "./review.ts";
 import * as store from "./store.ts";
 import { answerSummary } from "./quiz.ts";
-import type { ClassroomTool } from "./tools.ts";
 import { parseReviewKey } from "../assets/runtime/quiz.mjs";
 
 export interface RefillRequest {
@@ -66,7 +65,7 @@ export function refillRequests(classroom: string): RefillRequest[] {
         !r ||
         r.classroom !== classroom ||
         !isValidSlug(r.lesson) ||
-        !["pi", "service"].includes(r.owner) ||
+        r.owner !== "service" ||
         !Number.isSafeInteger(r.ownerPid) ||
         r.ownerPid < 1 ||
         typeof r.id !== "string" ||
@@ -320,38 +319,6 @@ export const REFILL_TOOL = {
   },
 };
 
-export function piRefillTool(): ClassroomTool {
-  return {
-    ...REFILL_TOOL,
-    label: "Save Review Variants",
-    async execute(args: { classroom: string; request_id: string; variants: unknown }) {
-      try {
-        const request = refillRequests(args.classroom).find((r) => r.id === args.request_id);
-        if (
-          !request ||
-          request.owner !== "pi" ||
-          request.ownerPid !== process.pid ||
-          request.status !== "running"
-        )
-          throw new Error("This Pi session does not own an active refill request.");
-        saveRefillPlan(request, args.variants);
-        applyRefill(request);
-        return {
-          content: [
-            { type: "text", text: "Saved private review variants. Learner history is unchanged." },
-          ],
-          details: {},
-        };
-      } catch (error) {
-        return {
-          content: [{ type: "text", text: `Error: ${(error as Error).message}` }],
-          details: { error: true },
-        };
-      }
-    },
-  };
-}
-
 /** Explicit retry may refresh authoring context, never the saved learner mistake. */
 export function refreshRefill(request: RefillRequest): RefillRequest {
   if (request.plan) return request;
@@ -372,14 +339,4 @@ export function refreshRefill(request: RefillRequest): RefillRequest {
   atomicJson(file(request.classroom), { version: 1, requests });
   invalidateActivity(request.classroom);
   return saved;
-}
-
-export function refillOwnerAlive(request: Pick<RefillRequest, "ownerPid">): boolean {
-  try {
-    process.kill(request.ownerPid, 0);
-    return true;
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ESRCH") return false;
-    throw error;
-  }
 }

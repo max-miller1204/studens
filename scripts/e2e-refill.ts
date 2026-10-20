@@ -60,7 +60,6 @@ try {
         prompt: request.prompt,
         at: request.at,
         status: "planned",
-        planVersion: 2,
         plan: {
           calls: [
             {

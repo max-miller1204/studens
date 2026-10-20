@@ -30,7 +30,7 @@ For each generated lesson, record these judgments with quoted evidence:
 Use good and bad cases. Include a prerequisite question disguised as a prequestion,
 a copied cloze answer, a novel application, a valid alternate method, a partially
 correct explanation, a correct uncertain answer, a hinted answer, and old records.
-Run grading cases through dedicated teacher plans and the Pi bridge. Compare point
+Run grading cases through dedicated teacher plans for each backend. Compare point
 allocations and feedback with a fixed rubric. Check confidence invariance. Report
 leaks and grading disagreements separately from authoring failures.
 

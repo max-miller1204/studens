@@ -9,6 +9,8 @@ import { readConfig } from "./config.ts";
 import { classroomsRoot, packageRoot } from "./paths.ts";
 
 export const DEFAULT_SERVICE_PORT = 43123;
+/** Log prefix the starting client reports as the service's startup error. */
+export const MIGRATION_FAILED = "Classroom format upgrade failed:";
 export function servicePort(): number {
   const text = process.env.PI_CLASSROOM_SERVICE_PORT;
   if (text === undefined) return readConfig().port ?? DEFAULT_SERVICE_PORT;
@@ -80,11 +82,6 @@ export async function ensureService(): Promise<any> {
       version: string;
     }
   ).version;
-  const legacyRoute = path.join(classroomsRoot(), ".pi-teach-pi", "phone.json");
-  if (fs.existsSync(legacyRoute))
-    throw new Error(
-      `A legacy Pi tailnet route is still recorded at ${legacyRoute}. Stop that server explicitly with the previous Pi package before retrying. No route or saved data was replaced.`,
-    );
   const status = await serviceStatus();
   if (status.running) {
     if (
@@ -100,6 +97,7 @@ export async function ensureService(): Promise<any> {
   const paths = servicePaths();
   fs.mkdirSync(paths.dir, { recursive: true, mode: 0o700 });
   const log = fs.openSync(paths.log, "a", 0o600);
+  const logStart = fs.fstatSync(log).size;
   const child = spawn(process.execPath, [path.join(packageRoot(), "src", "service-main.ts")], {
     cwd: packageRoot(),
     detached: true,
@@ -128,8 +126,15 @@ export async function ensureService(): Promise<any> {
       if (current.pid === child.pid || child.exitCode !== null || child.signalCode !== null)
         return current;
     }
-    if (child.exitCode !== null && !fs.existsSync(paths.lock))
-      throw new Error(`Classroom service failed to start. Read ${paths.log}.`);
+    if (child.exitCode !== null && !fs.existsSync(paths.lock)) {
+      const upgrade = fs
+        .readFileSync(paths.log)
+        .subarray(logStart)
+        .toString("utf8")
+        .split("\n")
+        .find((line) => line.startsWith(MIGRATION_FAILED));
+      throw new Error(upgrade ?? `Classroom service failed to start. Read ${paths.log}.`);
+    }
     await new Promise((resolve) => setTimeout(resolve, 100));
   }
   throw new Error(`Classroom service did not start within 10 seconds. Read ${paths.log}.`);

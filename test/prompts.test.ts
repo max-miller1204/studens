@@ -8,29 +8,14 @@ import {
   followUpPrompt,
   gradePrompt,
   PRETEST_FOLLOW_UP,
-  PANEL_REPLY,
-  panelReplyPrompt,
   QUIZ_FOLLOW_UP,
   reflectPrompt,
   reviewStatusText,
   teachingPrompt,
 } from "../src/prompts.ts";
 import { DAY_MS } from "../src/review.ts";
-import type {
-  Annotation,
-  FollowUp,
-  PanelMessage,
-  QuizGrade,
-  QuizSubmission,
-  Reflection,
-} from "../src/store.ts";
-import {
-  makeFixture,
-  seedClassroom,
-  writeGradedAttempt,
-  termAnswer,
-  type Fixture,
-} from "./helpers.ts";
+import type { Annotation, FollowUp, QuizGrade, QuizSubmission, Reflection } from "../src/store.ts";
+import { makeFixture, seedClassroom, type Fixture } from "./helpers.ts";
 
 let fixture: Fixture;
 
@@ -93,7 +78,11 @@ describe("followUpPrompt", () => {
     const asking = followUp("f2", "And across threads?", null);
     const later = followUp("f3", "Asked after this one", null);
 
-    const prompt = followUpPrompt({ ...card, followUps: [earlier, asking, later] }, asking, "push");
+    const prompt = followUpPrompt(
+      { ...card, followUps: [earlier, asking, later] },
+      asking,
+      "service",
+    );
 
     expect(prompt).toContain("What about borrows?");
     expect(prompt).toContain("Many readers, one writer.");
@@ -120,7 +109,7 @@ describe("quiz highlights and the teacher panel", () => {
   it("tells the teacher not to solve a quiz question before it is graded", () => {
     const prompt = askPrompt(
       { ...card, quiz: { quizId: "check-1", questionId: "q2", graded: false } },
-      "push",
+      "service",
     );
     expect(prompt).toContain("question `q2` of quiz `check-1`");
     expect(prompt).toContain("Do not give the answer");
@@ -133,52 +122,6 @@ describe("quiz highlights and the teacher panel", () => {
     );
     expect(prompt).toContain("has been graded");
     expect(prompt).not.toContain("Do not give the answer");
-  });
-
-  it("binds panel retrieval work to the configured classroom paths and graded keys", () => {
-    seedClassroom(fixture);
-    seedClassroom(fixture, { classroom: "other" });
-    writeGradedAttempt({
-      at: Date.now() - DAY_MS,
-      answers: [termAnswer("q1", "dropped")],
-      correct: { q1: false },
-    });
-    writeGradedAttempt({
-      classroom: "other",
-      at: Date.now() - DAY_MS,
-      answers: [termAnswer("unrelated", "SECRET OTHER ANSWER")],
-      correct: { unrelated: true },
-    });
-    const reply: PanelMessage = {
-      id: "reply",
-      lesson: card.lesson,
-      role: "learner",
-      text: "Rust drops it.",
-      at: Date.now(),
-    };
-    const prompt = panelReplyPrompt("rust", card.lesson, reply, []);
-    expect(prompt).toContain(paths.classroomDir("rust"));
-    expect(prompt).toContain(`${paths.classroomDir("rust")}/learning-records`);
-    expect(prompt).toContain("001-ownership/check-1/q1");
-    expect(prompt).not.toContain("SECRET OTHER ANSWER");
-    expect(prompt).not.toContain(paths.classroomDir("other"));
-  });
-  it("restates the panel conversation a reply answers", () => {
-    const earlier: PanelMessage[] = [
-      { id: "quiz:s1", lesson: card.lesson, role: "teacher", text: "Who frees it?", at: 1 },
-    ];
-    const reply: PanelMessage = {
-      id: "chat:1",
-      lesson: card.lesson,
-      role: "learner",
-      text: "The owner.",
-      at: 2,
-    };
-    const prompt = panelReplyPrompt("rust", card.lesson, reply, [...earlier, reply]);
-    expect(prompt).toContain("> Who frees it?");
-    expect(prompt).toContain("> The owner.");
-    expect(prompt.match(/The owner\./g)).toHaveLength(1);
-    expect(prompt).toContain(PANEL_REPLY);
   });
 });
 
@@ -231,7 +174,7 @@ describe("gradePrompt", () => {
   };
 
   it("shows typed answers and ignores saved confidence metadata", () => {
-    const prompt = gradePrompt(base, "push");
+    const prompt = gradePrompt(base, "service");
     expect(prompt).toContain("[q1] (cloze) Fill in the blank.");
     expect(prompt).toContain("A value has one [b1: «owner»].");
     expect(prompt).not.toContain("Their confidence");
@@ -239,7 +182,7 @@ describe("gradePrompt", () => {
   });
 
   it("tells the teacher a pretest is diagnostic, with no retrieval check", () => {
-    const prompt = gradePrompt({ ...base, kind: "pretest" }, "push");
+    const prompt = gradePrompt({ ...base, kind: "pretest" }, "service");
     expect(prompt).toContain("**pretest**");
     expect(prompt).toContain(PRETEST_FOLLOW_UP);
     expect(prompt).not.toContain(QUIZ_FOLLOW_UP);
@@ -247,7 +190,7 @@ describe("gradePrompt", () => {
 
   it("names the attempt and the previous score on a retake", () => {
     const previous = { score: 40 } as QuizGrade;
-    const prompt = gradePrompt({ ...base, attempt: 2 }, "push", previous);
+    const prompt = gradePrompt({ ...base, attempt: 2 }, "service", previous);
     expect(prompt).toContain("Attempt 2 at this quiz. The previous attempt scored 40%.");
   });
 
@@ -261,7 +204,7 @@ describe("gradePrompt", () => {
           { questionId: "q1", value: "c", label: "Third", prompt: "Pick all." },
         ],
       },
-      "push",
+      "service",
     );
     expect(prompt).toContain("1. [q1] Pick all.");
     expect(prompt).toContain("Their answer: First; Third");

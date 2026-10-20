@@ -37,14 +37,14 @@ afterEach(() => f.cleanup());
 
 describe("review request contracts", () => {
   it("saves the selected items once and resumes an unattempted review", () => {
-    const first = startReview("rust", randomUUID(), "pi");
+    const first = startReview("rust", randomUUID(), "service");
     expect(first.added).toBe(true);
     expect(first.session.items.map((i) => i.key)).toEqual(["001-ownership/check-1/q1"]);
     expect(fs.existsSync(lessonDir("rust", first.session.lesson))).toBe(false);
-    expect(startReview("rust", randomUUID(), "pi").session.id).toBe(first.session.id);
+    expect(startReview("rust", randomUUID(), "service").session.id).toBe(first.session.id);
     publishReview(first.session, reviewDocument(first.session.items));
     updateReview(first.session, "done");
-    expect(startReview("rust", randomUUID(), "pi").added).toBe(false);
+    expect(startReview("rust", randomUUID(), "service").added).toBe(false);
     expect(reviewSessions("rust")).toHaveLength(1);
     expect(JSON.stringify(publicReview(first.session))).not.toContain("lastAnswer");
   });
@@ -62,10 +62,12 @@ describe("review request contracts", () => {
       answers: Array.from({ length: 12 }, (_, i) => termAnswer(`q${i + 1}`, "owner")),
       correct: Object.fromEntries(Array.from({ length: 12 }, (_, i) => [`q${i + 1}`, true])),
     });
-    expect(startReview("rust", randomUUID(), "pi").session.items).toHaveLength(DEFAULT_REVIEW_SIZE);
+    expect(startReview("rust", randomUUID(), "service").session.items).toHaveLength(
+      DEFAULT_REVIEW_SIZE,
+    );
   });
   it("rejects empty, unfinished, unlinked, duplicate, and reordered review questions before writes", () => {
-    const s = startReview("rust", randomUUID(), "pi").session;
+    const s = startReview("rust", randomUUID(), "service").session;
     const document = reviewDocument(s.items);
     for (const bad of [
       { ...document, rubric_json: "{}" },
@@ -109,7 +111,7 @@ describe("review request contracts", () => {
     expect(fs.existsSync(lessonDir("rust", s.lesson))).toBe(false);
   });
   it("keeps the original objective policy and rejects invented historical policy", () => {
-    const session = startReview("rust", randomUUID(), "pi").session;
+    const session = startReview("rust", randomUUID(), "service").session;
     delete session.items[0].objective;
     const document = reviewDocument(session.items);
     const invented = JSON.parse(document.teaching_plan_json);
@@ -135,7 +137,7 @@ describe("review request contracts", () => {
     expect(() => validateReview(known, knownDocument)).not.toThrow();
   });
   it("replays publication without changing private files and rejects conflicting writes or symlinks", () => {
-    const s = startReview("rust", randomUUID(), "pi").session,
+    const s = startReview("rust", randomUUID(), "service").session,
       doc = reviewDocument(s.items);
     publishReview(s, doc);
     publishReview(s, doc);

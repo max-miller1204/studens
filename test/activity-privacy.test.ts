@@ -38,10 +38,7 @@ it.each([
   "rust/.review-refills.json",
   ".daily-reviews.json",
   "rust/.teacher.json",
-  "rust/001-ownership/annotations.json",
   "rust/001-ownership/lesson.json",
-  "rust/001-ownership/quiz/submissions/broken.json",
-  "rust/001-ownership/quiz/grades/broken.json",
 ])(
   "keeps malformed %s bytes out of activity HTTP and SSE without changing the source",
   async (relative) => {

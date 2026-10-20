@@ -580,10 +580,9 @@ community, respect it and note it in `RESOURCES.md`.
 
 ## Tools
 
-Use the tools available to the active host. Pi registers the shared tools and the resume tool
-and receives browser requests through its live session. Claude Code and Codex
-authoring agents receive the four scaffold and health tools, the three session
-tools, and the service and resume tools. They do not grade browser requests themselves.
+Use the tools available to the active host. Pi, Claude Code, and Codex authoring
+agents receive the four scaffold and health tools, the three session tools, and the
+service and resume tools. They do not grade browser requests themselves.
 The dedicated teacher can answer passage questions, grade quizzes, and record
 verified retrieval checks through a service plan. It cannot create lessons,
 browse sources, or edit arbitrary files. The authoring agent must research and
@@ -610,9 +609,8 @@ authoring. Use `scaffold_review` for due review items and preserve their keys.
 | `grade_lesson_quiz`      | Grade a submitted quiz from its private rubric.                                                                    |
 | `record_retrieval_check` | Link a successful panel retrieval check to its review item, with an active learning record.                        |
 
-Pi receives browser requests in its live session and answers in the lesson's
-teacher panel. Claude Code and Codex use the persistent dedicated teacher and its
-panel. Only the legacy inbox adapter uses
+Pi, Claude Code, and Codex use the persistent dedicated teacher and its panel.
+Only the legacy inbox adapter uses
 `wait_for_learner`. That tool receives browser requests, not chat replies.
 
 The Codex teacher stops after three minutes without progress or five minutes

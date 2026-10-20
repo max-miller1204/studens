@@ -12,7 +12,6 @@ import {
   validateReview,
 } from "../src/review-session.ts";
 import { dailyReviews, startDailyReview } from "../src/store/daily-review.ts";
-import { saveTeacherState } from "../src/service-state.ts";
 import { DAY_MS } from "../src/review.ts";
 import { classroomTools, PI_HOST, isFailure } from "../src/tools.ts";
 import {
@@ -155,13 +154,7 @@ describe("daily review durability", () => {
     expect(reviewSessions("rust")).toHaveLength(1);
     expect(store.listGrades("biology", reviewSessions("biology")[0].lesson)).toEqual(original);
   });
-  it("refuses another host's unpublished review and competing unfinished work", async () => {
-    const foreign = startReview("biology", randomUUID(), "pi").session;
-    const failed = await post("daily-review", { id: randomUUID() });
-    expect(failed.status).toBe(409);
-    expect(failed.body.error).toContain("belongs to pi");
-    expect(dailyReviews()).toHaveLength(0);
-    completePreparedReview(foreign);
+  it("reserves a daily selection before publication against competing reviews", async () => {
     const id = randomUUID();
     await post("daily-review", { id });
     await finish("biology");
@@ -205,71 +198,6 @@ describe("daily review durability", () => {
     expect(reviewSessions("rust")).toHaveLength(0);
     expect(store.listGrades("rust", "001-ownership")).toEqual(original);
   });
-  it("keeps a persistent classroom backend on reload through a Pi daily request", async () => {
-    saveTeacherState("biology", {
-      version: 1,
-      identity: { backend: "claude" },
-      requests: [],
-      messages: [],
-    });
-    server.setHooks({
-      reviewOwner: "pi",
-      onReview: completePreparedReview,
-      onReviewRetry: completePreparedReview,
-      onAsk: () => {},
-      onFollowUp: () => {},
-      onQuizSubmit: () => {},
-      onReflect: () => {},
-    });
-    const result = await post("daily-review", { id: randomUUID() });
-    expect(result.status).toBe(409);
-    expect(result.body.error).toContain("belongs to claude");
-    expect(dailyReviews()).toHaveLength(0);
-    expect(reviewSessions("biology")).toHaveLength(0);
-    const read = await (await fetch(`${base}/api/daily-review`)).json();
-    expect(read.daily).toBeNull();
-    expect(reviewSessions("biology")).toHaveLength(0);
-  });
-  it.each(["daily-review", "daily-review/continue", "daily-review/retry"])(
-    "rejects foreign %s without changing an existing owner's batch",
-    async (route) => {
-      saveTeacherState("biology", {
-        version: 1,
-        identity: { backend: "claude" },
-        requests: [],
-        messages: [],
-      });
-      const id = randomUUID();
-      await post("daily-review", { id });
-      const state = path.join(fixture.root, ".daily-reviews.json");
-      const snapshot = fs.readFileSync(state, "utf8");
-      const publishedBefore = [...published];
-      server.setHooks({
-        reviewOwner: "pi",
-        onReview: completePreparedReview,
-        onReviewRetry: completePreparedReview,
-        onAsk() {},
-        onFollowUp() {},
-        onQuizSubmit() {},
-        onReflect() {},
-      });
-      const foreign = await post(route, {
-        id: route === "daily-review" ? randomUUID() : id,
-        classroom: "biology",
-      });
-      expect.soft(fs.readFileSync(state, "utf8")).toBe(snapshot);
-      expect(foreign.status).toBe(409);
-      expect(foreign.body.error).toContain("belongs to claude");
-      expect(fs.readFileSync(state, "utf8")).toBe(snapshot);
-      expect(published).toEqual(publishedBefore);
-      const read = await (await fetch(`${base}/api/daily-review?id=${id}`)).json();
-      expect(read.daily.groups[0].error).toContain("belongs to claude");
-      expect(fs.readFileSync(state, "utf8")).toBe(snapshot);
-      expect(
-        (await fetch(`${base}/c/biology/reviews/${reviewSessions("biology")[0].lesson}`)).status,
-      ).toBe(200);
-    },
-  );
   it("keeps private selections off routes and rejects state and ancestor symlinks", async () => {
     const request = startDailyReview(randomUUID(), "service");
     for (const route of [

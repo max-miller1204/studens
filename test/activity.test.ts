@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, expect, it } from "vitest";
 import { randomUUID } from "node:crypto";
 import { classroomActivity } from "../src/server/activity.ts";
-import { ClassroomBridge } from "../src/bridge.ts";
 import { TeacherService } from "../src/teacher-service.ts";
 import { readTeacherState, saveTeacherState } from "../src/service-state.ts";
 import { makeFixture, seedClassroom, type Fixture } from "./helpers.ts";
@@ -59,19 +58,6 @@ it("rejects malformed and unknown stored request states instead of claiming idle
     server.setHooks({ ...hooks, teacherState: () => ({ requests: [request] }) });
     expect(() => classroomActivity("rust")).toThrow(/Invalid teacher activity request/);
   }
-});
-it("projects Pi's existing FIFO as running then queued and promotes once", () => {
-  const sent: string[] = [];
-  const bridge = new ClassroomBridge({ sendUserMessage: (text) => sent.push(text) });
-  server.setHooks({ ...hooks, teacherState: (c, l) => bridge.panelState(c, l) });
-  bridge.chat("rust", "001-ownership", "First", randomUUID());
-  bridge.chat("rust", "001-ownership", "Second", randomUUID());
-  expect(classroomActivity("rust").requests.map((r) => r.status)).toEqual(["running", "queued"]);
-  bridge.onAgentEnd([{ role: "assistant", content: [{ type: "text", text: "First answer" }] }]);
-  expect(classroomActivity("rust").requests.map((r) => r.status)).toEqual(["running"]);
-  bridge.onAgentEnd([]);
-  expect(classroomActivity("rust").requests[0].status).toBe("failed");
-  expect(sent).toHaveLength(2);
 });
 it("retains service interruption and explicit retry without leaking plans or duplicating turns", async () => {
   const id = randomUUID();
@@ -150,7 +136,7 @@ it("uses saved review publication state once and keeps unpublished links on the 
     answers: [termAnswer("q1", "owner")],
     correct: { q1: true },
   });
-  const review = startReview("rust", randomUUID(), "pi").session;
+  const review = startReview("rust", randomUUID(), "service").session;
   server.setHooks({
     ...hooks,
     teacherState: () => ({
@@ -193,7 +179,7 @@ it("reports a stale request whose original lesson is missing", () => {
 
 it("projects next lesson checking before publication and retains the canonical retry after restart", async () => {
   const { startLessonRequest, updateLessonRequest } = await import("../src/next-lesson.ts");
-  const request = startLessonRequest("rust", randomUUID(), "PRIVATE TOPIC", "pi", "service");
+  const request = startLessonRequest("rust", randomUUID(), "PRIVATE TOPIC", "pi");
   const mirror = {
     id: `lesson:${request.id}`,
     lesson: request.lesson,

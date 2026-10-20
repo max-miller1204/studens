@@ -59,7 +59,7 @@ function readDailyReviews(): DailyReview[] {
         !request ||
         !isDailyId(request.id) ||
         !Number.isFinite(request.at) ||
-        !["pi", "service"].includes(request.owner) ||
+        request.owner !== "service" ||
         !Array.isArray(request.groups) ||
         !request.groups.length ||
         request.groups.some(
@@ -71,7 +71,7 @@ function readDailyReviews(): DailyReview[] {
             !g.plan ||
             g.plan.classroom !== g.classroom ||
             !isDailyId(g.plan.id) ||
-            !["pi", "service"].includes(g.plan.owner) ||
+            g.plan.owner !== "service" ||
             !["queued", "running", "done", "failed"].includes(g.plan.status) ||
             !Number.isSafeInteger(g.plan.ownerPid) ||
             g.plan.ownerPid < 1 ||

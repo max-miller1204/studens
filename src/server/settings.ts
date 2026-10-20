@@ -84,7 +84,7 @@ export async function handleSettings(
       connection: connectionSettings(),
       preferences: learnerPreferences(classroom),
       teacher: hooks?.teacherSettings?.(classroom) ?? null,
-      host: hooks?.delivery === "service" ? "service" : "pi",
+      host: hooks?.delivery === "service" ? "service" : null,
       currentPort: getPort(),
       saved,
       applyError,

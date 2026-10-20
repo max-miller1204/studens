@@ -16,7 +16,8 @@ import { createHash, randomUUID } from "node:crypto";
 
 import { allocateCriteria, type CriterionAllocation } from "./criteria.ts";
 import { ASSISTANCE, type Assistance } from "./evidence.ts";
-import { applyAnswer, applyGrade } from "./bridge.ts";
+import { applyAnswer } from "./answers.ts";
+import { applyGrade } from "./quiz-grading.ts";
 import { mergeGrades } from "./closed-grading.ts";
 import { gradeScore, validateGrade } from "../assets/runtime/grade.mjs";
 import { avoidedUses, htmlText } from "./glossary.ts";
@@ -34,7 +35,7 @@ import { parseTeachingPlan } from "./teaching-plan.ts";
 import { parseRubric } from "./rubric.ts";
 import { authoredVariants } from "./review-variants.ts";
 import { startReview, completePreparedReview } from "./review-session.ts";
-import type { ReviewOwner } from "./review-session.ts";
+import type { TeacherMessage } from "./service-state.ts";
 import { answersByQuestion, kindOf } from "./quiz.ts";
 import {
   answerReviewKey,
@@ -64,12 +65,11 @@ export interface ClassroomTool {
 
 /** Host-owned context is never part of a model's tool arguments. */
 export interface ToolContext {
-  retrieval?: { classroom: string; lesson: string; reply: store.PanelMessage };
+  retrieval?: { classroom: string; lesson: string; reply: TeacherMessage };
 }
 
 /** What differs between the hosts that run these tools. */
 export interface ToolHost {
-  reviewOwner?: ReviewOwner;
   /** Tells the model how to show a classroom when the server is not running. */
   browseHint: string;
   /** Tells the model how to check a lesson and present its URL. */
@@ -96,27 +96,6 @@ function fail(text: string, details: Record<string, unknown> = {}): ToolResult {
 /** Whether a tool result reports a failure. */
 export function isFailure(result: ToolResult): boolean {
   return result.details["error"] === true;
-}
-
-export function registerClassroomTools(
-  pi: any,
-  extra: ClassroomTool[] = [],
-  beforeWrite?: (name: string) => ToolContext | void,
-): void {
-  for (const tool of [...classroomTools(PI_HOST), ...extra]) {
-    pi.registerTool({
-      name: tool.name,
-      label: tool.label,
-      description: tool.description,
-      parameters: tool.parameters,
-      execute: (_toolCallId: string, params: unknown) => {
-        let context: ToolContext | void = undefined;
-        if (tool.name !== "lesson_health" && tool.name !== "resume_lesson_teacher")
-          context = beforeWrite?.(tool.name);
-        return tool.execute(params, context || undefined);
-      },
-    });
-  }
 }
 
 /** JSON Schema helpers, kept tiny so the definitions below stay readable. */
@@ -692,12 +671,7 @@ export function classroomTools(host: ToolHost): ClassroomTool[] {
         }
 
         try {
-          const { session } = startReview(
-            params.classroom,
-            randomUUID(),
-            host.reviewOwner ?? "pi",
-            limit,
-          );
+          const { session } = startReview(params.classroom, randomUUID(), "service", limit);
           if (session.status === "failed")
             return fail(`Review failed: ${session.error}. Use Retry review on the classroom page.`);
           if (!session.document && session.status !== "done")

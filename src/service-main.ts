@@ -5,11 +5,12 @@ import * as http from "node:http";
 import * as path from "node:path";
 import { LearnerInbox, McpSession, type JsonRpcMessage } from "./mcp.ts";
 import { classroomsRoot, packageRoot } from "./paths.ts";
-import { servicePaths, servicePort } from "./service-client.ts";
+import { MIGRATION_FAILED, servicePaths, servicePort } from "./service-client.ts";
 import { PhoneAccess } from "./phone-access.ts";
 import { TailnetLinks } from "./tailnet-links.ts";
 import { TeacherService } from "./teacher-service.ts";
 import { readTeacherState } from "./service-state.ts";
+import { MigrationError, migrateClassrooms } from "./migrate.ts";
 import type { Backend } from "./teacher.ts";
 import { serviceToolDefinitions } from "./service-tools.ts";
 import type { ClassroomTool, ToolResult } from "./tools.ts";
@@ -48,9 +49,17 @@ function claim(): void {
   }
 }
 claim();
+try {
+  for (const file of migrateClassrooms()) console.log(`Upgraded ${file}.`);
+} catch (err) {
+  fs.unlinkSync(paths.lock);
+  if (!(err instanceof MigrationError)) throw err;
+  console.error(`${MIGRATION_FAILED} ${err.message}`);
+  process.exit(1);
+}
 const teacher = new TeacherService(),
   phone = new PhoneAccess(),
-  links = new TailnetLinks(phone, "service");
+  links = new TailnetLinks(phone);
 const clients = new Map<string, { session: McpSession; inbox: LearnerInbox }>();
 let closing = false;
 function status(): Record<string, unknown> {

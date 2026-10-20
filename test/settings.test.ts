@@ -48,7 +48,7 @@ it("merges validated connection settings without exposing or replacing unrelated
     { port: 0 },
     { port: "43100" },
     { tailscale: "yes" },
-    { piTailscalePort: null },
+    { tailscalePort: null },
     { extra: 7 },
   ])
     expect(() => saveConnectionSettings(values, connectionSettings().revision)).toThrow();
@@ -115,7 +115,7 @@ it("exposes owner-appropriate settings, specific errors and private route guards
   const base = await server.start(0);
   const url = `${base}/api/settings?classroom=rust`;
   const initial = await (await fetch(url)).json();
-  expect(initial.host).toBe("pi");
+  expect(initial.host).toBeNull();
   expect(initial.teacher).toBeNull();
   const rejected = await fetch(url, {
     method: "PUT",

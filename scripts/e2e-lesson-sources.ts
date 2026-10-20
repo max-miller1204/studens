@@ -270,7 +270,6 @@ export async function verifyLessonSources(artifacts: string | null): Promise<voi
         topic: "",
         owner: "codex",
         ownerPid: process.pid,
-        delivery: "service",
         at: 1,
         status: "failed",
         error: "Owned unfinished publication fixture.",

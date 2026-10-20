@@ -15,7 +15,7 @@ export interface LessonRuntimeConfig {
   classroomTitle: string;
   lessonTitle: string;
   baseUrl: string;
-  delivery?: "push" | "wait" | "service";
+  delivery?: "wait" | "service";
   pendingPretests?: string[];
   reviewScreen?: boolean;
   prerequisites?: { title: string; url: string }[];

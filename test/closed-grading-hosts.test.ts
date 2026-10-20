@@ -2,7 +2,6 @@ import { afterEach, beforeEach, expect, it } from "vitest";
 import { makeFixture, seedClassroom, type Fixture } from "./helpers.ts";
 import * as store from "../src/store.ts";
 import * as server from "../src/server.ts";
-import { ClassroomBridge } from "../src/bridge.ts";
 import { completeClosedSubmission } from "../src/quiz-grading.ts";
 import { TeacherService } from "../src/teacher-service.ts";
 import { readTeacherState, saveTeacherState } from "../src/service-state.ts";
@@ -92,12 +91,6 @@ it("saves a private grading plan before writes and recovers it once despite a ch
     "/c/rust/001-ownership/quiz/submissions/anything.json",
   ])
     expect((await fetch(base + url)).status).toBe(404);
-  const bridge = new ClassroomBridge({
-    sendUserMessage: () => {
-      throw new Error("Unexpected Pi turn");
-    },
-  });
-  bridge.grade(store.findSubmission(s.id)!);
   const inbox = new LearnerInbox();
   recoverLearnerRequests(inbox, ["rust"]);
   expect(inbox.size).toBe(0);
@@ -155,7 +148,7 @@ it("merges mixed quiz points and forbids regrading a closed answer", async () =>
   seed(true);
   const s = submit(true);
   expect(completeClosedSubmission(s)).toBe(false);
-  const prompt = gradePrompt(s, "push");
+  const prompt = gradePrompt(s, "service");
   expect(prompt).toContain("[open]");
   expect(prompt).not.toContain("[closed]");
   for (const params of [
@@ -250,7 +243,6 @@ it("applies a saved mixed plan before its first grade write without a model call
         status: "planned",
         at: Date.now(),
         prompt: gradePrompt(s, "service"),
-        planVersion: 2,
         planRubricDigest: s.rubricDigest,
         applied: 0,
         plan: {

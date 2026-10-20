@@ -8,12 +8,10 @@ import {
   updateRefill,
   saveRefillPlan,
   applyRefill,
-  piRefillTool,
   refreshRefill,
 } from "../src/review-refill.ts";
 import { lessonPools } from "../src/review-pool.ts";
 import { startReview, completePreparedReview } from "../src/review-session.ts";
-import { ClassroomBridge } from "../src/bridge.ts";
 import { TeacherService } from "../src/teacher-service.ts";
 import { readTeacherState, saveTeacherState } from "../src/service-state.ts";
 import * as store from "../src/store.ts";
@@ -90,12 +88,11 @@ it.each(["miss", "low"] as const)(
 );
 
 it("deduplicates targeted misses and low pools, and keeps plans and keys private", () => {
-  const request = discoverRefills("rust", "pi")[0];
+  const request = discoverRefills("rust", "service")[0];
   expect(request.reason).toBe("miss");
   expect(request.prompt).toContain("the original owner");
   expect(request.prompt).toContain("Not quite");
-  expect(discoverRefills("rust", "pi")).toHaveLength(1);
-  expect(discoverRefills("rust", "service")).toHaveLength(0);
+  expect(discoverRefills("rust", "service")).toHaveLength(1);
   const key = fs.readFileSync(path.join(fixture.root, "rust/001-ownership/quiz/key.json"), "utf8");
   updateRefill(request, "running");
   saveRefillPlan(request, variants(request));
@@ -109,15 +106,15 @@ it("deduplicates targeted misses and low pools, and keeps plans and keys private
   expect(fs.readFileSync(path.join(fixture.root, "rust/001-ownership/quiz/key.json"), "utf8")).toBe(
     key,
   );
-  const session = startReview("rust", randomUUID(), "pi").session;
+  const session = startReview("rust", randomUUID(), "service").session;
   completePreparedReview(session);
   // Three variants still leave two unseen questions, so there is no low-pool request.
-  expect(discoverRefills("rust", "pi")).toHaveLength(1);
+  expect(discoverRefills("rust", "service")).toHaveLength(1);
   expect(store.listGrades("rust", "001-ownership")).toHaveLength(1);
 });
 
 it("rejects invalid or colliding output before saving a plan", () => {
-  const request = discoverRefills("rust", "pi")[0];
+  const request = discoverRefills("rust", "service")[0];
   updateRefill(request, "running");
   const bad = variants(request);
   bad[0].id = "v1";
@@ -176,7 +173,6 @@ it("recovers a saved service refill plan without another model turn or grade", a
         at: request.at,
         status: "planned",
         plan: refillPlan(request),
-        planVersion: 2,
       },
     ],
     messages: [],
@@ -210,27 +206,6 @@ it("recovers a saved service refill plan without another model turn or grade", a
   await replayed.stop();
 });
 
-it("keeps Pi background work behind live turns, isolates its writes, and replays a saved plan", async () => {
-  const sent: string[] = [];
-  const bridge = new ClassroomBridge({ sendUserMessage: (text) => sent.push(text) });
-  bridge.noteForeignTurn();
-  bridge.maintenance("rust");
-  await new Promise((r) => setTimeout(r, 10));
-  expect(sent).toHaveLength(0);
-  bridge.onAgentEnd([]);
-  await new Promise((r) => setTimeout(r, 10));
-  expect(sent).toHaveLength(1);
-  expect(() => bridge.assertCanWrite("grade_lesson_quiz")).toThrow("only save private");
-  const request = refillRequests("rust")[0];
-  const args = JSON.parse(refillPlan(request).calls[0].arguments_json);
-  expect((await piRefillTool().execute(args)).details.error).toBeUndefined();
-  bridge.onAgentEnd([]);
-  expect(refillRequests("rust")[0].status).toBe("done");
-  expect(store.listPanelMessages("rust", "001-ownership")).toHaveLength(0);
-  expect(store.listGrades("rust", "001-ownership")).toHaveLength(1);
-  bridge.reset();
-});
-
 it("keeps a malformed background pool from blocking saved grades and leaves retry explicit", async () => {
   fixture.write("rust/001-ownership/quiz/key.json", "broken after grading");
   const teacher = new TeacherService(async () => refillPlan(refillRequests("rust")[0]));
@@ -250,41 +225,6 @@ it("keeps a malformed background pool from blocking saved grades and leaves retr
   expect(refillRequests("rust")[0].status).toBe("done");
   expect(store.listGrades("rust", "001-ownership")).toHaveLength(1);
   await teacher.stop();
-});
-
-it("keeps queued Pi work with its live owning process", async () => {
-  const request = discoverRefills("rust", "pi")[0];
-  request.ownerPid = process.ppid;
-  fixture.write("rust/.review-refills.json", JSON.stringify({ version: 1, requests: [request] }));
-  const sent: string[] = [];
-  const bridge = new ClassroomBridge({ sendUserMessage: (text) => sent.push(text) });
-  bridge.restoreRefills();
-  await new Promise((r) => setTimeout(r, 10));
-  expect(sent).toHaveLength(0);
-  expect(refillRequests("rust")[0].status).toBe("queued");
-  const teacher = new TeacherService(async () => refillPlan(request));
-  expect(() => teacher.attach("rust", "codex")).toThrow("live Pi session");
-  await teacher.stop();
-  bridge.reset();
-});
-
-it("does not restart Pi refills after a persistent teacher takes ownership", async () => {
-  const request = discoverRefills("rust", "pi")[0];
-  request.ownerPid = 999999999;
-  fixture.write("rust/.review-refills.json", JSON.stringify({ version: 1, requests: [request] }));
-  saveTeacherState("rust", {
-    version: 1,
-    identity: { backend: "codex" },
-    requests: [],
-    messages: [],
-  });
-  const sent: string[] = [];
-  const bridge = new ClassroomBridge({ sendUserMessage: (text) => sent.push(text) });
-  bridge.restoreRefills();
-  await new Promise((r) => setTimeout(r, 10));
-  expect(sent).toHaveLength(0);
-  expect(refillRequests("rust")[0].status).toBe("queued");
-  bridge.reset();
 });
 
 it("refreshes queued refills after earlier pool writes and keeps explicit retry errors", async () => {

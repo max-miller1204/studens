@@ -32,8 +32,7 @@ export async function verifyReviewWorkload(artifacts: string | null): Promise<vo
   const originalDates = store.reviewItems("rust").map((i) => ({ key: i.key, dueAt: i.dueAt }));
   let teacherTurns = 0;
   server.setHooks({
-    reviewOwner: "pi",
-    delivery: "push",
+    reviewOwner: "service",
     onReview: completePreparedReview,
     onReviewRetry: completePreparedReview,
     onAsk() {},

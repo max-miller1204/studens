@@ -7,6 +7,5 @@ export * from "./store/quiz-history.ts";
 export * from "./store/quizzes.ts";
 export * from "./store/review.ts";
 export * from "./store/reflections.ts";
-export * from "./store/panel.ts";
 export * from "./store/drafts.ts";
 export * from "./store/records.ts";

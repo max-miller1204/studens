@@ -12,7 +12,7 @@ export interface ServerHooks {
   lessonOwner?(classroom: string): LessonRequest["owner"];
   onNextLesson?(request: LessonRequest): void;
   onNextLessonRetry?(request: LessonRequest): void;
-  delivery?: "push" | "wait" | "service";
+  delivery?: "wait" | "service";
   canAccept?(classroom: string): void;
   teacherState?(classroom: string, lesson?: string): unknown;
   reviewOwner?: ReviewOwner;

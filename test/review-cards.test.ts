@@ -2,8 +2,6 @@ import { refillRequests } from "../src/review-refill.ts";
 import { completeClosedSubmission } from "../src/quiz-grading.ts";
 import { TeacherService } from "../src/teacher-service.ts";
 import { readTeacherState } from "../src/service-state.ts";
-import { ClassroomBridge } from "../src/bridge.ts";
-import { piResumes } from "../src/teacher-resume.ts";
 import { afterEach, beforeEach, expect, it } from "vitest";
 import { randomUUID } from "node:crypto";
 import * as fs from "node:fs";
@@ -47,7 +45,7 @@ afterEach(async () => {
 });
 
 it("keeps each card's rubric and completion durable without completing the remaining cards", () => {
-  const session = startReview("rust", randomUUID(), "pi").session;
+  const session = startReview("rust", randomUUID(), "service").session;
   const quizzes = authoredQuizzes(session.document!.lesson_html);
   expect(quizzes.map((quiz) => quiz.questions.length)).toEqual([1, 1]);
   const rubric = JSON.parse(session.document!.rubric_json);
@@ -67,7 +65,7 @@ it("keeps each card's rubric and completion durable without completing the remai
     correct: { r1: true },
   });
   expect(resumableReview(currentReview("rust")!)).toBe(true);
-  expect(startReview("rust", randomUUID(), "pi").session.id).toBe(session.id);
+  expect(startReview("rust", randomUUID(), "service").session.id).toBe(session.id);
   writeGradedAttempt({
     lesson: session.lesson,
     quizId: "review-2",
@@ -81,7 +79,7 @@ it("keeps each card's rubric and completion durable without completing the remai
 });
 
 it("guards review history ancestors and rejects private files on canonical and legacy routes", async () => {
-  const session = startReview("rust", randomUUID(), "pi").session;
+  const session = startReview("rust", randomUUID(), "service").session;
   completePreparedReview(session);
   const base = await server.start(0);
   for (const prefix of [`/c/rust/reviews/${session.lesson}`, `/c/rust/${session.lesson}`]) {
@@ -94,88 +92,6 @@ it("guards review history ancestors and rejects private files on canonical and l
   fs.renameSync(history, moved);
   fs.symlinkSync(moved, history, "dir");
   expect((await fetch(`${base}/c/rust/reviews/${session.lesson}`)).status).toBe(404);
-});
-
-it("keeps review panel replies durable behind an active Pi origin", () => {
-  const session = startReview("rust", randomUUID(), "pi").session;
-  completePreparedReview(session);
-  const sent: string[] = [];
-  const bridge = new ClassroomBridge({ sendUserMessage: (text) => sent.push(text) });
-  bridge.noteForeignTurn();
-  const id = randomUUID();
-  bridge.chat("rust", session.lesson, "The current owner releases it.", id);
-  bridge.chat("rust", session.lesson, "The current owner releases it.", id);
-  expect(sent).toHaveLength(0);
-  expect(piResumes("rust")).toHaveLength(1);
-  bridge.onAgentEnd([
-    { role: "assistant", content: [{ type: "text", text: "Background output" }] },
-  ]);
-  expect(sent).toHaveLength(1);
-  expect(
-    store.listPanelMessages("rust", session.lesson).filter((message) => message.role === "teacher"),
-  ).toHaveLength(0);
-  bridge.onAgentEnd([{ role: "assistant", content: [{ type: "text", text: "Correct owner." }] }]);
-  expect(store.listPanelMessages("rust", session.lesson).map((message) => message.text)).toEqual([
-    "The current owner releases it.",
-    "Correct owner.",
-  ]);
-  expect(piResumes("rust")[0].status).toBe("done");
-  bridge.reset();
-});
-
-it("queues consecutive Pi misses behind the active correction without repeating grades", () => {
-  const session = startReview("rust", randomUUID(), "pi").session;
-  completePreparedReview(session);
-  const sent: string[] = [];
-  const bridge = new ClassroomBridge({ sendUserMessage: (text) => sent.push(text) });
-  server.setHooks({
-    onAsk: () => {},
-    onFollowUp: () => {},
-    onQuizSubmit: () => {},
-    onReflect: () => {},
-    onReviewMiss: (submission) => bridge.correctReview(submission),
-  });
-  const submissions = ["review", "review-2"].map((quizId, i) => {
-    const submission = store.createSubmission({
-      classroom: "rust",
-      lesson: session.lesson,
-      quizId,
-      quizTitle: `Card ${i + 1}`,
-      kind: "review",
-      answers: [
-        {
-          questionId: `r${i + 1}`,
-          type: "choice",
-          prompt: "Who releases it?",
-          value: "old",
-          label: "The old binding",
-          reviewOf: session.items[i].key,
-        },
-      ],
-    });
-    expect(() => completeClosedSubmission(submission)).not.toThrow();
-    return submission;
-  });
-  expect(sent).toHaveLength(1);
-  expect(piResumes("rust").map((request) => request.id)).toEqual(
-    submissions.map((s) => `resume:${s.id}`),
-  );
-  // A model-origin handoff still cannot start a different request.
-  expect(() =>
-    bridge.resume({ classroom: "rust", lesson: session.lesson, submission_id: submissions[1].id }),
-  ).toThrow("cannot start another teacher request");
-  bridge.onAgentEnd([
-    { role: "assistant", content: [{ type: "text", text: "First correction?" }] },
-  ]);
-  expect(sent).toHaveLength(2);
-  bridge.onAgentEnd([
-    { role: "assistant", content: [{ type: "text", text: "Second correction?" }] },
-  ]);
-  for (const submission of submissions) completeClosedSubmission(submission);
-  expect(sent).toHaveLength(2);
-  expect(store.listGrades("rust", session.lesson)).toHaveLength(2);
-  expect(piResumes("rust").every((request) => request.status === "done")).toBe(true);
-  bridge.reset();
 });
 
 it("recovers a closed miss after the grade save and gives each missed card one corrective request", async () => {

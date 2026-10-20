@@ -128,36 +128,6 @@ export function classroomActivity(classroom: string): { requests: ActivityReques
       item: "Daily review",
     });
   }
-  // Historical live-session annotations may have no saved diagnostic or retry handle.
-  // Describe that missing history honestly; never invent a new dispatcher or re-answer it.
-  if (state?.identity?.backend === "pi") {
-    for (const lesson of readActivity(`lesson discovery for ${classroom}`, () =>
-      store.listLessons(classroom),
-    )) {
-      for (const a of readActivity(
-        `annotation state ${classroom}/${lesson.name}/annotations.json`,
-        () => store.listAnnotations(classroom, lesson.name),
-      )) {
-        for (const turn of [
-          { ...a, id: `ask:${a.id}`, kind: "ask" },
-          ...(a.followUps ?? []).map((t) => ({ ...t, id: `follow-up:${t.id}`, kind: "follow-up" })),
-        ]) {
-          if (turn.status !== "failed" || requests.has(turn.id)) continue;
-          requests.set(turn.id, {
-            id: turn.id,
-            lesson: lesson.name,
-            kind: turn.kind,
-            target: a.id,
-            status: "failed",
-            error:
-              "This historical Pi request has no saved error or supported service retry. Open its original question to inspect the conversation. Recovery requires its previous Pi package.",
-            retry: null,
-            retryId: turn.id,
-          });
-        }
-      }
-    }
-  }
   const result = [...requests.values()].flatMap((r, order) => {
     if (
       typeof r.id !== "string" ||

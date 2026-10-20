@@ -13,17 +13,10 @@ import * as path from "node:path";
 
 import { assetsDir, classroomDir, docsDir, lessonDir, templatesDir } from "./paths.ts";
 import { answerDetail, answersByQuestion, kindOf } from "./quiz.ts";
-import { readLesson, lessonReviewItems } from "./store.ts";
+import { readLesson } from "./store.ts";
 import type { ReviewSession } from "./review-session.ts";
-import { relativeDay, reviewTiming, type ReviewSummary } from "./review.ts";
-import type {
-  Annotation,
-  FollowUp,
-  PanelMessage,
-  QuizGrade,
-  QuizSubmission,
-  Reflection,
-} from "./store.ts";
+import { relativeDay, type ReviewSummary } from "./review.ts";
+import type { Annotation, FollowUp, QuizGrade, QuizSubmission, Reflection } from "./store.ts";
 
 /** Read a required teaching document. */
 function readDoc(name: string): string {
@@ -53,7 +46,7 @@ export function dedicatedTeacherPrompt(
     "Include only calls needed for this request. Omit unused calls. Never include placeholder calls or empty arguments. A grading plan returns one grade_quiz_answers call. It cannot include record_retrieval_check. That call requires an actual learner panel reply to a retrieval question and a learning record. Asking the question does not supply its answer or evidence.",
     "Use the teacher panel as chat. A wrong answer on a check or review needs a brief explanation and one new retrieval question. Do not give its answer. Wait for the learner's panel reply by returning the plan. Keep graded quizzes locked and preserve their scores. Use a different situation, not a leading paraphrase of the answer. A pretest asks about the upcoming lesson before instruction, unless explicitly requested as a prerequisite diagnostic. Wrong answers are expected. Give targeted emphasis or clarification in feedback. The gate releases prewritten teaching; you cannot rewrite it. Do not run a retrieval check after it. Direct the learner to teaching released after grading.",
     "Grade from the private rubric set before submission. Accept equivalent solutions. Apply partial credit to specific reasoning components. Confidence changes feedback only. Reinforce a correct but uncertain answer with an explanation. Never change credit because of confidence or assistance. Distinguish assisted, immediate independent, delayed retrieval, and transfer evidence. For saved criterion definitions, return questions[].criteria with criterion_id, points_earned, and feedback for every criterion. Explain the specific submitted step that met or missed it, including correct reasoning; preserve equivalent solutions. Never supply criterion descriptions or weights. Criterion points must sum to the question allocation. Omit criteria only where no definitions were saved. Supply points for every question when the request names the validated assessment contract. Do not invent criteria or change weights. Feedback may explain submitted answers. Before submission, clarify instructions without solving the assessment. Never quote the whole private rubric. Use only teaching released by the pretest gate.",
-    "For grade_quiz_answers, omit score. The service sums raw points and calculates the total. It rejects any supplied score. Keep every question allocation tied to the private rubric. Older saved requests may name grade_lesson_quiz and ask for score. This turn uses the score-free grade_quiz_answers operation in the current definitions.",
+    "For grade_quiz_answers, omit score. The service sums raw points and calculates the total. It rejects any supplied score. Keep every question allocation tied to the private rubric.",
     "lessonStage.gatedPretests names the pretests that release teaching. lessonStage.pendingPretests names those still awaiting grading. If the submitted pretest is gated, direct the learner to teaching released after grading. The service deliberately removes that teaching from your current HTML context. Do not claim that teaching is missing. For a standalone pretest, offer a lesson. The learner can select Next lesson on the classroom page.",
     "context.reviewItems lists this lesson's original graded keys. If a panel reply supports learning_record, return record_retrieval_check in the same plan with one of these keys, the actual learner reply, and evidence. Put the new record's content in plan.learning_record.markdown. Omit learning_record from the call arguments. The service creates that file and supplies its name to the tool. An existing file is not a prerequisite. If you cannot supply the retrieval call, return plan.learning_record=null. A record alone cannot verify a reply.",
     "context.reviewTiming is code-owned timing for the current corrective panel reply: use answerAt minus feedbackAt, never reviewItems.elapsedDays (which describes a previous graded exposure), selected-review metadata, free-form records, confidence or self-ratings. An immediate correction is immediate even when the missed review followed a long absence. Timing alone does not prove independence or transfer.",
@@ -68,25 +61,16 @@ export function dedicatedTeacherPrompt(
 }
 
 /**
- * How a wake-up message reached the model. Pi pushes it into the session; Claude Code
- * and Codex receive it as the result of a `wait_for_learner` call.
+ * How a wake-up message reached the model. The service gives it to the dedicated
+ * teacher; an MCP host without the service receives it from `wait_for_learner`.
  */
-export type Delivery = "push" | "wait" | "service";
+export type Delivery = "wait" | "service";
 
 function arrivalNote(delivery: Delivery): string {
-  if (delivery === "service")
-    return "The persistent classroom service delivered this request to its dedicated teacher.";
-  return delivery === "push"
-    ? "This notification was delivered automatically; nothing was polled."
+  return delivery === "service"
+    ? "The persistent classroom service delivered this request to its dedicated teacher."
     : "It arrived as the result of your `wait_for_learner` call.";
 }
-
-/**
- * Where a teacher reply reaches the learner, for requests that have no card. The
- * learner stays on the lesson page, so the reply goes to its teacher panel.
- */
-export const PANEL_REPLY =
-  "The learner is on the lesson page and reads your reply in its teacher panel. Your final message in this turn is posted there as written, so address it to the learner. Do not ask them to answer in the terminal or chat: they reply in the panel, and that reply comes back to you.";
 
 /** The same quiz follow-up rule applies to every host. */
 export const QUIZ_FOLLOW_UP =
@@ -455,7 +439,6 @@ export function gradePrompt(
           "Put the complete corrective retrieval question in the top-level message field: that field is the teacher panel. feedback_markdown and questions[].feedback belong to the locked graded quiz. The panel message must contain the question itself so the learner can answer there.",
         ]
       : []),
-    ...(delivery === "push" ? ["", PANEL_REPLY] : []),
   ].join("\n");
 }
 
@@ -465,11 +448,9 @@ export function gradePrompt(
  */
 export function reflectPrompt(reflection: Reflection, delivery: Delivery): string {
   const next =
-    delivery === "push"
-      ? `Then reply to the learner in a sentence or two. ${PANEL_REPLY}`
-      : delivery === "service"
-        ? "Return the service plan. The service receives the next request."
-        : "Then call `wait_for_learner` again.";
+    delivery === "service"
+      ? "Return the service plan. The service receives the next request."
+      : "Then call `wait_for_learner` again.";
   return [
     `💭 The learner saved a self-explanation in a lesson. ${arrivalNote(delivery)}`,
     "",
@@ -485,54 +466,6 @@ export function reflectPrompt(reflection: Reflection, delivery: Delivery): strin
     quote(reflection.text),
     "",
     `Do not grade it. Read it for what it shows about their understanding. If it shows a gap or a misconception, record it in the classroom notes and address it in the next lesson or check. A self-explanation alone does not establish mastery. Do not write a learning record without a verified retrieval check. ${next}`,
-  ].join("\n");
-}
-
-/** How many earlier panel messages a reply prompt restates. */
-const PANEL_HISTORY = 12;
-
-/**
- * Sent when the learner replies in the teacher panel. Pi only: the service gives its
- * teacher the whole conversation as context.
- *
- * The recent conversation is inlined because the reply ("a mutex", "yes") is
- * meaningless without the question it answers, and that question may be many turns
- * back.
- */
-export function panelReplyPrompt(
-  classroom: string,
-  lesson: string,
-  reply: PanelMessage,
-  earlier: readonly PanelMessage[],
-): string {
-  const items = lessonReviewItems(classroom, lesson);
-  const history = earlier
-    .filter((m) => m.at < reply.at)
-    .slice(-PANEL_HISTORY)
-    .flatMap((m) => [m.role === "teacher" ? "You wrote:" : "They wrote:", "", quote(m.text), ""]);
-  return [
-    `💬 The learner replied in the teacher panel on a lesson page. ${arrivalNote("push")}`,
-    "",
-    `Classroom: \`${classroom}\``,
-    `Lesson: \`${lesson}\` (${path.join(lessonDir(classroom, lesson), "lesson.html")})`,
-    "",
-    `Classroom directory: ${classroomDir(classroom)}`,
-    `Learning records directory: ${path.join(classroomDir(classroom), "learning-records")}`,
-    `Notes index: ${path.join(classroomDir(classroom), "NOTES.md")}`,
-    "Use these exact paths. In the record format below, ./ means this classroom directory. Create the learning-records directory only when a verified reply needs a record. Keep the quiz score unchanged.",
-    "This lesson's original review items:\n" + JSON.stringify(items),
-    "Current corrective reply timing (code-owned):\n" +
-      JSON.stringify(reviewTiming(items, reply.at)),
-    "Use this reply's answerAt minus feedbackAt for its delay. reviewItems.elapsedDays describes the previous graded exposure, not this correction. Selected-review metadata and free-form learning records cannot establish the current delay. An immediate correction stays immediate even after an overdue review. Confidence and self-ratings never affect scheduling.",
-    "Learning record format:\n" + readDoc("LEARNING-RECORD-FORMAT.md"),
-    ...(history.length > 0 ? ["The panel conversation so far:", "", ...history] : []),
-    "Their reply:",
-    "",
-    quote(reply.text),
-    "",
-    "If it answers a retrieval question you asked, check it. Follow up with one new question at a time until they demonstrate understanding. When they do, write a learning record and call record_retrieval_check with this exact reply as the answer. If they ask about the lesson, answer it as their teacher. If they agree to continue, start the next lesson in this classroom with the authoring steps, then give them its URL.",
-    "",
-    PANEL_REPLY,
   ].join("\n");
 }
 
@@ -589,8 +522,7 @@ with 1–3 sentences in their words._
 }
 
 /** Supply review authoring context only for an explicit browser request. */
-export function reviewPrompt(session: ReviewSession, delivery: "push" | "service"): string {
-  const dir = lessonDir(session.classroom, session.lesson);
+export function reviewPrompt(session: ReviewSession): string {
   return [
     `The learner selected Start review in classroom ${session.classroom}. Create only this review: ${session.lesson}.`,
     "Copy each known objective object exactly. If an original objective is unknown, infer only statement and application from its question. Omit retentionDays, interleaveGroup, and strategy. Do not invent a retention goal or method labels. The optional interleaveGroup and strategy fields must either both be present or both be absent.",
@@ -598,9 +530,7 @@ export function reviewPrompt(session: ReviewSession, delivery: "push" | "service
       ? [`Previous review authoring error: ${session.error}. Correct it in this attempt.`]
       : []),
     "Write one fresh question for each selected item. Keep their data-review-of keys and order. Keep answers, solutions, teaching, and hints out of the learner page. Preserve the original objective and retention policy in the private teaching plan. Use independent retrieval or a fresh application when it fits the objective. For every transfer-needed item, use task transfer and support independent in the private plan. Write an unfamiliar application of the same principle, with a new situation that requires method choice, diagnosis, or justification. Do not reuse any of its saved prompts or merely change names or numbers. Use the saved prompts as prior probes to avoid. Do not name the required method or supply hints. Do not claim retained knowledge from creating this page.",
-    delivery === "service"
-      ? "Return exactly one publish_review call. Its arguments_json contains lesson_html, rubric_json, and teaching_plan_json as strings. The service validates and saves these files. Return learning_record=null. Keep notes_markdown an empty string. Do not use tools or write files. Give a short message that the review is ready."
-      : `Write ${path.join(dir, "lesson.html")}, ${path.join(dir, "quiz/key.json")}, and ${path.join(dir, "quiz/plan.json")}. Do not call scaffold_review. Do not change any other lesson or learner history. The server publishes this page only after your turn ends and validation passes.`,
+    "Return exactly one publish_review call. Its arguments_json contains lesson_html, rubric_json, and teaching_plan_json as strings. The service validates and saves these files. Return learning_record=null. Keep notes_markdown an empty string. Do not use tools or write files. Give a short message that the review is ready.",
     `Package paths are absolute. Templates are in ${templatesDir()} and documentation is in ${docsDir()}. Never resolve package assets or docs under the classroom directory. The complete shells and contracts follow.`,
     `Review shell (${path.join(templatesDir(), "review.html")}):\n` +
       fs.readFileSync(path.join(templatesDir(), "review.html"), "utf8"),

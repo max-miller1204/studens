@@ -7,7 +7,6 @@ export interface ClassroomConfig {
   port?: number;
   tailscale?: boolean;
   tailscalePort?: number;
-  piTailscalePort?: number;
 }
 
 let testConfigPath: string | undefined;
@@ -52,16 +51,14 @@ export function resolveConfiguredPort(port: unknown): number {
   throw new Error("Configured port must be an integer from 1 to 65535.");
 }
 
-export type TailnetHost = "service" | "pi";
-
-/** Automatic tailnet links. `PI_CLASSROOM_TAILSCALE=0` takes priority. Pi uses port 8444. */
-export function tailscaleLinks(
-  host: TailnetHost,
-  config: ClassroomConfig = readConfig(),
-): { enabled: boolean; port?: number } {
+/** Automatic tailnet links. `PI_CLASSROOM_TAILSCALE=0` takes priority. */
+export function tailscaleLinks(config: ClassroomConfig = readConfig()): {
+  enabled: boolean;
+  port?: number;
+} {
   return {
     enabled: process.env["PI_CLASSROOM_TAILSCALE"] !== "0" && config.tailscale !== false,
-    port: host === "pi" ? (config.piTailscalePort ?? 8444) : config.tailscalePort,
+    port: config.tailscalePort,
   };
 }
 
@@ -70,13 +67,11 @@ export function validateConfig(config: ClassroomConfig): void {
   resolveConfiguredPort(config.port);
   if (config.tailscale !== undefined && typeof config.tailscale !== "boolean")
     throw new Error("tailscale must be a boolean.");
-  for (const key of ["tailscalePort", "piTailscalePort"] as const) {
-    if (config[key] !== undefined) {
-      try {
-        resolveConfiguredPort(config[key]);
-      } catch {
-        throw new Error(`${key} must be an integer from 1 to 65535.`);
-      }
+  if (config.tailscalePort !== undefined) {
+    try {
+      resolveConfiguredPort(config.tailscalePort);
+    } catch {
+      throw new Error("tailscalePort must be an integer from 1 to 65535.");
     }
   }
 }

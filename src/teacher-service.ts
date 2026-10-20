@@ -8,7 +8,6 @@ import {
 } from "./grade-dispute.ts";
 import type { DisputeTarget } from "./grade-dispute.ts";
 import { validateAnswerCriteria } from "./criteria.ts";
-import { dailyReviews, groupSession } from "./store/daily-review.ts";
 import { modelSelection } from "./teacher-models.ts";
 import { reteachOffers, reteachPrompt } from "./reteach.ts";
 import {
@@ -24,7 +23,6 @@ import type { LessonRequest } from "./next-lesson.ts";
 /** Run one request at a time for each classroom. Persist plans before writes. */
 import {
   discoverRefills,
-  refillOwnerAlive,
   refreshRefill,
   refillRequests,
   updateRefill,
@@ -33,11 +31,12 @@ import {
   REFILL_TOOL,
 } from "./review-refill.ts";
 import type { RefillRequest } from "./review-refill.ts";
-import { prepareResume, piResumes, piOwnerAlive, type ResumeInput } from "./teacher-resume.ts";
+import { prepareResume, type ResumeInput } from "./teacher-resume.ts";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { createHash } from "node:crypto";
-import { applyTurnAnswer, withHtml } from "./bridge.ts";
+import { applyTurnAnswer } from "./answers.ts";
+import { renderMarkdown } from "./markdown.ts";
 import { classroomDir, lessonDir, safeStaticFile, isStoredReview } from "./paths.ts";
 import { stageLesson } from "./pretest.ts";
 import { applyGrade, completeClosedSubmission } from "./quiz-grading.ts";
@@ -58,6 +57,7 @@ import { classroomTools, isFailure, PI_HOST } from "./tools.ts";
 import {
   readTeacherState,
   saveTeacherState,
+  type TeacherMessage,
   type TeacherRequest,
   type TeacherState,
 } from "./service-state.ts";
@@ -73,7 +73,6 @@ import {
 import {
   completePreparedReview,
   reviewSessions,
-  requireReviewOwner,
   updateReview,
   publishReview,
   validateReview,
@@ -93,46 +92,6 @@ export class TeacherService {
 
   attach(classroom: string, backend?: Backend): void {
     if (!store.readClassroom(classroom)) throw new Error(`No such classroom: ${classroom}`);
-    const legacyLesson = lessonRequests(classroom).find(
-      (r) => r.owner === "pi" && r.delivery !== "service" && r.status !== "done",
-    );
-    if (legacyLesson)
-      throw new Error(
-        `Classroom ${classroom} has unfinished legacy Pi lesson request ${legacyLesson.id}. Reopen the previous Pi package, explicitly retry and finish that request, then stop its server before retrying open_classroom. Saved plans and history have not been changed.`,
-      );
-    if (piResumes(classroom).some((r) => r.status === "running" && piOwnerAlive(r)))
-      throw new Error(
-        "A live Pi session owns this classroom's resume request. Finish it and explicitly stop the previous Pi server, then retry open_classroom.",
-      );
-    if (
-      refillRequests(classroom).some(
-        (r) =>
-          r.owner === "pi" &&
-          ["queued", "running", "planned"].includes(r.status) &&
-          refillOwnerAlive(r),
-      )
-    )
-      throw new Error(
-        "A live Pi session owns this classroom's background review work. Finish it and explicitly stop the previous Pi server, then retry open_classroom.",
-      );
-    const legacyReview = reviewSessions(classroom).find(
-      (r) => r.owner === "pi" && r.status !== "done",
-    );
-    const legacyRefill = refillRequests(classroom).find(
-      (r) => r.owner === "pi" && r.status !== "done",
-    );
-    const legacyResume = piResumes(classroom).find((r) => r.status !== "done");
-    const legacyDaily = dailyReviews()
-      .flatMap((request) => request.groups)
-      .find((group) => {
-        if (group.classroom !== classroom || group.empty) return false;
-        const session = groupSession(group) ?? group.plan;
-        return session.owner === "pi" && session.status !== "done";
-      });
-    if (legacyReview || legacyRefill || legacyResume || legacyDaily)
-      throw new Error(
-        `Classroom ${classroom} has unfinished legacy Pi work ${legacyReview?.id ?? legacyRefill?.id ?? legacyResume?.id ?? legacyDaily?.plan.id}. Reopen the previous Pi package, explicitly retry and finish that request, then stop its server before retrying open_classroom. Saved plans and history have not been changed.`,
-      );
     let state = this.states.get(classroom) ?? readTeacherState(classroom);
     if (!state) {
       if (!backend)
@@ -328,11 +287,9 @@ export class TeacherService {
     const session = reviewSessions(request.classroom).find((s) => s.id === request.target);
     if (!session || session.lesson !== request.lesson)
       throw new Error("The review request no longer exists.");
-    requireReviewOwner(session, "service");
     return session;
   }
   review(session: ReviewSession): void {
-    requireReviewOwner(session, "service");
     if (session.document) {
       if (session.status !== "failed") {
         completePreparedReview(session);
@@ -348,7 +305,7 @@ export class TeacherService {
       lesson: session.lesson,
       kind: "review",
       target: session.id,
-      prompt: reviewPrompt(session, "service"),
+      prompt: reviewPrompt(session),
     });
     if (session.status === "failed") {
       const state = this.states.get(session.classroom)!;
@@ -362,15 +319,13 @@ export class TeacherService {
     const state = this.states.get(request.classroom);
     if (!state) throw new Error("No teacher owns this classroom. Call open_classroom first.");
     requireLessonOwner(request, state.identity.backend);
-    if (request.owner === "pi" && request.delivery !== "service")
-      throw new Error("This legacy Pi lesson request must finish in its previous Pi package.");
     this.enqueue({
       id: `lesson:${request.id}`,
       classroom: request.classroom,
       lesson: request.lesson,
       kind: "lesson",
       target: request.id,
-      prompt: nextLessonPrompt(request, "service"),
+      prompt: nextLessonPrompt(request),
     });
     if (request.status === "failed") {
       const mirror = state.requests.find((r) => r.id === `lesson:${request.id}`)!;
@@ -448,13 +403,13 @@ export class TeacherService {
     if (existingReply && (existingReply.lesson !== lesson || existingReply.text !== text))
       throw new Error("This reply ID already belongs to a different saved panel reply.");
     if (!state.messages.some((m) => m.id === key)) {
-      const previous = this.messages(classroom, lesson, state).at(-1);
+      const previous = this.messages(lesson, state).at(-1);
       state.messages.push({
         id: key,
         lesson,
         role: "learner",
         text,
-        at: this.nextMessageAt(classroom, lesson, state),
+        at: this.nextMessageAt(lesson, state),
         ...(previous?.role === "teacher" ? { replyTo: previous.id } : {}),
       });
       saveTeacherState(classroom, state);
@@ -481,28 +436,16 @@ export class TeacherService {
     const request = prepareResume(input);
     const state = this.states.get(request.classroom);
     if (!state) throw new Error("No classroom teacher. Call open_classroom first.");
-    if (piResumes(request.classroom).some((r) => r.status === "running" && piOwnerAlive(r)))
-      throw new Error(
-        "A live Pi session owns this classroom's resume request. Finish it and explicitly stop the previous Pi server, then retry open_classroom.",
-      );
     if (reviewCard) {
       if (!state.requests.some((r) => r.id === request.id))
         this.enqueue({ ...request, kind: "resume", target: input.submission_id });
       return;
     }
     if (state.requests.some((r) => r.lesson === request.lesson && r.status !== "done")) return;
-    const reply = this.messages(request.classroom, request.lesson, state).at(-1);
+    const reply = this.messages(request.lesson, state).at(-1);
     if (reply?.role === "learner") {
       if (!reply.id.startsWith("chat:") || state.requests.some((r) => r.id === reply.id))
         throw new Error("The saved learner reply has no unfinished panel request.");
-      // Preserve the actual reply when it comes from historical Pi storage.
-      const existing = state.messages.find((m) => m.id === reply.id && m.role === "learner");
-      if (existing && (existing.lesson !== request.lesson || existing.text !== reply.text))
-        throw new Error("The saved reply ID belongs to a different panel message.");
-      if (!existing) {
-        state.messages.push(reply);
-        saveTeacherState(request.classroom, state);
-      }
       this.enqueue({
         id: reply.id,
         classroom: request.classroom,
@@ -546,12 +489,9 @@ export class TeacherService {
       }
       if (r.plan && submission) {
         try {
-          const call = r.plan.calls.find(
-            (call) => call.name === (r.planVersion === 2 ? GRADE_ANSWERS : "grade_lesson_quiz"),
-          );
+          const call = r.plan.calls.find((call) => call.name === GRADE_ANSWERS);
           if (!call) throw new Error("The saved plan has no grade call.");
-          const supplied = JSON.parse(call.arguments_json);
-          const args = r.planVersion === 2 ? scoredAnswers(supplied) : supplied;
+          const args = scoredAnswers(JSON.parse(call.arguments_json));
           validateGrade(
             args.score,
             args.questions.map(
@@ -593,11 +533,7 @@ export class TeacherService {
       }
     }
     if (r.kind === "lesson") {
-      let request = this.lessonRequest(r);
-      // Older decoder failures saved raw output only in the teacher state.
-      // Preserve it in the authoring attempt before an explicit retry replaces it.
-      if (request.modelOutput === undefined && r.modelOutput !== undefined)
-        request = updateLessonRequest(request, { modelOutput: r.modelOutput });
+      const request = this.lessonRequest(r);
       const failedPage = request.pageCheckFailed;
       prepareLessonRetry(request);
       if (failedPage) {
@@ -621,7 +557,7 @@ export class TeacherService {
       updateLessonRequest(request, { status: "queued", error: undefined });
     }
     if (!r.plan && r.kind === "lesson")
-      r.prompt = nextLessonPrompt({ ...this.lessonRequest(r), error: r.error }, "service");
+      r.prompt = nextLessonPrompt({ ...this.lessonRequest(r), error: r.error });
     if (!r.plan && r.error)
       r.prompt += `\n\nPrevious teacher plan error: ${r.error}\nCorrect it in the new plan.`;
     const refill = r.kind === "refill" ? refreshRefill(this.refillRequest(r)) : null;
@@ -634,22 +570,12 @@ export class TeacherService {
     this.publish(classroom, r.lesson);
     this.wake(classroom);
   }
-  /** Include saved Pi conversation when a classroom moves to a persistent host. */
-  private messages(
-    classroom: string,
-    lesson: string,
-    state: TeacherState,
-  ): (store.PanelMessage & { sourceBackend?: "pi" })[] {
-    const current = state.messages.filter((m) => m.lesson === lesson);
-    const history = store
-      .listPanelMessages(classroom, lesson)
-      .filter((m) => !current.some((existing) => existing.id === m.id && existing.role === m.role))
-      .map((m) => ({ ...m, sourceBackend: "pi" as const }));
-    return [...history, ...current].sort((a, b) => a.at - b.at);
+  private messages(lesson: string, state: TeacherState): TeacherMessage[] {
+    return state.messages.filter((m) => m.lesson === lesson).sort((a, b) => a.at - b.at);
   }
   /** Keep replies after saved messages if the clock has moved back. */
-  private nextMessageAt(classroom: string, lesson: string, state: TeacherState): number {
-    const previous = this.messages(classroom, lesson, state).at(-1);
+  private nextMessageAt(lesson: string, state: TeacherState): number {
+    const previous = this.messages(lesson, state).at(-1);
     return previous ? Math.max(Date.now(), previous.at + 1) : Date.now();
   }
   settings(classroom: string) {
@@ -698,7 +624,12 @@ export class TeacherService {
           status: r.status,
           error: r.error,
         })),
-      messages: lesson === undefined ? [] : this.messages(classroom, lesson, state).map(withHtml),
+      messages:
+        lesson === undefined
+          ? []
+          : this.messages(lesson, state).map((m) =>
+              m.role === "teacher" ? { ...m, html: renderMarkdown(m.text) } : m,
+            ),
     };
   }
   private publish(classroom: string, lesson: string): void {
@@ -834,7 +765,7 @@ export class TeacherService {
       privateRubric,
       teachingPlan: r.kind === "quiz" ? store.findSubmission(r.target)?.teachingPlan : undefined,
       records: store.readLearningRecords(r.classroom),
-      messages: this.messages(r.classroom, r.lesson, state),
+      messages: this.messages(r.lesson, state),
       grades: store.latestGrades(r.classroom, r.lesson),
       reviewItems,
       reviewTiming: r.kind === "chat" ? reviewTiming(reviewItems, replyAt) : [],
@@ -936,7 +867,6 @@ export class TeacherService {
             this.controllers.delete(controller);
           }
           r.plan = parsePlan(plan);
-          r.planVersion = 2;
           r.planValidated = false;
           r.status = "planned";
           saveTeacherState(classroom, state);
@@ -1040,7 +970,7 @@ export class TeacherService {
           lesson: r.lesson,
           role: "teacher",
           text: plan.message,
-          at: this.nextMessageAt(r.classroom, r.lesson, state),
+          at: this.nextMessageAt(r.lesson, state),
         });
       saveTeacherState(r.classroom, state);
       return;
@@ -1090,9 +1020,7 @@ export class TeacherService {
       );
     const required =
       r.kind === "quiz"
-        ? r.planVersion === 2
-          ? GRADE_ANSWERS
-          : "grade_lesson_quiz"
+        ? GRADE_ANSWERS
         : r.kind === "ask" || r.kind === "follow-up"
           ? "answer_lesson_question"
           : null;
@@ -1117,10 +1045,7 @@ export class TeacherService {
         (typeof args.answer_markdown !== "string" || !args.answer_markdown.trim())
       )
         throw new Error("Teacher answer is empty.");
-      if (
-        (c.name === "grade_lesson_quiz" || c.name === GRADE_ANSWERS) &&
-        (required !== c.name || args.submission_id !== r.target)
-      )
+      if (c.name === GRADE_ANSWERS && (required !== c.name || args.submission_id !== r.target))
         throw new Error("Teacher tried to grade a request it does not own.");
       if (
         c.name === "record_retrieval_check" &&
@@ -1146,12 +1071,7 @@ export class TeacherService {
           : publicTools.find((t) => t.name === c.name);
       if (
         !tool ||
-        ![
-          "answer_lesson_question",
-          "grade_lesson_quiz",
-          GRADE_ANSWERS,
-          "record_retrieval_check",
-        ].includes(c.name)
+        !["answer_lesson_question", GRADE_ANSWERS, "record_retrieval_check"].includes(c.name)
       )
         throw new Error(`Teacher operation is not allowed: ${c.name}`);
       for (const key of tool.parameters.required as string[])
@@ -1165,9 +1085,7 @@ export class TeacherService {
     const pretest = r.kind === "quiz" && store.findSubmission(r.target)?.kind === "pretest";
     const quiz = r.kind === "quiz" ? store.findSubmission(r.target) : null;
     if (quiz) {
-      const gradeCall = parsed.find(
-        (call) => call.name === "grade_lesson_quiz" || call.name === GRADE_ANSWERS,
-      );
+      const gradeCall = parsed.find((call) => call.name === GRADE_ANSWERS);
       if (gradeCall) validateAnswerCriteria(quiz, gradeCall.args.questions);
     }
     if (quiz?.rubricDigest && r.planRubricDigest !== quiz.rubricDigest)
@@ -1192,7 +1110,7 @@ export class TeacherService {
       plan.learning_record.trim() &&
       parsed.some(
         (call) =>
-          (call.name === "grade_lesson_quiz" || call.name === GRADE_ANSWERS) &&
+          call.name === GRADE_ANSWERS &&
           Array.isArray(call.args.questions) &&
           citedQuestions.length > 0 &&
           citedQuestions.every(
@@ -1209,7 +1127,7 @@ export class TeacherService {
       plan.learning_record.trim() &&
       !parsed.some(
         (call) =>
-          (call.name === "grade_lesson_quiz" || call.name === GRADE_ANSWERS) &&
+          call.name === GRADE_ANSWERS &&
           Array.isArray(call.args.questions) &&
           call.args.questions.some((question: { correct?: boolean }) => question.correct === true),
       )
@@ -1242,7 +1160,7 @@ export class TeacherService {
         if (a && store.isTurnPending(a, turn)) {
           applyTurnAnswer(r.target, turn, args.answer_markdown);
         }
-      } else if (name === "grade_lesson_quiz" || name === GRADE_ANSWERS) {
+      } else if (name === GRADE_ANSWERS) {
         if (!store.listGrades(r.classroom, r.lesson).some((g) => g.submissionId === r.target)) {
           const result = await tool.execute(args);
           if (isFailure(result)) {
@@ -1329,7 +1247,7 @@ export class TeacherService {
         lesson: r.lesson,
         role: "teacher",
         text: plan.message,
-        at: this.nextMessageAt(r.classroom, r.lesson, state),
+        at: this.nextMessageAt(r.lesson, state),
       });
   }
 }

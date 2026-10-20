@@ -127,9 +127,9 @@ function seed(classroom = "rust") {
 it("shares durable reservations across classroom starts, daily plans, topics, reload and clock changes", () => {
   seed();
   seed("biology");
-  const first = startReview("rust", randomUUID(), "pi", 3).session;
+  const first = startReview("rust", randomUUID(), "service", 3).session;
   completePreparedReview(first);
-  expect(startReview("rust", randomUUID(), "pi", 12).session.id).toBe(first.id);
+  expect(startReview("rust", randomUUID(), "service", 12).session.id).toBe(first.id);
   expect(classroomWorkload("rust", store.reviewItems("rust"), NOW)).toMatchObject({
     used: 3,
     remaining: 2,
@@ -146,16 +146,16 @@ it("shares durable reservations across classroom starts, daily plans, topics, re
     }),
   );
   expect(resumableReview(reviewSessions("rust")[0])).toBe(false);
-  const next = startReview("rust", randomUUID(), "pi", 12, { early: true }).session;
+  const next = startReview("rust", randomUUID(), "service", 12, { early: true }).session;
   expect(next.items).toHaveLength(2);
   expect(next.items.some((i) => first.items.some((a) => a.key === i.key))).toBe(false);
-  const daily = startDailyReview(randomUUID(), "pi");
+  const daily = startDailyReview(randomUUID(), "service");
   expect(daily.groups.find((g) => g.classroom === "rust")!.plan.id).toBe(next.id);
   expect(daily.groups.some((g) => g.classroom === "biology")).toBe(false);
-  expect(() => startReview("biology", randomUUID(), "pi")).toThrow("allowance is reserved");
+  expect(() => startReview("biology", randomUUID(), "service")).toThrow("allowance is reserved");
   const snapshot = JSON.stringify(dailyReviews());
   Date.now = () => NOW + DAY_MS;
-  expect(startDailyReview(randomUUID(), "pi").id).toBe(daily.id);
+  expect(startDailyReview(randomUUID(), "service").id).toBe(daily.id);
   expect(JSON.stringify(dailyReviews())).toBe(snapshot);
   expect(reviewSessions("rust")).toHaveLength(2);
   expect(classroomWorkload("rust", store.reviewItems("rust"), NOW + DAY_MS)).toMatchObject({
@@ -165,8 +165,10 @@ it("shares durable reservations across classroom starts, daily plans, topics, re
   });
   const rootLock = path.join(fixture.root, ".daily-reviews.lock");
   fs.writeFileSync(rootLock, "concurrent host");
-  expect(() => startReview("biology", randomUUID(), "pi")).toThrow("locked daily review edits");
-  expect(() => startDailyReview(randomUUID(), "pi")).toThrow("locked daily review edits");
+  expect(() => startReview("biology", randomUUID(), "service")).toThrow(
+    "locked daily review edits",
+  );
+  expect(() => startDailyReview(randomUUID(), "service")).toThrow("locked daily review edits");
   fs.unlinkSync(rootLock);
 });
 
@@ -177,11 +179,11 @@ it("bounds a many-classroom daily batch and rotates classrooms/topics over succe
   const batches: Array<{ day: number; classes: string[]; count: number }> = [];
   for (let day = 0; day < 4; day++) {
     vi.mocked(Date.now).mockReturnValue(NOW + day * DAY_MS);
-    const batch = startDailyReview(randomUUID(), "pi");
+    const batch = startDailyReview(randomUUID(), "service");
     const count = batch.groups.reduce((n, g) => n + g.plan.items.length, 0);
     expect(count).toBeLessThanOrEqual(rootWorkload(Date.now()).allowance);
     expect(count).toBeLessThanOrEqual(12);
-    expect(startDailyReview(randomUUID(), "pi").id).toBe(batch.id);
+    expect(startDailyReview(randomUUID(), "service").id).toBe(batch.id);
     for (const group of batch.groups) {
       served.add(group.classroom);
       const saved = savePlannedReview(group.plan);
@@ -200,7 +202,7 @@ it("bounds a many-classroom daily batch and rotates classrooms/topics over succe
     }
     batches.push({ day, classes: batch.groups.map((g) => g.classroom), count });
     expect(rootWorkload(Date.now()).remaining).toBe(0);
-    expect(() => startReview("class-8", randomUUID(), "pi", 12, { early: true })).toThrow(
+    expect(() => startReview("class-8", randomUUID(), "service", 12, { early: true })).toThrow(
       "allowance is reserved",
     );
   }
@@ -262,7 +264,7 @@ it("serializes independent host processes against one root budget and reports lo
   const execute = promisify(execFile);
   const source = new URL("../src/review-session.ts", import.meta.url).href;
   const attempt = async (classroom: string) => {
-    const code = `import {startReview} from ${JSON.stringify(source)};Date.now=()=>${NOW};try{const r=startReview(${JSON.stringify(classroom)},${JSON.stringify(randomUUID())},"pi",3);console.log(JSON.stringify({id:r.session.id,classroom:${JSON.stringify(classroom)},keys:r.session.items.map(i=>i.key)}));}catch(error){console.log(JSON.stringify({error:error.message}));}`;
+    const code = `import {startReview} from ${JSON.stringify(source)};Date.now=()=>${NOW};try{const r=startReview(${JSON.stringify(classroom)},${JSON.stringify(randomUUID())},"service",3);console.log(JSON.stringify({id:r.session.id,classroom:${JSON.stringify(classroom)},keys:r.session.items.map(i=>i.key)}));}catch(error){console.log(JSON.stringify({error:error.message}));}`;
     return JSON.parse(
       (
         await execute(process.execPath, ["--input-type=module", "-e", code], {
@@ -327,7 +329,7 @@ it("keeps an older saved question alias eligible without selecting its objective
     answers: [termAnswer("q1", "owner", { learning })],
     correct: { q1: true },
   });
-  const first = startReview("rust", randomUUID(), "pi", 3).session;
+  const first = startReview("rust", randomUUID(), "service", 3).session;
   const canonical = first.items[0].key,
     alias = "001-ownership/check-1/q1";
   const file = path.join(fixture.root, "rust/.reviews.json");

@@ -6,7 +6,7 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { createHash, randomUUID } from "node:crypto";
 import { makeFixture, seedClassroom, lessonHtml } from "../test/helpers.ts";
-import { applyAnswer } from "../src/bridge.ts";
+import { applyAnswer } from "../src/answers.ts";
 import { applyGrade } from "../src/quiz-grading.ts";
 import * as server from "../src/server.ts";
 import * as store from "../src/store.ts";

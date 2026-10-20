@@ -97,7 +97,6 @@ it("never associates an unreleased pretest, review or unfinished lesson with a t
       classroom: "course",
       owner: "claude",
       ownerPid: process.pid,
-      delivery: "service",
       status: "queued",
       at: 1,
       topic: "",

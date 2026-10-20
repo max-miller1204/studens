@@ -5,8 +5,6 @@ import { lessonModelPlan } from "../src/lesson-output.ts";
 import { dedicatedTeacherPrompt } from "../src/prompts.ts";
 import {
   nextLessonPrompt,
-  piLessonArguments,
-  piLessonDocument,
   startLessonRequest,
   validateLessonDocument,
 } from "../src/next-lesson.ts";
@@ -22,7 +20,7 @@ const template = fs.readFileSync(
 );
 const widget = template.slice(template.indexOf('<section class="cl-faded"'));
 
-it("preserves public practice through strict service/Pi serialization and private assessment validation", () => {
+it("preserves public practice through strict service serialization and private assessment validation", () => {
   const f = makeFixture();
   try {
     seedClassroom(f);
@@ -34,7 +32,6 @@ it("preserves public practice through strict service/Pi serialization and privat
     expect(decoded.lesson_html).toBe(document.lesson_html);
     expect(JSON.parse(decoded.rubric_json)).toEqual(JSON.parse(document.rubric_json));
     expect(JSON.parse(decoded.teaching_plan_json)).toEqual(JSON.parse(document.teaching_plan_json));
-    expect(piLessonDocument(piLessonArguments(document))).toEqual(document);
     expect(() => validateLessonDocument(decoded)).not.toThrow();
     expect(stageLesson(decoded.lesson_html, new Set()).html).not.toContain("data-cl-faded");
     const released = stageLesson(decoded.lesson_html, new Set(["pretest-1"])).html;
@@ -56,18 +53,10 @@ it("supplies the complete public widget contract inline only to explicit lesson 
   const f = makeFixture();
   try {
     seedClassroom(f);
-    const request = startLessonRequest(
-      "rust",
-      randomUUID(),
-      "A procedural lesson",
-      "codex",
-      "service",
-    );
-    for (const host of ["service", "pi"] as const) {
-      const prompt = nextLessonPrompt(request, host);
-      expect(prompt).toContain(template);
-      expect(prompt).toContain("data-cl-after-pretest");
-    }
+    const request = startLessonRequest("rust", randomUUID(), "A procedural lesson", "codex");
+    const prompt = nextLessonPrompt(request);
+    expect(prompt).toContain(template);
+    expect(prompt).toContain("data-cl-after-pretest");
     const ordinary = dedicatedTeacherPrompt("ordinary", "A learner reply", {}, []);
     expect(ordinary).not.toContain(template);
     expect(ordinary).not.toContain("data-cl-faded");

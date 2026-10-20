@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { randomUUID } from "node:crypto";
-import { ClassroomBridge } from "../src/bridge.ts";
 import {
   DAY_MS,
   isDue,
@@ -16,7 +15,6 @@ import {
   publishReview,
   updateReview,
 } from "../src/review-session.ts";
-import { piResumes } from "../src/teacher-resume.ts";
 import { TeacherService } from "../src/teacher-service.ts";
 import { readTeacherState, saveTeacherState } from "../src/service-state.ts";
 import { healthReport } from "../src/health.ts";
@@ -116,7 +114,7 @@ describe("re-teaching replay", () => {
       needsReteach: true,
       context: "unknown",
     });
-    expect(() => startReview("rust", randomUUID(), "pi")).toThrow("paused from review");
+    expect(() => startReview("rust", randomUUID(), "service")).toThrow("paused from review");
     const original = store
       .listGrades("rust", "001-ownership")
       .find((g) => g.submissionId === submissions[0].id)!;
@@ -145,8 +143,8 @@ describe("re-teaching replay", () => {
         });
       const session = (
         layout === "legacy"
-          ? legacyReview("rust", randomUUID(), "pi")
-          : startReview("rust", randomUUID(), "pi")
+          ? legacyReview("rust", randomUUID(), "service")
+          : startReview("rust", randomUUID(), "service")
       ).session;
       if (layout === "legacy") {
         publishReview(session, reviewDocument(session.items));
@@ -173,7 +171,7 @@ describe("re-teaching replay", () => {
       });
       expect(summarize(items, Date.now())).toMatchObject({ due: 1, dueSoon: 0, nextDueAt: null });
       expect(
-        startReview("rust", randomUUID(), "pi").session.items.map((item) => item.questionId),
+        startReview("rust", randomUUID(), "service").session.items.map((item) => item.questionId),
       ).toEqual(["q2"]);
       expect(reteachOffers("rust", "001-ownership")).toHaveLength(1);
       expect(reteachOffers("rust", session.lesson)).toHaveLength(0);
@@ -202,86 +200,6 @@ describe("re-teaching replay", () => {
 });
 
 describe("durable re-teach requests", () => {
-  it("keeps Pi failed work durable until explicit retry and rejects writes during the request", () => {
-    seed();
-    const request = prepareReteach("rust", "001-ownership", store.reviewItems("rust")[0].key);
-    const grades = store.listGrades("rust", "001-ownership");
-    let runs = 0;
-    const bridge = new ClassroomBridge({
-      sendUserMessage() {
-        runs++;
-      },
-    });
-    bridge.chat("rust", "001-ownership", request.text, request.id);
-    expect(() => bridge.assertCanWrite("record_retrieval_check")).toThrow("only a panel message");
-    bridge.reset();
-    const recovered = new ClassroomBridge({
-      sendUserMessage() {
-        runs++;
-      },
-    });
-    recovered.chat("rust", "001-ownership", request.text, request.id);
-    expect(runs).toBe(1);
-    expect(piResumes("rust")[0].status).toBe("failed");
-    recovered.retry("rust", `chat:${request.id}`);
-    recovered.onAgentEnd([
-      { role: "assistant", content: [{ type: "text", text: plan().message }] },
-    ]);
-    recovered.chat("rust", "001-ownership", request.text, request.id);
-    expect(runs).toBe(2);
-    expect(piResumes("rust")[0].status).toBe("done");
-    expect(store.listPanelMessages("rust", "001-ownership").map((m) => m.role)).toEqual([
-      "learner",
-      "teacher",
-    ]);
-    expect(store.listGrades("rust", "001-ownership")).toEqual(grades);
-    expect(store.reviewItems("rust")[0].needsReteach).toBe(true);
-    recovered.reset();
-  });
-  it("keeps an assisted reply on the original lesson durable and sequential after re-teaching", () => {
-    seed();
-    const request = prepareReteach("rust", "001-ownership", store.reviewItems("rust")[0].key);
-    const sent: string[] = [];
-    const bridge = new ClassroomBridge({ sendUserMessage: (text) => sent.push(text) });
-    bridge.chat("rust", "001-ownership", request.text, request.id);
-    bridge.onAgentEnd([{ role: "assistant", content: [{ type: "text", text: plan().message }] }]);
-    bridge.noteForeignTurn();
-    const replyId = randomUUID();
-    store.addPanelMessage("rust", {
-      id: `chat:${replyId}`,
-      lesson: "001-ownership",
-      role: "learner",
-      text: "The new owner. I used the example.",
-    });
-    bridge.chat("rust", "001-ownership", "The new owner. I used the example.", replyId);
-    expect(sent).toHaveLength(1);
-    expect(piResumes("rust").find((r) => r.id === `chat:${replyId}`)?.status).toBe("running");
-    bridge.onAgentEnd([{ role: "assistant", content: [{ type: "text", text: "Foreign output" }] }]);
-    expect(sent).toHaveLength(2);
-    bridge.reset();
-    const recovered = new ClassroomBridge({ sendUserMessage: (text) => sent.push(text) });
-    recovered.restoreResumes();
-    expect(sent).toHaveLength(2);
-    expect(piResumes("rust").find((r) => r.id === `chat:${replyId}`)?.status).toBe("failed");
-    recovered.retry("rust", `chat:${replyId}`);
-    recovered.onAgentEnd([
-      {
-        role: "assistant",
-        content: [{ type: "text", text: "Thanks for reporting help. Try tracing a fresh move." }],
-      },
-    ]);
-    recovered.chat("rust", "001-ownership", "The new owner. I used the example.", replyId);
-    expect(sent).toHaveLength(3);
-    expect(store.listPanelMessages("rust", "001-ownership").map((m) => m.role)).toEqual([
-      "learner",
-      "teacher",
-      "learner",
-      "teacher",
-    ]);
-    expect(store.listGrades("rust", "001-ownership")).toHaveLength(3);
-    expect(store.listRetrievalChecks("rust")).toEqual([]);
-    recovered.reset();
-  });
   it("rejects service evidence before writes, reloads failure, retries once and never resets assessment", async () => {
     seed();
     const item = store.reviewItems("rust")[0];
@@ -323,25 +241,6 @@ describe("durable re-teach requests", () => {
     seed();
     const item = store.reviewItems("rust")[0];
     const request = prepareReteach("rust", item.lesson, item.key);
-    store.addPanelMessage("rust", {
-      id: `chat:${request.id}`,
-      lesson: item.lesson,
-      role: "learner",
-      text: request.text,
-    });
-    let runs = 0;
-    const bridge = new ClassroomBridge({
-      sendUserMessage() {
-        runs++;
-      },
-    });
-    bridge.restoreResumes();
-    expect(runs).toBe(0);
-    bridge.chat("rust", item.lesson, request.text, request.id);
-    bridge.onAgentEnd([{ role: "assistant", content: [{ type: "text", text: plan().message }] }]);
-    expect(runs).toBe(1);
-    expect(store.listPanelMessages("rust", item.lesson)).toHaveLength(2);
-    bridge.reset();
     const initial = new TeacherService(async () => plan());
     initial.attach("rust", "codex");
     const saved = readTeacherState("rust")!;

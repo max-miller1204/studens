@@ -5,7 +5,7 @@ import { lessonModelPlan } from "../src/lesson-output.ts";
 import { nextLessonDocument } from "./next-lesson-fixture.ts";
 import { lessonOutput } from "./lesson-output-fixture.ts";
 import { makeFixture, seedClassroom, seedPreparedReviewSource } from "./helpers.ts";
-import { piLessonDocument, piLessonArguments, validateLessonDocument } from "../src/next-lesson.ts";
+import { validateLessonDocument } from "../src/next-lesson.ts";
 import { stageLesson } from "../src/pretest.ts";
 const template = fs.readFileSync(
   new URL("../assets/templates/stepper.html", import.meta.url),
@@ -64,7 +64,7 @@ it("rejects unknown fields, mixed trace/computed results, unsupported algorithms
   ])
     expect(() => validateStepper(invalid)).toThrow();
 });
-it("preserves public widgets through typed producer, strict Pi serialization and private assessment contracts", () => {
+it("preserves public widgets through typed producer, strict service serialization and private assessment contracts", () => {
   const f = makeFixture();
   try {
     seedClassroom(f);
@@ -74,7 +74,6 @@ it("preserves public widgets through typed producer, strict Pi serialization and
     const plan = lessonModelPlan(lessonOutput(document));
     const decoded = JSON.parse(plan.calls[0].arguments_json);
     expect(decoded.lesson_html).toBe(document.lesson_html);
-    expect(piLessonDocument(piLessonArguments(document))).toEqual(document);
     expect(() => validateLessonDocument(decoded)).not.toThrow();
     expect(JSON.parse(decoded.rubric_json)).toEqual(JSON.parse(document.rubric_json));
     expect(stageLesson(decoded.lesson_html, new Set()).html).not.toContain("data-cl-stepper");

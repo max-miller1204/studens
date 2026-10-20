@@ -2,8 +2,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { startReview, completePreparedReview } from "../src/review-session.ts";
 import { afterEach, expect, it, vi } from "vitest";
-import { ClassroomBridge } from "../src/bridge.ts";
-import { registerClassroomTools } from "../src/tools.ts";
+import { classroomTools, PI_HOST } from "../src/tools.ts";
 import { DAY_MS } from "../src/review.ts";
 import * as store from "../src/store.ts";
 import {
@@ -17,7 +16,6 @@ import {
 afterEach(() => vi.restoreAllMocks());
 it("uses the actual saved panel reply, not days spent waiting for its teacher, as retrieval time", async () => {
   const fixture = makeFixture();
-  const bridge = new ClassroomBridge({ sendUserMessage() {} });
   try {
     seedClassroom(fixture);
     seedPreparedReviewSource(fixture.root);
@@ -47,26 +45,28 @@ it("uses the actual saved panel reply, not days spent waiting for its teacher, a
     const replyAt = t + 11 * DAY_MS + 15000;
     vi.spyOn(Date, "now").mockReturnValue(replyAt);
     const answer = "The current owner releases it at scope end. I used no help.";
-    bridge.chat("rust", "001-ownership", answer, crypto.randomUUID());
-    const definitions = new Map<
-      string,
-      { execute: (id: string, args: unknown) => Promise<unknown> }
-    >();
-    registerClassroomTools(
-      { registerTool: (tool: any) => definitions.set(tool.name, tool) },
-      [],
-      (name) => bridge.assertCanWrite(name),
-    );
+    const reply = {
+      id: `chat:${crypto.randomUUID()}`,
+      lesson: "001-ownership",
+      role: "learner" as const,
+      text: answer,
+      at: replyAt,
+    };
+    const tool = classroomTools(PI_HOST).find((t) => t.name === "record_retrieval_check")!;
+    const context = { retrieval: { classroom: "rust", lesson: "001-ownership", reply } };
     vi.mocked(Date.now).mockReturnValue(replyAt + 3 * DAY_MS);
-    await definitions.get("record_retrieval_check")!.execute("check", {
-      classroom: "rust",
-      review_key: before.key,
-      learning_record: "0001-check.md",
-      answer,
-      evidence: "Correct explanation of the current owner.",
-      assistance: "none",
-      task: "retrieval",
-    });
+    await tool.execute(
+      {
+        classroom: "rust",
+        review_key: before.key,
+        learning_record: "0001-check.md",
+        answer,
+        evidence: "Correct explanation of the current owner.",
+        assistance: "none",
+        task: "retrieval",
+      },
+      context,
+    );
     const check = store.listRetrievalChecks("rust")[0];
     expect(check).toMatchObject({ answeredAt: replyAt, at: replyAt + 3 * DAY_MS });
     const after = store.reviewItems("rust")[0];
@@ -83,18 +83,20 @@ it("uses the actual saved panel reply, not days spent waiting for its teacher, a
     expect(store.reviewEvents("rust").find((e) => e.source === "chat")!.at).toBe(replyAt);
     expect(store.listGrades("rust", "001-ownership")).toHaveLength(2);
     // The host context cannot be rebound to another answer or lesson.
-    const failed: any = await definitions.get("record_retrieval_check")!.execute("other", {
-      classroom: "rust",
-      review_key: before.key,
-      learning_record: "0001-check.md",
-      answer: "Invented reply",
-      evidence: "No",
-      assistance: "none",
-    });
+    const failed: any = await tool.execute(
+      {
+        classroom: "rust",
+        review_key: before.key,
+        learning_record: "0001-check.md",
+        answer: "Invented reply",
+        evidence: "No",
+        assistance: "none",
+      },
+      context,
+    );
     expect(failed.details.error).toBe(true);
     expect(store.listRetrievalChecks("rust")).toHaveLength(1);
   } finally {
-    bridge.reset();
     fixture.cleanup();
   }
 });
@@ -119,7 +121,7 @@ it("preserves the original due cap of an early selection saved under an older sc
         correct: { q1: true },
       });
     vi.spyOn(Date, "now").mockReturnValue(t + 2 * DAY_MS);
-    const session = startReview("rust", crypto.randomUUID(), "pi", 3, { early: true }).session;
+    const session = startReview("rust", crypto.randomUUID(), "service", 3, { early: true }).session;
     completePreparedReview(session);
     const file = path.join(fixture.root, "rust/.reviews.json");
     const old = JSON.parse(fs.readFileSync(file, "utf8"));

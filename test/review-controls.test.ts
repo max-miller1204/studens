@@ -1,4 +1,3 @@
-import { ClassroomBridge } from "../src/bridge.ts";
 import { TeacherService } from "../src/teacher-service.ts";
 import { readTeacherState, saveTeacherState } from "../src/service-state.ts";
 import { createHash } from "node:crypto";
@@ -49,7 +48,7 @@ const post = (base: string, route: string, body: unknown) =>
 it.each([0, 1, 2, 2.5, 13, Infinity, "3", null])(
   "rejects invalid review size %s before any request or writes",
   (size) => {
-    expect(() => startReview("rust", randomUUID(), "pi", size as number)).toThrow(
+    expect(() => startReview("rust", randomUUID(), "service", size as number)).toThrow(
       "whole number from 3 to 12",
     );
     expect(reviewSessions("rust")).toEqual([]);
@@ -57,11 +56,10 @@ it.each([0, 1, 2, 2.5, 13, Infinity, "3", null])(
 );
 it.each([3, 12])("bounds the requested maximum %i by the daily allowance", (size) => {
   const id = randomUUID();
-  const review = startReview("rust", id, "pi", size).session;
+  const review = startReview("rust", id, "service", size).session;
   expect(review.items).toHaveLength(Math.min(size, 5));
   expect(reviewSessions("rust")[0].options).toEqual({ limit: size, early: false });
-  expect(startReview("rust", id, "pi", size).session).toEqual(review);
-  expect(() => startReview("rust", id, "service", size)).toThrow("belongs to pi");
+  expect(startReview("rust", id, "service", size).session).toEqual(review);
 });
 it("scopes topics by original objective groups and classroom-local identities", () => {
   seedClassroom(fixture, { classroom: "other" });
@@ -101,7 +99,7 @@ it("scopes topics by original objective groups and classroom-local identities", 
   expect(reviewTopic(grouped[0]).id).toBe(reviewTopic(grouped[1]).id);
   const groupTopic = reviewTopic(grouped[0]).id;
   const other = store.reviewItems("other");
-  const review = startReview("rust", randomUUID(), "pi", 3, { topic: groupTopic }).session;
+  const review = startReview("rust", randomUUID(), "service", 3, { topic: groupTopic }).session;
   expect(review.items).toHaveLength(2);
   expect(review.items.every((item) => item.objective?.interleaveGroup === "Ownership rules")).toBe(
     true,
@@ -113,7 +111,7 @@ it("scopes topics by original objective groups and classroom-local identities", 
   ).toBeGreaterThan(0);
   expect(store.reviewEvents("rust").some((event) => event.key === retired.key)).toBe(true);
   expect(store.reviewItems("other")).toEqual(other);
-  expect(() => startReview("other", randomUUID(), "pi", 3, { topic: "missing" })).toThrow(
+  expect(() => startReview("other", randomUUID(), "service", 3, { topic: "missing" })).toThrow(
     "no longer active",
   );
 });
@@ -136,7 +134,7 @@ it("retires an item without changing evidence, rejects stale actions, and restor
     ),
   ).toBe(false);
   expect(
-    startReview("rust", randomUUID(), "pi", 12, { early: true }).session.items.some(
+    startReview("rust", randomUUID(), "service", 12, { early: true }).session.items.some(
       (selected) => selected.key === item.key,
     ),
   ).toBe(false);
@@ -177,7 +175,7 @@ it("keeps an early miss's scheduled date across HTTP grading and recovery, retai
   });
   const before = store.reviewItems("early")[0];
   server.setHooks({
-    reviewOwner: "pi",
+    reviewOwner: "service",
     onReview: completePreparedReview,
     onReviewRetry: completePreparedReview,
     onAsk() {},
@@ -281,27 +279,6 @@ it("preserves the interval even when a selected early question is answered after
   expect(assisted.progress).not.toBe("retained-evidence");
 });
 
-it("rejects a review report sent through Pi when a persistent teacher owns the classroom", async () => {
-  const review = startReview("rust", randomUUID(), "pi", 3).session;
-  completePreparedReview(review);
-  const teacher = new TeacherService();
-  teacher.attach("rust", "codex");
-  const bridge = new ClassroomBridge({
-    sendUserMessage() {
-      throw new Error("Report reached the wrong teacher");
-    },
-  });
-  try {
-    expect(() => bridge.chat("rust", review.lesson, "Bad question report", randomUUID())).toThrow(
-      "belongs to a persistent teacher",
-    );
-    expect(store.listPanelMessages("rust", review.lesson)).toEqual([]);
-  } finally {
-    bridge.reset();
-    await teacher.stop();
-  }
-});
-
 it("requires explicit retry after a competing server holds the retirement lock", () => {
   const item = store.reviewItems("rust")[0];
   const lock = fixture.write("rust/.review-controls.json.lock", "other owner");
@@ -334,7 +311,7 @@ it("keeps paused and retired items out of early selection while preserving resto
   store.setReviewRetired("rust", other.key, true, 0);
   const items = store.reviewItems("rust");
   expect(summarize(items, Date.now())).toMatchObject({ total: 13, due: 12, retired: 1 });
-  const selected = startReview("rust", randomUUID(), "pi", 12, { early: true }).session.items;
+  const selected = startReview("rust", randomUUID(), "service", 12, { early: true }).session.items;
   expect(selected).toHaveLength(5);
   expect(selected.some((item) => item.key === paused.key || item.key === other.key)).toBe(false);
 });
@@ -452,7 +429,6 @@ it("recovers partial criterion credit on an early review once, preserving timing
         status: "planned",
         at: 1,
         applied: 0,
-        planVersion: 2,
         planValidated: true,
         requestedModel: "original-selection",
         resolvedModel: "original-model",

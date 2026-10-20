@@ -32,7 +32,7 @@ import { withReviewEdit } from "./review-lock.ts";
 import { classroomWorkload, pickDailyItems } from "./review-workload.ts";
 import type { PreparedVariant } from "./review-variants.ts";
 
-export type ReviewOwner = "pi" | "service";
+export type ReviewOwner = "service";
 
 export interface ReviewSession {
   owner: ReviewOwner;
@@ -71,7 +71,7 @@ export function reviewSessions(classroom: string): ReviewSession[] {
         (request: ReviewSession) =>
           !request ||
           request.classroom !== classroom ||
-          !["pi", "service"].includes(request.owner) ||
+          request.owner !== "service" ||
           !Number.isSafeInteger(request.ownerPid) ||
           request.ownerPid < 1 ||
           !isValidSlug(request.lesson) ||
@@ -176,7 +176,6 @@ function startReviewLocked(
   const existing =
     requests.find((r) => r.id === id) ?? [...requests].reverse().find(resumableReview);
   if (existing) {
-    if (existing.status !== "done") requireReviewOwner(existing, owner);
     return { session: existing, added: false };
   }
   const session = planReview(classroom, id, owner, limit, options);
@@ -492,14 +491,6 @@ export function readReviewDocument(session: ReviewSession): ReviewDocument {
     rubric_json: read("quiz/key.json"),
     teaching_plan_json: read("quiz/plan.json"),
   };
-}
-
-/** A host must not take over another host's review work. */
-export function requireReviewOwner(session: ReviewSession, owner: ReviewOwner): void {
-  if (session.owner !== owner)
-    throw new Error(
-      `This review belongs to ${session.owner}. Open that classroom host to continue.`,
-    );
 }
 
 /** Complete a saved assembly; callers retain legacy in-flight authoring separately. */

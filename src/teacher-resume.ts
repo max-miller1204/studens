@@ -1,5 +1,4 @@
 /** Explicit handoff from the initiating chat to a graded lesson's teacher. */
-import * as fs from "node:fs";
 import * as path from "node:path";
 import { classroomDir, isValidSlug, lessonDir } from "./paths.ts";
 import { answerReviewKey, findReviewItem } from "./review.ts";
@@ -128,60 +127,4 @@ export function resumeTeacherTool(resume: (input: ResumeInput) => void): Classro
       };
     },
   };
-}
-
-/** Pi resume requests survive session loss. This private file is never a static asset. */
-export interface PiResume extends ResumeRequest {
-  kind: "resume" | "chat";
-  status: "running" | "failed" | "done";
-  ownerPid: number;
-  ownerSession: string;
-  error?: string;
-}
-function file(classroom: string): string {
-  if (!isValidSlug(classroom)) throw new Error("Invalid classroom.");
-  return path.join(classroomDir(classroom), ".pi-teacher-resumes.json");
-}
-export function piResumes(classroom: string): PiResume[] {
-  try {
-    const value = JSON.parse(fs.readFileSync(file(classroom), "utf8"));
-    if (
-      !Array.isArray(value) ||
-      value.some(
-        (r) =>
-          !r ||
-          r.classroom !== classroom ||
-          !isValidSlug(r.lesson) ||
-          typeof r.id !== "string" ||
-          !["resume", "chat"].includes(r.kind) ||
-          !r.id.startsWith(`${r.kind}:`) ||
-          typeof r.prompt !== "string" ||
-          !["running", "failed", "done"].includes(r.status) ||
-          !Number.isInteger(r.ownerPid) ||
-          r.ownerPid < 1 ||
-          typeof r.ownerSession !== "string",
-      )
-    )
-      throw new Error("Invalid Pi teacher resume state.");
-    return value;
-  } catch (err) {
-    if ((err as NodeJS.ErrnoException).code === "ENOENT") return [];
-    throw err;
-  }
-}
-export function savePiResume(request: PiResume): void {
-  const list = piResumes(request.classroom).filter((r) => r.id !== request.id);
-  list.push(request);
-  const target = file(request.classroom);
-  fs.writeFileSync(`${target}.tmp`, JSON.stringify(list, null, 2), { mode: 0o600 });
-  fs.renameSync(`${target}.tmp`, target);
-}
-export function piOwnerAlive(request: PiResume): boolean {
-  try {
-    process.kill(request.ownerPid, 0);
-    return true;
-  } catch (err) {
-    if ((err as NodeJS.ErrnoException).code === "ESRCH") return false;
-    throw err;
-  }
 }

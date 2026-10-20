@@ -188,7 +188,6 @@ export function connectInbox(inbox: LearnerInbox): void {
 // ── MCP-only tools ────────────────────────────────────────────────────────────
 
 const MCP_HOST = {
-  reviewOwner: "service" as const,
   browseHint: "Call open_classroom to start the server, then give the learner the URL.",
   checkPage:
     "Call lesson_health for this lesson. It reports unfinished question types and a missing rubric. Call open_classroom to get the URL. Check the lesson URL in a headless browser. Look for contract errors and press each local control. Give the learner the lesson URL. Do not open a visible browser window. If headless checks cannot run, report the specific error and state that the controls were not checked. Do not switch to a visible browser.",

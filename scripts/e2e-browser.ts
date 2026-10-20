@@ -36,12 +36,13 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { applyAnswer, applyGrade } from "../src/bridge.ts";
+import { applyAnswer } from "../src/answers.ts";
+import { applyGrade } from "../src/quiz-grading.ts";
 import * as server from "../src/server.ts";
 import { classroomTools, PI_HOST } from "../src/tools.ts";
 import * as store from "../src/store.ts";
 import { makeFixture, lessonHtml, seedClassroom } from "../test/helpers.ts";
-import { verifyPiPanelBrowser } from "./e2e-pi-panel-browser.ts";
+import { verifyTeacherPanelBrowser } from "./e2e-teacher-panel-browser.ts";
 import { verifyServiceBrowser } from "./e2e-service-browser.ts";
 import { playwright, playwrightCode } from "./playwright.ts";
 
@@ -395,7 +396,7 @@ await verifySearchBrowser(artifacts ? path.join(artifacts, "search") : null);
 await verifyCourseMapBrowser(artifacts ? path.join(artifacts, "course-map") : null);
 await verifyLessonSources(artifacts ? path.join(artifacts, "lesson-sources") : null);
 
-await verifyPiPanelBrowser(artifacts ? path.join(artifacts, "pi-panel") : null);
+await verifyTeacherPanelBrowser(artifacts ? path.join(artifacts, "teacher-panel") : null);
 await verifyServiceBrowser(artifacts ? path.join(artifacts, "service") : null);
 
 await verifyReviewBrowser(artifacts ? path.join(artifacts, "review") : null);

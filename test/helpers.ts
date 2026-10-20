@@ -389,7 +389,7 @@ export function seedPreparedReviewSource(
 }
 
 /** Saved pre-pool requests still need the old authoring recovery contract. */
-export function legacyReview(classroom: string, id: string, owner: "pi" | "service") {
+export function legacyReview(classroom: string, id: string, owner: "service" = "service") {
   const target = path.join(classroomsRoot(), classroom, ".reviews.json");
   const requests = fs.existsSync(target)
     ? JSON.parse(fs.readFileSync(target, "utf8")).requests

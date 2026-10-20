@@ -1,30 +1,37 @@
 /**
- * Check, in a real browser, that a learner never needs the terminal in Pi: they can ask
- * about a quiz question in place, and the teacher's follow-up after grading arrives in
- * the lesson's teacher panel, where they answer it.
+ * Check, in a real browser, that a learner never needs the terminal: they can ask about a
+ * quiz question in place, and the teacher's follow-up after grading arrives in the
+ * lesson's teacher panel, where they answer it.
  *
- * The Pi session is the real bridge with a recording sender. This script plays the
- * agent: it reads each prompt and ends each run with the text a model would write.
+ * The teacher is the persistent service with a held fixture provider. This script plays
+ * the model: it reads each prompt and releases each request with the plan a model would return.
  */
 import * as fs from "node:fs";
 import * as path from "node:path";
 
-import { applyGrade, ClassroomBridge } from "../src/bridge.ts";
+import type { TeacherPlan } from "../src/teacher.ts";
+import { TeacherService } from "../src/teacher-service.ts";
 import * as server from "../src/server.ts";
 import * as store from "../src/store.ts";
 import { makeFixture, lessonHtml, seedClassroom } from "../test/helpers.ts";
 import { highlightText } from "./browser-actions.ts";
 import { playwright, playwrightCode } from "./playwright.ts";
 
-const run = (text: string) => [{ role: "assistant", content: [{ type: "text", text }] }];
+const plan = (message: string, calls: TeacherPlan["calls"] = []): TeacherPlan => ({
+  calls,
+  message,
+  learning_record: "",
+  notes_markdown: "",
+});
+const call = (name: string, args: unknown) => ({ name, arguments_json: JSON.stringify(args) });
 
-export async function verifyPiPanelBrowser(artifacts: string | null): Promise<void> {
+export async function verifyTeacherPanelBrowser(artifacts: string | null): Promise<void> {
   const fixture = makeFixture();
   seedClassroom(fixture);
   fixture.write(
     "rust/001-ownership/lesson.html",
     lessonHtml(
-      "Pi panel",
+      "Teacher panel",
       `
     <p>Every value has one owner.</p>
     <div style="height: 2400px"></div>
@@ -45,18 +52,51 @@ export async function verifyPiPanelBrowser(artifacts: string | null): Promise<vo
     <p>Continue reading the lesson.</p>`,
     ),
   );
+  fixture.write(
+    "rust/001-ownership/quiz/key.json",
+    JSON.stringify({
+      check: {
+        q1: {
+          expected: "b",
+          points: 1,
+          full: "Chooses the binding that received the move.",
+          partial: "No partial credit.",
+        },
+        q2: {
+          expected: "Drop",
+          points: 1,
+          full: "Names the Drop trait.",
+          partial: "No partial credit.",
+        },
+      },
+    }),
+  );
   const sent: string[] = [];
-  const bridge = new ClassroomBridge({ sendUserMessage: (text) => sent.push(text) });
-  server.setHooks({
-    onAsk: (annotation) => bridge.ask(annotation),
-    onFollowUp: (annotation, followUp) => bridge.followUp(annotation, followUp),
-    onQuizSubmit: (submission) => bridge.grade(submission),
-    onReflect: (reflection) => bridge.reflect(reflection),
-    teacherState: (classroom, lesson) => bridge.panelState(classroom, lesson),
-    onTeacherChat: (classroom, lesson, text, id) => bridge.chat(classroom, lesson, text, id),
-    onTeacherRetry: (classroom, id) => bridge.retry(classroom, id),
+  const held: ((plan: TeacherPlan) => void)[] = [];
+  const teacher = new TeacherService(async (_identity, prompt) => {
+    sent.push(prompt);
+    return new Promise<TeacherPlan>((resolve) => held.push(resolve));
   });
-  const session = `studens-pi-panel-${process.pid}`;
+  const release = async (next: TeacherPlan) => {
+    for (let i = 0; !held.length; i++) {
+      if (i > 200) throw new Error("The teacher request never reached the provider.");
+      await new Promise((r) => setTimeout(r, 25));
+    }
+    held.shift()!(next);
+  };
+  const annotation = () => store.listAnnotations("rust", "001-ownership")[0].id;
+  server.setHooks({
+    delivery: "service",
+    onAsk: (a) => teacher.question(a),
+    onFollowUp: (a, f) => teacher.followUp(a, f),
+    onQuizSubmit: (s) => teacher.submission(s),
+    onReflect: (r) => teacher.reflection(r),
+    teacherState: (classroom, lesson) => teacher.publicState(classroom, lesson),
+    onTeacherChat: (classroom, lesson, text, id) => teacher.chat(classroom, lesson, text, id),
+    onTeacherRetry: (classroom, id) => teacher.retry(classroom, id),
+  });
+  teacher.attach("rust", "codex");
+  const session = `studens-teacher-panel-${process.pid}`;
   const evidence: Record<string, unknown> = {};
   const assert = (condition: unknown, message: string) => {
     if (!condition) throw new Error(message);
@@ -97,7 +137,14 @@ export async function verifyPiPanelBrowser(artifacts: string | null): Promise<vo
         askPromptText.includes("Do not give the answer"),
       "The ask prompt does not guard the ungraded quiz question.",
     );
-    bridge.onAgentEnd(run("Ownership passed to the new binding."));
+    await release(
+      plan("", [
+        call("answer_lesson_question", {
+          annotation_id: annotation(),
+          answer_markdown: "Ownership passed to the new binding.",
+        }),
+      ]),
+    );
 
     // 2. A follow-up inside the quiz must not submit the quiz or save a quiz draft.
     evidence.followUp = await code(`
@@ -116,7 +163,14 @@ export async function verifyPiPanelBrowser(artifacts: string | null): Promise<vo
       !Object.hasOwn(store.readDrafts("rust", "001-ownership"), "quiz:check"),
       "Typing in the card saved a quiz draft.",
     );
-    bridge.onAgentEnd(run("Yes. After a move, the old binding cannot be used."));
+    await release(
+      plan("", [
+        call("answer_lesson_question", {
+          annotation_id: annotation(),
+          answer_markdown: "Yes. After a move, the old binding cannot be used.",
+        }),
+      ]),
+    );
 
     // 3. Submit. The panel moves under the quiz and says the teacher is grading.
     evidence.submit = await code(`
@@ -135,9 +189,9 @@ export async function verifyPiPanelBrowser(artifacts: string | null): Promise<vo
       `A card marker leaked into the answer: ${JSON.stringify(choice)}`,
     );
     assert(sent.at(-1)?.includes("teacher panel"), "The grade prompt does not name the panel.");
-    bridge.onAgentEnd(run("I will grade this next."));
+    await release(plan("I will grade this next."));
     evidence.retry = await code(`
-      await page.waitForFunction(() => document.querySelector('.cl-teacher-requests')?.textContent.includes('finished without grading'));
+      await page.waitForFunction(() => document.querySelector('.cl-teacher-requests')?.textContent.includes('grade_quiz_answers'));
       const state = await page.locator('form.cl-quiz').getAttribute('data-state');
       if (state !== 'submitted') throw new Error('Prose changed the quiz state.');
       const retried = page.waitForResponse(r => r.url().endsWith('/api/teacher/retry'));
@@ -147,16 +201,29 @@ export async function verifyPiPanelBrowser(artifacts: string | null): Promise<vo
       await page.evaluate(() => window.scrollTo(0, 0));
       return {ungradedState: state, explicitRetry: true};`);
     assert(store.listGrades("rust", "001-ownership").length === 0, "Prose wrote a grade.");
-    applyGrade(submission, {
-      score: 50,
-      feedbackMarkdown: "One of two.",
-      questions: [
-        { questionId: "q1", correct: true, feedback: "Right." },
-        { questionId: "q2", correct: false, feedback: "Clone copies. It does not clean up." },
-      ],
-    });
-    bridge.onAgentEnd(
-      run("Clone copies a value. **Which trait** runs when a value goes out of scope?"),
+    await release(
+      plan("Clone copies a value. **Which trait** runs when a value goes out of scope?", [
+        call("grade_quiz_answers", {
+          submission_id: submission.id,
+          feedback_markdown: "One of two.",
+          questions: [
+            {
+              question_id: "q1",
+              correct: true,
+              points_earned: 1,
+              points_possible: 1,
+              feedback: "Right.",
+            },
+            {
+              question_id: "q2",
+              correct: false,
+              points_earned: 0,
+              points_possible: 1,
+              feedback: "Clone copies. It does not clean up.",
+            },
+          ],
+        }),
+      ]),
     );
 
     // 4. The question arrives in the panel. The learner answers there.
@@ -180,12 +247,11 @@ export async function verifyPiPanelBrowser(artifacts: string | null): Promise<vo
       return { noticeShown: true, pointsDown: true, clickRevealedTeacher: true };`);
     const replyPrompt = sent.at(-1) ?? "";
     assert(
-      replyPrompt.includes("Which trait") &&
-        replyPrompt.includes("> Drop") &&
-        replyPrompt.includes("record_retrieval_check"),
+      replyPrompt.includes("The learner replied in the teacher panel") &&
+        replyPrompt.includes("Drop"),
       "The panel reply prompt lost its context.",
     );
-    bridge.onAgentEnd(run("Right. `Drop` runs the cleanup."));
+    await release(plan("Right. `Drop` runs the cleanup."));
 
     // A reply while reading past the quiz points up; scrolling updates the same notice.
     evidence.noticeAbove = await code(`
@@ -222,17 +288,21 @@ export async function verifyPiPanelBrowser(artifacts: string | null): Promise<vo
         state: document.querySelector('form.cl-quiz').dataset.state,
       }));
       if (!result.panelAfterQuiz || result.cardAfterQuestion !== 'q1' || !result.highlightInLabel || result.state !== 'graded') throw new Error('Reload lost the panel or the card: ' + JSON.stringify(result));
-      ${artifacts ? `await page.setViewportSize({ width: 1000, height: 1500 }); await page.locator('form.cl-quiz').evaluate(el => el.scrollIntoView()); await page.screenshot({ path: ${JSON.stringify(path.join(artifacts, "pi-panel.png"))} });` : ""}
+      ${artifacts ? `await page.setViewportSize({ width: 1000, height: 1500 }); await page.locator('form.cl-quiz').evaluate(el => el.scrollIntoView()); await page.screenshot({ path: ${JSON.stringify(path.join(artifacts, "teacher-panel.png"))} });` : ""}
       return result;`);
-    console.log("PASS: quiz highlight and Pi teacher panel");
+    console.log("PASS: quiz highlight and teacher panel");
   } catch (error) {
     evidence.failure = String(error);
     evidence.sent = sent;
     throw error;
   } finally {
+    await teacher.stop();
     if (artifacts) {
       fs.mkdirSync(artifacts, { recursive: true });
-      fs.writeFileSync(path.join(artifacts, "pi-panel.json"), JSON.stringify(evidence, null, 2));
+      fs.writeFileSync(
+        path.join(artifacts, "teacher-panel.json"),
+        JSON.stringify(evidence, null, 2),
+      );
     }
     if (browserOpen) await playwright(session, fixture.root, "close");
     await server.close();

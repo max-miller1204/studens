@@ -19,9 +19,6 @@ export interface LessonRequest {
   topic: string;
   owner: "pi" | "claude" | "codex";
   ownerPid: number;
-  /** Absent only on historical live-session Pi requests. */
-  delivery?: "service";
-  ownerSession?: string;
   at: number;
   status: "queued" | "running" | "done" | "failed";
   error?: string;
@@ -53,7 +50,6 @@ export function lessonRequests(classroom: string): LessonRequest[] {
           !isValidSlug(r.lesson) ||
           !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(r.id) ||
           !["pi", "claude", "codex"].includes(r.owner) ||
-          (r.delivery !== undefined && r.delivery !== "service") ||
           !Number.isSafeInteger(r.ownerPid) ||
           r.ownerPid < 1 ||
           typeof r.topic !== "string" ||

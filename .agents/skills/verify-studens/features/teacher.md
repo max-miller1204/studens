@@ -31,11 +31,11 @@ The learner receives follow-up questions and answers them in the lesson's teache
 
 Run `npm run verify -- browser --artifacts /tmp/studens-teacher`.
 
-The legacy Pi bridge fixture checks `.cl-teacher` follows the quiz, a prose-only grading run fails, and an explicit retry permits grading. It checks the panel reply reaches the correct prompt and all three conversation messages survive reload.
+The teacher panel fixture checks `.cl-teacher` follows the quiz, a prose-only grading run fails, and an explicit retry permits grading. It checks the panel reply reaches the correct prompt and all three conversation messages survive reload.
 
-It also receives replies while reading before and after the quiz. The notice must point down or up toward the teacher, update when scrolling past the panel, and dismiss when clicked as the teacher comes into view. Inspect `pi-panel/teacher-notice-below.png`, `pi-panel/teacher-notice-above.png`, and `pi-panel/pi-panel.json`.
+It also receives replies while reading before and after the quiz. The notice must point down or up toward the teacher, update when scrolling past the panel, and dismiss when clicked as the teacher comes into view. Inspect `teacher-panel/teacher-notice-below.png`, `teacher-panel/teacher-notice-above.png`, and `teacher-panel/teacher-panel.json`.
 
-The service fixture checks failure, retry, MCP disconnect and reconnect, request isolation between lessons, and teacher drafts. Inspect `pi-panel/pi-panel.json` and service state evidence.
+The service fixture checks failure, retry, MCP disconnect and reconnect, request isolation between lessons, and teacher drafts. Inspect `teacher-panel/teacher-panel.json` and service state evidence.
 
 For MCP connection cleanup, run `npx vitest run test/mcp-stdio-lifecycle.test.ts test/service-process.test.ts test/service-process-owner.test.ts`.
 The actual launcher/service checks use both Codex and Claude client identities: discovery,
@@ -289,4 +289,4 @@ see [Read and ask](reading.md).
 
 ## Gotchas
 
-Fixture teachers do not prove model responses. All three hosts use a dedicated persistent teacher session. The initiating Pi session context is intentionally separate. Legacy Pi bridge fixtures cover historical state, not a second production delivery path. New lessons start from the classroom page through the same persistent teacher; see [Next lesson](next-lesson.md). Private quiz keys must remain unavailable over HTTP.
+Fixture teachers do not prove model responses. All three hosts use a dedicated persistent teacher session. The initiating Pi session context is intentionally separate. Older classroom formats are upgraded once at service start; see `test/migrate.test.ts`. New lessons start from the classroom page through the same persistent teacher; see [Next lesson](next-lesson.md). Private quiz keys must remain unavailable over HTTP.

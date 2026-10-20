@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 import { lessonModelPlan } from "../src/lesson-output.ts";
-import { validateLessonDocument, piLessonDocument, nextLessonPrompt } from "../src/next-lesson.ts";
+import { validateLessonDocument, nextLessonPrompt } from "../src/next-lesson.ts";
 import { simpleLessonOutput } from "./lesson-output-fixture.ts";
 import { codeForm, codeQuestion, codeRubric, source, exercise } from "./code-fixture.ts";
 import { authoredVariants } from "../src/review-variants.ts";
@@ -27,18 +27,10 @@ const input = () => {
     })),
   };
 };
-it("preserves code HTML, public tests, judgment criteria and private variants through the actual typed/Pi producer", () => {
+it("preserves code HTML, public tests, judgment criteria and private variants through the actual typed producer", () => {
   const typed = input();
   const document = JSON.parse(lessonModelPlan(typed).calls[0].arguments_json);
   expect(() => validateLessonDocument(document)).not.toThrow();
-  const pi = piLessonDocument({
-    title: document.title,
-    summary: document.summary,
-    lesson_html: document.lesson_html,
-    rubric: JSON.parse(document.rubric_json),
-    teaching_plan: JSON.parse(document.teaching_plan_json),
-  });
-  expect(pi).toEqual(document);
   expect(document.lesson_html).toBe(typed.lesson_html);
   expect(JSON.parse(document.rubric_json).check.sum.criteria).toEqual(codeRubric.criteria);
   expect(JSON.parse(document.rubric_json).check.sum.expected).toBe(codeRubric.expected);
@@ -76,17 +68,14 @@ it("inlines the supported code contract for service authors without enabling ord
   const f = makeFixture();
   try {
     seedClassroom(f);
-    const prompt = nextLessonPrompt(
-      {
-        id: "code",
-        classroom: "rust",
-        lesson: "002-code",
-        topic: "Implement sum",
-        at: 1,
-        status: "queued",
-      } as any,
-      "service",
-    );
+    const prompt = nextLessonPrompt({
+      id: "code",
+      classroom: "rust",
+      lesson: "002-code",
+      topic: "Implement sum",
+      at: 1,
+      status: "queued",
+    } as any);
     expect(prompt).toContain("CODE-EXERCISES.md:");
     expect(prompt).toContain("a string for short/choice/code");
     expect(prompt).toContain("learning_record");

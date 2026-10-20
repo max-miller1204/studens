@@ -41,8 +41,7 @@ export async function verifyRootWorkload(artifacts: string | null): Promise<void
     history[classroom] = JSON.stringify(store.listGrades(classroom, "001-ownership"));
   }
   server.setHooks({
-    reviewOwner: "pi",
-    delivery: "push",
+    reviewOwner: "service",
     onReview: completePreparedReview,
     onReviewRetry: completePreparedReview,
     onAsk() {},

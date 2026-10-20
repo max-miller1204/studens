@@ -122,10 +122,6 @@ export function draftsFile(classroom: string, lesson: string): string {
 }
 
 /** The teacher panel conversation in Pi. The service keeps its own in `.teacher.json`. */
-export function panelMessagesFile(classroom: string, lesson: string): string {
-  return path.join(lessonDir(classroom, lesson), "teacher-messages.json");
-}
-
 /**
  * Extension-bundled assets (runtime JS/CSS, lesson templates, docs).
  *

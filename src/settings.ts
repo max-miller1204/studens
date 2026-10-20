@@ -56,7 +56,6 @@ export function connectionSettings() {
       port: config.port ?? null,
       tailscale: config.tailscale !== false,
       tailscalePort: config.tailscalePort ?? 8443,
-      piTailscalePort: config.piTailscalePort ?? 8444,
     },
     environmentPort: process.env.PI_CLASSROOM_SERVICE_PORT ?? null,
     tailnetDisabled: process.env.PI_CLASSROOM_TAILSCALE === "0",
@@ -64,7 +63,7 @@ export function connectionSettings() {
 }
 export function saveConnectionSettings(values: Record<string, unknown>, expected: unknown): void {
   for (const key of Object.keys(values))
-    if (!["port", "tailscale", "tailscalePort", "piTailscalePort"].includes(key))
+    if (!["port", "tailscale", "tailscalePort"].includes(key))
       throw new Error(`Unknown connection setting: ${key}.`);
   edit(configPath(), expected, () => {
     const config = { ...readConfig(), ...values };

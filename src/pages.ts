@@ -632,7 +632,6 @@ export function settingsPage(classroom: Classroom): string {
         <label class="cl-settings-check"><input name="tailscale" type="checkbox">Enable Tailscale links while connected</label>
         <p>Only people on your tailnet can use these links. Changes to links apply when you save.</p>
         <label>Service HTTPS port (all hosts)<input name="tailscalePort" type="number" min="1" max="65535" step="1" required></label>
-        <label>Legacy Pi HTTPS port (previous live-session package)<input name="piTailscalePort" type="number" min="1" max="65535" step="1" required></label>
         <p data-connection-override></p>
         <button class="cl-button" type="submit">Save connection settings</button><p role="status" data-save-status></p>
       </form>

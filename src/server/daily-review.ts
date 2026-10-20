@@ -14,29 +14,15 @@ import {
   startDailyReview,
 } from "../store/daily-review.ts";
 import type { DailyGroup, DailyReview } from "../store/daily-review.ts";
-import {
-  planReview,
-  plannedReviewEligible,
-  requireReviewOwner,
-  savePlannedReview,
-} from "../review-session.ts";
+import { planReview, plannedReviewEligible, savePlannedReview } from "../review-session.ts";
 import { rootWorkload } from "../review-workload.ts";
 import { privateStatePath } from "../paths.ts";
-import { readTeacherState } from "../service-state.ts";
 import { hooks } from "./hooks.ts";
 import { readJsonBody, sendHtml, sendJson, sendNotFound } from "./http.ts";
 
-/** Daily navigation must use the selected classroom host, including after reload. */
+/** Daily navigation reads each classroom's private teacher state through the path guards. */
 function requireGroupOwner(group: DailyGroup): void {
   privateStatePath(`${group.classroom}/.teacher.json`);
-  const teacher = readTeacherState(group.classroom);
-  if (hooks?.reviewOwner === "pi" && teacher)
-    throw new Error(
-      `This classroom belongs to ${teacher.identity.backend}. Open its persistent classroom service to continue.`,
-    );
-  const session = groupSession(group) ?? group.plan;
-  if (session.status !== "done" && hooks?.reviewOwner)
-    requireReviewOwner(session, hooks.reviewOwner);
 }
 function requireGroupHost(group: DailyGroup): void {
   if (!hooks?.reviewOwner || !hooks.onReview || !hooks.onReviewRetry)

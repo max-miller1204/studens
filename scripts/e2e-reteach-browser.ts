@@ -5,7 +5,6 @@ import * as path from "node:path";
 import { prepareReteach } from "../src/reteach.ts";
 import * as server from "../src/server.ts";
 import * as store from "../src/store.ts";
-import { ClassroomBridge } from "../src/bridge.ts";
 import { TeacherService } from "../src/teacher-service.ts";
 import { DAY_MS } from "../src/review.ts";
 import {
@@ -43,7 +42,6 @@ export async function driveReteach(
   lesson: string,
   artifacts: string | null,
   expectFailure = false,
-  interruptedBeforeQueue = false,
 ) {
   if (artifacts) fs.mkdirSync(artifacts, { recursive: true });
   const before = {
@@ -65,7 +63,7 @@ export async function driveReteach(
   const state = async () =>
     await (await fetch(`${base}/api/state?classroom=rust&lesson=${lesson}`)).json();
   await code(
-    `await page.setViewportSize({width:1280,height:900});await page.goto(${JSON.stringify(base + "/c/rust")});await page.getByRole('link',{name:'Open short re-teach',exact:true}).waitFor();${shot("after-desktop")}await page.setViewportSize({width:375,height:812});${shot("after-mobile")}if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth))throw new Error('Re-teach offer overflows mobile');await page.getByRole('link',{name:'Open short re-teach',exact:true}).click();await page.getByRole('button',{name:${JSON.stringify(interruptedBeforeQueue ? "Retry short re-teach" : "Start short re-teach")},exact:true}).waitFor();${shot("offer-mobile")}await page.getByRole('button',{name:${JSON.stringify(interruptedBeforeQueue ? "Retry short re-teach" : "Start short re-teach")},exact:true}).click();`,
+    `await page.setViewportSize({width:1280,height:900});await page.goto(${JSON.stringify(base + "/c/rust")});await page.getByRole('link',{name:'Open short re-teach',exact:true}).waitFor();${shot("after-desktop")}await page.setViewportSize({width:375,height:812});${shot("after-mobile")}if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth))throw new Error('Re-teach offer overflows mobile');await page.getByRole('link',{name:'Open short re-teach',exact:true}).click();await page.getByRole('button',{name:'Start short re-teach',exact:true}).waitFor();${shot("offer-mobile")}await page.getByRole('button',{name:'Start short re-teach',exact:true}).click();`,
   );
   async function waitForState(label: string, probe: () => Promise<any>) {
     const deadline = Date.now() + 180_000;
@@ -173,94 +171,69 @@ export async function driveReteach(
 }
 
 export async function verifyReteachBrowser(artifacts: string | null) {
-  for (const host of ["pi", "service"] as const) {
-    const f = makeFixture();
-    seedClassroom(f);
-    const lesson = seedReteach(f.root, "001-ownership");
-    if (host === "pi") {
-      const request = prepareReteach("rust", lesson, store.reviewItems("rust")[0].key);
-      store.addPanelMessage("rust", {
-        id: `chat:${request.id}`,
-        lesson,
-        role: "learner",
-        text: request.text,
+  const host = "service";
+  const f = makeFixture();
+  seedClassroom(f);
+  const lesson = seedReteach(f.root, "001-ownership");
+
+  const browser = `studens-reteach-${host}-${process.pid}`;
+  let turns = 0;
+  const message =
+    "One owner controls cleanup. For example, when a String moves from a to b, b owns it and drops it when b leaves scope. Who drops a value after it moves to a new binding?";
+  const teacher = new TeacherService(async (_identity, prompt) => {
+    if (prompt.includes("Background private review refill"))
+      return refillPlan(refillRequests("rust").find((r) => r.status === "running")!);
+    turns++;
+    if (turns === 1) throw new Error("Fixture provider interrupted during re-teach.");
+    return { calls: [], message, learning_record: "", notes_markdown: "" };
+  });
+  teacher.attach("rust", "codex");
+  server.setHooks({
+    onAsk() {},
+    onFollowUp() {},
+    onQuizSubmit() {},
+    onReflect() {},
+    teacherState: (c, l) => teacher.publicState(c, l),
+    onTeacherChat: (c, l, t, id) => teacher.chat(c, l, t, id),
+    onTeacherRetry: (c, id) => teacher.retry(c, id),
+  });
+  try {
+    const base = await server.start(0);
+    await playwright(browser, f.root, "open", base);
+    await driveReteach(
+      browser,
+      f.root,
+      base,
+      lesson,
+      artifacts ? path.join(artifacts, host) : null,
+      true,
+    );
+    if (turns !== 3)
+      throw new Error(`Expected failed request, explicit retry and learner reply, got ${turns}`);
+  } catch (error) {
+    if (artifacts) {
+      const failureDir = path.join(artifacts, host);
+      fs.mkdirSync(failureDir, { recursive: true });
+      fs.writeFileSync(
+        path.join(failureDir, "failure.json"),
+        JSON.stringify(
+          {
+            error: String(error),
+            teacher: teacher.publicState("rust", lesson),
+          },
+          null,
+          2,
+        ),
+      );
+      fs.cpSync(path.join(f.root, "rust"), path.join(failureDir, "classroom"), {
+        recursive: true,
       });
     }
-    const browser = `studens-reteach-${host}-${process.pid}`;
-    let turns = 0;
-    const message =
-      "One owner controls cleanup. For example, when a String moves from a to b, b owns it and drops it when b leaves scope. Who drops a value after it moves to a new binding?";
-    const bridge = new ClassroomBridge({
-      sendUserMessage() {
-        turns++;
-        queueMicrotask(() =>
-          bridge.onAgentEnd(
-            turns === 1 ? [] : [{ role: "assistant", content: [{ type: "text", text: message }] }],
-          ),
-        );
-      },
-    });
-    const teacher = new TeacherService(async (_identity, prompt) => {
-      if (prompt.includes("Background private review refill"))
-        return refillPlan(refillRequests("rust").find((r) => r.status === "running")!);
-      turns++;
-      if (turns === 1) throw new Error("Fixture provider interrupted during re-teach.");
-      return { calls: [], message, learning_record: "", notes_markdown: "" };
-    });
-    if (host === "service") teacher.attach("rust", "codex");
-    server.setHooks({
-      onAsk() {},
-      onFollowUp() {},
-      onQuizSubmit() {},
-      onReflect() {},
-      teacherState: (c, l) => (host === "pi" ? bridge.panelState(c, l) : teacher.publicState(c, l)),
-      onTeacherChat: (c, l, t, id) =>
-        host === "pi" ? bridge.chat(c, l, t, id) : teacher.chat(c, l, t, id),
-      onTeacherRetry: (c, id) => (host === "pi" ? bridge.retry(c, id) : teacher.retry(c, id)),
-    });
-    try {
-      const base = await server.start(0);
-      await playwright(browser, f.root, "open", base);
-      await driveReteach(
-        browser,
-        f.root,
-        base,
-        lesson,
-        artifacts ? path.join(artifacts, host) : null,
-        true,
-        host === "pi",
-      );
-      if (turns !== 3)
-        throw new Error(`Expected failed request, explicit retry and learner reply, got ${turns}`);
-    } catch (error) {
-      if (artifacts) {
-        const failureDir = path.join(artifacts, host);
-        fs.mkdirSync(failureDir, { recursive: true });
-        fs.writeFileSync(
-          path.join(failureDir, "failure.json"),
-          JSON.stringify(
-            {
-              error: String(error),
-              teacher:
-                host === "pi"
-                  ? bridge.panelState("rust", lesson)
-                  : teacher.publicState("rust", lesson),
-            },
-            null,
-            2,
-          ),
-        );
-        fs.cpSync(path.join(f.root, "rust"), path.join(failureDir, "classroom"), {
-          recursive: true,
-        });
-      }
-      throw error;
-    } finally {
-      await teacher.stop();
-      bridge.reset();
-      await playwright(browser, f.root, "close");
-      await server.close();
-      f.cleanup();
-    }
+    throw error;
+  } finally {
+    await teacher.stop();
+    await playwright(browser, f.root, "close");
+    await server.close();
+    f.cleanup();
   }
 }

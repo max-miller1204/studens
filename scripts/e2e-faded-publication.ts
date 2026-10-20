@@ -34,13 +34,7 @@ export async function verifyFadedPublication(artifacts: string | null): Promise<
     const document = JSON.parse(plan.calls[0].arguments_json);
     const records = JSON.stringify(store.readLearningRecords("rust"));
     const grades = JSON.stringify(store.listGrades("rust", "001-ownership"));
-    let request = startLessonRequest(
-      "rust",
-      randomUUID(),
-      "Faded publication contract",
-      "codex",
-      "service",
-    );
+    let request = startLessonRequest("rust", randomUUID(), "Faded publication contract", "codex");
     request = saveLessonDocument(request, document);
     // This is the production checker and serializer, not a synthetic page-check receipt.
     await completeLessonRequest(request);
@@ -66,13 +60,7 @@ export async function verifyFadedPublication(artifacts: string | null): Promise<
       ...document,
       lesson_html: document.lesson_html.replace('"version": 1', '"version": 99'),
     };
-    let rejected = startLessonRequest(
-      "rust",
-      randomUUID(),
-      "Malformed public widget",
-      "codex",
-      "service",
-    );
+    let rejected = startLessonRequest("rust", randomUUID(), "Malformed public widget", "codex");
     rejected = saveLessonDocument(rejected, invalid);
     let refusal = "";
     try {

@@ -38,8 +38,6 @@ export interface TeacherRequest {
   /** Snapshot taken only when a new inference request starts. */
   requestedModel?: string | null;
   resolvedModel?: string;
-  /** Version 2 uses score-free grade_quiz_answers. Absent on older saved plans. */
-  planVersion?: 2;
   planRubricDigest?: string;
   planValidated?: boolean;
   applied?: number;
@@ -53,6 +51,8 @@ export interface TeacherMessage {
   at: number;
   /** Server-selected panel task this learner actually replied to; absent historically. */
   replyTo?: string;
+  /** Panel history saved by the live Pi session before the format upgrade. */
+  sourceBackend?: "pi";
 }
 export interface TeacherState {
   version: 1;
@@ -71,9 +71,6 @@ export function readTeacherState(classroom: string): TeacherState | null {
       state.version !== 1 ||
       !["codex", "claude", "pi"].includes(state.identity.backend) ||
       !Array.isArray(state.requests) ||
-      state.requests.some(
-        (request) => request.planVersion !== undefined && request.planVersion !== 2,
-      ) ||
       !Array.isArray(state.messages)
     )
       throw new StateReadError(`Invalid teacher state for ${classroom}.`);

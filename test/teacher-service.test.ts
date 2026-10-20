@@ -14,7 +14,7 @@ import { TeacherService } from "../src/teacher-service.ts";
 import { readTeacherState, saveTeacherState } from "../src/service-state.ts";
 import * as store from "../src/store.ts";
 import * as server from "../src/server.ts";
-import { applyGrade } from "../src/bridge.ts";
+import { applyGrade } from "../src/quiz-grading.ts";
 import type { TeacherPlan } from "../src/teacher.ts";
 
 let f: Fixture;
@@ -689,66 +689,6 @@ it("regenerates a rejected grade on explicit retry without repeating a saved gra
   await restarted.stop();
 });
 
-it("regenerates an older rejected score marked as a valid plan", async () => {
-  const s = submission();
-  const invalid = grade(s.id);
-  const args = JSON.parse(invalid.arguments_json);
-  args.score = 10;
-  invalid.arguments_json = JSON.stringify(args);
-  const first = new TeacherService(async () => plan([invalid]));
-  first.attach("rust", "codex");
-  await first.idle();
-  const state = readTeacherState("rust")!;
-  state.requests[0].planValidated = true;
-  state.requests[0].plan!.calls[0].name = "grade_lesson_quiz";
-  delete state.requests[0].planVersion;
-  saveTeacherState("rust", state);
-  let runs = 0;
-  const restored = new TeacherService(async () => {
-    runs++;
-    return plan([grade(s.id)]);
-  });
-  restored.restore();
-  await restored.idle();
-  expect(runs).toBe(0);
-  restored.retry("rust", `quiz:${s.id}`);
-  await restored.idle();
-  expect(runs).toBe(1);
-  expect(readTeacherState("rust")!.requests[0].status).toBe("done");
-  expect(store.listGrades("rust", location.lesson)).toHaveLength(1);
-  await first.stop();
-  await restored.stop();
-});
-
-it("applies a valid saved legacy grade without requesting another model plan", async () => {
-  const s = submission();
-  const supplied = grade(s.id);
-  const args = JSON.parse(supplied.arguments_json);
-  args.score = 0;
-  supplied.arguments_json = JSON.stringify(args);
-  const first = new TeacherService(async () => plan([supplied]));
-  first.attach("rust", "codex");
-  await first.idle();
-  expect(store.listGrades("rust", location.lesson)).toHaveLength(0);
-  const state = readTeacherState("rust")!;
-  const request = state.requests[0];
-  request.plan!.calls[0].name = "grade_lesson_quiz";
-  delete request.planVersion;
-  request.status = "planned";
-  request.planValidated = true;
-  saveTeacherState("rust", state);
-  const restored = new TeacherService(async () => {
-    throw new Error("Recovery must use the saved legacy plan.");
-  });
-  restored.restore();
-  await restored.idle();
-  expect(readTeacherState("rust")!.requests[0].status).toBe("done");
-  expect(store.listGrades("rust", location.lesson)).toHaveLength(1);
-  expect(store.listGrades("rust", location.lesson)[0].score).toBe(0);
-  await first.stop();
-  await restored.stop();
-});
-
 it("rejects a legacy grade operation in a new teacher plan", async () => {
   const s = submission();
   const call = grade(s.id);
@@ -758,20 +698,6 @@ it("rejects a legacy grade operation in a new teacher plan", async () => {
   await teacher.idle();
   expect(readTeacherState("rust")!.requests[0].error).toContain("one grade_quiz_answers call");
   expect(store.listGrades("rust", location.lesson)).toHaveLength(0);
-  await teacher.stop();
-});
-
-it("rejects an unknown saved plan version before recovery", async () => {
-  submission();
-  const teacher = new TeacherService(async () => {
-    throw new Error("Leave the request failed for the recovery check.");
-  });
-  teacher.attach("rust", "codex");
-  await teacher.idle();
-  const state = readTeacherState("rust")!;
-  Object.assign(state.requests[0], { planVersion: 3 });
-  saveTeacherState("rust", state);
-  expect(() => readTeacherState("rust")).toThrow("Invalid teacher state");
   await teacher.stop();
 });
 

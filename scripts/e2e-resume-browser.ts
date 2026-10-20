@@ -1,10 +1,10 @@
 /** Check explicit chat handoffs in isolated, graded historical review fixtures. */
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { ClassroomBridge, applyGrade } from "../src/bridge.ts";
+import { applyGrade } from "../src/quiz-grading.ts";
 import { TeacherService } from "../src/teacher-service.ts";
 import { LearnerInbox, McpSession } from "../src/mcp.ts";
-import { resumeTeacherTool, piResumes } from "../src/teacher-resume.ts";
+import { resumeTeacherTool } from "../src/teacher-resume.ts";
 import { readTeacherState, saveTeacherState } from "../src/service-state.ts";
 import * as server from "../src/server.ts";
 import * as store from "../src/store.ts";
@@ -59,23 +59,15 @@ export async function verifyResumeBrowser(artifacts: string | null): Promise<voi
             at: Date.now() + 60_000,
           },
         ];
-        if (backend === "pi") for (const m of messages) store.addPanelMessage("rust", m);
-        else
-          saveTeacherState("rust", {
-            version: 1,
-            identity: { backend, sessionId: "fixture-existing" },
-            requests: [],
-            messages,
-          });
+        saveTeacherState("rust", {
+          version: 1,
+          identity: { backend, sessionId: "fixture-existing" },
+          requests: [],
+          messages,
+        });
       }
       let runs = 0;
       const prompts: string[] = [];
-      const bridge = new ClassroomBridge({
-        sendUserMessage: (text) => {
-          prompts.push(text);
-          runs++;
-        },
-      });
       const teacher = new TeacherService(async (_identity, prompt) => {
         prompts.push(prompt);
         runs++;
@@ -89,64 +81,27 @@ export async function verifyResumeBrowser(artifacts: string | null): Promise<voi
           notes_markdown: "",
         };
       });
-      const tool = resumeTeacherTool((input) =>
-        backend === "pi" ? bridge.resume(input) : teacher.resume(input),
-      );
-      if (backend === "pi")
-        server.setHooks({
-          onAsk: (a) => bridge.ask(a),
-          onFollowUp: (a, f) => bridge.followUp(a, f),
-          onQuizSubmit: (s) => bridge.grade(s),
-          onReflect: (r) => bridge.reflect(r),
-          teacherState: (c, l) => bridge.panelState(c, l),
-          onTeacherChat: (c, l, text, id) => bridge.chat(c, l, text, id),
-          onTeacherRetry: (c, id) => bridge.retry(c, id),
-        });
-      else {
-        teacher.connect();
-        teacher.attach("rust", backend);
-      }
+      const tool = resumeTeacherTool((input) => teacher.resume(input));
+      teacher.connect();
+      teacher.attach("rust", backend);
       const session = `studens-resume-${backend}-${scenario}-${process.pid}`;
       let browserOpen = false;
       try {
         const base = await server.start();
         const input = { ...location, submission_id: submission.id };
-        let url: string;
-        if (backend === "pi") {
-          bridge.setIdleProbe(() => false);
-          bridge.noteForeignTurn();
-          url = (await tool.execute(input)).details.url as string;
-          bridge.onAgentEnd([{ role: "assistant", content: "Continue on the lesson page." }]);
-          if (
-            store.listPanelMessages("rust", location.lesson).length !==
-            (scenario === "saved-reply" ? 2 : 0)
-          )
-            throw new Error("Initiating chat leaked into the panel.");
-        } else {
-          const mcp = new McpSession(new LearnerInbox(), { open: async () => base, tools: [tool] });
-          const response = await mcp.handle({
-            jsonrpc: "2.0",
-            id: 1,
-            method: "tools/call",
-            params: { name: "resume_lesson_teacher", arguments: input },
-          });
-          if (!response || "error" in response || (response.result as any).isError)
-            throw new Error(JSON.stringify(response));
-          url = `${base}/c/rust/001-ownership#cl-teacher`;
-        }
+        const mcp = new McpSession(new LearnerInbox(), { open: async () => base, tools: [tool] });
+        const response = await mcp.handle({
+          jsonrpc: "2.0",
+          id: 1,
+          method: "tools/call",
+          params: { name: "resume_lesson_teacher", arguments: input },
+        });
+        if (!response || "error" in response || (response.result as any).isError)
+          throw new Error(JSON.stringify(response));
+        const url = `${base}/c/rust/001-ownership#cl-teacher`;
         await playwright(session, fixture.root, "open", url);
         browserOpen = true;
-        if (backend === "pi")
-          bridge.onAgentEnd([
-            {
-              role: "assistant",
-              content:
-                scenario === "saved-reply"
-                  ? "Right. The new binding owns it."
-                  : "Which binding owns the buffer after a move?",
-            },
-          ]);
-        else await teacher.idle();
+        await teacher.idle();
         await tool.execute(input);
         if (runs !== 1) throw new Error("Resume repeated the question.");
         if (scenario === "empty") {
@@ -166,9 +121,7 @@ export async function verifyResumeBrowser(artifacts: string | null): Promise<voi
         return true;
       }`,
           );
-          if (backend === "pi")
-            bridge.onAgentEnd([{ role: "assistant", content: "Right. The new binding owns it." }]);
-          else await teacher.idle();
+          await teacher.idle();
         } else if (!prompts[0]?.includes("The new binding"))
           throw new Error("The recovered prompt lost the actual learner reply.");
         await playwrightCode(
@@ -199,11 +152,8 @@ export async function verifyResumeBrowser(artifacts: string | null): Promise<voi
                 scenario,
                 runs,
                 preserved: before === after,
-                panel:
-                  backend === "pi"
-                    ? bridge.panelState("rust", location.lesson)
-                    : teacher.publicState("rust", location.lesson),
-                requests: backend === "pi" ? piResumes("rust") : readTeacherState("rust")?.requests,
+                panel: teacher.publicState("rust", location.lesson),
+                requests: readTeacherState("rust")?.requests,
               },
               null,
               2,
@@ -214,7 +164,6 @@ export async function verifyResumeBrowser(artifacts: string | null): Promise<voi
         );
       } finally {
         await teacher.stop();
-        bridge.reset();
         if (browserOpen) await playwright(session, fixture.root, "close");
         await server.close();
         fixture.cleanup();

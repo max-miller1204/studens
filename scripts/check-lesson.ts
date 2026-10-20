@@ -10,7 +10,7 @@ import {
   _overrideClassroomsDir,
 } from "../src/paths.ts";
 import { stageLesson } from "../src/pretest.ts";
-import { applyGrade } from "../src/bridge.ts";
+import { applyGrade } from "../src/quiz-grading.ts";
 import * as server from "../src/server.ts";
 import * as store from "../src/store.ts";
 import { playwright, playwrightCode } from "./playwright.ts";

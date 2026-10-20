@@ -5,7 +5,7 @@ import { createHash } from "node:crypto";
 import { makeFixture, seedClassroom, lessonHtml } from "../test/helpers.ts";
 import * as server from "../src/server.ts";
 import * as store from "../src/store.ts";
-import { applyAnswer } from "../src/bridge.ts";
+import { applyAnswer } from "../src/answers.ts";
 import { highlightText } from "./browser-actions.ts";
 import { playwright, playwrightCode } from "./playwright.ts";
 

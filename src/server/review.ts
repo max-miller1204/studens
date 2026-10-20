@@ -4,7 +4,6 @@ import type { ReviewSession } from "../review-session.ts";
 import {
   currentReview,
   publicReview,
-  requireReviewOwner,
   reviewSessions,
   startReview,
   updateReview,
@@ -68,8 +67,6 @@ export async function handleReview(
       return sendJson(res, { error: "Unknown classroom." }, 404);
     try {
       const session = currentReview(classroom);
-      if (session && session.status !== "done" && hooks?.reviewOwner)
-        requireReviewOwner(session, hooks.reviewOwner);
       return sendJson(res, { review: publicReview(session) });
     } catch (err) {
       return sendJson(res, { error: (err as Error).message }, 409);
@@ -95,7 +92,6 @@ export async function handleReview(
         session = reviewSessions(body.classroom).find((s) => s.id === body.id);
         if (!session || session.status !== "failed")
           throw new Error("This review cannot be retried.");
-        requireReviewOwner(session, hooks.reviewOwner);
         hooks.onReviewRetry(session);
       } else {
         session = startReview(
@@ -115,13 +111,9 @@ export async function handleReview(
         202,
       );
     } catch (err) {
-      if (
-        session &&
-        session.owner === hooks.reviewOwner &&
-        (session.status === "queued" || route === "review/retry")
-      )
+      if (session && (session.status === "queued" || route === "review/retry"))
         updateReview(session, "failed", (err as Error).message);
-      if (session && session.owner === hooks.reviewOwner)
+      if (session)
         return sendJson(res, { review: publicReview(currentReview(body.classroom)) }, 202);
       return sendJson(res, { error: (err as Error).message }, 409);
     }
