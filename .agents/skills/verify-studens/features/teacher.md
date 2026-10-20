@@ -144,6 +144,16 @@ SSE-triggered projections. The publication-recovery drive explicitly closes and
 reopens its recorder around the owned service restart; it never reconnects or
 retries model work implicitly.
 
+For HTTP shutdown intake, run `npx vitest run test/server-lifecycle.test.ts`.
+The real-socket checks synchronize partial request headers with listener events,
+then complete the event request after shutdown starts. Require 503 with
+`Connection: close`, no event-stream registration, and shutdown without client
+cleanup. Registered root, classroom and lesson streams must receive normal events
+and drain. While a replacement listener serves events, the old listener must still
+refuse its pending request and finishing its drain must leave the new stream live.
+These checks complement the browser restart paths above; they do not establish the
+precise cause of a historical browser stall.
+
 The dispute fixture follows the activity link from the classroom into a long lesson
 with delayed state. It requires the saved dispute fully inside the mobile viewport,
 handles encoded and malformed fragments, then sends a real teacher SSE refresh and
