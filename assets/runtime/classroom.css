@@ -2333,3 +2333,48 @@ figure:has(> .cl-diagram) figcaption {
   margin: 0.5rem 0;
   font-size: 0.9rem;
 }
+
+/* Local step-through teaching: stable controls, readable state, discrete updates. */
+.cl-stepper-runtime {
+  border: 1px solid var(--cl-border-strong);
+  border-radius: 12px;
+  padding: 1rem;
+  margin-block: 1rem;
+  background: var(--cl-surface);
+}
+.cl-stepper-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-block: 1rem;
+}
+.cl-stepper-note {
+  color: var(--cl-text-muted);
+  font-size: 0.85rem;
+}
+.cl-stepper-status {
+  font-weight: 600;
+}
+.cl-stepper-state {
+  background: var(--cl-surface-2);
+  border-inline-start: 3px solid var(--cl-accent);
+  padding: 0.75rem;
+}
+.cl-stepper-state,
+.cl-stepper-explanation,
+.cl-stepper-transition {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.cl-stepper-runtime input {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin-block: 0.5rem;
+}
+.cl-stepper-input-error {
+  color: var(--cl-text);
+}
+.cl-stepper-frame {
+  min-width: 0;
+}

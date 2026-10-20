@@ -15,6 +15,23 @@ export const TEST_MODELS = {
   codex: { model: "gpt-6-luna", effort: "low" },
 } as const;
 
+/** Reject conflicting directed modes before starting any host or browser work. */
+export function directedLessonMode(
+  env: NodeJS.ProcessEnv = process.env,
+): "code" | "faded" | "stepper" | null {
+  const flags = [
+    ["code", "STUDENS_VERIFY_CODE_LESSON"],
+    ["faded", "STUDENS_VERIFY_FADED"],
+    ["stepper", "STUDENS_VERIFY_STEPPER"],
+  ] as const;
+  const selected = flags.filter(([, flag]) => env[flag] === "1");
+  if (selected.length > 1)
+    throw new Error(
+      `Select one directed authoring mode per run: ${selected.map(([, flag]) => flag).join(", ")}.`,
+    );
+  return selected[0]?.[0] ?? null;
+}
+
 /** Readiness belongs to the completed tool's run, never an earlier settlement. */
 export function toolRunSettled(
   events: readonly { type?: string; toolName?: string }[],

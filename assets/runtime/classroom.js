@@ -4,6 +4,7 @@ import { initDiagrams } from "./diagrams.mjs";
 import { initLinks } from "./links.mjs";
 import { initMath } from "./math.mjs";
 import { initTheme } from "./theme.mjs";
+import { initSteppers } from "./stepper.mjs";
 import { initFaded } from "./faded.mjs";
 import { createReviewScreen } from "./review-screen.mjs";
 import { createCards } from "./cards.mjs";
@@ -52,6 +53,7 @@ function init() {
   initMath(contentRoot).catch((err) => console.error("[classroom] math failed", err));
 
   initFaded(contentRoot);
+  initSteppers(contentRoot);
   highlights.init();
   quizzes.hydrateQuizzes();
   review = createReviewScreen({

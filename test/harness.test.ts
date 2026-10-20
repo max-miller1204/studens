@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   harnessCommand,
+  directedLessonMode,
   isPlaywrightLaunch,
   packagedPageChecks,
   useTestModel,
@@ -273,5 +274,24 @@ describe("browser launch detection", () => {
     "playwright-cli --help open && playwright-cli -s=lesson open http://127.0.0.1:3000 --config=/plugin/assets/playwright-headless.json",
   ])("recognizes actual launches: %s", (command) => {
     expect(isPlaywrightLaunch(command)).toBe(true);
+  });
+});
+
+describe("directed lesson mode selection", () => {
+  it.each([
+    [{}, null],
+    [{ STUDENS_VERIFY_CODE_LESSON: "1" }, "code"],
+    [{ STUDENS_VERIFY_FADED: "1" }, "faded"],
+    [{ STUDENS_VERIFY_STEPPER: "1" }, "stepper"],
+  ])("preserves each independent mode and ordinary default", (env, expected) => {
+    expect(directedLessonMode(env)).toBe(expected);
+  });
+  it.each([
+    { STUDENS_VERIFY_CODE_LESSON: "1", STUDENS_VERIFY_FADED: "1" },
+    { STUDENS_VERIFY_CODE_LESSON: "1", STUDENS_VERIFY_STEPPER: "1" },
+    { STUDENS_VERIFY_FADED: "1", STUDENS_VERIFY_STEPPER: "1" },
+    { STUDENS_VERIFY_CODE_LESSON: "1", STUDENS_VERIFY_FADED: "1", STUDENS_VERIFY_STEPPER: "1" },
+  ])("rejects every conflicting selection", (env) => {
+    expect(() => directedLessonMode(env)).toThrow("Select one directed authoring mode per run");
   });
 });

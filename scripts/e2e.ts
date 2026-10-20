@@ -22,7 +22,13 @@ import * as os from "node:os";
 import * as path from "node:path";
 import * as net from "node:net";
 import { refillRequests } from "../src/review-refill.ts";
-import { useTestModel, until, harnessCommand, parseHarness } from "./harness.ts";
+import {
+  useTestModel,
+  until,
+  harnessCommand,
+  parseHarness,
+  directedLessonMode,
+} from "./harness.ts";
 import { playwright, playwrightCode } from "./playwright.ts";
 import {
   seedHistoricalReview,
@@ -35,6 +41,7 @@ import { notesStub } from "../src/prompts.ts";
 import * as store from "../src/store.ts";
 import { control, serviceStatus } from "../src/service-client.ts";
 
+directedLessonMode();
 const harness = parseHarness(
   process.argv[2],
   "Usage: node scripts/e2e.ts <claude|codex> [artifacts]",

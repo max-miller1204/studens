@@ -654,3 +654,38 @@ New pages ask how the learner answered. A hint, reference, or solution is assist
 Missing reports stay unknown. An authored assisted question cannot prove independence
 even when the learner reports no extra help. Self-reports are evidence limits, not
 proof that no help occurred. Label supported completion and immediate checks honestly.
+
+### Step-through diagrams and computed simulations
+
+Copy a suitable section from [the stepper template](../assets/templates/stepper.html)
+into the pretest teaching gate, outside forms. Give every widget a unique
+`data-stepper-id`. The template declares the complete version 1 contract and four
+causal examples: heating water, a door controller, packet stages, and prefix sums.
+Use the existing lesson shell; the server supplies the runtime without a build.
+
+`mode: "trace"` declares ordered author-supplied snapshots. Each step needs a title,
+readable multiline state, transition and causal explanation; Mermaid is optional.
+State why the transition changes those values and declare assumptions. This mode
+never computes or verifies scientific/algorithmic results. The learner sees an
+“Authored trace” label. A carousel of unrelated pictures is not a causal trace.
+
+`mode: "prefix-sum"` with `domain: "algorithm"` takes `values`, 1–12 integers from
+-100 to 100. The built-in reducer derives every state by adding the next value;
+results cannot be supplied by the author. Learners may edit the comma-separated
+input and select **Recompute** to reset the run. Edits alone retain the explicitly
+labeled previous run; invalid input clears the view and gives a specific error.
+Use authored traces for other algorithms; no arbitrary code execution is added.
+
+Back, Next and Reset explore states. Play advances every 1.5 seconds and stops at
+the end; manual navigation, page hiding and removal pause it. Reduced motion
+uses manual stepping. Reload starts over. Plain text state/transition descriptions
+and polite step announcements accompany diagrams. State/explanation strings use
+the existing Temml math delimiters; Mermaid labels use plain text. Never place TeX
+inside Mermaid labels. Every step is rendered with the bundled local assets.
+
+All widget content is public teaching, including JSON scripts. Use different
+cases/values for graded checks and private variants. Do not add widget entries to
+the private assessment plan/key. Stepping, playing and changing input create no
+submission, grade, score, review evidence, or model request. They establish no
+learning outcome. The packaged `check-lesson.ts` exhausts every frame in the
+initial and released page using a disposable copy and refuses drawing errors.

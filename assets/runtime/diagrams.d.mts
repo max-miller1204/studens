@@ -7,4 +7,7 @@ export declare function dedentSource(text: string): string;
 
 export declare function diagramSource(element: Element): string;
 
-export declare function initDiagrams(root: ParentNode): Promise<void>;
+export declare function initDiagrams(
+  root: ParentNode,
+  options?: { signal?: AbortSignal },
+): Promise<void>;

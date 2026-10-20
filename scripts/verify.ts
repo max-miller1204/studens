@@ -4,6 +4,9 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { packageRoot } from "../src/paths.ts";
 
+import { directedLessonMode } from "./harness.ts";
+
+directedLessonMode();
 const root = packageRoot();
 const usage =
   "Usage: npm run verify -- [local|checks|browser|pi|claude|codex|settings <claude|codex>|authoring <claude|codex>|feedback <claude|codex>|quality <claude|codex>|refill <claude|codex>|phone [pi]|doctor [browser|pi|claude|codex]] [--artifacts <directory>]";

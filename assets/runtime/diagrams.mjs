@@ -48,7 +48,8 @@ export function diagramSource(element) {
  * The swap is synchronous, so the text index never sees the source text. The
  * returned promise settles when the first drawing is done.
  */
-export function initDiagrams(root) {
+export function initDiagrams(root, { signal } = {}) {
+  if (signal?.aborted) return Promise.resolve();
   const diagrams = [...root.querySelectorAll("pre.mermaid")].map((pre) => {
     const diagram = document.createElement("div");
     diagram.className = "cl-diagram";
@@ -64,18 +65,29 @@ export function initDiagrams(root) {
   });
   if (diagrams.length === 0) return Promise.resolve();
 
-  const redraw = () => draw(diagrams);
-  new MutationObserver(redraw).observe(document.documentElement, {
+  const redraw = () => draw(diagrams, signal);
+  const observer = new MutationObserver(redraw);
+  observer.observe(document.documentElement, {
     attributes: true,
     attributeFilter: ["data-theme"],
   });
-  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", redraw);
-  return draw(diagrams);
+  const media = window.matchMedia("(prefers-color-scheme: dark)");
+  media.addEventListener("change", redraw);
+  signal?.addEventListener(
+    "abort",
+    () => {
+      observer.disconnect();
+      media.removeEventListener("change", redraw);
+    },
+    { once: true },
+  );
+  return draw(diagrams, signal);
 }
 
 /** Queue one drawing of every diagram, so two theme changes cannot interleave. */
-function draw(diagrams) {
+function draw(diagrams, signal) {
   renderQueue = renderQueue.then(async () => {
+    if (signal?.aborted) return;
     let mermaid;
     try {
       mermaid = await loadMermaid();
@@ -91,12 +103,14 @@ function draw(diagrams) {
       themeVariables: themeVariables(),
     });
     for (const diagram of diagrams) {
+      if (signal?.aborted || !diagram.isConnected) continue;
       try {
         const { svg } = await mermaid.render(`cl-diagram-${++renderCount}`, sources.get(diagram));
+        if (signal?.aborted || !diagram.isConnected) continue;
         diagram.innerHTML = svg;
         diagram.removeAttribute("aria-busy");
       } catch (error) {
-        showError(diagram, error);
+        if (!signal?.aborted && diagram.isConnected) showError(diagram, error);
       }
     }
   });
