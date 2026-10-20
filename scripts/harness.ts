@@ -46,7 +46,7 @@ export function toolRunSettled(
 }
 
 /** Claude Code prefixes plugin MCP tools with this. Codex reports the bare name. */
-export const CLAUDE_PREFIX = "mcp__plugin_studens_classroom__";
+const CLAUDE_PREFIX = "mcp__plugin_studens_classroom__";
 
 export function parseHarness(value: string | undefined, usage: string): Harness {
   if (value !== "claude" && value !== "codex" && value !== "pi") throw new Error(usage);
@@ -54,7 +54,7 @@ export function parseHarness(value: string | undefined, usage: string): Harness 
 }
 
 /** A temporary CODEX_HOME with this checkout installed as a plugin. */
-export function codexHome(): string {
+function codexHome(): string {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), "studens-e2e-codex-"));
   const realHome = process.env["CODEX_HOME"] ?? path.join(os.homedir(), ".codex");
   fs.copyFileSync(path.join(realHome, "auth.json"), path.join(home, "auth.json"));
@@ -480,13 +480,4 @@ export async function until<T>(what: string, timeoutMs: number, probe: () => T |
     await new Promise((resolve) => setTimeout(resolve, 500));
   }
   throw new Error(`Timed out waiting for ${what}`);
-}
-
-/** Read a JSON file that another process may still be writing. Null until it parses. */
-export function readJsonWhenReady<T>(file: string): T | null {
-  try {
-    return JSON.parse(fs.readFileSync(file, "utf8")) as T;
-  } catch {
-    return null;
-  }
 }

@@ -296,7 +296,7 @@ async function runClaude(
   child.stderr.on("data", (chunk) => {
     stderr = (stderr + chunk).slice(-8000);
   });
-  child.stdin.on("error", (err) => {
+  child.stdin.on("error", () => {
     child.kill();
   });
   child.stdin.end(prompt);

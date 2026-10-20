@@ -12,11 +12,9 @@ import {
 } from "../src/review-session.ts";
 import { assembleReview, lessonPools } from "../src/review-pool.ts";
 import { DAY_MS } from "../src/review.ts";
-import { refillRequests } from "../src/review-refill.ts";
 import { TeacherService } from "../src/teacher-service.ts";
 import {
   makeFixture,
-  refillPlan,
   seedClassroom,
   seedPreparedReviewSource,
   termAnswer,

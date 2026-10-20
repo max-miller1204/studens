@@ -39,7 +39,7 @@ export function memoryForecast(items: ReviewItem[], now: number): ForecastDay[] 
   return days;
 }
 
-export function memoryGap(item: ReviewItem): string {
+function memoryGap(item: ReviewItem): string {
   if (item.needsReteach) return "Repeated misses · review paused for a short re-teach";
   if (item.gapOpen)
     return item.lastCredit > 0 && item.lastCredit < 1

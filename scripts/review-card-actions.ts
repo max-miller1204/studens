@@ -1,5 +1,5 @@
 /** Real learner controls shared by Pi and persistent-host verification. */
-export const CLOSED_REVIEW_REPLY =
+const CLOSED_REVIEW_REPLY =
   "The current owner releases the value when its scope ends. I answered without help.";
 
 export function closedReviewActions(screenshot: string | null): string {
@@ -26,16 +26,6 @@ export function closedReviewActions(screenshot: string | null): string {
       throw new Error('Original corrective reply failed: ' + (await failed.allTextContents()).join('; '));
     }
     await page.waitForFunction(() => document.querySelectorAll('.cl-teacher-message[data-role="teacher"]').length > 1, null, {timeout:120000});
-  `;
-}
-
-/** A failed background plan stays failed until the learner presses its retry button. */
-export function refillRetryActions(ids: string[], screenshot: string | null): string {
-  return `
-    ${screenshot ? `await page.evaluate(() => window.scrollTo(0, 0)); await page.screenshot({path:${JSON.stringify(screenshot)},fullPage:true});` : ""}
-    for (const id of ${JSON.stringify(ids)}) {
-      await page.locator('.cl-teacher-request').filter({hasText:id}).getByRole('button', {name:'Retry request',exact:true}).click();
-    }
   `;
 }
 

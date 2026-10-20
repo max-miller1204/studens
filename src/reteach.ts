@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import type { ReviewItem } from "./review.ts";
 import * as store from "./store.ts";
 
-export function reteachId(item: ReviewItem): string {
+function reteachId(item: ReviewItem): string {
   return `reteach:${createHash("sha256").update(`${item.key}:${item.lastAt}`).digest("hex")}`;
 }
 
