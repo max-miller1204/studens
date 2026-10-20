@@ -149,6 +149,6 @@ export async function driveRealNextLesson(
       JSON.stringify(saved, null, 2),
     );
   console.log(
-    `[e2e:${host}] PASS: classroom Next lesson researched, saved, checked without learner submissions, published and opened`,
+    `[e2e:${host}] PASS: classroom Next lesson saved, checked without learner submissions, published and opened`,
   );
 }
