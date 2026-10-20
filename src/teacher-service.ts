@@ -496,8 +496,13 @@ export class TeacherService {
       }
     }
     if (r.kind === "lesson") {
-      const failedPage = this.lessonRequest(r).pageCheckFailed;
-      prepareLessonRetry(this.lessonRequest(r));
+      let request = this.lessonRequest(r);
+      // Older decoder failures saved raw output only in the teacher state.
+      // Preserve it in the authoring attempt before an explicit retry replaces it.
+      if (request.modelOutput === undefined && r.modelOutput !== undefined)
+        request = updateLessonRequest(request, { modelOutput: r.modelOutput });
+      const failedPage = request.pageCheckFailed;
+      prepareLessonRetry(request);
       if (failedPage) {
         delete r.plan;
         r.planValidated = false;
@@ -765,6 +770,8 @@ export class TeacherService {
               (value) => {
                 r.modelOutput = value;
                 saveTeacherState(classroom, state);
+                if (r.kind === "lesson")
+                  updateLessonRequest(this.lessonRequest(r), { modelOutput: value });
               },
               (model) => {
                 r.resolvedModel = model;

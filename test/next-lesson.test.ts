@@ -19,6 +19,9 @@ import { TeacherService } from "../src/teacher-service.ts";
 import { readTeacherState, saveTeacherState } from "../src/service-state.ts";
 import { ClassroomBridge } from "../src/bridge.ts";
 import * as store from "../src/store.ts";
+import { lessonOutput } from "./lesson-output-fixture.ts";
+import { lessonModelPlan } from "../src/lesson-output.ts";
+import type { RunTeacher } from "../src/teacher.ts";
 function lessonSender(send: (...args: any[]) => void) {
   let tools = [
     "bash",
@@ -105,6 +108,47 @@ it("preserves rejected raw output and requires explicit retry before another mod
   expect(turns).toBe(1);
   expect(lessonRequests("rust")[0].status).toBe("failed");
   await again.stop();
+});
+it("saves decoder-rejected lesson output before failure and retains legacy raw output on explicit retry", async () => {
+  const raw = lessonOutput(nextLessonDocument(fixture.root));
+  raw.variants[0].quiz = "unknown-quiz";
+  let turns = 0;
+  const run: RunTeacher = async (...args) => {
+    turns++;
+    args[6]?.(raw);
+    return lessonModelPlan(raw);
+  };
+  const service = new TeacherService(run);
+  service.attach("rust", "codex");
+  const request = startLessonRequest("rust", randomUUID(), "next", "codex");
+  service.nextLesson(request);
+  await service.idle();
+  expect(turns).toBe(1);
+  const failed = lessonRequests("rust")[0];
+  expect(failed.error).toContain("Private variant names an unknown quiz or question");
+  expect(failed.modelOutput).toEqual(raw);
+  expect(readTeacherState("rust")!.requests[0].modelOutput).toEqual(raw);
+  expect(failed.document).toBeUndefined();
+  expect(publicLessonRequest(failed)).not.toHaveProperty("modelOutput");
+  expect(fs.existsSync(path.join(fixture.root, "rust", request.lesson))).toBe(false);
+  await service.stop();
+  // An earlier release saved this decoder failure only in .teacher.json.
+  updateLessonRequest(failed, { modelOutput: undefined });
+  const restarted = new TeacherService(run);
+  restarted.attach("rust", "codex");
+  await restarted.idle();
+  expect(turns).toBe(1);
+  restarted.retry("rust", `lesson:${request.id}`);
+  await restarted.idle();
+  expect(turns).toBe(2);
+  const retried = lessonRequests("rust")[0];
+  expect(retried.failedAttempts).toEqual([
+    { at: expect.any(Number), error: failed.error, output: raw },
+  ]);
+  expect(retried.status).toBe("failed");
+  expect(retried.modelOutput).toEqual(raw);
+  expect(fs.existsSync(path.join(fixture.root, "rust", request.lesson))).toBe(false);
+  await restarted.stop();
 });
 it("keeps authoring sequential after the actual learner reply and scopes research to authoring", async () => {
   let release: () => void = () => {};

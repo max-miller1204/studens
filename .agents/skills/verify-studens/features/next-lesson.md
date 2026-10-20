@@ -85,6 +85,11 @@ private HTML preservation, malformed and duplicate
 input refusal, and the installed CLI structured-schema boundary. These transport
 contracts do not replace the required real service drives.
 
+Run `npx vitest run test/next-lesson.test.ts` for authoring state recovery. Decoder
+rejections must retain raw output in private authoring state before failure. A
+restart must leave the failure visible without another turn; explicit retry must
+retain the rejected attempt, including older failures saved only in teacher state.
+
 Pi's event drive requires `agent_settled` after the current answer/grade tool,
 not settlement left over from a prior lesson origin. Its read-only observer records
 `pi-tools.jsonl`: explicit authoring advertises only publication, bounded research
