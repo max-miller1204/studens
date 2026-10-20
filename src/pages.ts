@@ -16,6 +16,7 @@ import {
   type ReviewItem,
   type ReviewSummary,
 } from "./review.ts";
+import type { ReviewWorkload } from "./review-workload.ts";
 import type { Classroom, ClassroomFolder, Lesson } from "./store.ts";
 
 // ── Shell ─────────────────────────────────────────────────────────────────────
@@ -97,7 +98,7 @@ export function landingPage(
   </div>
   <p class="cl-lede">${folder ? "Keep related classrooms together." : "Pick up where you left off, or start something new with <code>/teach</code>."}</p>
 </div>
-${!folder ? `<section class="cl-daily-summary" aria-label="Daily review" data-cl-daily><h2>${Object.values(dueByClassroom).reduce((sum, count) => sum + count, 0)} due across classrooms</h2><p>Review one classroom at a time, with up to ${DEFAULT_REVIEW_SIZE} due items from each.</p><button type="button" class="cl-button" data-daily-action disabled>Start daily review</button><p class="cl-progress-note" role="status" aria-live="polite" data-daily-status>Checking daily review…</p><a href="/reviews/daily">Daily review history</a></section>` : ""}
+${!folder ? `<section class="cl-daily-summary" aria-label="Daily review" data-cl-daily><h2>${Object.values(dueByClassroom).reduce((sum, count) => sum + count, 0)} due across classrooms</h2><p data-daily-workload>One shared daily allowance bounds new selections across all classrooms, topics, and early reviews. Deferred work stays due.</p><button type="button" class="cl-button" data-daily-action disabled>Start daily review</button><p class="cl-progress-note" role="status" aria-live="polite" data-daily-status>Checking daily review…</p><a href="/reviews/daily">Daily review history</a></section>` : ""}
 ${!folder && folders.length ? `<section aria-label="Folders"><h2 class="cl-section-title">Folders</h2><ul class="cl-grid cl-folder-grid">${folders.map((f) => `<li class="cl-card"><a class="cl-card-link" href="/?folder=${encodeURIComponent(f.id)}"><span class="cl-card-emoji" aria-hidden="true">📁</span><span class="cl-card-body"><span class="cl-card-title">${escapeHtml(f.name)}</span><span class="cl-card-meta">${plural(classrooms.filter((c) => f.classrooms.includes(c.name)).length, "classroom")}</span></span></a></li>`).join("\n")}</ul></section>` : ""}
 <section aria-label="${folder ? "Classrooms in folder" : "Unfiled classrooms"}">
 ${!folder && folders.length ? '<h2 class="cl-section-title">Unfiled classrooms</h2>' : ""}
@@ -202,6 +203,7 @@ export function missionWhy(mission: string | null): string | null {
 /** What the progress section of the classroom page shows. */
 export interface ClassroomProgress {
   review: ReviewSummary;
+  workload?: ReviewWorkload;
   /** Lesson name → questions from that lesson that are due for review. */
   dueByLesson: Record<string, number>;
   reteach?: Array<{ lesson: string; prompt: string }>;
@@ -291,6 +293,7 @@ export function reviewHistoryPage(
 function progressSection(data: ClassroomPageData): string {
   const { review, glossaryTerms, now } = data.progress;
   const records = data.learningRecords.length;
+  const work = data.progress.workload;
   if (review.total === 0 && !review.retired && glossaryTerms === 0 && records === 0) return "";
 
   const stat = (value: string, label: string, tone = "") =>
@@ -322,6 +325,7 @@ function progressSection(data: ClassroomPageData): string {
   ${review.total > 0 ? `<div class="cl-meter" role="meter" aria-label="Items with retained evidence" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${percent}"><span style="width: ${percent}%"></span></div>` : ""}
   <p class="cl-progress-note">Retained evidence needs independent answers after a delay. Application skills also need transfer. Old records with missing context stay unknown.</p>
   ${note ? `<p class="cl-progress-note">${escapeHtml(note)}</p>` : ""}
+  ${work ? `<p class="cl-progress-note" data-review-workload>${work.eligible} due slots available in this classroom today · ${work.used} reserved or used across all classrooms of today's ${work.allowance}-item allowance (daily cap ${work.cap}, all classrooms, UTC). ${work.deferred} due items deferred to later workload windows; they remain due. Next workload window: ${escapeHtml(new Date(work.nextWindowAt).toISOString())}. Prepared questions are required. Continue unfinished saved reviews. This limit changes workload, never grades or memory evidence.</p>` : ""}
   ${(data.progress.reteach ?? []).map((item) => `<p class="cl-progress-note">Review paused after repeated misses: ${escapeHtml(item.prompt)} <a href="/c/${escapeHtml(data.classroom.name)}/${escapeHtml(item.lesson)}#cl-reteach">Open short re-teach</a></p>`).join("")}
   ${
     review.total > 0
@@ -357,7 +361,7 @@ function progressSection(data: ClassroomPageData): string {
   </div>`
       : ""
   }
-${(data.progress.items ?? []).length ? `<details class="cl-review-items"><summary>Manage review items</summary><p>Retired items leave active review counts and future selections. Saved answers, grades, and published reviews stay available.</p>${(data.progress.items ?? []).map((item) => `<div class="cl-review-item" data-review-item="${escapeHtml(item.key)}" data-revision="${item.controlRevision ?? 0}" data-retired="${item.retiredAt !== undefined}"><a href="${lessonUrl(data.classroom.name, item.lesson)}">${escapeHtml(item.objective?.statement ?? item.prompt)}</a><span>${item.retiredAt === undefined ? "Active" : "Retired"} · ${item.attempts} saved exposures</span><button class="cl-button" type="button" data-review-retire>${item.retiredAt === undefined ? "Retire item" : "Restore item"}</button><p role="status" data-review-item-status></p></div>`).join("")}</details>` : ""}
+${(data.progress.items ?? []).length ? `<details class="cl-review-items"><summary>Manage review items</summary><p>Retired items leave active review counts and future selections. Saved answers, grades, and published reviews stay available.</p>${(data.progress.items ?? []).map((item) => `<div class="cl-review-item" data-review-item="${escapeHtml(item.key)}" data-revision="${item.controlRevision ?? 0}" data-retired="${item.retiredAt !== undefined}"><a href="${lessonUrl(data.classroom.name, item.lesson)}">${escapeHtml(item.objective?.statement ?? item.prompt)}</a><span>${item.retiredAt === undefined ? "Active" : "Retired"} · ${item.attempts} saved exposures</span><span>Due: ${escapeHtml(new Date(item.dueAt).toISOString())}. ${escapeHtml(item.scheduleReason)}</span><button class="cl-button" type="button" data-review-retire>${item.retiredAt === undefined ? "Retire item" : "Restore item"}</button><p role="status" data-review-item-status></p></div>`).join("")}</details>` : ""}
 </section>`;
 }
 

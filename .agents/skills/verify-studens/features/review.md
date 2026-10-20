@@ -88,8 +88,7 @@ grades its prepared independent transfer. Publication contracts reject retrieval
 or assisted tasks for that objective before writes. Its background refill retry
 must append to the original question pool while retaining the objective key.
 
-The control fixtures exercise both Pi and service queues. They choose Quick 3 and
-12 through the browser with paused and retired items excluded even for early review,
+The control fixtures exercise both Pi and service queues. They choose Quick 3 and request 12 through the browser with paused and retired items excluded even for early review,
 navigate classrooms, pick a saved objective group, reload
 options, answer early with assistance and compare the original due date, retire and
 restore while preserving evidence, and flag a question. Each report deliberately
@@ -108,6 +107,23 @@ existing teacher draft that must not be overwritten, unrelated classrooms,
 private files, and startup without duplicate grades or reports. Inspect
 `review-controls/pi/` and `review-controls/service/`, especially `result.json`.
 
+The workload fixtures drive 20 overdue items with 5 available slots and 15 deferred,
+then complete 3 and 2 unique closed cards. Another start shows the explicit shared
+allowance error; reload/restart preserve dates and grades. They also drive seven
+classrooms through the daily landing: only five total new cards are saved, an
+individual early start cannot bypass those reservations, and midnight/reload keep
+unfinished plans. After completing carried cards, an explicit classroom takes three
+new slots and the daily picker receives the remaining two. Inspect
+`review-workload/result.json`, `root/result.json`, and matching desktop/mobile
+screenshots below `review-workload/` (the root report is `review-workload/root/result.json`). The server clock is fixed and advanced across
+UTC midnight; this proves workload boundaries, not real elapsed human retention.
+The control fixture's later unrelated classroom now receives the shared allowance
+error after earlier cards consume its slots. Contract tests cover multi-day allowance
+ramping, nine-classroom/topic fairness, duplicate identities across classrooms,
+independent host processes and explicit lock contention. For this focused browser
+path, the exercised command is
+`node --input-type=module -e 'import {verifyReviewWorkload} from "./scripts/e2e-review-workload.ts";await verifyReviewWorkload("/tmp/studens-workload")'`.
+
 The card fixtures additionally check two-card order, immediate correct feedback
 without a model turn, a miss followed by a same-screen corrective exchange, 375px
 layout, second-card drafts, completion counts, duplicate submission rejection,
@@ -125,8 +141,7 @@ page, empty due work, malformed daily state, and private routes. Inspect
 `selected-before-progress.json`, and `partial-failure.json`. The service fixture
 keeps Biology on Claude and Rust on Codex; these fixture teachers prove routing,
 not real model access. Contract tests additionally reject foreign ownership and
-competing unfinished reviews. Daily selections use the same default per-classroom
-size and prepared-variant selection as classroom Progress. The daily fixtures
+competing unfinished reviews. Daily selections use the same prepared-variant boundary as classroom Progress and one root-wide allowance. The daily fixtures
 also use predeclared private criteria, require the saved publication contract,
 render the code-owned closed allocation, and verify criterion/timing snapshots
 remain private. Daily contracts additionally reuse an existing early judgment
@@ -162,6 +177,10 @@ calls even when the field is absent. Inspect each complete saved task manually:
 it must request fresh, answerable retrieval in the relevant lesson, without giving
 that task's answer. An imperative can satisfy this requirement without a question
 mark. Generic feedback fails this semantic review even if mechanical checks pass.
+Current panel timing uses the host-owned saved learner reply time and latest actual
+feedback/check boundary. The old selected review delay cannot label a new correction.
+Inspect new checks for `answeredAt` matching the learner message, separately from
+the check write time `at`; queued teacher latency must not manufacture delayed evidence.
 The subsequent real learner reply must still create its original linked evidence
 and learning record while preserving the grade.
 
@@ -219,8 +238,8 @@ Each new card is its own quiz; completing one card cannot finish the other cards
 Consecutive Pi misses queue separate durable corrections behind the active turn;
 recovery keeps one grade and one corrective request per submission.
 
-Miss counts remain cumulative. A successful latest result can resolve the current gap
-under existing evidence rules; opening a re-teach never resets the count. The two-miss
+Miss counts remain cumulative. An independently demonstrated latest result can resolve the current gap
+under existing evidence rules; assisted or unknown-independence replies keep the pause, including historical questions without an objective snapshot; opening a re-teach never resets the count. The two-miss
 health warning remains earlier than the three-miss review pause. Private request
 instructions and variant keys must not appear in the learner's help message.
 Daily plans live privately at the classrooms root. GET status never publishes a

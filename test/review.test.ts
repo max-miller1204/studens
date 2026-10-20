@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   DAY_MS,
-  nextBox,
   pickReviewItems,
   relativeDay,
   scheduleItems,
+  reviewTiming,
   summarize,
   type ReviewEvent,
 } from "../src/review.ts";
@@ -52,34 +52,31 @@ describe("scheduleItems", () => {
     expect(item.box).toBe(0);
     expect(item.dueAt).toBe(T0 + 3 * DAY_MS);
   });
-  it("extends intervals only on a due independent success", () => {
-    const [item] = scheduleItems([event(0), event(1), event(4), event(11)]);
-    expect(item).toMatchObject({
-      box: 3,
-      progress: "retained-evidence",
-      delayedSuccesses: 3,
-      evidenceSpanDays: 11,
-    });
-    expect(item.dueAt).toBe(T0 + 32 * DAY_MS);
-    expect(item.scheduleReason).toContain("7.0 days");
-    expect(item.prompt).toBe("Prompt at 0");
+  it("extends from actual elapsed time only on due independent success", () => {
+    const first = scheduleItems([event(0)])[0];
+    const next = scheduleItems([event(0), event(1)])[0];
+    expect(next.stability).toBeGreaterThan(first.stability);
+    expect(next.dueAt).toBeGreaterThan(T0 + 2 * DAY_MS);
+    expect(next.scheduleReason).toContain("1.0 days");
+    const overdue = scheduleItems([event(0), event(20)])[0];
+    expect(overdue.stability).toBeGreaterThan(next.stability);
+    expect(overdue.dueAt - overdue.lastFeedbackAt).toBeGreaterThan(
+      next.dueAt - next.lastFeedbackAt,
+    );
+    expect(overdue.prompt).toBe("Prompt at 0");
   });
-  it.each([
-    [1, -1, 0, 1],
-    [1, 0, 1, 4],
-    [1, 1, 1, 4],
-    [4, -1, 1, 4],
-    [4, 0, 2, 11],
-    [4, 1, 2, 11],
-  ])(
-    "keeps early reviews scheduled and promotes only when due (day %i, offset %i ms)",
-    (day, offset, box, dueDay) => {
-      const history = day === 1 ? [event(0)] : [event(0), event(1)];
-      const [item] = scheduleItems([...history, event(day, { at: T0 + day * DAY_MS + offset })]);
-      expect(item.box).toBe(box);
-      expect(item.dueAt).toBe(T0 + dueDay * DAY_MS + (offset < 0 ? 0 : offset));
-    },
-  );
+  it.each([-1, 0, 1])("honors the exact due boundary at offset %i ms", (offset) => {
+    const history = [event(0), event(1)];
+    const before = scheduleItems(history)[0];
+    const after = scheduleItems([...history, event(5, { at: before.dueAt + offset })])[0];
+    if (offset < 0) {
+      expect(after.dueAt).toBe(before.dueAt);
+      expect(after.stability).toBe(before.stability);
+    } else {
+      expect(after.dueAt).toBeGreaterThan(before.dueAt);
+      expect(after.stability).toBeGreaterThan(before.stability);
+    }
+  });
   it("requires delayed transfer for an application objective", () => {
     const e = evidence({ objective: { statement: "Apply cost", application: true } });
     const events = [0, 1, 8].map((day) => event(day, { evidence: e }));
@@ -115,7 +112,18 @@ describe("scheduleItems", () => {
       box: 0,
       lastCredit: 0.5,
     });
-    expect(item.dueAt).toBe(T0 + 31 * DAY_MS);
+    const before = scheduleItems([event(0), event(1), event(8)])[0];
+    const miss = scheduleItems([
+      event(0),
+      event(1),
+      event(8),
+      event(30, { correct: false, credit: 0 }),
+    ])[0];
+    expect(item.stability).toBeLessThan(before.stability);
+    expect(item.stability).toBeGreaterThan(miss.stability);
+    expect(item.difficulty).toBeLessThan(miss.difficulty);
+    expect(item.dueAt).toBeGreaterThan(miss.dueAt);
+    expect(item.stability / before.stability).toBeGreaterThan(0.84);
   });
   it("caps the base interval for an explicit retention duration without a deadline", () => {
     const e = evidence({
@@ -123,7 +131,7 @@ describe("scheduleItems", () => {
     });
     const [item] = scheduleItems([event(0, { evidence: e }), event(1, { evidence: e })]);
     expect(item.dueAt).toBe(T0 + 3 * DAY_MS);
-    expect(item.scheduleReason).toContain("retention goal 8 days");
+    expect(item.scheduleReason).toContain("retention-duration cap 8 days");
   });
   it("keeps schedule and credit invariant under confidence and replays deterministically", () => {
     const events = [event(0), event(1), event(8)];
@@ -188,11 +196,6 @@ it("summarizes retained evidence, transfer needs, and unknown context", () => {
     transferNeeded: 0,
   });
 });
-it("keeps bounded base intervals", () => {
-  expect(nextBox(0, true)).toBe(1);
-  expect(nextBox(4, true)).toBe(4);
-  expect(nextBox(3, false)).toBe(0);
-});
 it("describes days in words", () => {
   expect(relativeDay(T0, T0)).toBe("today");
   expect(relativeDay(T0 + DAY_MS, T0)).toBe("tomorrow");
@@ -228,4 +231,114 @@ it("counts simultaneous objective probes as one conservative exposure", () => {
     delayedSuccesses: 0,
     context: "assisted",
   });
+});
+
+it("bounds memory and replays long histories without clock, randomness or input mutations", () => {
+  const events: ReviewEvent[] = [];
+  let at = T0;
+  for (let i = 0; i < 250; i++) {
+    events.push(event(0, { at }));
+    const item = scheduleItems(events)[0];
+    expect(item.stability).toBeGreaterThanOrEqual(0.25);
+    expect(item.stability).toBeLessThanOrEqual(3650);
+    expect(item.difficulty).toBeGreaterThanOrEqual(1);
+    expect(item.difficulty).toBeLessThanOrEqual(10);
+    expect(Number.isFinite(item.dueAt)).toBe(true);
+    at = item.dueAt + 3 * DAY_MS;
+  }
+  const frozen = JSON.stringify(events);
+  expect(scheduleItems(JSON.parse(frozen).reverse())).toEqual(scheduleItems(events));
+  expect(JSON.stringify(events)).toBe(frozen);
+  const baseline = scheduleItems(events);
+  for (const confidence of [undefined, "guess", "unsure", "sure", 0, 1, 100])
+    for (const rating of [undefined, "again", "hard", "good", "easy", 4])
+      expect(scheduleItems(events.map((e) => ({ ...e, confidence, rating })))).toEqual(baseline);
+});
+it("rejects non-finite timestamps and out-of-range credit explicitly", () => {
+  for (const extra of [{ at: NaN }, { feedbackAt: Infinity }, { credit: -0.1 }, { credit: 1.1 }])
+    expect(() => scheduleItems([event(0, extra)])).toThrow("Invalid review event");
+});
+it("keeps supported, unknown and explicit early answers from growing memory", () => {
+  const base = [event(0), event(1)];
+  const before = scheduleItems(base)[0];
+  for (const extra of [
+    { early: true },
+    { evidence: undefined },
+    { evidence: evidence({ assistance: "hint" }) },
+    { evidence: evidence({ support: "assisted" }) },
+    { evidence: evidence({ assistance: "unknown" }) },
+  ]) {
+    const after = scheduleItems([...base, event(40, extra)])[0];
+    expect(after.stability).toBe(before.stability);
+    expect(after.difficulty).toBe(before.difficulty);
+    expect(after.dueAt).toBe(before.dueAt);
+  }
+});
+it("separates selected exposure delay from a current corrective reply", () => {
+  const [item] = scheduleItems([
+    event(0),
+    event(11, { correct: false, credit: 0, feedbackAt: T0 + 11 * DAY_MS + 1000 }),
+  ]);
+  expect(item.elapsedDays).toBe(11);
+  const [timing] = reviewTiming([item], item.lastFeedbackAt + 15000);
+  expect(timing).toMatchObject({
+    phase: "panel-corrective-reply",
+    elapsedMs: 15000,
+    delay: "immediate",
+  });
+  const corrected = scheduleItems([
+    event(0),
+    event(11, { correct: false }),
+    event(11 + 15 / 86400, { source: "chat" }),
+  ])[0];
+  expect(corrected).toMatchObject({
+    progress: "immediate-success",
+    delayedSuccesses: 0,
+    delayedTransfers: 0,
+    evidenceSpanDays: 0,
+  });
+});
+it("does not let supported success resolve a paused objective", () => {
+  const history = [0, 1, 2].map((day) => event(day, { correct: false, credit: 0 }));
+  expect(
+    scheduleItems([...history, event(5, { evidence: evidence({ assistance: "hint" }) })])[0]
+      .needsReteach,
+  ).toBe(true);
+  expect(scheduleItems([...history, event(5)])[0].needsReteach).toBe(false);
+});
+
+it("never uses confidence or self-ratings to break simultaneous probe ties", () => {
+  const a = event(1, {
+    questionKey: "001-cost/check/q1",
+    evidence: evidence({ assistance: "unknown" }),
+  });
+  const b = event(1, {
+    questionKey: "001-cost/check/q1",
+    evidence: evidence({ assistance: "hint" }),
+  });
+  const expected = scheduleItems([event(0), a, b]);
+  for (const confidence of ["guess", "sure", 0, 100])
+    for (const selfRating of ["again", "easy", 1, 4]) {
+      const mixed = [
+        event(0),
+        { ...a, confidence, selfRating },
+        { ...b, confidence: selfRating, selfRating: confidence },
+      ];
+      expect(scheduleItems(mixed)).toEqual(expected);
+      expect(scheduleItems([...mixed].reverse())).toEqual(expected);
+    }
+});
+it("keeps distinct immutable attempts separate even with equal timestamps", () => {
+  const a = event(1, { attemptId: "a", questionKey: "001-cost/check/q1" });
+  const b = event(1, {
+    attemptId: "b",
+    questionKey: "001-cost/check/q1",
+    correct: false,
+    credit: 0.5,
+  });
+  const c = { ...a, questionKey: "001-cost/check/q2", credit: 0.5, correct: false };
+  const item = scheduleItems([b, a, c])[0];
+  expect(item.attempts).toBe(2);
+  expect(item.lastCredit).toBe(0.5);
+  expect(scheduleItems([c, a, b])).toEqual(scheduleItems([b, a, c]));
 });
