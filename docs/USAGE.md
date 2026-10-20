@@ -12,7 +12,9 @@
 
 Omit the topic to continue. In Pi, `/classroom <name>` opens one classroom,
 `/classroom list` lists saved material, and `/classroom status` reports the server.
-Links are returned to you; commands do not launch a browser.
+Links are returned to you; commands do not launch a browser. The `open_classroom`
+tool also accepts an exact `lesson` directory with `classroom` to return a canonical
+lesson link.
 
 On the lesson page, highlight text to ask a question and use its card for follow-ups.
 Submit quizzes for per-question feedback. Reply to teacher questions below the
@@ -28,11 +30,9 @@ returns its classrooms to **Unfiled** and keeps their lessons and links.
 
 ## Teacher service
 
-Pi's HTTP server runs in its live session and stops with that session. Use
-`/classroom start` or `/classroom stop` to control it. The status widget shows its port.
-
-Claude Code and Codex use a persistent service with one dedicated teacher per
-classroom. Closing the initiating chat leaves it running. Use `classroom_service`
+Pi, Claude Code, and Codex share a persistent service with one dedicated teacher per
+classroom. In Pi, use `/classroom start`, `/classroom status`, and `/classroom stop`.
+The widget shows the persistent service port. Closing the initiating chat leaves it running. Use `classroom_service`
 with action `start`, `status`, or `stop`, or run these commands from the package:
 
 ```sh
@@ -45,11 +45,30 @@ Status reports the owner process, package path, root, port, and log. The default
 address is `127.0.0.1:43123`; set `PI_CLASSROOM_SERVICE_PORT` to change it. Unix
 local sockets are required. A conflicting port, package path, version, or classroom
 backend causes an error. Stop the old service explicitly before replacing it.
-Set `PI_CLASSROOM_TEACHER=codex` or `claude` when the initiating host is unknown.
+Set `PI_CLASSROOM_TEACHER=pi`, `codex`, or `claude` when the initiating host is unknown.
 
 Requests and plans are saved before writes. Recovery completes saved plans without
 another model call or duplicate grade. Interrupted calls and authentication errors
 appear on the page; resolve the cause and select **Retry request**.
+
+### Pi teacher context and migration
+
+The dedicated Pi teacher uses your Pi account and configured provider/model, including
+`models.json` providers. It has its own saved conversation, not the context of the
+Pi session that opened the link. Model settings on the classroom page control this
+teacher independently of your initiating chat. Lessons, notes, saved grades and
+panel conversations supply durable context; return to initiating chat to author new
+material. The teacher cannot use initiating-session extensions or interactive tools.
+
+Before upgrading from Pi's live-session delivery, finish or explicitly retry its
+pending review (including unpublished daily groups), refill, and resume work with the previous package, then stop that
+server, including idle legacy servers without pending request records. The new
+service rejects recorded unfinished legacy ownership and preserves those
+files. It never deletes a plan or takes over a live owner. Keep the previous package
+and a complete data backup available if recovery is needed. Remove its tailnet route
+with that package's explicit stop before opening the persistent service. Older
+packages cannot read the new Pi teacher identity; rollback requires the matching
+whole-data backup described in [rollback and recovery](ROLLBACK.md).
 
 ## Updating Studens
 
@@ -73,9 +92,9 @@ from `main`. Start a new host session after changing the installed plugin.
 
 Before changing releases, finish active teacher work. Stop the persistent service
 explicitly with `classroom_service` action `stop` (or `npm run service -- stop`
-from its installed package), then start the new release. Pi's server belongs to
-its session; `/reload` reloads the extension in that session. Classrooms and saved
-learner state keep their existing locations.
+from its installed package), then start the new release. `/reload` reconnects Pi's
+extension; it does not stop the shared service. Classrooms and saved learner state
+keep their existing locations.
 
 ## Phone and remote links
 
@@ -83,10 +102,11 @@ While Tailscale is connected, classroom commands create tailnet-only HTTPS links
 HTTP stays on loopback. Tailnet members allowed by your policy can read pages and
 submit requests. Without a connected tailnet, links use `127.0.0.1`.
 
-The service uses HTTPS port 8443 and Pi uses 8444. Change these or disable tailnet
+All hosts use the service HTTPS port 8443. Change `tailscalePort` or disable tailnet
 links in [configuration](CONFIGURATION.md). Route errors are explicit: occupied
 ports and Funnel-enabled ports are rejected, and unrelated Serve routes stay intact.
-Service stop removes its route; Pi stop or session end removes Pi's route.
+Explicit service stop (including `/classroom stop`) removes its route. Closing Pi
+or another initiating host keeps the route and teacher work alive.
 A disconnected node cannot remove a route, so its ownership record is retained.
 
 ## Upgrading from pi-teach

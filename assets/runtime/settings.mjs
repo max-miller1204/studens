@@ -28,13 +28,13 @@ function modelInput() {
 function renderTeacher() {
   const teacher = teacherStatus;
   root.querySelector("[data-teacher-owner]").textContent = teacher
-    ? `${teacher.identity.backend === "claude" ? "Claude Code" : "Codex"} · this classroom’s teacher`
+    ? `${teacher.identity.backend === "claude" ? "Claude Code" : teacher.identity.backend === "pi" ? "Pi" : "Codex"} · this classroom’s teacher`
     : state.host === "pi"
       ? "Pi · your live session chooses the teacher model. Change it in Pi."
-      : "Open this classroom from Claude Code or Codex to attach its teacher.";
+      : "Open this classroom from Pi, Claude Code, or Codex to attach its teacher.";
   modelForm.hidden = !teacher;
   root.querySelector("[data-teacher-active]").textContent = teacher
-    ? `Last answering model: ${teacher.identity.activeModel || "No answer yet"}`
+    ? `${teacher.identity.backend === "pi" ? "Last Pi SDK model selection" : "Last answering model"}: ${teacher.identity.activeModel || "No answer yet"}`
     : "";
   root.querySelector("[data-teacher-request]").textContent = teacher
     ? `Requested setting: ${teacher.identity.requestedModel ?? "tool’s configured default"}${teacher.identity.activeModel ? ` · Last answer used setting: ${teacher.identity.activeRequestedModel ?? "tool’s configured default"}` : ""}`

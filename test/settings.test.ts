@@ -126,7 +126,7 @@ it("exposes owner-appropriate settings, specific errors and private route guards
     }),
   });
   expect(rejected.status).toBe(400);
-  expect((await rejected.json()).error).toMatch(/live Pi/);
+  expect((await rejected.json()).error).toMatch(/attach its persistent teacher/);
   for (const route of [
     "/c/rust/.teacher.json",
     "/c/rust/settings/quiz/key.json",

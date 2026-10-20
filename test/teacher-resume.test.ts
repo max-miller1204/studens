@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as fs from "node:fs";
 import * as path from "node:path";
-import classroomExtension from "../index.ts";
 import { ClassroomBridge, applyGrade } from "../src/bridge.ts";
 import { TeacherService } from "../src/teacher-service.ts";
 import { readTeacherState, saveTeacherState } from "../src/service-state.ts";
@@ -148,36 +147,6 @@ describe("explicit teacher handoff", () => {
     expect(store.listRetrievalChecks("rust")).toEqual([]);
     expect(store.readLearningRecords("rust")).toEqual([]);
   });
-
-  it.each(["interactive", "rpc"])(
-    "routes %s initiating input through the registered Pi tools and hooks",
-    async (source) => {
-      const input = graded();
-      const hooks = new Map<string, (event: any) => Promise<void>>();
-      const tools = new Map<string, any>();
-      const sent: string[] = [];
-      classroomExtension({
-        on: (name: string, handler: any) => hooks.set(name, handler),
-        registerTool: (tool: any) => tools.set(tool.name, tool),
-        registerCommand: () => {},
-        sendUserMessage: (text: string) => sent.push(text),
-      } as any);
-      await server.start();
-      await hooks.get("input")!({ source });
-      await tools.get("resume_lesson_teacher").execute("resume-call", input);
-      expect(sent).toHaveLength(0);
-      await hooks.get("agent_end")!({ messages: message("Continue at the lesson link.") });
-      expect(sent).toHaveLength(1);
-      expect(store.listPanelMessages("rust", input.lesson)).toEqual([]);
-      expect(() => tools.get("grade_lesson_quiz").execute("grade-call", {})).toThrow(
-        "only a panel message",
-      );
-      await hooks.get("agent_end")!({ messages: message("Who owns the moved buffer?") });
-      expect(store.listPanelMessages("rust", input.lesson).map((m) => m.text)).toEqual([
-        "Who owns the moved buffer?",
-      ]);
-    },
-  );
 
   it("reuses a pending Pi grading run or an existing historical conversation", () => {
     const input = graded();
@@ -355,6 +324,10 @@ describe("explicit teacher handoff", () => {
     const teacher = new TeacherService(async () => plan());
     expect(() => teacher.attach("rust", "codex")).toThrow("live Pi");
     bridge.reset();
+    expect(() => teacher.attach("rust", "pi")).toThrow("unfinished legacy Pi work");
+    foreign.restoreResumes();
+    foreign.retry("rust", `resume:${input.submission_id}`);
+    foreign.onAgentEnd(message("Who owns the moved buffer?"));
     teacher.attach("rust", "codex");
     expect(() => foreign.resume(input)).toThrow("persistent teacher");
     expect(() => teacher.attach("rust", "claude")).toThrow("belongs to codex");

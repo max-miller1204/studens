@@ -9,17 +9,14 @@
  */
 
 import * as fs from "node:fs";
-import * as path from "node:path";
 
-import { classroomDir, classroomsRoot, slugify } from "./paths.ts";
-import { PhoneAccess } from "./phone-access.ts";
+import { classroomDir, slugify } from "./paths.ts";
+import { SERVICE_BRIEF } from "./mcp.ts";
 import { reviewStatusText, teachingPrompt } from "./prompts.ts";
 import { summarize } from "./review.ts";
-import * as server from "./server.ts";
-import { attachStatusWidget, refreshStatusWidget } from "./status-widget.ts";
+import { attachStatusWidget, detachStatusWidget, refreshStatusWidget } from "./status-widget.ts";
 import * as store from "./store.ts";
-import { TailnetLinks } from "./tailnet-links.ts";
-import type { ClassroomBridge } from "./bridge.ts";
+import type { PiServiceClient } from "./pi-service-client.ts";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -29,7 +26,7 @@ export interface CommandHost {
   sendUserMessage(text: string, options?: { deliverAs?: string }): void;
 }
 
-export function registerClassroomCommands(pi: any, bridge: ClassroomBridge): void {
+export function registerClassroomCommands(pi: any, client: PiServiceClient): void {
   // ── /classroom ──────────────────────────────────────────────────────────────
 
   pi.registerCommand("classroom", {
@@ -48,20 +45,20 @@ export function registerClassroomCommands(pi: any, bridge: ClassroomBridge): voi
 
       switch (verb) {
         case undefined:
-          return handleOpen(ctx, null);
+          return handleOpen(ctx, null, client);
         case "start":
-          return handleStart(ctx);
+          return handleStart(ctx, client);
         case "stop":
-          return handleStop(ctx);
+          return handleStop(ctx, client);
         case "status":
-          return handleStatus(ctx);
+          return handleStatus(ctx, client);
         case "list":
           return handleList(ctx);
         case "open":
-          return handleOpen(ctx, argument || null);
+          return handleOpen(ctx, argument || null, client);
         default:
           // A bare name is the common case: /classroom rust-ownership
-          return handleOpen(ctx, trimmed);
+          return handleOpen(ctx, trimmed, client);
       }
     },
   });
@@ -80,21 +77,16 @@ export function registerClassroomCommands(pi: any, bridge: ClassroomBridge): voi
       const topic = (args ?? "").trim();
       const classroom = resolveClassroom(topic);
 
-      // The teaching turn is a normal turn, but the bridge's FIFO must stay aligned
-      // with agent_end or a later answer would be attributed to the wrong run.
-      bridge.noteForeignTurn();
-      const prompt = teachingPrompt(
-        topic,
-        classroom,
-        classroom ? classroomReviewText(classroom) : null,
-      );
+      const prompt =
+        teachingPrompt(topic, classroom, classroom ? classroomReviewText(classroom) : null) +
+        "\n\n" +
+        SERVICE_BRIEF;
       if (ctx.isIdle()) pi.sendUserMessage(prompt);
       else pi.sendUserMessage(prompt, { deliverAs: "followUp" });
 
-      const baseUrl = server.getBaseUrl();
       ctx.ui.notify(
         classroom
-          ? `📚 Continuing ${classroom}${baseUrl ? ` — ${server.urlFor(classroom)}` : " (run /classroom to open it)"}`
+          ? `📚 Continuing ${classroom} (run /classroom to open it)`
           : "📚 Starting a new classroom. Expect some questions about why you want to learn this.",
         "info",
       );
@@ -131,63 +123,30 @@ export function classroomReviewText(classroom: string): string {
 
 // ── /classroom handlers ───────────────────────────────────────────────────────
 
-/** Pi sessions share one ownership file per classrooms root, apart from the service's. */
-export function piLinks(): TailnetLinks {
-  // Keep existing route ownership discoverable across the Studens rename.
-  const file = path.join(classroomsRoot(), ".pi-teach-pi", "phone.json");
-  return new TailnetLinks(new PhoneAccess(undefined, file), "pi");
-}
-
-/** Report a failed tailnet route instead of giving a local link. */
-async function shareLinks(ctx: any): Promise<boolean> {
-  try {
-    await piLinks().share();
-    return true;
-  } catch (err) {
-    ctx.ui.notify((err as Error).message, "error");
-    return false;
-  }
-}
-
-async function handleStart(ctx: any): Promise<void> {
-  if (server.isRunning()) {
-    ctx.ui.notify(`Classroom server already running at ${server.getBaseUrl()}`, "info");
-    return;
-  }
-  await server.start();
-  // Reason: session_start may have run before any server existed, so every command that
-  // starts or stops the server re-adopts this session's UI and redraws the widget.
-  attachStatusWidget(ctx.ui);
-  if (!(await shareLinks(ctx))) return;
-  ctx.ui.notify(`Classroom server started at ${server.urlFor()}`, "info");
-}
-
-async function handleStop(ctx: any): Promise<void> {
-  if (!server.isRunning()) {
-    ctx.ui.notify("Classroom server is not running.", "info");
-    return;
-  }
-  // Keep the server running when its route cannot be removed.
-  try {
-    await piLinks().stop(true);
-  } catch (err) {
-    ctx.ui.notify((err as Error).message, "error");
-    return;
-  }
-  await server.close();
-  refreshStatusWidget();
-  ctx.ui.notify("Classroom server stopped.", "info");
-}
-
-function handleStatus(ctx: any): void {
-  const baseUrl = server.getBaseUrl();
-  const link = server.urlFor();
-  const classrooms = store.listClassrooms();
-  const lessons = classrooms.reduce((sum, c) => sum + c.lessonCount, 0);
+async function handleStart(ctx: any, client: PiServiceClient): Promise<void> {
+  const result = await client.call("open_classroom", {});
+  await attachStatusWidget(ctx.ui);
   ctx.ui.notify(
-    baseUrl
-      ? `Classroom server running at ${baseUrl}${link !== baseUrl ? `\nLink: ${link}` : ""}\n${classrooms.length} classroom${classrooms.length === 1 ? "" : "s"}, ${lessons} lesson${lessons === 1 ? "" : "s"}`
-      : `Classroom server is not running. ${classrooms.length} classroom${classrooms.length === 1 ? "" : "s"} on disk — run /classroom to browse them.`,
+    `${(result.content[0] as any).text}\nThe persistent service continues after Pi exits.`,
+    "info",
+  );
+}
+
+async function handleStop(ctx: any, client: PiServiceClient): Promise<void> {
+  await client.call("classroom_service", { action: "stop" });
+  // Stop is asynchronous; clear this UI immediately without claiming another owner stopped.
+  detachStatusWidget();
+  ctx.ui.notify("Classroom service stop requested for every attached classroom.", "info");
+}
+
+async function handleStatus(ctx: any, client: PiServiceClient): Promise<void> {
+  const result = await client.call("classroom_service", { action: "status" });
+  const status = JSON.parse((result.content[0] as any).text);
+  await refreshStatusWidget();
+  ctx.ui.notify(
+    status.running
+      ? `Persistent classroom service running at ${status.url} (process ${status.pid}). It continues after Pi exits.`
+      : "Classroom service is not running. Run /classroom to start it.",
     "info",
   );
 }
@@ -225,7 +184,11 @@ export function classroomListText(emptyHint: string): string {
   return lines.join("\n").trimEnd();
 }
 
-async function handleOpen(ctx: any, requested: string | null): Promise<void> {
+async function handleOpen(
+  ctx: any,
+  requested: string | null,
+  client: PiServiceClient,
+): Promise<void> {
   let target = requested;
 
   if (target && !fs.existsSync(classroomDir(target))) {
@@ -253,9 +216,7 @@ async function handleOpen(ctx: any, requested: string | null): Promise<void> {
     }
   }
 
-  await server.start();
-  attachStatusWidget(ctx.ui);
-  if (!(await shareLinks(ctx))) return;
-  const url = server.urlFor(target ?? undefined)!;
-  ctx.ui.notify(`📚 ${url}`, "info");
+  const result = await client.call("open_classroom", target ? { classroom: target } : {});
+  await attachStatusWidget(ctx.ui);
+  ctx.ui.notify((result.content[0] as any).text, "info");
 }

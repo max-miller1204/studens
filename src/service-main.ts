@@ -56,6 +56,7 @@ let closing = false;
 function status(): Record<string, unknown> {
   return {
     running: true,
+    backends: ["pi", "claude", "codex"],
     stopping: closing,
     pid: process.pid,
     root: path.resolve(classroomsRoot()),
@@ -118,7 +119,12 @@ function session(id: string, backend?: Backend): McpSession {
   const mcp = new McpSession(inbox, {
     tools,
     async open(classroom, requested) {
-      if (requested !== undefined && requested !== "claude" && requested !== "codex")
+      if (
+        requested !== undefined &&
+        requested !== "claude" &&
+        requested !== "codex" &&
+        requested !== "pi"
+      )
         throw new Error("Invalid teacher_backend.");
       const selected = (requested as Backend | undefined) ?? backend;
       for (const name of classroom ? [classroom] : store.listClassrooms().map((c) => c.name))
@@ -159,7 +165,7 @@ const ipc = http.createServer((req, res) => {
       } else if (req.url === "/rpc") {
         if (
           typeof args.client !== "string" ||
-          ![undefined, "codex", "claude"].includes(args.backend)
+          ![undefined, "codex", "claude", "pi"].includes(args.backend)
         )
           throw new Error("Invalid client identity.");
         value = await session(args.client, args.backend).handle(args.message as JsonRpcMessage);

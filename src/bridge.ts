@@ -91,6 +91,7 @@ type Origin =
   | { kind: "refill"; request: RefillRequest }
   | { kind: "other" };
 
+/** Legacy regression fixture. Production Pi uses PiServiceClient and TeacherService. */
 export class ClassroomBridge {
   private readonly pending: Origin[] = [];
   private readonly sessionId = randomUUID();

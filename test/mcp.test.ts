@@ -158,6 +158,15 @@ describe("session tools", () => {
     expect(text(result)).toContain(`${server.getBaseUrl()}/c/rust`);
   });
 
+  it("returns exact existing lesson links and rejects traversal without starting another server", async () => {
+    const result = await call("open_classroom", { classroom: "rust", lesson: "001-ownership" });
+    expect(text(result)).toContain("/c/rust/001-ownership");
+    for (const lesson of ["missing", "../MISSION.md", "/etc/passwd"]) {
+      const rejected = await call("open_classroom", { classroom: "rust", lesson });
+      expect(rejected.isError).toBe(true);
+    }
+  });
+
   it("open_classroom fails loudly for an unknown classroom", async () => {
     const result = await call("open_classroom", { classroom: "haskell" });
     expect(result.isError).toBe(true);

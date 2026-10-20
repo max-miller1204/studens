@@ -56,8 +56,13 @@ lines.on("line", (line) => {
   void (async () => {
     if (message.method === "initialize") {
       const configured = process.env.PI_CLASSROOM_TEACHER;
-      if (configured !== undefined && configured !== "codex" && configured !== "claude")
-        throw new Error("PI_CLASSROOM_TEACHER must be codex or claude.");
+      if (
+        configured !== undefined &&
+        configured !== "codex" &&
+        configured !== "claude" &&
+        configured !== "pi"
+      )
+        throw new Error("PI_CLASSROOM_TEACHER must be codex, claude, or pi.");
       const name = String(message.params?.clientInfo?.name ?? "").toLowerCase();
       backend =
         (configured as Backend | undefined) ??

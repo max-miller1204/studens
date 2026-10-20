@@ -917,3 +917,54 @@ it("keeps model errors until explicit request retry and never retries on selecti
   expect(readTeacherState("rust")!.requests[0].status).toBe("done");
   await teacher.stop();
 });
+
+it("retains a validated Pi grading plan after a storage error and recovers it once without inference", async () => {
+  const s = submission();
+  const dir = path.join(f.root, "rust/001-ownership/quiz/grades");
+  fs.mkdirSync(dir, { recursive: true });
+  fs.chmodSync(dir, 0o500);
+  let turns = 0;
+  const teacher = new TeacherService(async (_identity, _prompt, _cwd, save) => {
+    turns++;
+    save("pi-storage-conversation");
+    return plan([grade(s.id)]);
+  });
+  try {
+    teacher.attach("rust", "pi");
+    await teacher.idle();
+    const failed = readTeacherState("rust")!.requests.find((r) => r.target === s.id)!;
+    expect(failed.status).toBe("failed");
+    expect(failed.error).toContain("EACCES");
+    expect(failed.planValidated).toBe(true);
+    expect(failed.applied ?? 0).toBe(0);
+    expect(store.listGrades("rust", "001-ownership")).toEqual([]);
+    fs.chmodSync(dir, 0o700);
+    await teacher.stop();
+    const recovered = new TeacherService(async () => {
+      throw new Error("A saved grading plan must not request another inference.");
+    });
+    recovered.attach("rust");
+    expect(readTeacherState("rust")!.requests.find((r) => r.id === failed.id)!.status).toBe(
+      "failed",
+    );
+    recovered.retry("rust", failed.id);
+    await recovered.idle();
+    expect(store.listGrades("rust", "001-ownership")).toHaveLength(1);
+    expect(readTeacherState("rust")!.requests.find((r) => r.id === failed.id)!.plan).toEqual(
+      failed.plan,
+    );
+    expect(readTeacherState("rust")!.identity.sessionId).toBe("pi-storage-conversation");
+    await recovered.stop();
+    const again = new TeacherService(async () => {
+      throw new Error("Completed plans cannot repeat.");
+    });
+    again.attach("rust");
+    await again.idle();
+    await again.stop();
+    expect(store.listGrades("rust", "001-ownership")).toHaveLength(1);
+    expect(turns).toBe(1);
+  } finally {
+    fs.chmodSync(dir, 0o700);
+    await teacher.stop();
+  }
+});

@@ -24,9 +24,6 @@ jobs:
       - run: npm run check
       - run: npm test
 
-      # Reason: `npm audit` walks the dev tree too, which here means auditing the Pi CLI
-      # we depend on only for `import type`. That code never runs and never ships, so it
-      # produces permanent noise that hides the one thing worth failing on: a problem in
-      # the runtime dependencies that actually reach users.
+      # Audit the production tree, including the packaged persistent Pi teacher SDK.
       - name: Audit production dependencies
         run: npm run audit

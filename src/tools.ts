@@ -469,7 +469,20 @@ export function classroomTools(host: ToolHost): ClassroomTool[] {
             })),
           });
         } catch (err) {
-          return fail((err as Error).message);
+          const code = (err as NodeJS.ErrnoException).code;
+          const storageError = [
+            "EACCES",
+            "EPERM",
+            "ENOSPC",
+            "EROFS",
+            "EIO",
+            "ENOENT",
+            "ENOTDIR",
+            "EISDIR",
+            "EMFILE",
+            "ENFILE",
+          ].includes(code ?? "");
+          return fail((err as Error).message, { storageError });
         }
         const kind = kindOf(submission);
         const reviewKeys = [

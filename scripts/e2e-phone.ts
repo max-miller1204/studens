@@ -5,12 +5,18 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as net from "node:net";
 import { execFile } from "node:child_process";
+import { spawn } from "node:child_process";
+import { useTestModel, harnessCommand } from "./harness.ts";
+import { readTeacherState } from "../src/service-state.ts";
 import { promisify } from "node:util";
 import { makeFixture, seedClassroom } from "../test/helpers.ts";
 import { control, ensureService, serviceStatus } from "../src/service-client.ts";
 const exec = promisify(execFile);
 const artifacts = process.argv[2] ? path.resolve(process.argv[2]) : null;
 if (artifacts) fs.mkdirSync(artifacts, { recursive: true });
+const backend = process.argv[3] ?? "codex";
+if (!["pi", "codex"].includes(backend)) throw new Error("Phone backend must be pi or codex.");
+const restore = backend === "pi" ? useTestModel("pi") : () => {};
 const browser = `studens-phone-settings-${process.pid}`;
 let browserOpen = false;
 const fixture = makeFixture();
@@ -26,6 +32,13 @@ process.env.PI_CLASSROOM_CONFIG = fixture.write(
 );
 delete process.env.PI_CLASSROOM_TAILSCALE;
 const before = JSON.parse((await exec("tailscale", ["serve", "status", "--json"])).stdout);
+if (
+  before.TCP?.[String(httpsPort)] ||
+  Object.keys(before.Web ?? {}).some((key) => key.endsWith(`:${httpsPort}`))
+)
+  throw new Error(
+    `HTTPS port ${httpsPort} is already configured. Choose an unused STUDENS_PHONE_PORT; no route was changed.`,
+  );
 function unrelated(config: any): unknown {
   const copy = structuredClone(config);
   delete copy.TCP?.[String(httpsPort)];
@@ -36,7 +49,7 @@ function unrelated(config: any): unknown {
 async function call(name: string, args: unknown): Promise<any> {
   const response = await control("/rpc", {
     client: "phone-evaluation",
-    backend: "codex",
+    backend,
     message: { jsonrpc: "2.0", id: 1, method: "tools/call", params: { name, arguments: args } },
   });
   if (response.result.isError) throw new Error(response.result.content[0].text);
@@ -49,7 +62,7 @@ const routed = async () =>
     JSON.parse((await exec("tailscale", ["serve", "status", "--json"])).stdout).Web ?? {},
   ).some((key) => key.endsWith(`:${httpsPort}`));
 const openTailnet = async () => {
-  const opened = await call("open_classroom", { classroom: "rust", teacher_backend: "codex" });
+  const opened = await call("open_classroom", { classroom: "rust", teacher_backend: backend });
   const link = /^\[Open classroom\]\((https:\/\/[^)]+\.ts\.net:(\d+)\/c\/rust)\)$/.exec(opened);
   if (!link || Number(link[2]) !== httpsPort)
     throw new Error(`open_classroom did not return the tailnet link: ${opened}`);
@@ -57,10 +70,88 @@ const openTailnet = async () => {
 };
 try {
   await ensureService();
+  let hostOutput = "";
+  if (backend === "pi") {
+    const [command, args] = harnessCommand(
+      "pi",
+      'Call open_classroom for classroom rust and teacher_backend pi. Then call open_classroom with classroom rust and lesson "001-ownership". Return both tool-provided links and end this turn.',
+      ["open_classroom"],
+    );
+    const child = spawn(command, args, {
+      cwd: fixture.root,
+      env: { ...process.env, PI_CLASSROOMS_DIR: fixture.root },
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    let stderr = "";
+    child.stdout.on("data", (c) => {
+      hostOutput += c;
+    });
+    child.stderr.on("data", (c) => {
+      stderr += c;
+    });
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    try {
+      const code = await Promise.race([
+        new Promise<number | null>((resolve, reject) => {
+          child.once("error", reject);
+          child.once("close", resolve);
+        }),
+        new Promise<never>((_, reject) => {
+          timer = setTimeout(
+            () => reject(new Error("Initiating Pi phone host timed out.")),
+            180_000,
+          );
+        }),
+      ]);
+      if (code !== 0) throw new Error(`Initiating Pi phone host exited ${code}: ${stderr}`);
+    } finally {
+      clearTimeout(timer);
+      child.kill();
+      if (artifacts) {
+        fs.writeFileSync(path.join(artifacts, "pi-host-output.jsonl"), hostOutput);
+        fs.writeFileSync(path.join(artifacts, "pi-host-stderr.log"), stderr);
+      }
+    }
+    if (
+      !(await serviceStatus()).running ||
+      !(await routed()) ||
+      readTeacherState("rust")?.identity.backend !== "pi"
+    )
+      throw new Error("Pi exit lost its persistent teacher/route.");
+  }
   const classroom = await openTailnet();
+  if (
+    backend === "pi" &&
+    (!hostOutput.includes(classroom) || !hostOutput.includes(`${classroom}/001-ownership`))
+  )
+    throw new Error("Actual Pi did not return classroom and lesson tailnet links.");
   for (const url of [classroom, `${classroom}/001-ownership`])
     if (!(await fetch(url)).ok) throw new Error(`Tailnet URL did not load: ${url}`);
   const state = JSON.parse(await call("classroom_service", { action: "status" }));
+  const current = JSON.parse((await exec("tailscale", ["serve", "status", "--json"])).stdout);
+  if (
+    Object.keys(current.AllowFunnel ?? {}).some(
+      (key) => key.endsWith(`:${httpsPort}`) && current.AllowFunnel[key],
+    )
+  )
+    throw new Error("Owned route enabled Funnel.");
+  if (artifacts)
+    fs.writeFileSync(
+      path.join(artifacts, "tailnet-provenance.json"),
+      JSON.stringify(
+        {
+          backend,
+          before,
+          during: current,
+          classroom,
+          lesson: `${classroom}/001-ownership`,
+          status: state,
+          initiatingHostExited: true,
+        },
+        null,
+        2,
+      ),
+    );
   if (!state.tailnet?.enabled) throw new Error("Service status did not report the owned route.");
   const base = (await serviceStatus()).url;
   await playwright(browser, fixture.root, "open", `${base}/c/rust/settings`);
@@ -105,6 +196,8 @@ try {
   if (JSON.stringify(unrelated(before)) !== JSON.stringify(unrelated(after)))
     throw new Error("Unrelated Serve routes changed.");
   if (await routed()) throw new Error("Owned tailnet route remains.");
+  if (artifacts)
+    fs.writeFileSync(path.join(artifacts, "tailnet-after.json"), JSON.stringify(after, null, 2));
   console.log(
     "PASS: automatic tailnet classroom and lesson links, service status, settings-page disable/enable, config disable, service stop cleanup, and unchanged unrelated routes.",
   );
@@ -115,4 +208,5 @@ try {
     await new Promise((r) => setTimeout(r, 300));
   }
   fixture.cleanup();
+  restore();
 }

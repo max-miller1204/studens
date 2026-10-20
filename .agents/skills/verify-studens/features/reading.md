@@ -29,6 +29,15 @@ The suite fills `form.cl-reflect textarea` and selects `Save`. Saved text must r
 after reload; an unsent reflection draft must survive pretest release without waking
 a teacher. Inspect `stored-learner-paths.json` and `disk-draft-history.json`.
 
+For an actual persistent Pi teacher, close initiating Pi after opening a scratch
+lesson containing a self-explanation. Fill `form.cl-reflect textarea`, select
+`Save`, and require the durable `reflect` request to finish in the saved Pi session.
+Highlight prose and ask a question, then fill `[data-cl-followup]` in its answered
+card and select `Ask`. Require both saved answers, the reflection text, and the
+same Pi session after reload. These ungraded actions must not create quiz grades.
+Use a complete scaffold, including `NOTES.md`; this is a transport and persistence
+check, not an authored-lesson quality evaluation.
+
 The suite opens glossary definitions and changes the theme. It checks drawn diagrams, accessible descriptions, and a visible error for invalid Mermaid source. Diagram text must not offer the ask pill. It checks drawn math, literal TeX in code, a visible error for invalid TeX, and Markdown math in a card answer. Math text must not offer the ask pill. A highlight around a formula marks the whole formula and quotes it as TeX. Grading receives each formula as TeX.
 
 ## Gotchas
