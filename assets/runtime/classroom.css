@@ -2420,6 +2420,111 @@ body > .cl-teacher-activity {
   color: var(--cl-danger);
 }
 
+/* Learner-owned passage actions and saved marks. */
+.cl-selection-actions {
+  position: absolute;
+  z-index: 1000;
+  display: flex;
+  gap: 4px;
+  padding: 5px;
+  max-width: calc(100vw - 16px);
+  background: var(--cl-surface, Canvas);
+  color: var(--cl-text, CanvasText);
+  border: 1px solid var(--cl-border, GrayText);
+  border-radius: 10px;
+  box-shadow: 0 4px 20px #0002;
+  font:
+    13px system-ui,
+    sans-serif;
+}
+.cl-selection-actions[hidden],
+.cl-learner-marks [hidden] {
+  display: none;
+}
+.cl-selection-actions .cl-ask-pill {
+  position: static;
+  transform: none;
+  box-shadow: none;
+}
+.cl-selection-actions button,
+.cl-learner-marks button {
+  cursor: pointer;
+  border: 1px solid var(--cl-border, GrayText);
+  background: var(--cl-surface, Canvas);
+  color: inherit;
+  padding: 6px 9px;
+  border-radius: 6px;
+  font: inherit;
+}
+.cl-selection-actions button:focus-visible,
+.cl-learner-marks :focus-visible {
+  outline: 2px solid var(--cl-accent, Highlight);
+  outline-offset: 2px;
+}
+.cl-learner-marks {
+  box-sizing: border-box;
+  max-width: 66ch;
+  margin: 12px auto;
+  padding: 10px 16px;
+  font:
+    14px/1.5 system-ui,
+    sans-serif;
+  color: var(--cl-text, CanvasText);
+}
+.cl-learner-marks summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.cl-learner-marks ul {
+  padding: 0;
+  list-style: none;
+}
+.cl-learner-marks li {
+  border-top: 1px solid var(--cl-border, GrayText);
+  padding: 14px 0;
+}
+.cl-learner-marks blockquote,
+.cl-learner-marks [data-mark-quote] {
+  margin: 8px 0;
+  padding-left: 12px;
+  border-left: 3px solid #b08930;
+  overflow-wrap: anywhere;
+}
+.cl-mark-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.cl-mark-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 0;
+}
+.cl-learner-marks textarea {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+}
+.cl-learner-marks [role="alert"],
+.cl-mark-anchor-status {
+  color: var(--cl-danger, #b33b33);
+}
+::highlight(cl-learner-highlight) {
+  background-color: #f6d66b99;
+  color: inherit;
+}
+::highlight(cl-learner-note) {
+  background-color: #87bfde77;
+  text-decoration: underline;
+  color: inherit;
+}
+::highlight(cl-learner-bookmark) {
+  background-color: #b2b0ec66;
+  text-decoration: underline;
+  color: inherit;
+}
+
 .cl-expected {
   margin-top: 1rem;
   padding: 1rem;

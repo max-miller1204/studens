@@ -4,7 +4,9 @@ The learner reads a lesson and asks about text without leaving the page.
 
 ## Sub-features
 
-- Highlight lesson prose or a quiz question and its options.
+- Select lesson prose or a quiz question and its options. Selection alone sends nothing.
+- Explicitly highlight, add a margin note, or bookmark without asking the teacher.
+- Revisit, edit notes, and delete marks from the lesson-local Saved marks panel.
 - Read a card answer and send a card follow-up.
 - Restore saved cards and unsent text after reload.
 - Keep rejected questions on the page with their specific error and an explicit resend.
@@ -16,9 +18,9 @@ The learner reads a lesson and asks about text without leaving the page.
 1. Start a lesson from the host.
 2. Open its localhost URL.
 3. Select text.
-4. Select `Ask your teacher`.
-5. Enter a question.
-6. Submit it.
+4. Choose `Highlight`, `Note`, `Bookmark`, or `Ask` in the passage actions.
+5. For a note, enter text and select `Save note`. For Ask, enter a question and select `Ask your teacher`.
+6. Open `Saved marks` to revisit a passage, edit a note, or delete a mark.
 
 ## Driving it with playwright-cli
 
@@ -40,6 +42,28 @@ The fixture records native dialogs and requires none; it never dismisses one.
 The suite fills `form.cl-reflect textarea` and selects `Save`. Saved text must remain
 after reload; an unsent reflection draft must survive pretest release without waking
 a teacher. Inspect `stored-learner-paths.json` and `disk-draft-history.json`.
+
+The `learner-marks/` fixture drives `.cl-selection-actions` and the `Saved marks`
+panel. It checks each explicit action, overlapping paint ranges, note text as literal
+markup, reload/revisit/delete, and a real save lock with a retained session draft.
+Removing the lock must not resend. Two tabs create marks concurrently and reject
+stale note edits; `Refresh saved marks`, `Use refreshed revision`, then `Save note`
+are explicit steps to reconcile a kept draft. Corrupt/unsupported state must show
+a specific read error while retaining visible marks. Keyboard selection extension
+and `Alt+M`, then Tab/Enter, choose an action without teacher work.
+
+The fixture resolves repeated words and overlapping quote occurrences using canonical context, preserves exact quotes
+across reflow/markup edits, and displays missing or ambiguous passages without
+choosing another location. It checks private routes and excludes mark UI from the
+canonical text index and answer snapshots. Expected-answer panels also remain outside
+selection actions and indexing, while authored quiz prompts stay selectable. Before
+adjacent Ask, classroom file hashes
+(except the private marks file) and the controlled service request list must be
+unchanged. Actual Ask/follow-up controls then save two ordered answers through the
+persistent service fixture. A neighboring machine assessment grades once, leaves the
+note draft editable, and restores its saved answer; a negative answer mutation must
+still be detected. This fixture uses no model inference. Inspect `result.json` and
+matched desktop/mobile light/dark captures.
 
 For an actual persistent Pi teacher, close initiating Pi after opening a scratch
 lesson containing a self-explanation. Fill `form.cl-reflect textarea`, select

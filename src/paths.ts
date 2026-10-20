@@ -104,6 +104,15 @@ export function annotationsFile(classroom: string, lesson: string): string {
   return path.join(lessonDir(classroom, lesson), "annotations.json");
 }
 
+/** Learner-owned marks are private and never enter the teacher question inbox. */
+export function learnerMarksFile(classroom: string, lesson: string): string {
+  if (!isValidSlug(classroom) || !isValidSlug(lesson))
+    throw new Error("Invalid learner marks classroom or lesson.");
+  return privateStatePath(
+    path.relative(classroomsRoot(), path.join(lessonDir(classroom, lesson), ".learner-marks.json")),
+  );
+}
+
 export function reflectionsFile(classroom: string, lesson: string): string {
   return path.join(lessonDir(classroom, lesson), "reflections.json");
 }
