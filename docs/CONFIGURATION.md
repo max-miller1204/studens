@@ -129,8 +129,8 @@ All persistent classrooms offer **Teacher model**. **Use tool’s configured def
 Selections are private to the classroom’s `.teacher.json`, survive service restarts, and never edit global CLI configuration. Claude receives `--model`; Codex receives the model on thread start/resume and turn start. **Last answering model** comes from Claude’s assistant messages or the completed Codex turn’s resolved thread model, independently of the requested/default setting. A reported reroute or unexpected resolution fails the request before its plan is applied.
 
 A setting change applies between teacher requests and keeps the existing conversation. Running work finishes with its original setting; saved plans recover without another model request or grade. A model error names the selection and stays visible until explicit request retry. Choosing another setting alone does not retry the request. Pi selects an exact `provider/model` ID through its SDK catalog and records the
-successful SDK selection separately as **Last Pi SDK model selection**. Pi SDK
-0.83.0 initializes its assistant model from the selected catalog entry; its
+successful SDK selection separately as **Last Pi SDK model selection**. The packaged
+Pi SDK initializes its assistant model from the selected catalog entry; its
 OpenAI Codex response handlers do not independently replace that value with a
 provider-resolved response model. This label reports the exact SDK selection,
 not independent evidence of upstream routing. The service rejects SDK fallback

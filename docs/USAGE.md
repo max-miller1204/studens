@@ -18,7 +18,8 @@ lesson link.
 
 On the lesson page, highlight text to ask a question and use its card for follow-ups.
 Submit quizzes for per-question feedback. Reply to teacher questions below the
-quiz. Return to the initiating chat when you want new material.
+quiz. For new material, select **Next lesson** on the classroom page and optionally
+enter a topic, or ask in the initiating chat.
 
 The classroom page offers reviews of due ideas. Failed requests show their specific
 error and require an explicit retry. Quiz answers, grades, question threads, and
@@ -57,8 +58,9 @@ The dedicated Pi teacher uses your Pi account and configured provider/model, inc
 `models.json` providers. It has its own saved conversation, not the context of the
 Pi session that opened the link. Model settings on the classroom page control this
 teacher independently of your initiating chat. Lessons, notes, saved grades and
-panel conversations supply durable context; return to initiating chat to author new
-material. The teacher cannot use initiating-session extensions or interactive tools.
+panel conversations supply durable context. Explicit **Next lesson** requests on the
+classroom page use this same dedicated teacher. The teacher cannot use
+initiating-session extensions or interactive tools.
 
 Before upgrading from Pi's live-session delivery, finish or explicitly retry its
 pending review (including unpublished daily groups), refill, and resume work with the previous package, then stop that
