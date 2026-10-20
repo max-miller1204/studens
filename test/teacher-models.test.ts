@@ -3,8 +3,10 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { afterEach, beforeEach, expect, it } from "vitest";
 import { makeFixture, type Fixture } from "./helpers.ts";
-import { runStructured, teacherModels } from "../src/teacher.ts";
+import { runStructured, teacherModels, runTeacher } from "../src/teacher.ts";
 import { modelSelection } from "../src/teacher-models.ts";
+import { simpleLessonOutput } from "./lesson-output-fixture.ts";
+import { lessonModelPlan } from "../src/lesson-output.ts";
 let f: Fixture;
 let priorPath: string | undefined;
 let priorModel: string | undefined;
@@ -28,7 +30,7 @@ if(backend==='claude'&&!process.argv.includes('--input-format')) {
   if(model==='unavailable') {send({type:'result',is_error:true,result:'Model unavailable for this account.'});return;}
   const actual=behavior.reroute?'other-model':model==='quick'?'actual-quick':model;
   send({type:'assistant',message:{model:actual}});
-  send({type:'result',session_id:'same-session',structured_output:{ok:true}});
+  send({type:'result',session_id:'same-session',structured_output:behavior.output??{ok:true}});
  });
 } else readline.createInterface({input:process.stdin}).on('line',line=>{
  const m=JSON.parse(line);log(m);
@@ -38,15 +40,17 @@ if(backend==='claude'&&!process.argv.includes('--input-format')) {
  }
  if(!m.id)return;
  if(m.method==='initialize')send({id:m.id,result:{}});
- else if(m.method==='config/read')send({id:m.id,result:{config:{model:'configured-custom',mcp_servers:{inherited:{command:'must-not-run'}}}}});
+ else if(m.method==='config/read')send({id:m.id,result:{config:{model:'configured-custom',mcp_servers:behavior.mcpServers??{}}}});
+ else if(m.method==='mcpServerStatus/list')send({id:m.id,result:{data:behavior.exposeMcp?[{name:'unexpected-server'}]:behavior.invalidInventory?{}:[],nextCursor:behavior.repeatInventory?'again':null}});
  else if(m.method==='model/list')send({id:m.id,result:{data:[{id:'catalog-'+(m.params.cursor||'first'),model:'catalog-'+(m.params.cursor||'first'),displayName:'Catalog',isDefault:false}],nextCursor:m.params.cursor?null:'second'}});
  else if(m.method==='thread/start'||m.method==='thread/resume')send({id:m.id,result:{model:m.params.model,thread:{id:m.params.threadId||'same-thread'}}});
  else if(m.method==='turn/start') {
   if(m.params.model==='unavailable'){send({id:m.id,error:{message:'Model unavailable for this account.'}});return;}
   send({id:m.id,result:{turn:{id:'turn'}}});
+  if(behavior.forbiddenTool)send({method:'item/started',params:{threadId:m.params.threadId,turnId:'turn',item:{type:behavior.forbiddenTool}}});
   if(behavior.foreignReroute)send({method:'model/rerouted',params:{threadId:m.params.threadId,turnId:'stale-turn',fromModel:m.params.model,toModel:'other-model',reason:'unavailable'}});
   if(behavior.reroute)send({method:'model/rerouted',params:{threadId:m.params.threadId,turnId:'turn',fromModel:m.params.model,toModel:'other-model',reason:'unavailable'}});
-  send({method:'item/completed',params:{threadId:m.params.threadId,turnId:'turn',item:{type:'agentMessage',text:'{"ok":true}'}}});
+  send({method:'item/completed',params:{threadId:m.params.threadId,turnId:'turn',item:{type:'agentMessage',text:JSON.stringify(behavior.output??{ok:true})}}});
   send({method:'turn/completed',params:{threadId:m.params.threadId,turn:{id:'turn',status:'completed'}}});
  }
 });
@@ -220,16 +224,197 @@ it("ignores model reroutes from a stale turn in the same resumed thread", async 
   expect(active).toBe("custom-id");
 });
 
-it("disables inherited MCP servers, plugins, shell and research on dedicated Codex turns", async () => {
-  await runStructured({ backend: "codex" }, "Resolve a grade dispute", f.root, () => {}, schema);
-  expect(messages().find((m) => m.backend === "codex" && m.args).args).toEqual([
-    "app-server",
-    "--stdio",
-    "--disable",
+it.each(["codex", "claude"] as const)(
+  "keeps %s model selection and active reporting while research is enabled for one explicit turn only",
+  async (backend) => {
+    let session: string | undefined;
+    const active: string[] = [];
+    for (const research of [true, false])
+      await expect(
+        runStructured(
+          {
+            backend,
+            sessionId: session,
+            requestedModel: backend === "claude" ? "quick" : "custom-id",
+          },
+          "Explicit lesson, then ordinary reply",
+          f.root,
+          (id) => {
+            session = id;
+          },
+          schema,
+          undefined,
+          (model) => active.push(model),
+          research,
+        ),
+      ).resolves.toEqual({ ok: true });
+    expect(active).toEqual(
+      backend === "claude" ? ["actual-quick", "actual-quick"] : ["custom-id", "custom-id"],
+    );
+    const all = messages();
+    if (backend === "claude") {
+      const turns = all.filter((m) => m.args && !m.args.includes("--input-format"));
+      expect(turns.map((m) => m.args[m.args.indexOf("--tools") + 1])).toEqual([
+        "WebSearch,WebFetch",
+        "",
+      ]);
+      expect(turns[0].args.slice(turns[0].args.indexOf("--allowedTools") + 1)).toEqual([
+        "WebSearch",
+        "WebFetch",
+      ]);
+      expect(turns[1].args).not.toContain("--allowedTools");
+      expect(turns[1].args).toContain(session);
+    } else {
+      const starts = all.filter((m) => ["thread/start", "thread/resume"].includes(m.method));
+      expect(starts.map((m) => m.params.config.web_search)).toEqual(["live", "disabled"]);
+      for (const start of starts) {
+        expect(start.params.config.features.shell_tool).toBe(false);
+        expect(start.params.config.mcp_servers).toEqual({});
+        expect(start.params.sandbox).toBe("read-only");
+        expect(start.params.model).toBe("custom-id");
+      }
+      expect(starts[1].params.threadId).toBe(session);
+    }
+  },
+);
+
+it.each(["codex", "claude"] as const)(
+  "decodes the dedicated %s lesson response into a saved canonical call by code",
+  async (backend) => {
+    const output = simpleLessonOutput;
+    f.write("behavior.json", JSON.stringify({ output }));
+    let raw: unknown;
+    const plan = await runTeacher(
+      { backend, requestedModel: backend === "claude" ? "quick" : "custom-id" },
+      "Explicit lesson",
+      f.root,
+      () => {},
+      undefined,
+      { operations: ["publish_lesson"], required: true, research: true },
+      (value) => {
+        raw = value;
+      },
+    );
+    expect(raw).toEqual(output);
+    expect(plan).toEqual(lessonModelPlan(output));
+    const all = messages();
+    const schema =
+      backend === "codex"
+        ? all.find((m) => m.method === "turn/start").params.outputSchema
+        : JSON.parse(
+            all.find((m) => m.args && !m.args.includes("--input-format")).args[
+              all
+                .find((m) => m.args && !m.args.includes("--input-format"))
+                .args.indexOf("--json-schema") + 1
+            ],
+          );
+    expect(schema.properties).toHaveProperty("lesson_html");
+    expect(schema.properties).not.toHaveProperty("calls");
+    expect(schema.additionalProperties).toBe(false);
+  },
+);
+
+it("disables inherited MCP servers, installed plugins and connected apps before every Codex turn", async () => {
+  f.write(
+    "behavior.json",
+    JSON.stringify({ mcpServers: { configured: { command: "must-not-run" } } }),
+  );
+  await runStructured(
+    { backend: "codex", requestedModel: "custom-id" },
+    "Return data",
+    f.root,
+    () => {},
+    { type: "object" },
+  );
+  const all = messages(),
+    start = all.find((m) => m.method === "thread/start");
+  expect(start.params.config.mcp_servers).toEqual({ configured: { enabled: false } });
+  for (const name of [
     "apps",
-    "--disable",
     "plugins",
-  ]);
+    "remote_plugin",
+    "shell_tool",
+    "unified_exec",
+    "multi_agent",
+    "browser_use",
+    "in_app_browser",
+    "computer_use",
+    "image_generation",
+    "view_image",
+    "skill_mcp_dependency_install",
+  ]) {
+    expect(start.params.config.features[name]).toBe(false);
+    const args = all.find((m) => m.args?.[0] === "app-server").args;
+    expect(args.some((arg: string, i: number) => arg === "--disable" && args[i + 1] === name)).toBe(
+      true,
+    );
+  }
+  expect(all.findIndex((m) => m.method === "mcpServerStatus/list")).toBeLessThan(
+    all.findIndex((m) => m.method === "turn/start"),
+  );
+  expect(all.find((m) => m.method === "mcpServerStatus/list").params.threadId).toBe("same-thread");
+});
+it.each([
+  [{ exposeMcp: true }, /still exposes MCP servers/],
+  [{ invalidInventory: true }, /MCP inventory/],
+  [{ repeatInventory: true }, /repeated a pagination cursor/],
+  [{ mcpServers: [] }, /invalid MCP server configuration/],
+])("refuses an unverified Codex tool scope before starting inference", async (behavior, error) => {
+  f.write("behavior.json", JSON.stringify(behavior));
+  await expect(
+    runStructured(
+      { backend: "codex", requestedModel: "custom-id" },
+      "Return data",
+      f.root,
+      () => {},
+      { type: "object" },
+    ),
+  ).rejects.toThrow(error);
+  expect(messages().some((m) => m.method === "turn/start")).toBe(false);
+});
+it.each(["mcpToolCall", "commandExecution", "fileChange", "webSearch"])(
+  "rejects a forbidden Codex execution notification: %s",
+  async (type) => {
+    f.write("behavior.json", JSON.stringify({ forbiddenTool: type }));
+    await expect(
+      runStructured(
+        { backend: "codex", requestedModel: "custom-id" },
+        "Return data",
+        f.root,
+        () => {},
+        { type: "object" },
+      ),
+    ).rejects.toThrow(/attempted forbidden/);
+  },
+);
+it("permits native Codex web research only on an explicit research turn", async () => {
+  f.write("behavior.json", JSON.stringify({ forbiddenTool: "webSearch" }));
+  await expect(
+    runStructured(
+      { backend: "codex", requestedModel: "custom-id" },
+      "Read the requested public source",
+      f.root,
+      () => {},
+      schema,
+      undefined,
+      undefined,
+      true,
+    ),
+  ).resolves.toEqual({ ok: true });
+  expect(messages().find((m) => m.method === "thread/start").params.config.web_search).toBe("live");
+});
+
+it("disables inherited MCP servers, plugins, shell and research on dedicated Codex dispute turns", async () => {
+  f.write(
+    "behavior.json",
+    JSON.stringify({ mcpServers: { inherited: { command: "must-not-run" } } }),
+  );
+  await runStructured({ backend: "codex" }, "Resolve a grade dispute", f.root, () => {}, schema);
+  expect(
+    messages()
+      .find((m) => m.backend === "codex" && m.args)
+      .args.slice(0, 6),
+  ).toEqual(["app-server", "--stdio", "--disable", "apps", "--disable", "plugins"]);
   const start = messages().find((m) => m.method === "thread/start");
   expect(start.params).toMatchObject({
     sandbox: "read-only",

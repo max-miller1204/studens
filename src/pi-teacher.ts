@@ -9,6 +9,8 @@ import {
   SessionManager,
   SettingsManager,
 } from "@earendil-works/pi-coding-agent";
+import type { AgentSession, ToolDefinition } from "@earendil-works/pi-coding-agent";
+import { readLessonSource } from "./lesson-research.ts";
 import { privateStatePath, safeStaticFile } from "./paths.ts";
 import type { ModelCatalog } from "./teacher-models.ts";
 import type { TeacherIdentity } from "./teacher.ts";
@@ -69,6 +71,160 @@ export async function piModels(cwd: string): Promise<ModelCatalog> {
   };
 }
 
+/** Construct a fresh request loadout, even when reopening the same saved conversation. */
+export function piTeacherTools(
+  schema: Record<string, unknown>,
+  research = false,
+  ownerSignal?: AbortSignal,
+) {
+  let output: unknown;
+  let count = 0;
+  let sources = 0;
+  let failure: Error | undefined;
+  const requireLive = (toolSignal?: AbortSignal) => {
+    if (ownerSignal?.aborted || toolSignal?.aborted)
+      throw new Error("Pi teacher request was interrupted. Retry explicitly.");
+  };
+  const requireOpen = () => {
+    if (failure) throw failure;
+    if (count) throw new Error("Pi already submitted its plan. End this turn.");
+  };
+  const customTools: ToolDefinition[] = [
+    {
+      name: "submit_teacher_plan",
+      label: "Submit Teacher Plan",
+      description:
+        "Return exactly one complete structured result for the current request. This only records output; the service validates and applies it after the turn ends.",
+      parameters: schema as any,
+      executionMode: "sequential",
+      async execute(_id, args, toolSignal) {
+        requireLive(toolSignal);
+        if (failure) throw failure;
+        if (++count !== 1)
+          throw new Error("Pi returned more than one teacher plan. Retry explicitly.");
+        output = args;
+        return {
+          content: [{ type: "text", text: "Plan recorded. End this turn." }],
+          details: {},
+        };
+      },
+    },
+  ];
+  if (research)
+    customTools.push({
+      name: "read_lesson_source",
+      label: "Read Public Lesson Source",
+      description:
+        "Read an HTTP(S) public source only for this explicit lesson request. At most five sources, five redirects per source, 2 MB and 30 seconds per network step. Private networks and credentials are refused. Classroom resources are already supplied in the request; this tool cannot read files.",
+      parameters: {
+        type: "object",
+        additionalProperties: false,
+        properties: { url: { type: "string" } },
+        required: ["url"],
+      } as any,
+      executionMode: "sequential",
+      async execute(_id, args, toolSignal) {
+        try {
+          requireLive(toolSignal);
+          requireOpen();
+          if (++sources > 5) throw new Error("Pi lesson research exceeded five sources.");
+          const researchSignal =
+            ownerSignal && toolSignal
+              ? AbortSignal.any([ownerSignal, toolSignal])
+              : (ownerSignal ?? toolSignal);
+          const text = await readLessonSource(args, researchSignal);
+          requireLive(toolSignal);
+          return { content: [{ type: "text", text }], details: {} };
+        } catch (error) {
+          failure ??= new Error(
+            `Pi lesson research failed: ${error instanceof Error ? error.message : String(error)} Retry explicitly.`,
+          );
+          throw failure;
+        }
+      },
+    });
+  return {
+    tools: customTools.map((tool) => tool.name),
+    customTools,
+    fail(error: Error) {
+      failure ??= error;
+    },
+    throwFailure() {
+      if (failure) throw failure;
+    },
+    result() {
+      if (failure) throw failure;
+      requireLive();
+      if (count !== 1 || output === undefined)
+        throw new Error("Pi teacher returned no single structured plan. Retry explicitly.");
+      return output;
+    },
+  };
+}
+
+/** Native validation and tool lookup can fail before a custom execute is called. */
+export function observePiTeacherRequest(
+  session: Pick<AgentSession, "subscribe" | "abort">,
+  loadout: ReturnType<typeof piTeacherTools>,
+  interrupt: () => void,
+  saveModelOutput?: (value: unknown) => void,
+) {
+  const fail = (error: Error) => {
+    loadout.fail(error);
+    interrupt();
+    void session.abort();
+  };
+  return session.subscribe((event) => {
+    if (event.type === "tool_execution_start" && event.toolName === "submit_teacher_plan") {
+      try {
+        // Persist the actual arguments before the SDK's own schema validation.
+        saveModelOutput?.(event.args);
+      } catch (error) {
+        fail(
+          new Error(
+            `Pi teacher could not save raw plan: ${error instanceof Error ? error.message : String(error)} Retry explicitly.`,
+          ),
+        );
+      }
+    }
+    if (event.type === "tool_execution_end" && event.isError) {
+      const result = event.result as { content?: { type: string; text?: string }[] };
+      const detail = result.content
+        ?.filter((part) => part.type === "text")
+        .map((part) => part.text ?? "")
+        .join("\n")
+        // SDK AJV diagnostics append the complete private plan arguments.
+        // Keep that dump in SDK history, never in the learner-visible error.
+        .split("\n\nReceived arguments:")[0];
+      fail(
+        new Error(
+          `Pi teacher tool ${event.toolName} failed: ${detail || "native SDK tool failure"} Retry explicitly.`,
+        ),
+      );
+    }
+  });
+}
+
+/** Repeat the current canonical envelope at the request boundary, after older formats. */
+export function piTeacherRequestPrompt(
+  prompt: string,
+  schema: Record<string, unknown>,
+  research = false,
+): string {
+  const properties = schema.properties as Record<string, unknown> | undefined;
+  const required = schema.required;
+  const canonical =
+    properties &&
+    Array.isArray(required) &&
+    ["calls", "message", "learning_record", "notes_markdown"].every(
+      (name) => Object.hasOwn(properties, name) && required.includes(name),
+    );
+  const envelope = canonical
+    ? `\n\nCURRENT submit_teacher_plan outer envelope and field constraints for this request:\n${JSON.stringify(schema)}\nInclude every required top-level field. When the current schema permits calls: [], a prose-only reply still needs its actual learner-facing message and every other required field. Use learning_record: null when no learning record qualifies, and notes_markdown: "" when there is no note. Do not omit these fields. Follow this current envelope rather than an earlier lesson or refill response format.`
+    : "";
+  return `${prompt}${research ? "\n\nFor public web research use read_lesson_source. Classroom resources are supplied above. Return the typed lesson data through submit_teacher_plan; it does not publish directly." : ""}${envelope}\n\nReturn your complete structured result by calling submit_teacher_plan exactly once. Do not answer the learner outside that plan. End your turn after the tool accepts it.`;
+}
+
 export async function runPi(
   identity: TeacherIdentity,
   prompt: string,
@@ -77,6 +233,8 @@ export async function runPi(
   schema: Record<string, unknown>,
   signal?: AbortSignal,
   active?: (model: string) => void,
+  research = false,
+  saveModelOutput?: (value: unknown) => void,
 ): Promise<unknown> {
   const { runtime, settings, loader, configuredModel } = await configuration(cwd);
   const selected = identity.requestedModel ?? configuredModel;
@@ -117,8 +275,9 @@ export async function runPi(
     save(path.basename(manager.getSessionFile()!));
   }
   await loader.reload();
-  let output: unknown;
-  let count = 0;
+  const scope = new AbortController();
+  const scopeSignal = signal ? AbortSignal.any([signal, scope.signal]) : scope.signal;
+  const loadout = piTeacherTools(schema, research, scopeSignal);
   const { session, modelFallbackMessage } = await createAgentSession({
     cwd,
     agentDir: getAgentDir(),
@@ -128,33 +287,30 @@ export async function runPi(
     settingsManager: settings,
     sessionManager: manager,
     resourceLoader: loader,
-    tools: ["submit_teacher_plan"],
-    customTools: [
-      {
-        name: "submit_teacher_plan",
-        label: "Submit Teacher Plan",
-        description:
-          "Return exactly one complete plan for the current request. This only records output; the service validates and applies it after the turn ends.",
-        parameters: schema as any,
-        async execute(_id, args) {
-          if (++count !== 1)
-            throw new Error("Pi returned more than one teacher plan. Retry explicitly.");
-          output = args;
-          return {
-            content: [{ type: "text", text: "Plan recorded. End this turn." }],
-            details: {},
-          };
-        },
-      },
-    ],
+    tools: loadout.tools,
+    customTools: loadout.customTools,
   });
+  const unsubscribe = observePiTeacherRequest(
+    session,
+    loadout,
+    () => scope.abort(),
+    saveModelOutput,
+  );
   const abort = () => {
+    loadout.fail(
+      signal?.reason instanceof Error
+        ? signal.reason
+        : new Error("Pi teacher request was interrupted. Retry explicitly."),
+    );
+    scope.abort();
     void session.abort();
   };
   let timedOut = false;
   const timer = setTimeout(() => {
     timedOut = true;
-    abort();
+    loadout.fail(new Error("Pi teacher timed out after 180 seconds. Retry explicitly."));
+    scope.abort();
+    void session.abort();
   }, 180_000);
   signal?.addEventListener("abort", abort, { once: true });
   try {
@@ -167,9 +323,17 @@ export async function runPi(
       throw new Error(
         `Pi did not select ${selected}: ${modelFallbackMessage ?? "unexpected model"}. Choose a model and retry explicitly.`,
       );
-    await session.prompt(
-      `${prompt}\n\nReturn your complete structured result by calling submit_teacher_plan exactly once. Do not answer the learner outside that plan. End your turn after the tool accepts it.`,
-    );
+    const actualTools = session.getActiveToolNames();
+    if (JSON.stringify([...actualTools].sort()) !== JSON.stringify([...loadout.tools].sort()))
+      throw new Error("Pi teacher exposed tools outside this request. Retry explicitly.");
+    manager.appendCustomEntry("studens_teacher_scope", {
+      research,
+      tools: actualTools,
+      selectedModel: selected,
+      thinkingLevel: session.thinkingLevel,
+    });
+    await session.prompt(piTeacherRequestPrompt(prompt, schema, research));
+    loadout.throwFailure();
     if (timedOut) throw new Error("Pi teacher timed out after 180 seconds. Retry explicitly.");
     if (signal?.aborted) throw new Error("Pi teacher request was interrupted. Retry explicitly.");
     const last = [...session.messages].reverse().find((m) => m.role === "assistant");
@@ -177,13 +341,17 @@ export async function runPi(
       throw new Error(
         `Pi teacher failed: ${last.errorMessage ?? last.stopReason}. Retry explicitly.`,
       );
-    if (count !== 1 || output === undefined)
-      throw new Error("Pi teacher returned no structured plan. Retry explicitly.");
+    const output = loadout.result();
     // SDK selection only: this Pi provider does not independently report the
     // provider-resolved response model. Do not present it as that attestation.
     active?.(selected);
     return output;
+  } catch (error) {
+    loadout.throwFailure();
+    throw error;
   } finally {
+    unsubscribe();
+    scope.abort(new Error("Pi teacher request ended."));
     clearTimeout(timer);
     signal?.removeEventListener("abort", abort);
     session.dispose();

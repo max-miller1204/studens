@@ -11,7 +11,16 @@ export interface TeacherRequest {
   classroom: string;
   lesson: string;
   kind:
-    "ask" | "follow-up" | "quiz" | "reflect" | "chat" | "review" | "resume" | "refill" | "dispute";
+    | "ask"
+    | "follow-up"
+    | "quiz"
+    | "reflect"
+    | "chat"
+    | "review"
+    | "resume"
+    | "refill"
+    | "lesson"
+    | "dispute";
   target: string;
   dispute?: GradeDispute;
   disputeDecision?: DisputeResolution["decision"];
