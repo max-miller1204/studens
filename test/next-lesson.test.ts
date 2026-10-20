@@ -20,6 +20,7 @@ import { TeacherService } from "../src/teacher-service.ts";
 import { readTeacherState, saveTeacherState } from "../src/service-state.ts";
 import { ClassroomBridge } from "../src/bridge.ts";
 import * as store from "../src/store.ts";
+import { assetsDir, docsDir, templatesDir } from "../src/paths.ts";
 import { lessonOutput } from "./lesson-output-fixture.ts";
 import { lessonModelPlan } from "../src/lesson-output.ts";
 import type { RunTeacher } from "../src/teacher.ts";
@@ -47,6 +48,51 @@ beforeEach(() => {
   seedPreparedReviewSource(fixture.root);
 });
 afterEach(() => fixture.cleanup());
+it.each(["pi", "claude", "codex"] as const)(
+  "assembles inline contracts and service capabilities for the actual %s producer request",
+  async (backend) => {
+    let prompt = "";
+    const service = new TeacherService(
+      async (_identity, assembled, _cwd, _save, _signal, contract) => {
+        prompt = assembled;
+        expect(contract).toMatchObject({
+          operations: ["publish_lesson"],
+          research: true,
+          required: true,
+        });
+        throw new Error("Controlled producer stop before publication");
+      },
+    );
+    try {
+      service.attach("rust", backend);
+      const request = startLessonRequest("rust", randomUUID(), "Borrowing", backend, "service");
+      service.nextLesson(request);
+      await service.idle();
+      // Full source contracts remain available, including their examples and limits.
+      for (const name of ["TEACHING.md", "TEACHING-PLAN.md", "CODE-EXERCISES.md"])
+        expect(prompt).toContain(fs.readFileSync(path.join(docsDir(), name), "utf8"));
+      for (const name of ["quiz.html", "lesson.html", "faded.html", "stepper.html"])
+        expect(prompt).toContain(fs.readFileSync(path.join(templatesDir(), name), "utf8"));
+      expect(prompt).toContain("Classroom resources:");
+      expect(prompt).toContain("Borrowing");
+      expect(prompt).toContain("no local-file, shell or browser access");
+      expect(prompt).toContain("host or filesystem authoring sessions");
+      expect(prompt).not.toContain(templatesDir());
+      expect(prompt).not.toContain(path.join(assetsDir(), "playwright-headless.json"));
+      expect(prompt).not.toContain("For every page, run node");
+      expect(prompt).not.toContain("For playwright-cli");
+      expect(prompt).not.toContain(`${request.lesson}/quiz/key.json`);
+      expect(prompt).not.toContain(`${request.lesson}/quiz/plan.json`);
+      expect(prompt).toContain("Return typed lesson data:");
+      const failed = readTeacherState("rust")!.requests[0];
+      expect(failed.status).toBe("failed");
+      expect(failed.applied ?? 0).toBe(0);
+      expect(fs.existsSync(path.join(fixture.root, "rust", request.lesson))).toBe(false);
+    } finally {
+      await service.stop();
+    }
+  },
+);
 it("deduplicates unfinished work across tabs and protects the actual host", () => {
   const r = startLessonRequest("rust", randomUUID(), "Borrowing", "claude");
   expect(startLessonRequest("rust", randomUUID(), "different", "claude").id).toBe(r.id);

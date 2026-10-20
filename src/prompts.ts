@@ -90,11 +90,15 @@ export const PRETEST_FOLLOW_UP =
  * The steps a scaffold tool returns. They repeat the method at the point of use,
  * because a long session can remember an older quiz contract.
  */
+export type AuthoringContext =
+  { mode: "filesystem"; lessonPath: string; checkPage: string } | { mode: "service" };
+
 export function authoringSteps(
   kind: "lesson" | "review" | "quiz" | "pretest",
-  lessonPath: string,
-  checkPage: string,
+  context: AuthoringContext,
 ): string {
+  const service = context.mode === "service";
+  const lessonPath = service ? "" : context.lessonPath;
   const contract = path.join(templatesDir(), "quiz.html");
   const rubric = path.join(path.dirname(lessonPath), "quiz", "key.json");
   const middle =
@@ -117,7 +121,9 @@ export function authoringSteps(
           ];
   return [
     "Authoring steps:",
-    `1. Read the current quiz contract: ${contract}. Read it for each ${kind}. It can change between sessions.`,
+    service
+      ? "1. Use the complete Quiz contract, Lesson shell, TEACHING.md, TEACHING-PLAN.md and CODE-EXERCISES.md supplied inline in this request. They are reference contracts, not paths to fetch."
+      : `1. Read the current quiz contract: ${contract}. Read it for each ${kind}. It can change between sessions.`,
     ...middle,
     ...(kind === "lesson"
       ? [
@@ -127,22 +133,47 @@ export function authoringSteps(
           fs.readFileSync(path.join(templatesDir(), "stepper.html"), "utf8"),
         ]
       : []),
-    `Write a private teaching plan in ${path.join(path.dirname(lessonPath), "quiz", "plan.json")}. Read docs/TEACHING-PLAN.md for its contract. Map every question to its objective, mental task, and support. Map each gated prequestion to the element id of teaching that addresses it. Do not put strategy labels or expected answers in public metadata. lesson_health and submission check structural alignment. Metadata does not prove question quality.`,
-    `5. Write the private rubric in ${rubric} before the learner submits. Key it by quiz id, then question id. Each entry needs expected, positive points, full, partial, and criteria: an array of {id, description, points} whose positive weights sum to the question points. Declare specific reasoning components before submission; exact questions need one all-or-zero criterion. Descriptions become visible only after grading. Include criteria on private variants too. Do not reuse one generic partial-credit rule for the whole test.`,
+    (service
+      ? "Return the private teaching plan as structured objectives, quizzes and variants under the supplied response schema. Use the inline TEACHING-PLAN.md contract."
+      : `Write a private teaching plan in ${path.join(path.dirname(lessonPath), "quiz", "plan.json")}. Read docs/TEACHING-PLAN.md for its contract.`) +
+      " Map every question to its objective, mental task, and support. Map each gated prequestion to the element id of teaching that addresses it. Do not put strategy labels or expected answers in public metadata. lesson_health and submission check structural alignment. Metadata does not prove question quality.",
+    (service
+      ? "5. Return each question's private rubric as typed data under its quiz and question identity. The host serializes the private key before publication."
+      : `5. Write the private rubric in ${rubric} before the learner submits. Key it by quiz id, then question id.`) +
+      " Each entry needs expected, positive points, full, partial, and criteria: an array of {id, description, points} whose positive weights sum to the question points. Declare specific reasoning components before submission; exact questions need one all-or-zero criterion. Descriptions become visible only after grading. Include criteria on private variants too. Do not reuse one generic partial-credit rule for the whole test.",
     ...(kind === "lesson" || kind === "quiz"
       ? [
-          "Prepare two or three private review variants for every check question in quiz/key.json and quiz/plan.json. Follow docs/TEACHING-PLAN.md (Private review variants). Each variant needs complete question controls, its own rubric, and independent retrieval of the original objective. Never put the pool or expected answers in public HTML.",
+          (service
+            ? "Return two or three private review variants for every check question in the structured variants array. Follow the inline TEACHING-PLAN.md (Private review variants)."
+            : "Prepare two or three private review variants for every check question in quiz/key.json and quiz/plan.json. Follow docs/TEACHING-PLAN.md (Private review variants).") +
+            " Each variant needs complete question controls, its own rubric, and independent retrieval of the original objective. Never put the pool or expected answers in public HTML.",
         ]
       : []),
     "Keep graded expected answers out of learner HTML, comments, scripts, data attributes, and linked public files. Public local-practice keys/solutions are a separate teaching contract and must use different cases. A collapsed answer is still exposed. A teaching example must not solve a graded question with the same values.",
     "Plan the skill, reasoning, and misconception each question tests in the private rubric. For reasoning and application objectives, include a new situation that requires transfer, method choice, diagnosis, or justification. Do not build a test from copied sentences or easy blanks. Solve every question against its rubric and inspect the whole assessment for answer cues before sharing it. A schedule, diagnosis, or solution supplied in one question must not solve another. Use distinct cases when questions test related skills.",
     "Accept equivalent valid solutions. For a constructed schedule or counterexample, solve at least two valid alternatives. Check that each earns full credit. Do not make credit depend on arbitrary thread names, step order, or wording when the question allows alternatives.",
-    'For programming implementation tasks, consider data-type="code" from quiz.html: a labelled starter editor plus public declarative input/output tests for one synchronous JavaScript function. Only JavaScript is supported. Run executes in the packaged isolated browser interpreter; never execute learner source on the host. Tests and expected examples are public debugging feedback, not private scoring keys. Keep implementation solutions and judgment criteria private. The teacher grades the exact saved source under those fixed criteria; client pass flags never award points. Use other response types for languages or APIs this runtime does not support. Check Run, a revision, and an error before sharing a code exercise.',
-    'Use a diagram when it helps explain a process, relationship, or state. Write Mermaid source in <pre class="mermaid">. The runtime draws it with the page theme; do not add a network script. For a quiz diagram, put it in .cl-q-stimulus. The grader receives its Mermaid source. Give the diagram an accessible name and a text description of the relationships. Choose data-type from the learner response, not from the diagram. Keep teaching diagrams behind the pretest gate. Keep solutions out of assessment diagrams. Check the drawing, labels, and arrows in the headless browser. Fix every diagram error before sharing.',
-    "Write math in TeX: \\( ... \\) inline and \\[ ... \\] for display. The runtime draws it as MathML. Write < as &lt; inside math, and keep HTML tags out of it. Text in pre, code, or .cl-no-math stays literal. The grader receives the TeX. Keep math out of match items: their select shows the TeX. Check that every formula draws. Fix every math error before sharing.",
-    `6. Check the page in a headless browser. Each control must work, and no contract error may show. ${checkPage}`,
-    `For every page, run node ${JSON.stringify(path.join(templatesDir(), "..", "..", "scripts", "check-lesson.ts"))} <classroom> <lesson>. It checks the initial and released page in a disposable copy. It does not change learner state. Never submit a synthetic pretest to the learner's page to reveal controls.`,
-    `For playwright-cli, use a new named session and pass --config=${JSON.stringify(path.join(assetsDir(), "playwright-headless.json"))} to open. This config sets headless to true. Do not use --headed, show, an attached user browser, or a tool that opens a visible window. Close the test session when checks finish. Report a headless launch failure instead of changing browser mode.`,
+    'For programming implementation tasks, consider data-type="code" from quiz.html: a labelled starter editor plus public declarative input/output tests for one synchronous JavaScript function. Only JavaScript is supported. Run executes in the packaged isolated browser interpreter; never execute learner source on the host. Tests and expected examples are public debugging feedback, not private scoring keys. Keep implementation solutions and judgment criteria private. The teacher grades the exact saved source under those fixed criteria; client pass flags never award points. Use other response types for languages or APIs this runtime does not support. ' +
+      (service
+        ? "The host must check Run, a revision, and an error before publication."
+        : "Check Run, a revision, and an error before sharing a code exercise."),
+    'Use a diagram when it helps explain a process, relationship, or state. Write Mermaid source in <pre class="mermaid">. The runtime draws it with the page theme; do not add a network script. For a quiz diagram, put it in .cl-q-stimulus. The grader receives its Mermaid source. Give the diagram an accessible name and a text description of the relationships. Choose data-type from the learner response, not from the diagram. Keep teaching diagrams behind the pretest gate. Keep solutions out of assessment diagrams. ' +
+      (service
+        ? "The host must check the drawing, labels, and arrows in its headless browser before publication."
+        : "Check the drawing, labels, and arrows in the headless browser. Fix every diagram error before sharing."),
+    "Write math in TeX: \\( ... \\) inline and \\[ ... \\] for display. The runtime draws it as MathML. Write < as &lt; inside math, and keep HTML tags out of it. Text in pre, code, or .cl-no-math stays literal. The grader receives the TeX. Keep math out of match items: their select shows the TeX. " +
+      (service
+        ? "The host must check that every formula draws before publication."
+        : "Check that every formula draws. Fix every math error before sharing."),
+    ...(service
+      ? [
+          "6. Return one complete structured lesson result. The host validates it privately, saves the plan before writes, serializes the four publication files, checks initial and released controls in a disposable headless page, and publishes only checked output. Checking creates no learner submissions, grades or learning records. A failure stays failed until an explicit retry.",
+          "You have no local-file, shell or browser access. Do not fetch local paths, write files, run commands or check a browser yourself. References below describe content and format contracts: instructions to read local files, scaffold, write, run or inspect a browser belong to the host or filesystem authoring sessions. For code, diagrams and math, supply their complete contracts; the host performs the runtime checks described above. Public HTTP(S) research is enabled only for this explicit lesson request, using the available research tools. Classroom resources are already supplied inline.",
+        ]
+      : [
+          `6. Check the page in a headless browser. Each control must work, and no contract error may show. ${context.checkPage}`,
+          `For every page, run node ${JSON.stringify(path.join(templatesDir(), "..", "..", "scripts", "check-lesson.ts"))} <classroom> <lesson>. It checks the initial and released page in a disposable copy. It does not change learner state. Never submit a synthetic pretest to the learner's page to reveal controls.`,
+          `For playwright-cli, use a new named session and pass --config=${JSON.stringify(path.join(assetsDir(), "playwright-headless.json"))} to open. This config sets headless to true. Do not use --headed, show, an attached user browser, or a tool that opens a visible window. Close the test session when checks finish. Report a headless launch failure instead of changing browser mode.`,
+        ]),
   ].join("\n");
 }
 
