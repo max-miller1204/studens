@@ -42,6 +42,17 @@ The resume fixtures use a saved review with an empty panel or an unanswered save
 
 The actual Pi target uses the same learner drive and dedicated service queue as Claude and Codex, including daily classroom groups. Its additional lifecycle drive closes the initiating Pi while teacher work runs, submits from two browser tabs, reconnects from a fresh Pi, rejects an unavailable model, and uses explicit retry after changing settings. It saves a real valid Pi grade plan while an owned scratch grade directory denies writes, restarts the service, retries the saved plan, then restarts again. Require one saved grade, unchanged plan and conversation bytes, no new inference, the exact Pi model, and low thinking. Explicit `/classroom stop` followed by Pi shutdown must produce no extension errors. Inspect `pi/lifecycle/`, including `lifecycle.json`, the original saved plan, private session transcript, and screenshots.
 
+For launcher or production dependency changes, use a clean exact-commit archive
+without `node_modules`, retaining `docs/ATTRIBUTION.md`. Run `node mcp/launch.mjs`
+with a scratch classrooms root, an unused loopback service port, and tailnet links
+disabled. Send MCP `initialize` (client name `codex`) and `tools/list`. These are
+lazy discovery; use `classroom_service` action `start` before checking HTTP ownership.
+Require the real `npm ci --omit=dev --ignore-scripts` bootstrap, only JSON-RPC on
+stdout, and the installed Pi SDK's `createAgentSession` export loading from that
+archive. Development-only packages must be absent. Stop through the management
+tool and remove owned scratch roots. No model turn or account edit is needed.
+Record actual Node separately from the declared minimum, now 22.19.0.
+
 For a changed real Pi path, run `npm run verify -- pi`. For shared service or prompt changes, run `npm run verify -- claude`, then `npm run verify -- codex`. Add `--artifacts <directory>` to retain host evidence. These drives ask a question, submit a wrong answer, and reply in the panel. They check that the quiz score remains unchanged.
 
 The service reply fixture reports no help. The drives require the actual reply and reported assistance in a saved retrieval check. They require a linked learning record and keep immediate correction outside retained evidence. Inspect `stored-teacher-state.json` and the retained `classroom/` files.

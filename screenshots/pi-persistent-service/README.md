@@ -1,6 +1,6 @@
 # Pi persistent service evidence
 
-Matching fixture captures from main `ff52f741` and this migration. Both use the same classroom, lesson, panel message, viewports, and themes. The base bridge ends without a reply; the after fixture reports a specific Pi model error. These comparisons prove UI behavior, not model behavior or human learning.
+Matching fixture captures from main `987f4a1` and this migration. Both use the same classroom, lesson, panel message, viewports, and themes. The base bridge ends without a reply; the after fixture reports a specific Pi model error. These comparisons prove UI behavior, not model behavior or human learning.
 
 | State                    | Before                                                            | After                                                             |
 | ------------------------ | ----------------------------------------------------------------- | ----------------------------------------------------------------- |

@@ -1,6 +1,6 @@
 {
   "mode": "Change: Pi host/lifecycle migration and downstream learner paths",
-  "base": "ff52f741291a0ba9ed982f20962c5638fd942b60",
+  "base": "987f4a1ecaea01688a7561b1c37b3e61cf7e24fc",
   "models": {
     "pi": "openai-codex/gpt-6-luna low (SDK selection; upstream resolution independently unverified)",
     "claude": "claude-haiku-5-5 low",
@@ -79,7 +79,7 @@
       "rawReceipt": "/tmp/studens-issue39/final-combined-phone/run.json"
     }
   ],
-  "sourceEquivalence": "Pi ran0946cc1; later c7d490f changed Pi identity labels/docs/recipes, one SDK provenance comment and lifecycle log wording only. The actual Pi phone and supplemental browser drive executed that label source. Claude ran c7d490f and Codex6dc5405; latter delta was evidence and reading recipe only. No model/plan/grading contract changed in these deltas.",
+  "sourceEquivalence": "Pi ran0946cc1; later c7d490f changed Pi identity labels/docs/recipes, one SDK provenance comment and lifecycle log wording only. The actual Pi phone and supplemental browser drive executed that label source. Claude ran c7d490f and Codex6dc5405; latter delta was evidence and reading recipe only. No model/plan/grading contract changed in these deltas. Accepted PR69 main987f4a1 then merged normally: all10 extracted canonical grader declarations including criteria have equivalent parsed JavaScript AST after type erasure; teacher adapters/queue/recovery/prompts unchanged. The later22.19 minimum and SDK resolution guard are verified by clean exact1910eae first-start without model inference, not by repeating model drives.",
   "runtimeObservations": [
     "Actual Pi extension opens persistent service; queued dedicated Pi work and HTTP survive initiating exit; fresh Pi reconnect preserves owner PID/session.",
     "Two accepted learner POSTs run FIFO; service owns review/refill work. Invalid exact model stays failed until explicit browser retry after model setting change.",
@@ -103,5 +103,38 @@
   "images": "Matching base/after desktop/mobile light/dark UI captures are fixtures; the additional two captures are actual Pi runtime. See provenance.json.",
   "recipeChanges": [
     "Shared Pi target uses persistent service; lifecycle recovery/ownership/model-selection checks; Pi phone route drive; actual Pi reflection/card-follow-up steps."
-  ]
+  ],
+  "runtimePrerequisite": {
+    "declaredMinimum": "22.19.0",
+    "testedNode": "24.22.0",
+    "actualMinimumRuntimeExecuted": false,
+    "productionDependencyVersionsUnchanged": true
+  },
+  "firstStart": {
+    "verdict": "PASS",
+    "source": "1910eae6785d15cf0d64af9b6e15fc4e7b952e0a",
+    "node": "24.22.0",
+    "archiveWithoutNodeModules": true,
+    "actualLauncherProductionCi": true,
+    "mcpInitializeToolsListStartStop": true,
+    "sdkVersion": "0.83.0",
+    "sdkResolvesAndLoadsInsideArchive": true,
+    "developmentOnlyDependenciesAbsent": true,
+    "stdoutOnlyMcp": true,
+    "lockUnchanged": true,
+    "noModelInference": true,
+    "rawReport": "/tmp/studens-issue39/first-start-corrected/result.json",
+    "cleanup": "/tmp/studens-issue39/first-start-corrected/cleanup.json",
+    "retainedFailure": "Initial probe wrongly expected discovery to start HTTP. Original install and MCP responses retained; corrected explicit start before checking ownership."
+  },
+  "postMergeCompletedChecks": {
+    "focusedTests": {
+      "files": 6,
+      "tests": 112,
+      "exit": 0
+    },
+    "exactGraderAstDeclarations": 10,
+    "npmCiEngine": 0,
+    "raw": "/tmp/studens-issue39/post-main69-focused-command.json"
+  }
 }
