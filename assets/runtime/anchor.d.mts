@@ -29,3 +29,8 @@ export declare function findSelector(
 ): SelectorMatch | null;
 
 export declare function normalizeText(value: string): string;
+
+export declare function resolveSelector(
+  text: string,
+  selector: TextQuoteSelector,
+): ({ status: "resolved" } & SelectorMatch) | { status: "missing" | "ambiguous" };

@@ -32,7 +32,7 @@ export function createGlossary({ config, contentRoot }) {
 
   const NO_TERMS =
     "script, style, pre, code, a, button, label, select, h1, h2, h3, h4, h5, h6, " +
-    "form.cl-quiz, form.cl-reflect, .cl-header, .cl-card-panel, .cl-ask-pill, " +
+    "form.cl-quiz, form.cl-reflect, .cl-learner-marks, .cl-selection-actions, .cl-header, .cl-card-panel, .cl-ask-pill, " +
     ".cl-badge-marker, .cl-term, .cl-term-pop, .cl-contract-error, .cl-diagram, .cl-math, mark.cl-hl";
 
   function markTerms(section, terms) {

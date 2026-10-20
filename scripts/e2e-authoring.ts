@@ -70,6 +70,7 @@ import { checkPractice, selectLocateAnswer } from "./browser-actions.ts";
 import { checkFaded } from "./faded-browser-actions.ts";
 import { checkSteppers } from "./stepper-browser-actions.ts";
 import { playwright, playwrightCode } from "./playwright.ts";
+import { quizAnswerSnapshot } from "./quiz-answer-snapshot.ts";
 
 const AUTHORING_TIMEOUT_MS = 30 * 60_000;
 const GRADING_TIMEOUT_MS = 20 * 60_000;
@@ -361,7 +362,7 @@ const SUBMIT_LESSON = `async page => {
       if (controls.get(i)?.keyboard) continue;
       const button = buttons.nth(i);
       const authored = await button.evaluate((b) =>
-        !b.closest('form, .cl-stepper-runtime, .cl-faded-runtime, .cl-header, .cl-card-inline, .cl-card-panel, .cl-ask-pill, .cl-badge-marker, .cl-term, .cl-term-pop, .cl-contract-error, .cl-teacher'));
+        !b.closest('form, .cl-stepper-runtime, .cl-faded-runtime, .cl-learner-marks, .cl-selection-actions, .cl-header, .cl-card-inline, .cl-card-panel, .cl-ask-pill, .cl-badge-marker, .cl-term, .cl-term-pop, .cl-contract-error, .cl-teacher'));
       if (!authored || !(await button.isVisible())) continue;
       const label = ((await button.getAttribute('aria-label')) || (await button.innerText())).trim();
       if (await button.isDisabled()) {
@@ -408,9 +409,7 @@ const SUBMIT_LESSON = `async page => {
       if (type === 'locate') await selectLocateAnswer(q.locator('.cl-segment').first());
     }
     const saved = await form.evaluate((f) => ({
-      checked: [...f.querySelectorAll('input:checked')].filter(el => el.closest('.cl-q') && !el.closest('.cl-q-verdict, .cl-card-panel')).map((i) => i.value),
-      text: [...f.querySelectorAll('input[type=text], input:not([type]), textarea')].filter(el => el.closest('.cl-q') && !el.closest('.cl-q-verdict, .cl-card-panel')).map((i) => i.value),
-      selects: [...f.querySelectorAll('select')].filter(el => el.closest('.cl-q') && !el.closest('.cl-q-verdict, .cl-card-panel')).map((s) => s.value),
+      ...(${quizAnswerSnapshot.toString()})(f),
       order: [...f.querySelectorAll('.cl-order > li')].map((li) => li.dataset.item),
       segments: [...f.querySelectorAll('.cl-segment[aria-pressed="true"]')].map((s) => s.dataset.segment),
     }));
@@ -437,9 +436,7 @@ const READ_GRADED = `async page => {
     attempts: f.dataset.attempts,
     grade: f.querySelector('.cl-grade-banner')?.innerText.replace(/\\s+/g, ' ').trim() ?? null,
     saved: {
-      checked: [...f.querySelectorAll('input:checked')].filter(el => el.closest('.cl-q') && !el.closest('.cl-q-verdict, .cl-card-panel')).map((i) => i.value),
-      text: [...f.querySelectorAll('input[type=text], input:not([type]), textarea')].filter(el => el.closest('.cl-q') && !el.closest('.cl-q-verdict, .cl-card-panel')).map((i) => i.value),
-      selects: [...f.querySelectorAll('select')].filter(el => el.closest('.cl-q') && !el.closest('.cl-q-verdict, .cl-card-panel')).map((s) => s.value),
+      ...(${quizAnswerSnapshot.toString()})(f),
       order: [...f.querySelectorAll('.cl-order > li')].map((li) => li.dataset.item),
       segments: [...f.querySelectorAll('.cl-segment[aria-pressed="true"]')].map((s) => s.dataset.segment),
     },
