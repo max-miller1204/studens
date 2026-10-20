@@ -69,7 +69,7 @@ const OPTIONAL_END = new Set(
 const MALFORMED_TOKEN =
   /(?:attribute|eof-in-tag|eof-before-tag-name|eof-in-comment|incorrectly-opened-comment|unexpected-solidus-in-tag|end-tag-with-trailing-solidus)/;
 const RUNTIME =
-  /(?:^|\s)(?:cl-(?:header|card-panel|ask-pill|badge-marker|term-pop|contract-error|diagram|teacher|teacher-notice|stepper-runtime|faded-runtime|code-runner|practice-feedback|q-verdict|quiz-footer|answer-report|order-controls|expected))(?:\s|$)/;
+  /(?:^|\s)(?:cl-(?:header|lesson-links|source-notice|card-panel|ask-pill|badge-marker|term-pop|contract-error|diagram|teacher|teacher-notice|stepper-runtime|faded-runtime|code-runner|practice-feedback|q-verdict|quiz-footer|answer-report|order-controls|expected))(?:\s|$)/;
 export function canonicalText(text: string): string {
   return text.replace(/\s+/g, " ").trim().normalize("NFC");
 }

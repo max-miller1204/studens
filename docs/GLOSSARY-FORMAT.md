@@ -48,3 +48,11 @@ lesson page does not show a broken entry.
 - **Group under subheadings** when natural clusters emerge (e.g. `## Anatomy`, `## Programming`). A flat list is fine when terms cohere.
 - **Flag ambiguities explicitly.** If a term is used loosely in the wider field, note the resolution: "In this workspace, 'set' always means a working set — warm-ups are tracked separately."
 - **Revise as understanding deepens.** A definition the user wrote in week one may be wrong by week six. Update in place; do not leave stale entries.
+
+## Teaching source links
+
+A glossary definition can link to its explicitly declared teaching section. See
+[SOURCE-LINKS.md](SOURCE-LINKS.md). The section's `data-cl-teaches` value must match
+this entry's canonical term; repeated mentions and lesson order do not identify an
+origin. Old entries without provenance keep their definitions and term routes.
+Source links do not promote terms, grade work or establish retention.

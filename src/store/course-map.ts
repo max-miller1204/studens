@@ -9,12 +9,14 @@ import {
   privateStatePath,
 } from "../paths.ts";
 import { stageLesson } from "../pretest.ts";
+import { teachingAnchors } from "../lesson-sources.ts";
 import { authoredQuizzes } from "../quiz-authoring.ts";
 import { reviewSessions } from "../review-session.ts";
 import { parseTeachingPlan } from "../teaching-plan.ts";
 import type { TeachingPlan } from "../teaching-plan.ts";
 import { orderPrefix, resolveLessonHtml, titleFromSlug } from "./classrooms.ts";
 import { latestQuizStates } from "./quiz-history.ts";
+import { lessonRequests } from "./lesson-requests.ts";
 import {
   parseMissionCoursePlan,
   renderMission,
@@ -27,6 +29,8 @@ export interface CourseObjective {
   key: string;
   statement: string;
   quizzes: { id: string; purpose: Purpose }[];
+  /** Public, released section from one unambiguous validated prequestion teaching target. */
+  teaching?: string;
 }
 export interface CourseLesson {
   name: string;
@@ -121,6 +125,7 @@ export function readCourseMap(classroom: string): CourseMap | null {
   }
   let pending: Set<string>;
   try {
+    privateStatePath(`${classroom}/.reviews.json`);
     pending = new Set(
       reviewSessions(classroom)
         .filter((request) => request.status !== "done")
@@ -130,6 +135,16 @@ export function readCourseMap(classroom: string): CourseMap | null {
     throw new Error(`Cannot load ${classroom}/.reviews.json: invalid review publication state.`, {
       cause: error,
     });
+  }
+  try {
+    privateStatePath(`${classroom}/.lesson-requests.json`);
+    for (const request of lessonRequests(classroom))
+      if (request.status !== "done") pending.add(request.lesson);
+  } catch (error) {
+    throw new Error(
+      `Cannot load ${classroom}/.lesson-requests.json: invalid lesson publication state.`,
+      { cause: error },
+    );
   }
   const reserved = new Set(["reference", "assets", "learning-records", "notes", "quiz"]);
   const lessons: CourseLesson[] = [];
@@ -189,6 +204,7 @@ export function readCourseMap(classroom: string): CourseMap | null {
     const objectives: CourseObjective[] = [];
     if (plan && !staged.pendingPretests.length) {
       const visible = new Set(authoredQuizzes(staged.html).map((q) => q.id));
+      const anchors = teachingAnchors(staged.html);
       for (const [id, objective] of Object.entries(plan.objectives)) {
         const quizzes = Object.entries(plan.quizzes)
           .filter(
@@ -196,11 +212,26 @@ export function readCourseMap(classroom: string): CourseMap | null {
               visible.has(quizId) && Object.values(quiz.questions).some((q) => q.objective === id),
           )
           .map(([quizId, quiz]) => ({ id: quizId, purpose: quiz.purpose }));
+        const targets = new Set(
+          Object.entries(plan.quizzes)
+            .filter(
+              ([quizId, quiz]) =>
+                quiz.purpose === "prequestion" && staged.gatedPretests.includes(quizId),
+            )
+            .flatMap(([, quiz]) =>
+              Object.values(quiz.questions)
+                .filter((q) => q.objective === id)
+                .map((q) => q.teaching!),
+            ),
+        );
         if (quizzes.length)
           objectives.push({
             key: `${name}/@objective/${id}`,
             statement: objective.statement,
             quizzes,
+            ...(targets.size === 1 && anchors.has([...targets][0])
+              ? { teaching: [...targets][0] }
+              : {}),
           });
       }
     }

@@ -57,6 +57,11 @@ Only this explicit answer creates one submission and grade. Before grading, neit
 the gated objective nor its edge appears in the map or mission document. After
 grading the objective and edge appear; reload preserves them and adds no writes.
 
+The lesson reading recipe also checks the projection of released **builds-on**
+relationships into prerequisite lesson links. `related` and upcoming connections
+retain their existing meanings. Pending Next lesson requests stay outside both
+source navigation and the map, even if partial lesson files exist.
+
 ## Gotchas
 
 The optional `studens-course-map` block in `MISSION.md` is an authoring contract;
@@ -69,3 +74,9 @@ This feature describes teaching coverage and author intentions. It does not mark
 mastery or prove human retention. Fixture grading does not prove a model connection
 or real authoring adoption. Select the authoring targets when changing the mission
 contract or its guidance.
+
+For an unambiguous released objective's existing validated prequestion `teaching`
+mapping, the prerequisite link includes its unique visible safe section anchor.
+Missing or ambiguous mappings retain the owning lesson link; gated mappings expose
+no destination before release. The source fixture clicks the released Borrowing
+prerequisite and checks focus/visibility at `#teach-borrow` after one diagnostic grade.
