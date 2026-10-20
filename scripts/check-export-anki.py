@@ -87,6 +87,9 @@ for filename, projection in [('rust.apkg', 'projection.json'), ('rust-answers.ap
             for name in media.values():
                 (card_dir / name).write_bytes((Path(c.media.dir()) / name).read_bytes())
             (card_dir / 'card.html').write_text('<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>body{font:18px/1.5 sans-serif;max-width:900px;margin:2rem auto;padding:1rem}pre{white-space:pre-wrap}img,svg{max-width:100%}</style>' + rendered)
+        if filename == 'rust-answers.apkg':
+            lesson_card = next(c.get_card(i) for i in cards if c.get_note(c.get_card(i).nid).fields[0] == 'Ownership')
+            (work / 'rendered-card' / 'answers.html').write_text('<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>body{font:18px/1.5 sans-serif;max-width:900px;margin:2rem auto;padding:1rem}pre{white-space:pre-wrap}img,svg{max-width:100%}</style>' + lesson_card.answer())
         reports.append(report)
     finally:
         c.close()

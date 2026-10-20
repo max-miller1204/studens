@@ -7,7 +7,7 @@ The learner takes saved public classroom material into Anki, print, or Markdown.
 - Download a real `.apkg` deck and portable Markdown; open a printable classroom.
 - Keep public documents, notes, learning records, released lessons, glossary and question threads.
 - Preserve Unicode, code line breaks, formulas, Mermaid source and referenced public media.
-- Keep adjacent public radio/checkbox labels separately readable after controls are removed, including inline emphasis and exact Unicode.
+- Keep adjacent public input/select/textarea labels separately readable after controls are removed, including radio/checkbox options, associated `for`/`id` labels, inline emphasis and exact Unicode.
 - Keep inline and referenced static SVG labels, nested positioned text spans and exact Unicode; omit hidden and active SVG content.
 - Exclude private keys/plans/variants/drafts/teacher/recovery files and unreleased teaching.
 - Include only already-unlocked expected answers after explicit, off-by-default selection.
@@ -56,6 +56,16 @@ GUID/card identities, classroom deck ownership, and zero review history. Reimpor
 must not duplicate notes; newer source updates existing identities, unrelated notes
 survive, local newer edits remain, and removing a source does not delete Anki notes.
 The card browser check renders the actual imported `card.answer()` HTML and media.
+The rich fixture also includes the exact no-whitespace `Size`/`Unit` quantity pair,
+number input, associated select/textarea labels, inline emphasis and Unicode.
+Inspect `rust-generic-markdown.png`, `rust-answers-generic-markdown.png` and
+`official-import/imported-generic{,-answers}.png`. Label glyphs must occupy
+separate non-overlapping lines in their original numbered quantity item, with the
+next item separate. Both consent states download PDF, Markdown and Anki through
+Export controls; inspect the actual PDF text and rasterized quantity page as well.
+Controls, values and source attributes must be absent. The normal saved assessment
+and course navigation remain usable alongside this public reading fixture.
+
 The rich fixture includes inline and referenced SVG labels with nested positioned
 `tspan` text. Print, rendered Markdown and the imported card must show both labels;
 inspect `imported-svg.png` for the focused card view. Checks require nonzero glyph
