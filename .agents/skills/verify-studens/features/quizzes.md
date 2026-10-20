@@ -72,6 +72,22 @@ calls. A neighboring graded check still submits and scores normally, preserving 
 private predeclared criterion and code-owned allocation. Public practice
 feedback never reads the private graded rubric, and its static route stays blocked.
 
+For an authored lesson, run `node scripts/check-lesson.ts <classroom> <lesson>`
+with its classrooms root in `PI_CLASSROOMS_DIR`. The command preflights saved
+metadata, private rubric, teaching plan, criteria, and declared review variants
+through the production contracts before opening its disposable HTML preview.
+Missing promised files, unsupported versions, malformed JSON/UTF-8, symlinks,
+unknown identities, and invalid machine keys must exit nonzero without a receipt.
+An unchanged valid authored lesson and an HTML-only legacy lesson must still pass
+the initial/released controls check. Compare `preflight.inputHashes` with the source
+HTML, metadata, key, and plan bytes (null records an absent optional file).
+The authoring harness matches these hashes to the saved inputs; editing a private
+file invalidates the receipt. Keep a before/after hash inventory of the original
+classroom: the preview must leave it unchanged. Private inputs stay outside
+the preview. Its disposable pretest grades only release controls and prove no
+model grading or learning outcome. Contract and receipt regressions also run in
+`test/lesson-inputs.test.ts` and `test/harness.test.ts`.
+
 ## Gotchas
 
 The fixture grading tool proves page and storage behavior. It does not prove model grading quality. API attempts from older clients are checked separately from the learner's locked quiz controls. The `feedback claude` and `feedback codex` targets combine a saved closed answer with judgment questions. They require the model to omit the closed question and verify the final score from merged point allocations. Immediate correct answers do not prove retention.

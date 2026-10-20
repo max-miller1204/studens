@@ -41,12 +41,12 @@
 
 import { evaluateContent } from "./authoring-evaluator.ts";
 import { parseTeachingPlan } from "../src/teaching-plan.ts";
+import { inputNames, readLessonInputs } from "./lesson-inputs.ts";
 import { spawn } from "node:child_process";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import * as net from "node:net";
-import { createHash } from "node:crypto";
 import { control, servicePaths, serviceStatus } from "../src/service-client.ts";
 
 import { _overrideClassroomsDir } from "../src/paths.ts";
@@ -516,13 +516,14 @@ async function main(): Promise<void> {
     }
     const packagedChecks = packagedPageChecks(harness, authoring.stream());
     for (const lesson of lessons) {
-      const htmlHash = createHash("sha256")
-        .update(fs.readFileSync(path.join(root, CLASSROOM, lesson, "lesson.html")))
-        .digest("hex");
+      const inputs = readLessonInputs(CLASSROOM, lesson);
       if (
         !packagedChecks.some(
           (check) =>
-            check.classroom === CLASSROOM && check.lesson === lesson && check.htmlHash === htmlHash,
+            check.classroom === CLASSROOM &&
+            check.lesson === lesson &&
+            check.preflight.htmlFile === inputs.htmlFile &&
+            inputNames.every((name) => check.preflight.inputHashes[name] === inputs.hashes[name]),
         )
       )
         failures.push(`The agent did not complete the packaged page check for ${lesson}.`);
