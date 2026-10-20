@@ -252,3 +252,29 @@ Immediate correct answers do not prove retention.
 Practice feedback is public teaching content, not a graded key. Open reasoning is
 not machine checked; use a reflection or local solution reveal. Practice has no
 saved history and supplies no evidence of retention.
+
+## Expected answers after grading
+
+`node scripts/e2e-expected-answers.ts /tmp/studens-expected-answers` drives the
+actual lesson shell through saved grading, a new corrective panel task, the learner's
+reply, and a validated retrieval check. Correct original answers show the expected
+answer, full/partial credit guidance and declared criteria. Original misses wait
+for an exact corrective check; disputes cannot bypass that wait. Graded pretests
+release without a corrective check. All ten supported response types render with
+readable option/item/pair/blank labels and numeric units/tolerance; code keys are
+explanations or source text and never execute.
+
+Inspect `initial.json`, `corrective-before.json`, `corrective-after.json`,
+`reload-probes.json`, `formats.json`, `result.json`, retained `classroom/`, and the
+matching desktop/mobile light/dark captures. The drive includes failed grading,
+reload without automatic retry, explicit Retry request, a restored original rubric
+with keyboard `Retry expected answer`, locked second-tab answers, malformed and
+neighboring HTTP targets, private static routes and ungraded sibling keys. Reads
+must preserve grades, checks and review events. Its teacher plans are fixtures.
+
+The real Pi/Claude/Codex host targets retain `expected-before.json` and
+`expected-after.json` around their actual corrective task and reply. Inspect the
+saved task for a new answerable example: neither punctuation nor a grade alone
+establishes a retrieval task. Legacy attempts without original source identity,
+ambiguous shared-objective checks, and unrelated replies must remain unavailable;
+changed/missing original sources show a specific error and require explicit retry.
