@@ -2636,6 +2636,176 @@ body > .cl-teacher-activity {
   margin-top: 0.75rem;
 }
 
+/* Memory map: evidence stays distinct from estimated scheduling and teaching coverage. */
+.cl-memory-map {
+  margin-bottom: 1.5rem;
+}
+.cl-memory-intro {
+  max-width: 45rem;
+  line-height: 1.6;
+}
+.cl-memory-forecast {
+  padding: 1.25rem;
+  margin: 1.5rem 0;
+  background: var(--cl-surface-2);
+  border: 1px solid var(--cl-border);
+  border-radius: var(--cl-radius);
+}
+.cl-memory-forecast-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.cl-memory-forecast-heading h3 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+.cl-memory-forecast-heading > span {
+  color: var(--cl-accent);
+  font-weight: 600;
+}
+.cl-memory-forecast p {
+  line-height: 1.55;
+  font-size: 0.875rem;
+}
+.cl-memory-bars {
+  display: grid;
+  grid-template-columns: repeat(14, minmax(0, 1fr));
+  list-style: none;
+  padding: 0;
+  margin: 1.5rem 0;
+  gap: 0.4rem;
+}
+.cl-memory-bars li {
+  min-width: 0;
+  text-align: center;
+  font-size: 0.68rem;
+  color: var(--cl-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.cl-memory-bars li > div {
+  height: 4rem;
+  display: flex;
+  align-items: end;
+  border-bottom: 1px solid var(--cl-border-strong);
+  margin: 0.35rem 0;
+}
+.cl-memory-bars i {
+  display: block;
+  width: 100%;
+  background: var(--cl-accent);
+  border-radius: 3px 3px 0 0;
+}
+.cl-memory-bars li > span:first-child {
+  font-size: 0.85rem;
+  color: var(--cl-text);
+}
+.cl-memory-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+  font-size: 0.875rem;
+}
+.cl-memory-table caption {
+  text-align: left;
+  padding-bottom: 0.75rem;
+}
+.cl-memory-table th,
+.cl-memory-table td {
+  text-align: left;
+  padding: 0.5rem;
+  border-bottom: 1px solid var(--cl-border);
+}
+.cl-memory-items {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 1rem;
+}
+.cl-memory-item {
+  min-width: 0;
+  padding: 1.25rem;
+  border: 1px solid var(--cl-border);
+  border-radius: var(--cl-radius);
+  background: var(--cl-surface);
+  overflow-wrap: anywhere;
+}
+.cl-memory-heading h3 {
+  margin: 0 0 0.4rem;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+.cl-memory-heading h3 a {
+  text-decoration: none;
+}
+.cl-memory-heading h3 a:hover {
+  text-decoration: underline;
+}
+.cl-memory-tag {
+  color: var(--cl-text-muted);
+  font-size: 0.75rem;
+}
+.cl-memory-facts {
+  display: grid;
+  grid-template-columns: 1fr 1.3fr 1.3fr 1fr;
+  gap: 1.25rem;
+  margin: 1.1rem 0;
+}
+.cl-memory-facts dt {
+  color: var(--cl-text-muted);
+  font-size: 0.72rem;
+  margin-bottom: 0.45rem;
+}
+.cl-memory-facts dd {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+.cl-memory-facts small {
+  display: block;
+  color: var(--cl-text-muted);
+  font-size: 0.75rem;
+  margin-top: 0.35rem;
+}
+.cl-memory-why {
+  border-top: 1px solid var(--cl-border);
+  padding-top: 0.75rem;
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+.cl-memory-why summary,
+.cl-memory-forecast summary {
+  cursor: pointer;
+  color: var(--cl-accent);
+}
+.cl-memory-feedback {
+  white-space: pre-wrap;
+}
+.cl-memory-empty {
+  padding: 1.25rem;
+  border-left: 3px solid var(--cl-border-strong);
+  line-height: 1.6;
+}
+@media (max-width: 600px) {
+  .cl-memory-facts {
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+  .cl-memory-forecast,
+  .cl-memory-item {
+    padding: 1rem;
+  }
+  .cl-memory-bars {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    row-gap: 1rem;
+  }
+  .cl-memory-bars li > div {
+    height: 2.5rem;
+  }
+}
+
 /* Portable classroom exports. */
 .cl-export-form > label {
   display: flex;

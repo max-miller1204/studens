@@ -923,11 +923,11 @@ describe("glossary and progress", () => {
       correct: { q1: true },
     });
     const page = await (await get("/c/rust")).text();
-    expect(page).toContain("Progress");
+    const item = store.reviewItems("rust").find((item) => item.quizId === "old")!;
+    expect(page).toContain(`data-memory-key="${item.key}"`);
+    expect(page).toContain(`datetime="${new Date(item.lastAt).toISOString()}"`);
+    expect(page).toContain(item.scheduleReason);
     expect(page).toContain("cl-badge-due");
-    expect(page).toContain(
-      '<span class="cl-stat-value">1</span><span class="cl-stat-label">glossary term</span>',
-    );
     expect(await (await get("/")).text()).toContain("due for review");
   });
 });
