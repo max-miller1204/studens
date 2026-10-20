@@ -36,12 +36,18 @@ It also receives replies while reading before and after the quiz. The notice mus
 
 The service fixture checks failure, retry, MCP disconnect and reconnect, request isolation between lessons, and teacher drafts. Inspect `pi-panel/pi-panel.json` and service state evidence.
 
-For MCP connection cleanup, run `npx vitest run test/mcp-stdio-lifecycle.test.ts test/service-process.test.ts`.
+For MCP connection cleanup, run `npx vitest run test/mcp-stdio-lifecycle.test.ts test/service-process.test.ts test/service-process-owner.test.ts`.
 The actual launcher/service checks use both Codex and Claude client identities: discovery,
 status and stop leave a stopped service stopped; start serves HTTP; acknowledged stop
 followed by stdin close must exit without a detach error. A refused stop keeps its
 specific error and leaves HTTP live after client exit. A held fixture teacher keeps
 running and queued requests intact across live detach, then saves each grade once.
+After a stop acknowledgement, wait for the exact recorded PID to exit and its owner
+file and socket to disappear before asserting stopped status. The acknowledgement
+precedes teardown; a status connection during listener close can report
+`connect ECONNRESET`. Keep that transport error visible. Fixture cleanup validates
+the recorded package and port, closes its MCP children, and waits for owned teardown;
+it must not probe the closing listener or treat missing paths alone as process exit.
 The separate private-control boundary checks delayed stop replies at EOF, tool/RPC/
 transport failures, an owner lost between the management probe and request, and an
 unexpected missing socket on detach. Errors stay visible and never trigger a retry
