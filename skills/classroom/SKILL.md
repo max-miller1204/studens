@@ -10,10 +10,9 @@ description: Give the user a link to their classrooms, or list their classrooms 
   URL it returns. Never open a browser for the user.
 - To list classrooms and lessons in the terminal, call `list_classrooms`.
 
-Claude Code and Codex attach to a persistent local service. Closing this chat does
+Pi, Claude Code, and Codex attach to a persistent local service. Closing this chat does
 not stop it. Each classroom has one dedicated teacher backend and session. Browser
 requests start teacher work. Use the teacher panel for retrieval questions and replies.
-Pi keeps its in-process server and direct bridge.
 
 - Use `classroom_service` with action status to inspect ownership, the stable URL,
   and the tailnet route.
