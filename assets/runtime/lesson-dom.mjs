@@ -11,7 +11,7 @@ const QUIZ_RUNTIME_UI =
   ".cl-stepper-runtime, .cl-faded-runtime, .cl-code-runner, [data-cl-grade], .cl-practice-feedback, .cl-q-verdict, .cl-quiz-footer, .cl-answer-report, .cl-order-controls";
 
 /** Our own UI, never lesson text: a highlight must not anchor into it. */
-export const RUNTIME_UI = `script, style, noscript, .cl-header, .cl-card-panel, .cl-ask-pill, .cl-badge-marker, .cl-term-pop, .cl-contract-error, .cl-diagram, .cl-math, .cl-teacher, .cl-teacher-notice, ${QUIZ_RUNTIME_UI}`;
+export const RUNTIME_UI = `script, style, noscript, .cl-header, .cl-learner-marks, .cl-selection-actions, .cl-card-panel, .cl-ask-pill, .cl-badge-marker, .cl-term-pop, .cl-contract-error, .cl-diagram, .cl-math, .cl-teacher, .cl-teacher-notice, ${QUIZ_RUNTIME_UI}`;
 
 // ── Plain-text index over the DOM ─────────────────────────────────────────────
 
@@ -121,7 +121,7 @@ function elementOf(node) {
 }
 
 export function outsideIndex(node) {
-  return Boolean(elementOf(node)?.closest(`.cl-diagram, .cl-math, ${QUIZ_RUNTIME_UI}`));
+  return Boolean(elementOf(node)?.closest(RUNTIME_UI));
 }
 
 /**
@@ -204,12 +204,27 @@ export function showErrors(container, heading, errors, before = null) {
 /** The text of a lesson element, with each formula as its TeX. */
 export function textOf(element) {
   if (!element) return "";
+  const notes = detachLearnerMarks(element);
   const restore = swapMathForSource(element);
   try {
     return normalizeText(element.textContent);
   } finally {
     restore();
+    notes();
   }
+}
+
+/** Temporarily omit learner-owned UI from assessment text snapshots. */
+export function detachLearnerMarks(element) {
+  const notes = [...element.querySelectorAll(".cl-learner-marks")].map((node) => ({
+    node,
+    parent: node.parentNode,
+    next: node.nextSibling,
+  }));
+  for (const { node } of notes) node.remove();
+  return () => {
+    for (const { node, parent, next } of notes.reverse()) parent.insertBefore(node, next);
+  };
 }
 
 export function setQuizStatus(form, html, isHtml = false) {

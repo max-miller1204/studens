@@ -1,3 +1,4 @@
+import { verifyLearnerMarksBrowser } from "./e2e-learner-marks-browser.ts";
 import { verifyStepperPublication } from "./e2e-stepper-publication.ts";
 import { verifyDisputesBrowser } from "./e2e-disputes-browser.ts";
 import { verifyReviewWorkload } from "./e2e-review-workload.ts";
@@ -422,3 +423,5 @@ await verifyStepperBrowser(artifacts ? path.join(artifacts, "stepper") : null);
 await verifyStepperPublication(artifacts ? path.join(artifacts, "stepper-publication") : null);
 
 await verifyActivityBrowser(artifacts ? path.join(artifacts, "activity") : null);
+
+await verifyLearnerMarksBrowser(artifacts ? path.join(artifacts, "learner-marks") : null);

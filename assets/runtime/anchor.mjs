@@ -141,6 +141,26 @@ export function findSelector(text, selector) {
 }
 
 /**
+ * Learner marks must expose ties rather than guess a different repeated passage.
+ * Uses the same exact quotes and context scoring as question anchors; no fuzzy text.
+ */
+export function resolveSelector(text, selector) {
+  const candidates = allIndexesOf(text, selector.exact);
+  if (!candidates.length) return { status: "missing" };
+  const scores = candidates.map((start) => contextScore(text, start, selector));
+  const best = scores.reduce((highest, score) => Math.max(highest, score), -1);
+  const winners = candidates.filter((_, i) => scores[i] === best);
+  if (winners.length !== 1) return { status: "ambiguous" };
+  const start = winners[0];
+  return {
+    status: "resolved",
+    start,
+    end: start + selector.exact.length,
+    exact: best === selector.prefix.length + selector.suffix.length,
+  };
+}
+
+/**
  * Normalize a selection for storage: collapse runs of whitespace and trim.
  *
  * The DOM inserts whitespace that never appears in the source (indentation between
