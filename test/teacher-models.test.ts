@@ -6,6 +6,7 @@ import { makeFixture, type Fixture } from "./helpers.ts";
 import { runStructured, teacherModels, runTeacher } from "../src/teacher.ts";
 import { modelSelection } from "../src/teacher-models.ts";
 import { simpleLessonOutput } from "./lesson-output-fixture.ts";
+import { passageAnswerPlan, PASSAGE_ANSWER_SCHEMA } from "../src/passage-answer.ts";
 import { lessonModelPlan } from "../src/lesson-output.ts";
 let f: Fixture;
 let priorPath: string | undefined;
@@ -426,3 +427,80 @@ it("disables inherited MCP servers, plugins, shell and research on dedicated Cod
     },
   });
 });
+
+it.each(["codex", "claude"] as const)(
+  "sends typed passage data through %s after lesson history and preserves rejected raw output",
+  async (backend) => {
+    let sessionId: string | undefined;
+    const identity = () => ({
+      backend,
+      sessionId,
+      requestedModel: backend === "claude" ? "quick" : "custom-id",
+    });
+    const save = (id: string) => {
+      sessionId = id;
+    };
+    f.write("behavior.json", JSON.stringify({ output: simpleLessonOutput }));
+    await runTeacher(identity(), "Explicit lesson", f.root, save, undefined, {
+      operations: ["publish_lesson"],
+      required: true,
+      research: true,
+    });
+    const output = {
+      annotation_id: "exact-owner",
+      answer_markdown: '"λ"\n\n```rust\nlet café = "🦀";\n```\nC:\\notes\\',
+    };
+    const contract = {
+      operations: ["answer_lesson_question"],
+      required: true,
+      response: "passage-answer" as const,
+    };
+    f.write("behavior.json", JSON.stringify({ output }));
+    let raw: unknown;
+    const plan = await runTeacher(
+      identity(),
+      "Ordinary passage",
+      f.root,
+      save,
+      undefined,
+      contract,
+      (value) => {
+        raw = value;
+      },
+    );
+    expect(raw).toEqual(output);
+    expect(plan).toEqual(passageAnswerPlan(output));
+    const rejected = { ...output, calls: [] };
+    f.write("behavior.json", JSON.stringify({ output: rejected }));
+    await expect(
+      runTeacher(identity(), "Explicit retry", f.root, save, undefined, contract, (value) => {
+        raw = value;
+      }),
+    ).rejects.toThrow("only annotation_id and answer_markdown");
+    expect(raw).toEqual(rejected);
+    const all = messages();
+    if (backend === "codex") {
+      const turns = all.filter((m) => m.method === "turn/start");
+      expect(turns.slice(1).map((m) => m.params.outputSchema)).toEqual([
+        PASSAGE_ANSWER_SCHEMA,
+        PASSAGE_ANSWER_SCHEMA,
+      ]);
+      const resumes = all.filter((m) => m.method === "thread/resume");
+      expect(resumes).toHaveLength(2);
+      for (const m of resumes) {
+        expect(m.params.threadId).toBe(sessionId);
+        expect(m.params.config.web_search).toBe("disabled");
+        expect(m.params.sandbox).toBe("read-only");
+      }
+    } else {
+      const turns = all.filter((m) => m.args && !m.args.includes("--input-format"));
+      for (const turn of turns.slice(1)) {
+        expect(JSON.parse(turn.args[turn.args.indexOf("--json-schema") + 1])).toEqual(
+          PASSAGE_ANSWER_SCHEMA,
+        );
+        expect(turn.args[turn.args.indexOf("--tools") + 1]).toBe("");
+        expect(turn.args).toContain(sessionId);
+      }
+    }
+  },
+);

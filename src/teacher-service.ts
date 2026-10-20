@@ -737,7 +737,11 @@ export class TeacherService {
         return { operations: [GRADE_ANSWERS], required: true, messageRequired: true };
       case "ask":
       case "follow-up":
-        return { operations: ["answer_lesson_question"], required: true };
+        return {
+          operations: ["answer_lesson_question"],
+          required: true,
+          response: "passage-answer",
+        };
       case "refill":
         return { operations: [REFILL_TOOL.name], required: true };
       case "review":
@@ -841,9 +845,26 @@ export class TeacherService {
     const defs = classroomTools(PI_HOST)
       .map((tool) => (tool.name === "grade_lesson_quiz" ? answerGradingTool(tool) : tool))
       .filter((t) => contract.operations.includes(t.name));
+    // Reassemble queued passage requests with the current transport instructions.
+    // Historical raw outputs and already-saved canonical plans never pass this boundary.
+    let requestPrompt = r.prompt;
+    if (contract.response === "passage-answer") {
+      const annotation = store.findAnnotation(r.target);
+      if (!annotation || annotation.classroom !== r.classroom || annotation.lesson !== r.lesson)
+        throw new Error("The passage request no longer owns its annotation.");
+      const followUp =
+        r.kind === "follow-up"
+          ? annotation.followUps?.find((turn) => turn.id === r.turn)
+          : undefined;
+      if (r.kind === "follow-up" && !followUp)
+        throw new Error("The passage follow-up no longer exists.");
+      requestPrompt = followUp
+        ? followUpPrompt(annotation, followUp, "service")
+        : askPrompt(annotation, "service");
+    }
     return dedicatedTeacherPrompt(
       r.id,
-      `Current request kind: ${r.kind}. ${contract.required ? "Return exactly one call from the tool definitions." : contract.operations.length ? "Return only retrieval calls supported by this learner reply. Otherwise return calls=[]." : "Return calls=[]."}\n\n${r.prompt}${codeRecordReferences ? `\n\n${codeRecordReferences}` : ""}`,
+      `Current request kind: ${r.kind}. ${contract.response === "passage-answer" ? "Return the typed passage answer fields from the current response schema." : contract.required ? "Return exactly one call from the tool definitions." : contract.operations.length ? "Return only retrieval calls supported by this learner reply. Otherwise return calls=[]." : "Return calls=[]."}\n\n${requestPrompt}${codeRecordReferences ? `\n\n${codeRecordReferences}` : ""}`,
       context,
       defs.map((t) => {
         const parameters = structuredClone(t.parameters);
@@ -855,6 +876,7 @@ export class TeacherService {
         }
         return { name: t.name, description: t.description, parameters };
       }),
+      contract.response === "passage-answer",
     );
   }
   private async drain(classroom: string): Promise<void> {
@@ -1078,6 +1100,8 @@ export class TeacherService {
       throw new Error(`Teacher must return one ${required} call.`);
     if (r.kind !== "ask" && r.kind !== "follow-up" && !plan.message.trim())
       throw new Error("Teacher message is empty.");
+    if ((r.kind === "ask" || r.kind === "follow-up") && plan.calls.length !== 1)
+      throw new Error("A passage answer requires exactly one answer_lesson_question call.");
     // Validate ownership for every call before any write.
     const parsed = plan.calls.map((c) => {
       const args = JSON.parse(c.arguments_json);
@@ -1088,6 +1112,11 @@ export class TeacherService {
         (required !== c.name || args.annotation_id !== r.target)
       )
         throw new Error("Teacher tried to answer a request it does not own.");
+      if (
+        c.name === "answer_lesson_question" &&
+        (typeof args.answer_markdown !== "string" || !args.answer_markdown.trim())
+      )
+        throw new Error("Teacher answer is empty.");
       if (
         (c.name === "grade_lesson_quiz" || c.name === GRADE_ANSWERS) &&
         (required !== c.name || args.submission_id !== r.target)
@@ -1211,8 +1240,6 @@ export class TeacherService {
         const a = store.findAnnotation(r.target);
         const turn = r.turn ?? null;
         if (a && store.isTurnPending(a, turn)) {
-          if (typeof args.answer_markdown !== "string" || !args.answer_markdown.trim())
-            throw new Error("Teacher answer is empty.");
           applyTurnAnswer(r.target, turn, args.answer_markdown);
         }
       } else if (name === "grade_lesson_quiz" || name === GRADE_ANSWERS) {

@@ -284,6 +284,84 @@ async function main(): Promise<void> {
       browser,
       root,
       `async page => {
+        await page.locator('[data-cl-followup]').fill('Can you show a short Rust move example in a fenced code block?');
+        const response = page.waitForResponse(r=>r.url().endsWith('/follow-up') && r.request().method()==='POST');
+        await page.locator('.cl-card-panel').getByRole('button',{name:'Ask',exact:true}).click();
+        if((await response).status()!==201)throw new Error('Card follow-up was refused.');
+        return true;
+      }`,
+    );
+    await wait(
+      "passage follow-up",
+      (s) =>
+        s.annotations[0]?.followUps?.[0]?.status === "answered" &&
+        s.teacher.requests.every((r: any) => r.status === "done"),
+    );
+    const passageState = readTeacherState(CLASSROOM)!;
+    const passage = store.findAnnotation(question.id)!;
+    const passageRequests = passageState.requests.filter(
+      (r) => r.kind === "ask" || r.kind === "follow-up",
+    );
+    if (
+      passageRequests.map((r) => r.kind).join(",") !== "ask,follow-up" ||
+      passage.answerMarkdown !== savedAnnotation.answerMarkdown
+    )
+      throw new Error("Passage order or original answer changed.");
+    for (const request of passageRequests) {
+      const raw = request.modelOutput as { annotation_id: string; answer_markdown: string };
+      const saved = JSON.parse(request.plan!.calls[0].arguments_json);
+      const answer =
+        request.kind === "ask" ? passage.answerMarkdown : passage.followUps![0].answerMarkdown;
+      if (
+        Object.keys(raw).sort().join(",") !== "annotation_id,answer_markdown" ||
+        raw.annotation_id !== question.id ||
+        raw.answer_markdown !== answer ||
+        saved.annotation_id !== question.id ||
+        saved.answer_markdown !== answer ||
+        !request.planValidated ||
+        request.applied !== 1
+      )
+        throw new Error("Native typed passage output differs from its durable answer.");
+    }
+    if (
+      passageState.identity.sessionId !== answered.teacher.identity.sessionId ||
+      store.listGrades(CLASSROOM, LESSON).length ||
+      store.listRetrievalChecks(CLASSROOM).length ||
+      store.listLearningRecords(CLASSROOM).length
+    )
+      throw new Error("Passage answers changed teacher identity or wrote evidence.");
+    await playwrightCode(
+      browser,
+      root,
+      `async page=>{
+      await page.reload();
+      await page.waitForFunction(()=>document.querySelectorAll('.cl-card-turn').length===2 && !document.querySelector('.cl-card-status'));
+      ${artifacts ? `await page.screenshot({path:${JSON.stringify(path.join(artifacts, "typed-passage-reload.png"))},fullPage:true});` : ""}
+      return {url:page.url(),snapshot:await page.locator('body').ariaSnapshot()};
+    }`,
+    );
+    if (artifacts)
+      fs.writeFileSync(
+        path.join(artifacts, "typed-passage.json"),
+        JSON.stringify(
+          {
+            identity: passageState.identity,
+            requests: passageRequests,
+            annotation: passage,
+            noGradesOrEvidence: true,
+          },
+          null,
+          2,
+        ),
+      );
+    log(
+      "PASS: native typed Ask and ordered card follow-up survive reload with identical saved Markdown and no grades/evidence",
+    );
+
+    await playwrightCode(
+      browser,
+      root,
+      `async page => {
       await page.waitForSelector('.cl-card-answer');
       await page.locator('input[value="b"]').check();
       await page.locator('form.cl-quiz button[type="submit"]').click();
