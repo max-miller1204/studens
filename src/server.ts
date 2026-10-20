@@ -1,3 +1,4 @@
+import { handleSearch } from "./server/search.ts";
 /**
  * server.ts — the in-process HTTP server behind /classroom.
  *
@@ -79,6 +80,11 @@ async function handleRequest(
   }
 
   if (segments.length === 0) return handleLanding(res, url);
+  if (
+    segments[0] === "search" &&
+    (segments.length === 1 || (segments.length === 2 && segments[1] === "source"))
+  )
+    return handleSearch(res, url);
   // Reason: lessons are plain documents with no <link rel="icon">, so the browser asks
   // for /favicon.ico and logs a 404 in the console on every lesson view.
   if (segments.length === 1 && segments[0] === "favicon.ico") return sendFavicon(res);

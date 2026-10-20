@@ -14,6 +14,7 @@
  */
 
 import { spawnSync } from "node:child_process";
+import { existsSync } from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -27,10 +28,12 @@ if (nodeMajor < 22 || (nodeMajor === 22 && nodeMinor < 19) || !process.features.
 }
 
 function hasRuntimeDependencies() {
+  // Do not prime Node's missing-package metadata cache before npm ci creates it.
+  if (!existsSync(path.join(root, "node_modules/parse5/package.json"))) return false;
   try {
     import.meta.resolve("marked");
-    import.meta.resolve("parse5");
     import.meta.resolve("@earendil-works/pi-coding-agent");
+    import.meta.resolve("parse5");
     return true;
   } catch {
     return false;
