@@ -68,7 +68,7 @@ beforeEach(() => {
   ) {
     return [this.getModel("openai-codex", "gpt-6-luna")!];
   });
-  vi.mocked(readLessonSource).mockResolvedValue("Controlled public source text");
+  vi.mocked(readLessonSource).mockReset().mockResolvedValue("Controlled public source text");
   requests = 0;
   abortedRequests = [];
   raw = [];
