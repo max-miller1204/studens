@@ -163,3 +163,71 @@ export async function handleQuizSubmit(
   if (!completeClosedSubmission(submission)) hooks?.onQuizSubmit(submission);
   sendJson(res, store.publicSubmission(submission), 201);
 }
+
+/** Only an explicit learner action queues a dispute; reads never wake the teacher. */
+export async function handleQuizDispute(
+  req: http.IncomingMessage,
+  res: http.ServerResponse,
+): Promise<void> {
+  const body = (await readJsonBody(req)) as Record<string, unknown>;
+  if (
+    !body ||
+    !isValidSlug(body.classroom) ||
+    !isValidSlug(body.lesson) ||
+    !store.readLesson(body.classroom, body.lesson) ||
+    !isContractId(body.quizId) ||
+    !isContractId(body.questionId) ||
+    typeof body.submissionId !== "string" ||
+    typeof body.id !== "string" ||
+    !/^[a-f0-9-]{36}$/.test(body.id) ||
+    typeof body.gradedAt !== "number" ||
+    !Number.isSafeInteger(body.gradedAt) ||
+    body.gradedAt <= 0 ||
+    typeof body.reason !== "string" ||
+    !body.reason.trim() ||
+    body.reason.length > 8000 ||
+    Object.keys(body).some(
+      (key) =>
+        ![
+          "id",
+          "classroom",
+          "lesson",
+          "quizId",
+          "submissionId",
+          "questionId",
+          "gradedAt",
+          "reason",
+        ].includes(key),
+    )
+  )
+    return sendJson(
+      res,
+      { error: "Select a graded answer and explain why it deserves credit." },
+      400,
+    );
+  if (!hooks?.onGradeDispute)
+    return sendJson(
+      res,
+      {
+        error:
+          "No dedicated teacher owns grade disputes. Open this classroom from your agent first.",
+      },
+      409,
+    );
+  try {
+    hooks.canAccept?.(body.classroom);
+    const id = hooks.onGradeDispute({
+      id: body.id,
+      classroom: body.classroom,
+      lesson: body.lesson,
+      quizId: body.quizId,
+      submissionId: body.submissionId,
+      questionId: body.questionId,
+      gradedAt: body.gradedAt,
+      reason: body.reason.trim(),
+    });
+    sendJson(res, { id }, 201);
+  } catch (error) {
+    sendJson(res, { error: (error as Error).message }, 409);
+  }
+}

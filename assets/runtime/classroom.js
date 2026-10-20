@@ -140,7 +140,10 @@ async function loadState() {
     for (const quiz of state.quizzes) quizzes.applyQuizState(quiz);
     review?.restore();
     for (const reflection of state.reflections) reflections.applyReflection(reflection);
-    if (state.teacher) teacher.renderTeacher(state.teacher);
+    if (state.teacher) {
+      teacher.renderTeacher(state.teacher);
+      quizzes.updateTeacher(state.teacher);
+    }
     teacher.renderReteach(state.reteach ?? []);
     if (!draftsRestored) {
       draftsRestored = true;
@@ -168,12 +171,17 @@ function connectEvents() {
     quizzes.applyQuizState({
       submission: payload.submission,
       grade: payload.grade,
+      history: payload.history,
       attempts: payload.submission.attempt ?? 1,
     });
     review?.refresh();
   });
 
-  source.addEventListener("teacher", (event) => teacher.renderTeacher(JSON.parse(event.data)));
+  source.addEventListener("teacher", (event) => {
+    const state = JSON.parse(event.data);
+    teacher.renderTeacher(state);
+    quizzes.updateTeacher(state);
+  });
   source.addEventListener("open", () => {
     if (config.delivery === "service" && !review?.failed) loadState();
   });

@@ -2053,3 +2053,31 @@ figure:has(> .cl-diagram) figcaption {
 .cl-practice .cl-quiz-status {
   flex: 1 1 12rem;
 }
+
+/* Grade disputes use separate controls while the original answer stays locked. */
+.cl-disputes,
+.cl-grade-history {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--cl-border);
+}
+.cl-disputes summary,
+.cl-grade-history summary {
+  cursor: pointer;
+}
+.cl-disputes textarea {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  margin: 0.5rem 0;
+}
+.cl-disputes p,
+.cl-grade-history {
+  overflow-wrap: anywhere;
+}
+.cl-dispute {
+  margin-block: 0.75rem;
+}
+.cl-dispute-response {
+  white-space: pre-wrap;
+}

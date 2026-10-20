@@ -39,6 +39,7 @@ export const PLAN_SCHEMA = {
               "grade_quiz_answers",
               "record_retrieval_check",
               "publish_review",
+              "resolve_grade_dispute",
             ],
           },
           arguments_json: { type: "string" },
@@ -440,7 +441,15 @@ async function runCodex(
       cwd,
       approvalPolicy: "never",
       sandbox: "read-only",
-      config: { mcp_servers: {}, features: { shell_tool: false } },
+      // Empty maps merge with inherited configuration. Disable each configured server
+      // and plugin discovery so the dedicated teacher has no direct grade/tool escape.
+      config: {
+        mcp_servers: Object.fromEntries(
+          Object.keys(settings.config?.mcp_servers ?? {}).map((name) => [name, { enabled: false }]),
+        ),
+        web_search: "disabled",
+        features: { shell_tool: false, plugins: false },
+      },
     };
     const result = identity.sessionId
       ? await request("thread/resume", { ...config, threadId: identity.sessionId })

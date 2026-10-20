@@ -1,3 +1,12 @@
+import {
+  RESOLVE_DISPUTE,
+  snapshotDispute,
+  validateDisputeTarget,
+  resolveDispute,
+  disputePrompt,
+  publicDisputes,
+} from "./grade-dispute.ts";
+import type { DisputeTarget } from "./grade-dispute.ts";
 import { validateAnswerCriteria } from "./criteria.ts";
 import { dailyReviews, groupSession } from "./store/daily-review.ts";
 import { modelSelection } from "./teacher-models.ts";
@@ -21,7 +30,7 @@ import { createHash } from "node:crypto";
 import { applyTurnAnswer, withHtml } from "./bridge.ts";
 import { classroomDir, lessonDir, safeStaticFile, isStoredReview } from "./paths.ts";
 import { stageLesson } from "./pretest.ts";
-import { completeClosedSubmission } from "./quiz-grading.ts";
+import { applyGrade, completeClosedSubmission } from "./quiz-grading.ts";
 import { validateGrade } from "../assets/runtime/grade.mjs";
 import { answerGradingTool, GRADE_ANSWERS, scoredAnswers } from "./teacher-grading.ts";
 import {
@@ -144,6 +153,7 @@ export class TeacherService {
       onAsk: (a) => this.question(a),
       onFollowUp: (a, f) => this.followUp(a, f),
       onQuizSubmit: (s) => this.submission(s),
+      onGradeDispute: (input) => this.dispute(input),
       onReflect: (r) => this.reflection(r),
       teacherSettings: (classroom) => this.settings(classroom),
       setTeacherModel: (classroom, model, revision) => this.setModel(classroom, model, revision),
@@ -210,6 +220,69 @@ export class TeacherService {
       target: s.id,
       prompt: gradePrompt(s, "service", store.previousGrade(s)),
     });
+  }
+  dispute(input: DisputeTarget): string {
+    const state = this.states.get(input.classroom);
+    if (!state) throw new Error("No classroom teacher. Call open_classroom first.");
+    const id = `dispute:${input.id}`;
+    const existing = state.requests.find(
+      (r) =>
+        r.id === id ||
+        (r.kind === "dispute" &&
+          r.dispute?.lesson === input.lesson &&
+          r.dispute.submissionId === input.submissionId &&
+          r.dispute.questionId === input.questionId &&
+          r.dispute.gradedAt === input.gradedAt),
+    );
+    if (existing) {
+      const d = existing.dispute;
+      if (
+        !d ||
+        d.classroom !== input.classroom ||
+        d.lesson !== input.lesson ||
+        d.quizId !== input.quizId ||
+        d.submissionId !== input.submissionId ||
+        d.questionId !== input.questionId ||
+        d.gradedAt !== input.gradedAt ||
+        d.reason !== input.reason
+      )
+        throw new Error(
+          "A different dispute already uses this request or grade revision. Reload the lesson.",
+        );
+      return existing.id;
+    }
+    const dispute = snapshotDispute(input);
+    this.enqueue({
+      id,
+      classroom: input.classroom,
+      lesson: input.lesson,
+      kind: "dispute",
+      target: input.submissionId,
+      dispute,
+      prompt: "Resolve the saved learner grade dispute.",
+    });
+    return id;
+  }
+  private disputeDefinition() {
+    const grading = answerGradingTool(
+      classroomTools(PI_HOST).find((t) => t.name === "grade_lesson_quiz")!,
+    );
+    const question = (grading.parameters.properties as any).questions.items;
+    return {
+      name: RESOLVE_DISPUTE,
+      description:
+        "Resolve this exact saved dispute. Accepted judgment points use the original rubric; machine points cannot change.",
+      parameters: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          dispute_id: { type: "string" },
+          decision: { type: "string", enum: ["accepted", "declined", "authoring-defect"] },
+          question,
+        },
+        required: ["dispute_id", "decision"],
+      },
+    };
   }
   reflection(r: store.Reflection): void {
     this.enqueue({
@@ -516,6 +589,7 @@ export class TeacherService {
     if (!state) return null;
     return {
       reteach: reteachOffers(classroom, lesson),
+      disputes: publicDisputes(state.requests, lesson),
       identity: { ...state.identity, persistent: true },
       requests: state.requests
         .filter((r) => r.lesson === lesson)
@@ -546,6 +620,8 @@ export class TeacherService {
   }
   private contract(r: TeacherRequest): PlanContract {
     switch (r.kind) {
+      case "dispute":
+        return { operations: [RESOLVE_DISPUTE], required: true, messageRequired: true };
       case "quiz":
         return { operations: [GRADE_ANSWERS], required: true, messageRequired: true };
       case "ask":
@@ -569,6 +645,17 @@ export class TeacherService {
     }
   }
   private prompt(r: TeacherRequest, state: TeacherState): string {
+    if (r.kind === "dispute") {
+      if (
+        !r.dispute ||
+        r.target !== r.dispute.submissionId ||
+        r.classroom !== r.dispute.classroom ||
+        r.lesson !== r.dispute.lesson
+      )
+        throw new Error("The dispute request does not match its target.");
+      validateDisputeTarget(r.dispute, r.id);
+      return disputePrompt(r.dispute, r.id, this.disputeDefinition()) + `\n\n${r.prompt}`;
+    }
     if (r.kind === "review") return r.prompt;
     if (r.kind === "refill")
       return `${r.prompt}\n\nTool definition: ${JSON.stringify(REFILL_TOOL)}`;
@@ -755,6 +842,39 @@ export class TeacherService {
   }
   private async apply(r: TeacherRequest, state: TeacherState): Promise<void> {
     const plan = r.plan!;
+    if (r.kind === "dispute") {
+      if (
+        !r.dispute ||
+        r.target !== r.dispute.submissionId ||
+        r.classroom !== r.dispute.classroom ||
+        r.lesson !== r.dispute.lesson
+      )
+        throw new Error("The dispute request does not match its target.");
+      const receipt = validateDisputeTarget(r.dispute, r.id);
+      const result = resolveDispute(r.dispute, plan);
+      r.planValidated = true;
+      saveTeacherState(r.classroom, state);
+      if (result.questions && !receipt)
+        applyGrade(r.dispute.submission, {
+          score: result.score!,
+          questions: result.questions,
+          feedbackMarkdown: plan.message,
+          disputeId: r.id,
+          revisesGradedAt: r.dispute.gradedAt,
+        });
+      r.disputeDecision = result.resolution.decision;
+      r.applied = 1;
+      if (!state.messages.some((m) => m.id === r.id && m.role === "teacher"))
+        state.messages.push({
+          id: r.id,
+          lesson: r.lesson,
+          role: "teacher",
+          text: plan.message,
+          at: this.nextMessageAt(r.classroom, r.lesson, state),
+        });
+      saveTeacherState(r.classroom, state);
+      return;
+    }
     if (r.kind === "refill") {
       const request = this.refillRequest(r);
       if (

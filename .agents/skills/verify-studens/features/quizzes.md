@@ -10,6 +10,7 @@ The learner submits typed answers and reads grades on the lesson page.
 - Preserve drafts and optional assistance reports.
 - Lock a graded quiz. Display partial credit and saved criterion allocations.
 - Keep the newest attempt and grade revision across reload and two tabs.
+- Dispute a graded answer with a saved reason, teacher response and immutable grade history.
 - Release gated teaching after a pretest grade.
 
 ## How to get to it (user POV)
@@ -71,6 +72,35 @@ practice HTTP writes, saved drafts, submissions, grades, review items, or teache
 calls. A neighboring graded check still submits and scores normally, preserving its
 private predeclared criterion and code-owned allocation. Public practice
 feedback never reads the private graded rubric, and its static route stays blocked.
+
+## Dispute a grade
+
+On a graded answer, open `I think this deserves credit`. Explain why the original
+answer meets the criteria, then select `Send grade dispute` or use Ctrl/Command +
+Enter. The answer remains locked. Read the linked response beside it and in the
+teacher panel. `Grade history` shows original and revised point allocations and
+feedback. Machine points stay code-owned: the teacher can explain the result or flag
+an authoring defect. A judgment revision uses the original submission and rubric.
+Historical submissions without a saved rubric digest show a specific refusal.
+
+`node --input-type=module -e 'import {verifyDisputesBrowser} from "./scripts/e2e-disputes-browser.ts"; await verifyDisputesBrowser("/tmp/studens-disputes")'`
+drives the same learner path as the shared real-host probe. It checks a mixed grade
+revising 2/4 to 4/4 judgment points while preserving the closed 0/1 allocation,
+linked reason/response/history, keyboard submission, blank input, desktop/375px,
+light/dark, reload and locks. A failed dispute stays failed on reload; `Retry request`
+resolves it once. A second tab sees the same result. Stale, unknown, neighboring and
+blank targets are rejected, and private snapshots stay off HTTP. Inspect
+`seed.json`, `judgment.json`, `machine.json`, `result.json`, `failed-request.json`
+and `retry-and-probes.json`. Original misgrading and teacher responses are fixtures.
+
+The `pi`, `claude` and `codex` targets append `driveDisputeProbe` after their existing
+criterion checks. Their initial misallocation is deliberately seeded; the learner's
+disputes go through the actual owning teacher and fixed model. Inspect `disputes/`
+and the retained `.teacher.json`: read the actual reasoning and criterion allocations,
+not only the harness verdict. These checks do not measure first-pass grading quality
+or human learning. Contract tests cover fixed definitions, machine-override rejection,
+before/after-write recovery, repeated retry, original timestamps, early caps and
+retirement without another exposure or learning record.
 
 ## Gotchas
 
