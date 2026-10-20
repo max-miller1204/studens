@@ -65,6 +65,11 @@ note draft editable, and restores its saved answer; a negative answer mutation m
 still be detected. This fixture uses no model inference. Inspect `result.json` and
 matched desktop/mobile light/dark captures.
 
+The authoring submit/reload snapshot keeps checked, text, and select answers from
+the question while excluding verdict, question-thread, expected-answer, and mark
+UI. The fixture probes each excluded owner and verifies that mutations of each
+real answer-control category still change the snapshot.
+
 For an actual persistent Pi teacher, close initiating Pi after opening a scratch
 lesson containing a self-explanation. Fill `form.cl-reflect textarea`, select
 `Save`, and require the durable `reflect` request to finish in the saved Pi session.

@@ -15,6 +15,7 @@ import { highlightText, selectLocateAnswer, checkPractice } from "./browser-acti
 import { checkFaded } from "./faded-browser-actions.ts";
 import { checkSteppers } from "./stepper-browser-actions.ts";
 import { playwright, playwrightCode } from "./playwright.ts";
+import { quizAnswerSnapshot } from "./quiz-answer-snapshot.ts";
 
 function inventory(root: string): Record<string, string> {
   const files: Record<string, string> = {};
@@ -310,7 +311,7 @@ export async function verifyLearnerMarksBrowser(artifacts: string | null): Promi
       const excluded=await page.evaluate(async()=>{const {buildTextIndex}=await import('/static/lesson-dom.mjs');return buildTextIndex(document.body).segments.every(s=>!s.node.parentElement.closest('.cl-expected,.cl-learner-marks'));});
       if(!excluded)throw Error('Expected answer/note UI entered canonical index');
       // Negative probe: the ordinary saved-answer snapshot must still notice a real answer mutation.
-      const snapshot=()=>page.locator('form.cl-quiz').evaluate(f=>[...f.querySelectorAll('input:checked')].filter(el=>el.closest('.cl-q')&&!el.closest('.cl-q-verdict,.cl-card-panel,.cl-learner-marks')).map(el=>el.value));
+      const snapshot=()=>page.locator('form.cl-quiz').evaluate(${quizAnswerSnapshot.toString()});
       const saved=await snapshot();await page.locator('input[value="new"]').evaluate(el=>el.checked=false);
       if(JSON.stringify(await snapshot())===JSON.stringify(saved))throw Error('Snapshot concealed saved-answer mutation');
       await page.reload();await page.locator('form.cl-quiz[data-state="graded"]').waitFor();
@@ -323,6 +324,26 @@ export async function verifyLearnerMarksBrowser(artifacts: string | null): Promi
     assert.ok(!JSON.stringify(submission).includes("margin"));
     assert.equal(store.listGrades("rust", "001-ownership")[0].score, 100);
     assert.equal(turns.length, 2);
+    // Probe every answer-control category and each excluded runtime owner in a real DOM.
+    result.answerSnapshot = await code(`
+      return page.evaluate(() => {
+        const form=document.createElement('form');
+        const controls='<input type="checkbox" checked value="checked"><input type="text" value="text"><input value="default"><textarea>textarea</textarea><select><option selected value="select">Select</option></select>';
+        form.innerHTML='<div class="cl-q">'+controls+['cl-q-verdict','cl-card-panel','cl-expected','cl-learner-marks'].map(c=>'<div class="'+c+'">'+controls+'</div>').join('')+'</div>'+controls;
+        const snapshot=${quizAnswerSnapshot.toString()};
+        const before=snapshot(form);
+        const expected={checked:['checked'],text:['text','default','textarea'],selects:['select']};
+        if(JSON.stringify(before)!==JSON.stringify(expected))throw Error('Answer snapshot did not retain exactly the authored controls: '+JSON.stringify(before));
+        const detected=[];
+        for(const selector of ['.cl-q > input[type=checkbox]','.cl-q > input[type=text]','.cl-q > input:not([type])','.cl-q > textarea','.cl-q > select']) {
+          const el=form.querySelector(selector),value=el.value,checked=el.checked;
+          if(el.type==='checkbox')el.checked=false;else el.value='changed';
+          if(JSON.stringify(snapshot(form))===JSON.stringify(before))throw Error('Answer snapshot concealed mutation of '+selector);
+          detected.push(selector);el.value=value;if(el.type==='checkbox')el.checked=checked;
+        }
+        return {before,excluded:['cl-q-verdict','cl-card-panel','cl-expected','cl-learner-marks'],negativeMutationsDetected:detected};
+      });
+    `);
     // Exercise the exact maintained authoring browser templates without rerolling a model lesson.
     const authoring = fs.readFileSync(new URL("./e2e-authoring.ts", import.meta.url), "utf8");
     const template = (name: string) => {
@@ -330,6 +351,7 @@ export async function verifyLearnerMarksBrowser(artifacts: string | null): Promi
       if (!declaration) throw new Error(`Missing authoring browser template ${name}.`);
       return runInNewContext(declaration[1], {
         selectLocateAnswer,
+        quizAnswerSnapshot,
         checkPractice,
         checkFaded,
         checkSteppers,
@@ -434,7 +456,9 @@ export async function verifyLearnerMarksBrowser(artifacts: string | null): Promi
     result.zeroTeacherUntilAdjacentAsk = true;
     result.marks = readLearnerMarks("rust", "001-ownership");
     result.teacher = readTeacherState("rust");
-    result.sourceFreeze = "67092d07d143050caa6648de5a8280164ce05f96 plus this working diff";
+    result.harnessSourceSHA256 = createHash("sha256")
+      .update(fs.readFileSync(import.meta.filename))
+      .digest("hex");
     if (artifacts)
       fs.writeFileSync(path.join(artifacts, "result.json"), JSON.stringify(result, null, 2));
     console.log(
