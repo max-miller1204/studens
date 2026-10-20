@@ -1,0 +1,81 @@
+{
+  "originalBase": "5cb7dce13aef01364d3f5b5ffe5a8f4d93075927",
+  "reviewBase": "f2c723712e0bb8079c425b198843aceff9139c53",
+  "afterCaptureSource": "2bb31a5bb0c4f836b986a52010f9000546a1e915",
+  "afterSourceLimit": "Maintained inert parse5 extraction adds standard HTML tree/entity semantics. Fresh parser captures still match all six committed landing/result images byte-for-byte. The optional-tag image additionally shows named-entity text. Final full gate uses a frozen clean head.",
+  "runtime": "Node 24.22.0",
+  "declaredMinimum": "Node >=22.19.0 (exact minimum not tested)",
+  "viewports": {
+    "desktop": [1280, 900],
+    "mobile": [390, 844]
+  },
+  "themes": ["light", "dark"],
+  "data": "Mathematics then Rust; one visible lesson each; same mission, emoji and zero due summary. After entry links into all four public domains in both classrooms.",
+  "control": "Repository playwright-cli headless harness; real loopback HTTP; fixture answer/grade boundaries only.",
+  "visualInspection": "All matched before/after captures plus results, error and edited-source screenshots inspected. No overflow or clipping in the search UI.",
+  "rawEvidence": "/tmp/studens-search30",
+  "files": {
+    "after-desktop-dark.png": "abb10ba06697975e31e4201fcf45227cffd2353ccda1cc01a0ce3344ccb2220a",
+    "after-desktop-light.png": "d1a0390cfc1d928f215adab3f33b4311466ea7a5867aac88daa79109ba4435a9",
+    "after-mobile-dark.png": "ad9bd2eb930b448eb96818a9151f6de74e16203e31373e36acbc28a8c851229a",
+    "after-mobile-light.png": "a3d0a3b607c13fb4b18966d06da6771d601c235ac96f2183006c821e41535353",
+    "before-desktop-dark.png": "bbe6a65f0e4e312c264660e55e089b020a434ac575ea8bce64154d0917e355fd",
+    "before-desktop-light.png": "f8208eee7041437051c68eee68436901ed7a40bb1bc1b77c5d23891406db4fe3",
+    "before-mobile-dark.png": "dd9f1443109c3bd49b9bd4c6fd6eedebfb36eb094e183c4d87c1968d47d9ce8c",
+    "before-mobile-light.png": "17744bd8ddb817bb0bc0e90239858b2514cfbb6910937cde1f21f2e68225e792",
+    "edited-passage.png": "85564d9ab4d7098bd807a7d00e16c33b918f7a4c051e16d2178ead0ca4496577",
+    "error.png": "f39343e0827ed4dc6c04babfc8242d7e20420ae50440c83413b4146a969eedba",
+    "no-results.png": "8f61b61c5161803c57e29949c283cdcbd225c305cce98281f0f97274545973a3",
+    "original-base/before-desktop-dark.png": "bbe6a65f0e4e312c264660e55e089b020a434ac575ea8bce64154d0917e355fd",
+    "original-base/before-desktop-light.png": "f8208eee7041437051c68eee68436901ed7a40bb1bc1b77c5d23891406db4fe3",
+    "original-base/before-mobile-dark.png": "dd9f1443109c3bd49b9bd4c6fd6eedebfb36eb094e183c4d87c1968d47d9ce8c",
+    "original-base/before-mobile-light.png": "17744bd8ddb817bb0bc0e90239858b2514cfbb6910937cde1f21f2e68225e792",
+    "results-desktop-light.png": "0ff6d5f1a7670d7c1a4b77a8f882954cfba0290089f12777f3585d78cb715d8f",
+    "results-mobile-dark.png": "db0cb3c8c1dcf22573c4d0f1f49347edce198c84a5cad903ef5c48154a0eca03",
+    "optional-tags.png": "c0b55a05f6f3b28966d289aa44e2b861189dc9f07538f6eb9307052acd6538d5",
+    "legacy-stale-before.png": "15981d94e1d50c099dc63708c3c80743dd57e38f898366484a181073664b7ad2",
+    "legacy-stale-after.png": "9be0c6640191616f2d4e5c168c29c81ca6a822bcebb6bc27a75a43d0302afcdc"
+  },
+  "focusedBrowserReport": {
+    "sourceParent": "f91664e75d55b5067699596736abdfb703e67f35",
+    "changes": "One-line notice container repair for valid legacy HTML without main, plus portable stale-link regression.",
+    "rawRun": "/tmp/studens-search30/browser-legacy-notice"
+  },
+  "optionalTags": {
+    "sourceParent": "b5cc9222a9f0007f2b8868526bfd5e8fc73ae78d",
+    "parserSHA256": "85829ae3bbcab347dae340818ac92ac85f98c43fcf39fb7d2a3ce5bec7840de4",
+    "rawHTTP": "/tmp/studens-orchestration-20261019/issue30-parent-review/search-after-parse5",
+    "rawBrowser": "/tmp/studens-search30/browser-parser",
+    "inspection": "Eight exact paragraph/list/table/entity targets open with visible matching text. Legacy authored layout preserved; no authored CSS added."
+  },
+  "parser": {
+    "package": "parse5",
+    "version": "8.0.1",
+    "entitiesVersion": "8.1.0",
+    "sourceParent": "b5cc9222a9f0007f2b8868526bfd5e8fc73ae78d",
+    "reason": "Visible caf\u00e9/\u03b1 queries missed encoded HTML5 named entities under the custom extractor.",
+    "installedGraph": "/tmp/studens-search30/parser-installed-graph.json",
+    "installedFiles": "/tmp/studens-search30/parser-installed-files.json",
+    "rawBrowser": "/tmp/studens-search30/browser-parser"
+  },
+  "legacyStale": {
+    "beforeSource": "f91664e75d55b5067699596736abdfb703e67f35",
+    "afterChange": "One-line lesson-content container selection for the unavailable-passage notice.",
+    "viewport": [1280, 900],
+    "theme": "light",
+    "preferredDark": false,
+    "sameAuthoredSource": "Legacy document with no main and an edited public paragraph, opened at its old canonical passage hash.",
+    "rawBefore": "/tmp/studens-search30/legacy-stale-before-controlled",
+    "rawAfter": "/tmp/studens-search30/legacy-stale-after",
+    "inspection": "Before has no notice/Search link; after shows the honest notice and Search navigation while keeping the edited lesson readable.",
+    "runtimeSHA256": "971ac8cc99e75cae7d54449f2ab7fac13211977aff383b4bef3ac20a558c8814"
+  },
+  "previousReviewBase": "67092d07d143050caa6648de5a8280164ce05f96",
+  "acceptedBaseCapture": {
+    "source": "f2c723712e0bb8079c425b198843aceff9139c53",
+    "version": "0.11.9 inherited by ordinary merge",
+    "rawRun": "/tmp/studens-search30/before-f2",
+    "comparison": "/tmp/studens-search30/accepted-f2-media-comparison.json",
+    "note": "All four fresh exact-f2 captures match the preserved670/original5cb before images byte-for-byte. Those original captures and refs remain retained."
+  }
+}
