@@ -10,6 +10,7 @@ The learner takes saved public classroom material into Anki, print, or Markdown.
 - Keep inline and referenced static SVG labels, nested positioned text spans and exact Unicode; omit hidden and active SVG content.
 - Exclude private keys/plans/variants/drafts/teacher/recovery files and unreleased teaching.
 - Include only already-unlocked expected answers after explicit, off-by-default selection.
+- Resolve answer labels from released teaching while independent diagnostic gates and nested inert templates stay private.
 - Keep checked canonical source links and reject private routes across aliases.
 - Export without teacher calls, grades, learning evidence or scheduling writes.
 
@@ -59,6 +60,28 @@ The rich fixture includes inline and referenced SVG labels with nested positione
 inspect `imported-svg.png` for the focused card view. Checks require nonzero glyph
 geometry and loaded SVG media, exact imported label/media bytes, and absent hidden,
 script, event, foreign-object and external-reference canaries.
+
+The default browser suite also runs the released-template answer regression. For a focused check:
+
+```sh
+node --input-type=module -e 'import("./scripts/e2e-export-template-browser.ts").then(m=>m.verifyExportTemplateBrowser("/tmp/studens-export-template"))'
+"$ANKI_PYTHON" scripts/check-export-template-anki.py /tmp/studens-export-template
+node --input-type=module -e 'import("./scripts/e2e-export-template-browser.ts").then(m=>m.verifyTemplateImportedCardBrowser("/tmp/studens-export-template/official-import"))'
+```
+
+This controlled fixture submits a real diagnostic, releases its original template,
+then grades choice/multi/order/match/locate answers through lesson controls. Inspect
+`learner.json`, `graded-{off,on}.{md,apkg,pdf}` and `graded-on-print.png`.
+Two controlled teacher turns create an exact corrective task/reply/check, unlocking
+one numeric miss while a neighboring miss stays locked. Inspect `corrected-*`,
+`*-read-only.json`, `official-import/report.json` and `answer-card.png`. The answer
+cards must use original public labels, preserve GUIDs on reimport and contain no
+private keys, internal option identities, unreleased neighbor or nested inert content.
+Read inventories cover sources, attempts/grades, teacher state, reviews/schedules and
+an unrelated classroom, allowing only deliberate fixture-owner changes. Export reads
+must make zero teacher calls. These fixture turns prove persistence and eligibility,
+not model behavior or learning. Contract tests additionally reject nested pretest
+gates and missing/duplicate identities or ambiguous labels with explicit-retry errors.
 
 HTTP contract tests additionally cover checked tailnet canonical sources in all
 three formats, local sources when disabled, alias media/private links, untrusted
