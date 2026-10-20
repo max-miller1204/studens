@@ -3,6 +3,7 @@ import * as fs from "node:fs";
 import type * as http from "node:http";
 import * as path from "node:path";
 import { injectLessonRuntime } from "../lesson-html.ts";
+import { lessonPrerequisites } from "../store/lesson-sources.ts";
 import {
   classroomPage,
   settingsPage,
@@ -230,6 +231,7 @@ export function handleClassroomRoute(
         .map((state) => state.quizId),
     ),
   );
+  const prerequisites = lessonPrerequisites(name, second);
   sendHtml(
     res,
     injectLessonRuntime(
@@ -244,6 +246,8 @@ export function handleClassroomRoute(
         delivery: hooks?.delivery ?? "push",
         pendingPretests: staged.pendingPretests,
         reviewScreen: isStoredReview(second),
+        prerequisites: prerequisites.links,
+        prerequisiteError: prerequisites.error,
       },
     ),
   );

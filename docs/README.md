@@ -21,6 +21,7 @@ Start with [installation and your first lesson](../README.md).
 - File formats: [mission](MISSION-FORMAT.md), [resources](RESOURCES-FORMAT.md),
   [glossary](GLOSSARY-FORMAT.md), [notes](NOTES-FORMAT.md),
   [learning records](LEARNING-RECORD-FORMAT.md).
+- [Source links](SOURCE-LINKS.md): explicit lesson prerequisites and glossary teaching origins.
 - [Evidence](EVIDENCE.md): sources and limits of the teaching practices.
 - [Evaluation](EVALUATION.md): software checks and human retention studies.
 - [Attribution](ATTRIBUTION.md) and [upstream license](LICENSE.upstream).

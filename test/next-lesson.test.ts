@@ -69,7 +69,12 @@ it.each(["pi", "claude", "codex"] as const)(
       service.nextLesson(request);
       await service.idle();
       // Full source contracts remain available, including their examples and limits.
-      for (const name of ["TEACHING.md", "TEACHING-PLAN.md", "CODE-EXERCISES.md"])
+      for (const name of [
+        "TEACHING.md",
+        "TEACHING-PLAN.md",
+        "CODE-EXERCISES.md",
+        "SOURCE-LINKS.md",
+      ])
         expect(prompt).toContain(fs.readFileSync(path.join(docsDir(), name), "utf8"));
       for (const name of ["quiz.html", "lesson.html", "faded.html", "stepper.html"])
         expect(prompt).toContain(fs.readFileSync(path.join(templatesDir(), name), "utf8"));
@@ -613,4 +618,30 @@ it("refuses a corrupt saved page-check receipt before publication writes", async
   await expect(completeLessonRequest(saved)).rejects.toThrow("receipt is invalid JSON");
   expect(fs.existsSync(path.join(fixture.root, "rust", request.lesson))).toBe(false);
   expect(lessonRequests("rust")[0].document).toEqual(document);
+});
+
+it("keeps explicit teaching provenance through typed output and refuses unsafe origins before saved publication", () => {
+  const original = nextLessonDocument(fixture.root);
+  original.lesson_html = original.lesson_html.replace(
+    '<section id="teaching-owner"',
+    '<section data-cl-teaches="Ownership" id="teaching-owner"',
+  );
+  const plan = lessonModelPlan(lessonOutput(original));
+  const call = plan.calls[0];
+  expect(call.name).toBe("publish_lesson");
+  const document = JSON.parse(call.arguments_json);
+  validateLessonDocument(document);
+  const request = startLessonRequest("rust", randomUUID(), "Teaching origin", "codex", "service");
+  expect(() =>
+    saveLessonDocument(request, {
+      ...document,
+      lesson_html: document.lesson_html.replace('id="teaching-owner"', 'id="../quiz/key.json"'),
+    }),
+  ).toThrow("safe, stable section id");
+  expect(lessonRequests("rust").find((r) => r.id === request.id)?.document).toBeUndefined();
+  expect(fs.existsSync(path.join(fixture.root, "rust", request.lesson))).toBe(false);
+  saveLessonDocument(request, document);
+  expect(lessonRequests("rust").find((r) => r.id === request.id)?.document?.lesson_html).toContain(
+    'data-cl-teaches="Ownership"',
+  );
 });

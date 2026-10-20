@@ -47,6 +47,8 @@ function init() {
   document.body.classList.add("cl-lesson-page");
 
   buildHeader();
+  buildLessonLinks();
+  window.addEventListener("hashchange", alignTeachingSource);
   initTeacherActivity(config.classroom);
   // After buildHeader: the toggle it wires up is the button the header just created.
   initTheme();
@@ -75,7 +77,8 @@ function init() {
     .then(() =>
       glossary.initGlossary().catch((err) => console.error("[classroom] glossary failed", err)),
     )
-    .then(highlights.restoreAskDraft);
+    .then(highlights.restoreAskDraft)
+    .then(alignTeachingSource);
   connectEvents();
   // A reload can come before a draft's timer fires. Send what is waiting first.
   window.addEventListener("pagehide", drafts.sendWaitingDrafts);
@@ -121,6 +124,84 @@ function buildHeader() {
  * Lessons are model-authored, so we cannot rely on a particular wrapper existing.
  * Prefer an explicit opt-in, then the usual semantic containers, then <body>.
  */
+/** Put an explicitly declared teaching destination below the actual sticky header. */
+function alignTeachingSource() {
+  let id;
+  try {
+    id = decodeURIComponent(location.hash.slice(1));
+  } catch {
+    return;
+  }
+  document.querySelector("[data-cl-source-notice]")?.remove();
+  if (!/^[A-Za-z0-9_.-]{1,128}$/.test(id) || /^\.+$/.test(id) || id.startsWith("cl-")) return;
+  const target = document.getElementById(id);
+  if (!target) {
+    const notice = document.createElement("p");
+    notice.dataset.clSourceNotice = "";
+    notice.className = "cl-search-notice cl-source-notice";
+    notice.setAttribute("role", "status");
+    notice.textContent = "This section is no longer available. The lesson may have been edited. ";
+    const retry = document.createElement("a");
+    retry.href = location.pathname + location.search + location.hash;
+    retry.textContent = "Retry loading source section";
+    retry.addEventListener("click", (event) => {
+      event.preventDefault();
+      location.reload();
+    });
+    const start = document.createElement("a");
+    start.href = location.pathname;
+    start.textContent = "Read lesson from start";
+    notice.append(retry, " · ", start);
+    if (contentRoot === document.body) document.querySelector(".cl-header")?.after(notice);
+    else contentRoot.prepend(notice);
+    notice.tabIndex = -1;
+    notice.focus();
+    return;
+  }
+  if (!target.matches("section, article")) return;
+  const header = document.querySelector(".cl-header");
+  target.style.scrollMarginTop = `${(header?.getBoundingClientRect().height ?? 0) + 16}px`;
+  target.scrollIntoView({ block: "start" });
+  target.tabIndex = -1;
+  target.focus({ preventScroll: true });
+}
+
+function buildLessonLinks() {
+  if (!config.prerequisites?.length && !config.prerequisiteError) return;
+  const nav = document.createElement("nav");
+  nav.className = "cl-lesson-links";
+  nav.setAttribute("aria-label", "Lesson prerequisites");
+  if (config.prerequisiteError) {
+    const error = document.createElement("p");
+    error.setAttribute("role", "alert");
+    error.textContent = config.prerequisiteError;
+    const retry = document.createElement("a");
+    retry.href = location.pathname;
+    retry.textContent = "Retry loading lesson links";
+    nav.append(error, retry);
+  } else {
+    const label = document.createElement("p");
+    label.textContent = "Builds on";
+    const list = document.createElement("ul");
+    for (const source of config.prerequisites) {
+      const item = document.createElement("li");
+      const link = document.createElement("a");
+      link.href = source.url;
+      link.textContent = source.title;
+      item.appendChild(link);
+      list.appendChild(item);
+    }
+    nav.append(label, list);
+    const note = document.createElement("p");
+    note.className = "cl-progress-note";
+    note.textContent = "Prerequisites recorded in your course map.";
+    nav.appendChild(note);
+  }
+  const header = document.querySelector(".cl-header");
+  if (header) header.after(nav);
+  else document.body.prepend(nav);
+}
+
 function resolveContentRoot() {
   return (
     document.querySelector("[data-cl-content]") ||

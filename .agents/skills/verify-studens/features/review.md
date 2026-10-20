@@ -184,14 +184,9 @@ the check write time `at`; queued teacher latency must not manufacture delayed e
 The subsequent real learner reply must still create its original linked evidence
 and learning record while preserving the grade.
 
-A failed corrective reply is captured before reload and one explicit `Retry request`.
-The retry uses the product's saved error feedback; the same teacher must then reply.
-Inspect `corrective-reply-retries.json` and `<host>-review-correction.png.reply-failed.png`
-when present. A second failure stops the drive; no grade or evidence validator is relaxed.
+Unexpected native corrective-reply or background-refill failures stop the ordinary host drive on the original request. Preserve the failed screenshot/request and `failed-review-refills.json`; do not rerun generation to turn that gate green. Product Retry controls remain available. Any parent-approved causal retry is separate evidence and does not replace the original verdict.
 
-If generated background output fails validation, the host drive retains
-`failed-review-refills.json` and `review-refills-failed.png`, then presses each
-failed request's `Retry request` once. A second failure stops the check.
+Controlled browser recovery remains in the default `npm run verify`: `e2e-review-cards.ts` injects a correction error, reloads without inference, and explicitly retries; `e2e-review-controls.ts` does the same for a failed question report while checking the saved model snapshot; `e2e-review-browser.ts` injects a background-provider failure and explicitly retries exactly once without changing the grade or unlocking the quiz. Inspect `browser/review-cards/{pi,service}`, `browser/review-controls/{pi,service}`, and `browser/review/{pi,service}` including failed/retried captures and saved result state. These teachers are fixtures, not native authoring successes.
 
 For the refill protocol, run `npm run verify -- refill claude`, then
 `npm run verify -- refill codex`, with separate artifact directories. Each target

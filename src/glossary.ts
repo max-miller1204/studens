@@ -10,7 +10,13 @@
 import { findTerms } from "../assets/runtime/glossary.mjs";
 import { renderMarkdown } from "./markdown.ts";
 
+export type TeachingOrigin =
+  | { status: "available"; title: string; url: string }
+  | { status: "unavailable" | "error"; message: string };
+
 export interface GlossaryTerm {
+  /** Read-only public projection from explicit saved teaching declarations. */
+  origin?: TeachingOrigin;
   /** The term as written, for example `RPE (Rate of Perceived Exertion)`. */
   term: string;
   /** Every form the page looks for: the term, and each side of a parenthesis. */

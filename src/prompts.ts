@@ -127,6 +127,14 @@ export function authoringSteps(
     ...middle,
     ...(kind === "lesson"
       ? [
+          service
+            ? "Teaching origin contract:\n" +
+              fs.readFileSync(path.join(docsDir(), "SOURCE-LINKS.md"), "utf8")
+            : `Read ${path.join(docsDir(), "SOURCE-LINKS.md")} for explicit teaching-origin declarations. Mark only a section that actually teaches the canonical term, never a repeated mention or an inferred origin. Legacy unknown origins stay unlinked.`,
+        ]
+      : []),
+    ...(kind === "lesson"
+      ? [
           "For a suitable multi-step procedure, use the reusable .cl-faded widget below, outside every form and inside the pretest gate. It hands over one more step on each new case. Its public solutions and keys must never answer a graded question; use different cases/values. Do not map this local practice into the private assessment plan/key. Exact term/numeric checks and honest open comparison create no saved work or learning evidence. Other valid local lesson interactions remain supported.",
           fs.readFileSync(path.join(templatesDir(), "faded.html"), "utf8"),
           "For causal processes, state machines, pipelines or algorithms, use the reusable .cl-stepper contract below when step inspection helps. Keep it inside the pretest gate and outside forms. Label authored traces honestly; only prefix-sum computes state from learner input. Public teaching uses different cases/values from graded checks and private variants. This local widget creates no learning evidence. Copy only the suitable example and adapt its causal states; do not force unrelated domains into a lesson.",
