@@ -221,7 +221,7 @@ ${lessons.map((lesson, i) => lessonRow(lesson, i, data.progress.dueByLesson[less
   ${classroom.mission ? `<p class="cl-lede">${escapeHtml(missionWhy(classroom.mission) ?? "")}</p>` : ""}
 </div>
 ${progressSection(data)}
-<p><a href="/c/${encodeURIComponent(classroom.name)}/course-map">Course map</a> · <a href="/c/${encodeURIComponent(classroom.name)}/reviews">Review history</a> · <a href="/c/${encodeURIComponent(classroom.name)}/settings">Settings</a></p>
+<p><a href="/c/${encodeURIComponent(classroom.name)}/course-map">Course map</a> · <a href="/c/${encodeURIComponent(classroom.name)}/reviews">Review history</a> · <a href="/c/${encodeURIComponent(classroom.name)}/settings">Settings</a> · <a href="#cl-export">Export</a></p>
 <section class="cl-section">
   <h2 class="cl-section-title">Lessons</h2>
   <div id="cl-next-lesson" class="cl-next-lesson" data-cl-next-lesson="${escapeHtml(classroom.name)}">
@@ -232,7 +232,21 @@ ${progressSection(data)}
   </div>
   ${lessonList}
 </section>
-${sidePanel(data)}`;
+${sidePanel(data)}
+<section id="cl-export" class="cl-section" aria-label="Export classroom">
+<h2 class="cl-section-title">Export classroom</h2>
+<p>Take saved public documents, learning records, notes, released lessons and question threads with you. Private teaching files and unreleased content stay private. Interactive controls are omitted.</p>
+<form method="get" action="/api/export" target="_blank" class="cl-export-form">
+<input type="hidden" name="classroom" value="${escapeHtml(classroom.name)}">
+<label><input type="checkbox" name="answers" value="1"> Include answers already unlocked in Studens</label>
+<p class="cl-progress-note">Off by default. Includes only expected answers available under the original grading and corrective rules.</p>
+<div class="cl-export-actions">
+<button class="cl-button" name="format" value="anki">Download Anki deck</button>
+<button class="cl-button" name="format" value="markdown">Download Markdown</button>
+<button class="cl-button" name="format" value="print">Open printable classroom</button>
+</div>
+</form>
+</section>`;
 
   return shell({
     title: `${classroom.title} — Classrooms`,
