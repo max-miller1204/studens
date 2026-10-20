@@ -1,3 +1,4 @@
+import { searchPassages } from "../search-passages.ts";
 import * as fs from "node:fs";
 import type * as http from "node:http";
 import * as path from "node:path";
@@ -231,15 +232,19 @@ export function handleClassroomRoute(
   );
   sendHtml(
     res,
-    injectLessonRuntime(staged.html, {
-      classroom: name,
-      lesson: second,
-      classroomTitle: classroom.title,
-      lessonTitle: lesson.title,
-      baseUrl: baseUrl ?? "",
-      delivery: hooks?.delivery ?? "push",
-      pendingPretests: staged.pendingPretests,
-      reviewScreen: isStoredReview(second),
-    }),
+    injectLessonRuntime(
+      searchPassages(staged.html).html +
+        '<script type="module" src="/static/search-source.mjs"></script>',
+      {
+        classroom: name,
+        lesson: second,
+        classroomTitle: classroom.title,
+        lessonTitle: lesson.title,
+        baseUrl: baseUrl ?? "",
+        delivery: hooks?.delivery ?? "push",
+        pendingPretests: staged.pendingPretests,
+        reviewScreen: isStoredReview(second),
+      },
+    ),
   );
 }

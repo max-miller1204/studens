@@ -140,7 +140,8 @@ async function loadState() {
       // An orphaned annotation (the lesson text changed under it) still gets a card,
       // parked at the end of the lesson rather than silently discarded.
       cards.renderCard(annotation, mark);
-      if (!mark) cards.minimiseCard(annotation.id);
+      if (!mark && location.hash !== `#cl-question-${annotation.id}`)
+        cards.minimiseCard(annotation.id);
     }
 
     for (const quiz of state.quizzes) quizzes.applyQuizState(quiz);
@@ -155,6 +156,8 @@ async function loadState() {
       draftsRestored = true;
       restoreDrafts(state.drafts);
     }
+    document.body.dataset.clStateLoaded = "true";
+    window.dispatchEvent(new Event("cl:state-loaded"));
   } catch (err) {
     review?.loadFailed(err);
     console.warn("[classroom] could not load lesson state", err);

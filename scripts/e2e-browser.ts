@@ -1,4 +1,5 @@
 import { verifyMemoryMapBrowser } from "./e2e-memory-map-browser.ts";
+import { verifySearchBrowser } from "./e2e-search-browser.ts";
 import { verifyStepperPublication } from "./e2e-stepper-publication.ts";
 import { verifyDisputesBrowser } from "./e2e-disputes-browser.ts";
 import { verifyExpectedAnswers } from "./e2e-expected-answers.ts";
@@ -386,6 +387,7 @@ try {
   fixture.cleanup();
 }
 
+await verifySearchBrowser(artifacts ? path.join(artifacts, "search") : null);
 await verifyCourseMapBrowser(artifacts ? path.join(artifacts, "course-map") : null);
 
 await verifyPiPanelBrowser(artifacts ? path.join(artifacts, "pi-panel") : null);
