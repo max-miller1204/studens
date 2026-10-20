@@ -26,6 +26,9 @@
     "extensions": [
       "./index.ts"
     ],
+    "skills": [
+      "./skills"
+    ],
     "image": "https://raw.githubusercontent.com/max-miller1204/studens/main/screenshots/answer.png"
   },
   "scripts": {

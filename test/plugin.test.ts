@@ -16,6 +16,19 @@ const readJson = (relative: string) =>
 
 const pkg = readJson("package.json");
 
+describe("Pi package", () => {
+  it("declares the extension and packaged teaching skills for native discovery", () => {
+    expect(pkg["pi"].extensions).toEqual(["./index.ts"]);
+    expect(pkg["pi"].skills).toEqual(["./skills"]);
+    for (const entry of pkg["pi"].extensions)
+      expect(fs.statSync(path.join(packageRoot(), entry)).isFile()).toBe(true);
+    for (const skill of ["teach", "classroom"])
+      expect(
+        fs.statSync(path.join(packageRoot(), pkg["pi"].skills[0], skill, "SKILL.md")).isFile(),
+      ).toBe(true);
+  });
+});
+
 it.each([".claude-plugin/plugin.json", ".codex-plugin/plugin.json"])(
   "%s keeps the Studens identity, version, and repository in sync",
   (file) => {

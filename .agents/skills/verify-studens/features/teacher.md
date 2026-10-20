@@ -15,6 +15,7 @@ The learner receives follow-up questions and answers them in the lesson's teache
 - Regenerate a plan rejected before writes. Keep valid plans for recovery.
 - Request a new grade plan after an explicit retry of a rejected score.
 - Keep the persistent service available after Pi or MCP exit.
+- Discover the packaged Pi teaching skills alongside the classroom extension.
 
 ## How to get to it (user POV)
 
@@ -169,6 +170,42 @@ Both must expose zero servers/tools. Preserve paginated raw catalogs, source has
 and the original rollout bytes. An empty MCP config, a mock transport assertion or
 a passing model turn alone does not prove this boundary. Apps and plugins must be
 disabled before process discovery as well as in thread settings.
+
+### Packaged Pi commands
+
+For Pi package resource declarations, run
+`npx vitest run test/plugin.test.ts test/pi-teacher-resources.test.ts`.
+The first checks declared package files; the second checks that dedicated teachers
+exclude initiating resources while retaining their model settings.
+
+Also drive the supported native Pi CLI with Node 22.19+ in a fresh scratch cwd.
+Create empty owned home, agent, config, data, cache, temporary and classrooms
+directories. Pass those paths as `HOME`, `PI_CODING_AGENT_DIR`, `XDG_CONFIG_HOME`,
+`XDG_DATA_HOME`, `XDG_CACHE_HOME`, `NODE_COMPILE_CACHE`, `TMPDIR`,
+`PI_CLASSROOM_CONFIG` (a file path) and `PI_CLASSROOMS_DIR` before launch.
+Use an unused positive loopback `PI_CLASSROOM_SERVICE_PORT` and
+`PI_CLASSROOM_TAILSCALE=0`. Do not inherit account files or a native session.
+Write only `packages: ["<absolute checkout path>"]`,
+`extensions: ["-builtin:mcp"]` and `enableSkillCommands: true` to the scratch
+agent's `settings.json`; do not supply explicit skill paths.
+
+Run `"$NODE22" "$PI_PACKAGE/dist/bundle/cli.js" --mode rpc --offline --no-session --no-mcp --no-context-files`
+from that scratch cwd, with `PI_OFFLINE=1` and `PI_SKIP_VERSION_CHECK=1`.
+Send only `{"id":"commands","type":"get_commands"}`, then
+`{"id":"state","type":"get_state"}` after its response. Require successful
+responses, zero messages/pending messages and no streaming/compaction. Close stdin
+after both replies and require exit 0. Save exact executable/source pins, argv,
+scratch environment and settings. Select only command name, source and sourceInfo
+for `classroom`, `skill:teach` and `skill:classroom`; withhold other payloads
+without hashes. Require the extension's sourceInfo path to equal the package's
+`index.ts`, and each skill's path to equal its exact `skills/<name>/SKILL.md`, with
+the same package source, baseDir, user scope and package origin. Require no service
+owner/socket or classroom writes. Repeat from fresh scratch state when validating
+the recipe, then remove only owned runtime directories and retain selected evidence.
+
+This is development package discovery without inference. An installed final release
+and actual native skill adoption/teaching remain separate real-host checks; never
+claim them from constructor reads, command discovery or these contracts.
 
 ### Classroom activity
 
