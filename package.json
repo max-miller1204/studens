@@ -42,7 +42,7 @@
     "e2e:feedback": "node scripts/e2e-feedback.ts",
     "e2e:authoring": "node scripts/e2e-authoring.ts",
     "check": "tsc --noEmit",
-    "audit": "npm audit --omit=dev --audit-level=moderate",
+    "audit": "node scripts/check-runtime-dependencies.ts && npm audit --omit=dev --audit-level=moderate",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "service": "node scripts/classroom-service.ts",
@@ -50,7 +50,7 @@
     "test:mutate": "stryker run"
   },
   "dependencies": {
-    "@earendil-works/pi-coding-agent": "^0.83.0",
+    "@earendil-works/pi-coding-agent": "1.0.1",
     "marked": "^15.0.12"
   },
   "devDependencies": {
@@ -63,5 +63,16 @@
   },
   "engines": {
     "node": ">=22.19.0"
+  },
+  "overrides": {
+    "@earendil-works/pi-coding-agent": {
+      "@earendil-works/chord": "1.0.1",
+      "@earendil-works/pi-agent-core": "1.0.1",
+      "@earendil-works/pi-ai": "1.0.1",
+      "@earendil-works/pi-codemode": "1.0.1",
+      "@earendil-works/pi-mcp": "1.0.1",
+      "@earendil-works/pi-tui": "1.0.1",
+      "@earendil-works/pi-telemetry": "1.0.1"
+    }
   }
 }

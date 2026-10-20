@@ -23,6 +23,7 @@ async function configuration(cwd: string) {
     ...source.getProjectSettings(),
     retry: { enabled: false, provider: { maxRetries: 0 } },
     compaction: { enabled: false },
+    cacheWarming: "off",
   });
   const runtime = await ModelRuntime.create({
     authPath: path.join(getAgentDir(), "auth.json"),
