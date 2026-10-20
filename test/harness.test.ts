@@ -46,6 +46,16 @@ const receipt = {
   classroom: "os",
   lesson: "002-forks",
   htmlHash: "a".repeat(64),
+  preflight: {
+    version: 1,
+    htmlFile: "lesson.html",
+    inputHashes: {
+      "lesson.html": "a".repeat(64),
+      "lesson.json": null,
+      "quiz/key.json": null,
+      "quiz/plan.json": null,
+    },
+  },
   learnerStateChanged: false,
   initial: { quizzes: 1, contractErrors: 0, pageErrors: 0 },
   released: { quizzes: 2, contractErrors: 0, pageErrors: 0 },
@@ -65,7 +75,12 @@ function codex(output: unknown = receipt, executed = command, exit_code = 0): st
 describe("packaged authoring check receipts", () => {
   it("accepts a successful Codex execution", () => {
     expect(packagedPageChecks("codex", codex())).toEqual([
-      { classroom: "os", lesson: "002-forks", htmlHash: receipt.htmlHash },
+      {
+        classroom: "os",
+        lesson: "002-forks",
+        htmlHash: receipt.htmlHash,
+        preflight: receipt.preflight,
+      },
     ]);
   });
   it("recognizes shell-escaped program quotes", () => {
@@ -137,7 +152,14 @@ describe("packaged authoring check receipts", () => {
     const output = JSON.stringify(receipt, null, 2) + "\n(eval):1: == not found\n";
     expect(
       packagedPageChecks("codex", codex(output, `${command} | tail -30; echo ===`, 1)),
-    ).toEqual([{ classroom: "os", lesson: "002-forks", htmlHash: receipt.htmlHash }]);
+    ).toEqual([
+      {
+        classroom: "os",
+        lesson: "002-forks",
+        htmlHash: receipt.htmlHash,
+        preflight: receipt.preflight,
+      },
+    ]);
   });
   it("rejects a failed check that prints no receipt", () => {
     expect(packagedPageChecks("codex", codex("Error: Contract error", command, 1))).toEqual([]);
@@ -149,6 +171,22 @@ describe("packaged authoring check receipts", () => {
     { ...receipt, initial: { ...receipt.initial, contractErrors: 1 } },
     { ...receipt, released: { ...receipt.released, pageErrors: 1 } },
     { ...receipt, released: undefined },
+    { ...receipt, preflight: undefined },
+    { ...receipt, preflight: { ...receipt.preflight, version: 2 } },
+    {
+      ...receipt,
+      preflight: {
+        ...receipt.preflight,
+        inputHashes: { ...receipt.preflight.inputHashes, "quiz/key.json": undefined },
+      },
+    },
+    {
+      ...receipt,
+      preflight: {
+        ...receipt.preflight,
+        inputHashes: { ...receipt.preflight.inputHashes, "lesson.html": "b".repeat(64) },
+      },
+    },
   ])("rejects incomplete or unsafe checks", (invalid) => {
     expect(packagedPageChecks("codex", codex(invalid))).toEqual([]);
   });

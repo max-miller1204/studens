@@ -1,5 +1,6 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { validateLessonContractVersions } from "../lesson-contracts.ts";
 import { isValidSlug, lessonDir } from "../paths.ts";
 import { kindOf } from "../quiz.ts";
 import { listAnnotations } from "./annotations.ts";
@@ -30,14 +31,7 @@ export function readLesson(classroom: string, lesson: string): Lesson | null {
   if (!htmlPath) return null;
 
   const meta = readJson<LessonMeta>(path.join(dir, "lesson.json"));
-  if (meta?.instructionalContract !== undefined && meta.instructionalContract !== 1)
-    throw new Error(`Unknown instructional contract for ${classroom}/${lesson}.`);
-  if (meta?.criterionContract !== undefined && meta.criterionContract !== 1)
-    throw new Error("Unsupported criterion contract version.");
-  if (meta?.assessmentContract !== undefined && meta.assessmentContract !== 1)
-    throw new Error("Unsupported assessment contract version.");
-  if (meta?.reviewVariantContract !== undefined && meta.reviewVariantContract !== 1)
-    throw new Error("Unsupported review variant contract version.");
+  validateLessonContractVersions(meta, classroom, lesson);
   const grades = latestGrades(classroom, lesson);
   const submissions = listSubmissions(classroom, lesson);
   const gradedIds = new Set(grades.map((g) => g.submissionId));
