@@ -1,0 +1,82 @@
+{
+  "epoch": "Original PR84 head7a804ec/base56a2186; historical attachments preserved",
+  "items": [
+    {
+      "label": "Desktop light before",
+      "url": "https://github.com/user-attachments/assets/9a0b8f89-2b3d-4b7c-86b2-52f5636805e0",
+      "status": 200,
+      "bytes": 31894,
+      "matchesUploaded": true
+    },
+    {
+      "label": "Desktop light after",
+      "url": "https://github.com/user-attachments/assets/86f3130e-2fc4-4530-8815-aa61c43900e7",
+      "status": 200,
+      "bytes": 85839,
+      "matchesUploaded": true
+    },
+    {
+      "label": "Desktop dark before",
+      "url": "https://github.com/user-attachments/assets/1e59c396-0682-462d-8791-a0e9f32c3bf3",
+      "status": 200,
+      "bytes": 34096,
+      "matchesUploaded": true
+    },
+    {
+      "label": "Desktop dark after",
+      "url": "https://github.com/user-attachments/assets/7c926e47-4c01-4816-a2e2-aca438b85b76",
+      "status": 200,
+      "bytes": 89672,
+      "matchesUploaded": true
+    },
+    {
+      "label": "Mobile light before",
+      "url": "https://github.com/user-attachments/assets/479c694e-e35d-46fb-ba4f-e80569cd16aa",
+      "status": 200,
+      "bytes": 28362,
+      "matchesUploaded": true
+    },
+    {
+      "label": "Mobile light after",
+      "url": "https://github.com/user-attachments/assets/83c8f3a1-1d1d-4128-b974-a18f8b3f47dd",
+      "status": 200,
+      "bytes": 77647,
+      "matchesUploaded": true
+    },
+    {
+      "label": "Mobile dark before",
+      "url": "https://github.com/user-attachments/assets/538ccce1-0a1f-4d65-8b8e-933dbe4b9987",
+      "status": 200,
+      "bytes": 30632,
+      "matchesUploaded": true
+    },
+    {
+      "label": "Mobile dark after",
+      "url": "https://github.com/user-attachments/assets/d0638005-5992-45bb-bb2a-6b506c355c59",
+      "status": 200,
+      "bytes": 81434,
+      "matchesUploaded": true
+    },
+    {
+      "label": "Play recording",
+      "url": "https://github.com/user-attachments/assets/7699c0d2-5f41-43a2-b27a-a836426a3d71",
+      "status": 200,
+      "bytes": 96429,
+      "matchesUploaded": true
+    },
+    {
+      "label": "Pi-authored initial simulation",
+      "url": "https://github.com/user-attachments/assets/2f3aaa73-3d07-4d0d-94bf-6cbd94be62f1",
+      "status": 200,
+      "bytes": 70319,
+      "matchesUploaded": true
+    },
+    {
+      "label": "Pi-authored computed second prefix",
+      "url": "https://github.com/user-attachments/assets/c7117a67-7dc7-4653-aa8a-553aeb7e81bd",
+      "status": 200,
+      "bytes": 79415,
+      "matchesUploaded": true
+    }
+  ]
+}

@@ -1,0 +1,204 @@
+{
+  "capturedAt": "2026-10-20T05:11:55.296716+00:00",
+  "base": "65804de6da1f2308f4258c9a284fe64d3ab34674",
+  "runtime": "6ea428ee2913e4b9762adeda5348249b3b0204d3",
+  "fixture": {
+    "base": "65804de6da1f2308f4258c9a284fe64d3ab34674",
+    "after": "6ea428ee2913e4b9762adeda5348249b3b0204d3",
+    "bodySHA256": "6b811a1013a5debbe11336a4709259504e03ecb1ee7b25927a5deee9e6674345",
+    "fixture": "same authored lesson HTML/title/shell/viewport before load; no DOM styling injection",
+    "viewports": [
+      [1280, 900],
+      [390, 844]
+    ],
+    "themes": ["light", "dark"],
+    "limits": "Synthetic teaching content, no model/learning claim. Scoped widget clip, not final every-feature demo."
+  },
+  "media": {
+    "before-desktop-light.png": {
+      "sha256": "c9635e81679be86a920707cb186a516b8739836bb49da03e83046f1fe8a4200d",
+      "bytes": 36058
+    },
+    "before-desktop-dark.png": {
+      "sha256": "8a840296c74fbd2bf65ddd3ad5de94b476c484b1059362266e4e4a36902f2167",
+      "bytes": 38191
+    },
+    "before-mobile-light.png": {
+      "sha256": "4d3e88b8e30106ed1871a885644e9f0adb8a253aa51f15ded8e3f9d1fc4d1791",
+      "bytes": 32593
+    },
+    "before-mobile-dark.png": {
+      "sha256": "629027247f3459db2dc5e78d3b4e805d0fd79367c1f894102809f110e75fd193",
+      "bytes": 34815
+    },
+    "after-desktop-light.png": {
+      "sha256": "04dcde9beecb93665f98f108967b659186110036589a0695c263cbd1bf5b38c4",
+      "bytes": 90330
+    },
+    "after-desktop-dark.png": {
+      "sha256": "be18140f28f1ce5d17f3e0e4aeca380aecb8ba8c3124ca6f5665f36e5c06de39",
+      "bytes": 94459
+    },
+    "after-mobile-light.png": {
+      "sha256": "71823ba3f0ab7b3f4f39dd81cef1088fdbfc05191a8e8025306b3d7f08503285",
+      "bytes": 82341
+    },
+    "after-mobile-dark.png": {
+      "sha256": "3499c79cc3df70f60288ec89523af36d005006b2e49600ae6d6e96ce7ce64119",
+      "bytes": 86136
+    },
+    "step-through.mp4": {
+      "sha256": "7a47ed839d3005eeb49119c33b1b88cb875643e5d3e5e4bcb183885ed6f3dd84",
+      "bytes": 180471
+    }
+  },
+  "inspected": "All 8 screenshots, full clip one-second contact sheet and native middle frame; both themes/readable mobile, all 3 stages and final stop",
+  "video": {
+    "viewport": [1024, 1400],
+    "nativeRecordSize": [1024, 1400],
+    "encoding": "H264 CRF20 yuv420p faststart; no crop or frame omission",
+    "scope": "Synthetic packet trace Play then stop; scoped widget demo, not final every-feature video"
+  },
+  "gate": {
+    "revision": "6ea428ee2913e4b9762adeda5348249b3b0204d3",
+    "cleanTree": true,
+    "tests": 1162,
+    "fullBrowser": "PASS",
+    "prodAudit": "123 installed versions, zero vulnerabilities"
+  },
+  "mathFixtureRepair": {
+    "verify-final": {
+      "states": [
+        "Phase: liquid\nTemperature: 20 \u00b0C\nEnergy: (x^2)",
+        "Phase: liquid\nTemperature: 100 \u00b0C\nEnergy: (x^2+1)"
+      ],
+      "literalTeXDelimiters": [false, false]
+    },
+    "verify-integrated658": {
+      "states": [
+        "Phase: liquid\nTemperature: 20 \u00b0C\nEnergy: \\(x^2\\)",
+        "Phase: liquid\nTemperature: 100 \u00b0C\nEnergy: \\(x^2+1\\)"
+      ],
+      "literalTeXDelimiters": [true, true]
+    },
+    "runtimeSHA256": "b70cbd188bb499ee6f7d2332d2812fd9ff03f6d7173bb08db30ac3f6984e25bf"
+  },
+  "retainedPublications": [
+    {
+      "host": "pi",
+      "kind": "retained-authored-source-current-checker-and-browser",
+      "inference": false,
+      "syntheticRelease": true,
+      "fourHashes": {
+        "lesson.html": "b1ca6cbf8efc0738c2c9e46bfaa9a7c4ed92ee81bed9e12c182e57209f5a2a37",
+        "lesson.json": "0dfa9b01d3e55bcf3bf0997049beb2511791b6342304f6cff15c604518e7a399",
+        "quiz/key.json": "94f14b5ed3fe8dd1623ca0647d157af75c7bbecd96e245e0027aefa81caeebbf",
+        "quiz/plan.json": "b7f8ac99caffbeb099e4364168403234954e2729a1d91ffd77c85ffcfa3f330e"
+      },
+      "initial": {
+        "quizzes": 1,
+        "controls": [],
+        "practice": 0,
+        "code": 0,
+        "faded": 0,
+        "steppers": 0,
+        "contractErrors": 0,
+        "pageErrors": 0
+      },
+      "released": {
+        "quizzes": 2,
+        "controls": [],
+        "practice": 0,
+        "code": 0,
+        "faded": 0,
+        "steppers": 1,
+        "contractErrors": 0,
+        "pageErrors": 0
+      },
+      "learnerStateChanged": false,
+      "HTTPWrites": [],
+      "teacherTurns": 0,
+      "fileHashesUnchanged": true,
+      "historicalFullHostVerdict": "PASS"
+    },
+    {
+      "host": "claude",
+      "kind": "retained-authored-source-current-checker-and-browser",
+      "inference": false,
+      "syntheticRelease": true,
+      "fourHashes": {
+        "lesson.html": "cff13731cf020329270fca79f643cb29f4ef111c2ab244f612727bbed60309a5",
+        "lesson.json": "9e97f2be04c0ed7cb1fde37e4c30fa32bde7a42752d6f312eaadb05179e6aed0",
+        "quiz/key.json": "6f5882fd7793d8ca929dfef001c422c37149ade8c6f4ce876809998957c30834",
+        "quiz/plan.json": "d9e11494324e1d473e591c94444371a87a1291d6e9cfb9641e5f782fb12772dc"
+      },
+      "initial": {
+        "quizzes": 1,
+        "controls": [],
+        "practice": 0,
+        "code": 0,
+        "faded": 0,
+        "steppers": 0,
+        "contractErrors": 0,
+        "pageErrors": 0
+      },
+      "released": {
+        "quizzes": 2,
+        "controls": [],
+        "practice": 0,
+        "code": 0,
+        "faded": 0,
+        "steppers": 1,
+        "contractErrors": 0,
+        "pageErrors": 0
+      },
+      "learnerStateChanged": false,
+      "HTTPWrites": [],
+      "teacherTurns": 0,
+      "fileHashesUnchanged": true,
+      "historicalFullHostVerdict": "PASS"
+    },
+    {
+      "host": "codex",
+      "kind": "retained-authored-source-current-checker-and-browser",
+      "inference": false,
+      "syntheticRelease": true,
+      "fourHashes": {
+        "lesson.html": "19f2f095889fb24c8e01f803ade870ee93ed525c9c07f38774f167e788ac03cb",
+        "lesson.json": "8a3b9ce4eaf670ced0a5e2492c8bb0d1f1f53f2c8e18584322a8722ccf035ffa",
+        "quiz/key.json": "bfe48ef37e78a5eaf264ef9adbab58354785ccf290bee907da629a322b6a25f0",
+        "quiz/plan.json": "427d40cbb35d65f2cdf41bb80f6ba949a1a5bc0a4a4d6b1006be3683859d3c63"
+      },
+      "initial": {
+        "quizzes": 1,
+        "controls": [],
+        "practice": 0,
+        "code": 0,
+        "faded": 0,
+        "steppers": 0,
+        "contractErrors": 0,
+        "pageErrors": 0
+      },
+      "released": {
+        "quizzes": 2,
+        "controls": [],
+        "practice": 0,
+        "code": 0,
+        "faded": 0,
+        "steppers": 1,
+        "contractErrors": 0,
+        "pageErrors": 0
+      },
+      "learnerStateChanged": false,
+      "HTTPWrites": [],
+      "teacherTurns": 0,
+      "fileHashesUnchanged": true,
+      "historicalFullHostVerdict": "FAIL"
+    }
+  ],
+  "limits": [
+    "No model calls after source integration. Original full-host Codex FAIL and baseline/after failures remain.",
+    "Current conservative receipt grammar rejects 6 unsupported completed command forms; do not credit historical final receipt coverage as current parser acceptance.",
+    "Pi authored private arithmetic error and live-pretest authoring adherence violation retained. No human-learning efficacy claim."
+  ]
+}
