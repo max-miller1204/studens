@@ -59,7 +59,12 @@ export interface ClassroomTool {
   description: string;
   /** JSON Schema for the tool's arguments. */
   parameters: Record<string, unknown>;
-  execute(params: any): Promise<ToolResult>;
+  execute(params: any, context?: ToolContext): Promise<ToolResult>;
+}
+
+/** Host-owned context is never part of a model's tool arguments. */
+export interface ToolContext {
+  retrieval?: { classroom: string; lesson: string; reply: store.PanelMessage };
 }
 
 /** What differs between the hosts that run these tools. */
@@ -96,7 +101,7 @@ export function isFailure(result: ToolResult): boolean {
 export function registerClassroomTools(
   pi: any,
   extra: ClassroomTool[] = [],
-  beforeWrite?: (name: string) => void,
+  beforeWrite?: (name: string) => ToolContext | void,
 ): void {
   for (const tool of [...classroomTools(PI_HOST), ...extra]) {
     pi.registerTool({
@@ -105,9 +110,10 @@ export function registerClassroomTools(
       description: tool.description,
       parameters: tool.parameters,
       execute: (_toolCallId: string, params: unknown) => {
+        let context: ToolContext | void = undefined;
         if (tool.name !== "lesson_health" && tool.name !== "resume_lesson_teacher")
-          beforeWrite?.(tool.name);
-        return tool.execute(params);
+          context = beforeWrite?.(tool.name);
+        return tool.execute(params, context || undefined);
       },
     });
   }
@@ -209,26 +215,44 @@ export function classroomTools(host: ToolHost): ClassroomTool[] {
         },
         ["assistance", "task"],
       ),
-      async execute(params: {
-        classroom: string;
-        review_key: string;
-        learning_record: string;
-        answer: string;
-        evidence: string;
-        assistance?: Assistance;
-        task?: "retrieval" | "transfer";
-      }) {
+      async execute(
+        params: {
+          classroom: string;
+          review_key: string;
+          learning_record: string;
+          answer: string;
+          evidence: string;
+          assistance?: Assistance;
+          task?: "retrieval" | "transfer";
+        },
+        context?: ToolContext,
+      ) {
         if (!store.readClassroom(params.classroom))
           return fail(`No such classroom: ${params.classroom}`);
         try {
-          const check = store.recordRetrievalCheck(params.classroom, {
-            key: params.review_key,
-            learningRecord: params.learning_record,
-            answer: params.answer,
-            evidence: params.evidence,
-            assistance: params.assistance,
-            task: params.task,
-          });
+          const source = context?.retrieval;
+          if (
+            source &&
+            (source.classroom !== params.classroom ||
+              source.reply.text !== params.answer ||
+              !findReviewItem(
+                store.lessonReviewItems(params.classroom, source.lesson),
+                params.review_key,
+              ))
+          )
+            throw new Error("Retrieval timing must belong to this lesson's actual learner reply.");
+          const check = store.recordRetrievalCheck(
+            params.classroom,
+            {
+              key: params.review_key,
+              learningRecord: params.learning_record,
+              answer: params.answer,
+              evidence: params.evidence,
+              assistance: params.assistance,
+              task: params.task,
+            },
+            source?.reply.at,
+          );
           return ok(
             `Recorded retrieval evidence for ${check.key}. The quiz grade is preserved. Later review remains scheduled.`,
             { check },

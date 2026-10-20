@@ -33,7 +33,7 @@ import {
   reviewPrompt,
 } from "./prompts.ts";
 import * as store from "./store.ts";
-import { findReviewItem } from "./review.ts";
+import { findReviewItem, reviewTiming } from "./review.ts";
 import * as server from "./server.ts";
 import { classroomTools, isFailure, PI_HOST } from "./tools.ts";
 import {
@@ -614,6 +614,8 @@ export class TeacherService {
           .map((s) => s.quizId),
       ),
     );
+    const reviewItems = store.lessonReviewItems(r.classroom, r.lesson);
+    const replyAt = state.messages.find((m) => m.id === r.id && m.role === "learner")?.at ?? r.at;
     const context = {
       lesson: staged.html,
       lessonStage: {
@@ -625,7 +627,8 @@ export class TeacherService {
       records: store.readLearningRecords(r.classroom),
       messages: this.messages(r.classroom, r.lesson, state),
       grades: store.latestGrades(r.classroom, r.lesson),
-      reviewItems: store.lessonReviewItems(r.classroom, r.lesson),
+      reviewItems,
+      reviewTiming: r.kind === "chat" ? reviewTiming(reviewItems, replyAt) : [],
       classroomDocs,
       topicNotes,
     };
@@ -965,7 +968,12 @@ export class TeacherService {
           .listRetrievalChecks(r.classroom)
           .find((check) => check.key === args.review_key && check.learningRecord === recordFile);
         if (!previous) {
-          const result = await tool.execute(args);
+          const reply = state.messages.find((m) => m.id === r.id && m.role === "learner");
+          if (!reply)
+            throw new Error("The retrieval request has no saved learner reply timestamp.");
+          const result = await tool.execute(args, {
+            retrieval: { classroom: r.classroom, lesson: r.lesson, reply },
+          });
           if (isFailure(result)) throw new Error(result.content[0].text);
         }
       }

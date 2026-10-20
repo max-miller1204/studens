@@ -5,7 +5,12 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { _overrideClassroomsDir, lessonDir } from "../src/paths.ts";
 import * as server from "../src/server.ts";
 import * as store from "../src/store.ts";
-import { completePreparedReview, reviewSessions, startReview } from "../src/review-session.ts";
+import {
+  completePreparedReview,
+  reviewSessions,
+  startReview,
+  validateReview,
+} from "../src/review-session.ts";
 import { dailyReviews, startDailyReview } from "../src/store/daily-review.ts";
 import { saveTeacherState } from "../src/service-state.ts";
 import { DAY_MS } from "../src/review.ts";
@@ -160,10 +165,12 @@ describe("daily review durability", () => {
     const id = randomUUID();
     await post("daily-review", { id });
     await finish("biology");
-    const competing = startReview("rust", randomUUID(), "service").session;
-    const stale = await post("daily-review/continue", { id, classroom: "rust" });
-    expect(stale.body.daily.groups[1].error).toContain("Another unfinished review");
-    expect(reviewSessions("rust").map((r) => r.id)).toEqual([competing.id]);
+    // The root plan now reserves its item before publication, preventing the race.
+    expect(() => startReview("rust", randomUUID(), "service")).toThrow("allowance is reserved");
+    expect(reviewSessions("rust")).toEqual([]);
+    const continued = await post("daily-review/continue", { id, classroom: "rust" });
+    expect(continued.body.daily.groups[1].error).toBeUndefined();
+    expect(reviewSessions("rust").map((r) => r.id)).toEqual([dailyReviews()[0].groups[1].plan.id]);
   });
   it("requires explicit refresh when an unstarted group's canonical due selection changes", async () => {
     const id = randomUUID();
@@ -376,7 +383,17 @@ describe("daily review durability", () => {
     fs.writeFileSync(keyFile, JSON.stringify(key));
     // Existing root selection remains immutable; a fresh planner refuses new missing definitions.
     const { planReview } = await import("../src/review-session.ts");
-    expect(() => planReview("rust", randomUUID(), "service")).toThrow("no predeclared criteria");
+    // The already-reserved item cannot be selected by a competing fresh plan.
+    expect(() => planReview("rust", randomUUID(), "service")).toThrow("allowance is reserved");
+    const saved = dailyReviews()[0].groups[1].plan;
+    const missingCriteria = JSON.parse(saved.document!.rubric_json);
+    for (const quiz of Object.values(missingCriteria) as Array<
+      Record<string, { criteria?: unknown }>
+    >)
+      for (const question of Object.values(quiz)) delete question.criteria;
+    expect(() =>
+      validateReview(saved, { ...saved.document!, rubric_json: JSON.stringify(missingCriteria) }),
+    ).toThrow("criteria");
     expect(dailyReviews()[0].groups[1].plan.criterionContract).toBe(1);
   });
   it("keeps both private snapshots in an early judgement group across restart and explicit grading", async () => {

@@ -1,5 +1,5 @@
 import { lessonDir } from "../src/paths.ts";
-import { afterEach, beforeEach, expect, it } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { randomUUID } from "node:crypto";
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -34,7 +34,10 @@ beforeEach(() => {
     correct: { q1: true },
   });
 });
-afterEach(() => fixture.cleanup());
+afterEach(() => {
+  vi.restoreAllMocks();
+  fixture.cleanup();
+});
 
 it("saves the complete assembly before writes and rotates variants only for new reviews", () => {
   const first = startReview("rust", randomUUID(), "pi").session;
@@ -56,6 +59,8 @@ it("saves the complete assembly before writes and rotates variants only for new 
     answers: [termAnswer("r1", "owner", { reviewOf: first.items[0].key })],
     correct: { r1: true },
   });
+  expect(() => startReview("rust", randomUUID(), "pi")).toThrow("allowance is reserved");
+  vi.spyOn(Date, "now").mockReturnValue(Date.now() + DAY_MS);
   const second = startReview("rust", randomUUID(), "pi").session;
   expect(second.variants).toEqual({ "001-ownership/check-1/q1": "v2" });
   expect(reviewSessions("rust")).toHaveLength(2);

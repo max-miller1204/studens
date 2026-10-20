@@ -20,6 +20,7 @@ import {
   requireReviewOwner,
   savePlannedReview,
 } from "../review-session.ts";
+import { rootWorkload } from "../review-workload.ts";
 import { privateStatePath } from "../paths.ts";
 import { readTeacherState } from "../service-state.ts";
 import { hooks } from "./hooks.ts";
@@ -56,6 +57,11 @@ function presentDailyReview(request: DailyReview) {
   return result;
 }
 
+function publicWorkload() {
+  const { reservedKeys: _privateKeys, ...state } = rootWorkload(Date.now());
+  return state;
+}
+
 /** Only explicit actions publish or retry a group; reads never wake a teacher. */
 function openGroup(request: DailyReview, classroom: unknown, retry: boolean): void {
   const index = activeGroup(request);
@@ -79,7 +85,10 @@ function openGroup(request: DailyReview, classroom: unknown, retry: boolean): vo
       // The picker also applies retirement/pausing controls when those are present.
       const anyDue = dailyDue()[group.classroom] > 0;
       if (!anyDue) group.empty = true;
-      else group.plan = planReview(group.classroom, group.plan.id, group.plan.owner);
+      else
+        group.plan = planReview(group.classroom, group.plan.id, group.plan.owner, undefined, {
+          replaceReservation: true,
+        });
       delete group.error;
       saveDailyReview(request);
       if (group.empty) return;
@@ -116,6 +125,7 @@ export async function handleDailyReview(
       return sendJson(res, {
         daily: request ? presentDailyReview(request) : null,
         due: dailyDue(),
+        workload: publicWorkload(),
       });
     }
     if (req.method !== "POST") return sendJson(res, { error: "Unknown daily review action." }, 405);
@@ -138,7 +148,11 @@ export async function handleDailyReview(
         openGroup(current, body.classroom, route === "daily-review/retry"),
       );
     }
-    return sendJson(res, { daily: presentDailyReview(request), due: dailyDue() }, 202);
+    return sendJson(
+      res,
+      { daily: presentDailyReview(request), due: dailyDue(), workload: publicWorkload() },
+      202,
+    );
   } catch (error) {
     return sendJson(res, { error: (error as Error).message }, 409);
   }

@@ -4,7 +4,8 @@ import * as path from "node:path";
 import { questionCredit } from "../../assets/runtime/grade.mjs";
 import { reviewKey } from "../../assets/runtime/quiz.mjs";
 import type { Assistance } from "../evidence.ts";
-import { isAssistance } from "../evidence.ts";
+import { reviewSessions } from "../review-session.ts";
+import { isAssistance, independent } from "../evidence.ts";
 import { classroomDir, isValidSlug } from "../paths.ts";
 import type { QuizAnswer } from "../quiz.ts";
 import { answerSummary, answersByQuestion, kindOf } from "../quiz.ts";
@@ -25,6 +26,7 @@ import { readLearningRecords } from "./records.ts";
  */
 export function reviewEvents(classroom: string): ReviewEvent[] {
   const events: ReviewEvent[] = [];
+  const selections = reviewSessions(classroom);
   for (const lesson of listLessonDirs(classroom)) {
     const history = listGrades(classroom, lesson);
     const firstFeedback = new Map<string, number>();
@@ -40,6 +42,11 @@ export function reviewEvents(classroom: string): ReviewEvent[] {
         const verdict = grade.questions.find((q) => q.questionId === questionId);
         if (!verdict) continue;
         const credit = questionCredit(verdict);
+        const selected = selections.find((session) => session.lesson === lesson);
+        const selectedItem =
+          selected &&
+          findReviewItem(selected.items, answerReviewKey(lesson, submission.quizId, group[0]));
+        const selectedEarly = selectedItem && selectedItem.dueAt > selected!.at;
         events.push({
           key: answerReviewKey(lesson, submission.quizId, group[0]),
           ...(!group[0].reviewOf
@@ -49,11 +56,16 @@ export function reviewEvents(classroom: string): ReviewEvent[] {
               }
             : {}),
           at: submission.submittedAt,
+          attemptId: submission.id,
           feedbackAt,
-          early: submission.earlyReviewKeys?.includes(
-            answerReviewKey(lesson, submission.quizId, group[0]),
-          ),
+          early:
+            selectedEarly ||
+            submission.earlyReviewKeys?.includes(
+              answerReviewKey(lesson, submission.quizId, group[0]),
+            ),
+          earlyDueAt: selectedEarly ? selectedItem.dueAt : undefined,
           evidence: group[0].learning,
+          gapIndependent: independent(group[0].learning),
           correct: verdict.correct,
           credit: credit.earned / credit.possible,
           prompt: group[0].prompt ?? "",
@@ -64,7 +76,12 @@ export function reviewEvents(classroom: string): ReviewEvent[] {
     }
   }
   const aliases = new Map<string, string>();
-  for (const event of [...events].sort((a, b) => a.at - b.at))
+  for (const event of [...events].sort(
+    (a, b) =>
+      a.at - b.at ||
+      a.key.localeCompare(b.key) ||
+      (a.questionKey ?? "").localeCompare(b.questionKey ?? ""),
+  ))
     if (event.questionKey && !aliases.has(event.questionKey))
       aliases.set(event.questionKey, event.key);
   const canonical = (key: string) => aliases.get(key) ?? key;
@@ -81,7 +98,9 @@ export function reviewEvents(classroom: string): ReviewEvent[] {
       throw new Error(`Retrieval check ${check.id} refers to an unknown review item: ${check.key}`);
     events.push({
       key: canonical(check.key),
-      at: check.at,
+      at: check.answeredAt ?? check.at,
+      feedbackAt: check.at,
+      attemptId: check.id,
       correct: true,
       credit: 1,
       prompt: original.prompt,
@@ -90,6 +109,7 @@ export function reviewEvents(classroom: string): ReviewEvent[] {
       source: "chat",
       learningRecord: check.learningRecord,
       evidence: canonical(check.key).split("/")[1] === "@objective" ? check.learning : undefined,
+      gapIndependent: check.learning ? independent(check.learning) : check.assistance === "none",
     });
   }
   return events;
@@ -112,6 +132,8 @@ export interface RetrievalCheck {
   id: string;
   key: string;
   at: number;
+  /** Actual panel reply time supplied by the owning host, absent in old checks. */
+  answeredAt?: number;
   answer: string;
   evidence: string;
   learningRecord: string;
@@ -129,7 +151,8 @@ export function listRetrievalChecks(classroom: string): RetrievalCheck[] {
 /** Preserve the quiz attempt and add later evidence of understanding. */
 export function recordRetrievalCheck(
   classroom: string,
-  input: Omit<RetrievalCheck, "id" | "at" | "learning">,
+  input: Omit<RetrievalCheck, "id" | "at" | "answeredAt" | "learning">,
+  answeredAt?: number,
 ): RetrievalCheck {
   const item = findReviewItem(reviewItems(classroom), input.key);
   if (!item) throw new Error(`No graded review item: ${input.key}`);
@@ -153,8 +176,11 @@ export function recordRetrievalCheck(
     throw new Error("Retrieval check has unknown assistance.");
   if (input.task !== undefined && !["retrieval", "transfer"].includes(input.task))
     throw new Error("Retrieval check task must be retrieval or transfer.");
+  if (answeredAt !== undefined && (!Number.isFinite(answeredAt) || answeredAt > Date.now()))
+    throw new Error("Retrieval check has an invalid learner reply timestamp.");
   const check: RetrievalCheck = {
     ...input,
+    ...(answeredAt === undefined ? {} : { answeredAt }),
     learning:
       item.objective && item.objectiveId
         ? {

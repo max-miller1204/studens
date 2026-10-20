@@ -410,13 +410,11 @@ export async function verifyReviewControls(artifacts: string | null): Promise<vo
         await page.locator('[data-cl-review-early]').check();
         await page.locator('[data-cl-review-size]').selectOption('12');
         await page.getByRole('button',{name:'Start review',exact:true}).click();
-        await page.getByText('Question 1 of 12 · 0 answered',{exact:true}).waitFor();
+        await page.getByText("Today's shared review allowance",{exact:false}).waitFor();
         ${shot("maximum-size")}
       `);
-      if (currentReview("many")!.items.length !== 12)
-        throw new Error("Maximum selection is not 12.");
-      if (currentReview("many")!.items.some((item) => ["q1", "q2"].includes(item.questionId)))
-        throw new Error("Early selection included a retired or paused item.");
+      if (currentReview("many"))
+        throw new Error("Another classroom bypassed the shared allowance.");
       if (
         JSON.stringify(store.reviewItems("other")) !== unrelated ||
         JSON.stringify(store.listGrades("rust", "001-ownership")) !== JSON.stringify(originalGrades)
