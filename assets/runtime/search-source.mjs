@@ -23,7 +23,7 @@ function resolve() {
   link.href = "/search";
   link.textContent = "Search across classrooms";
   notice.append(" ", link);
-  document.querySelector("main")?.prepend(notice);
+  (document.querySelector("main") ?? document.body).prepend(notice);
 }
 if (document.readyState === "loading")
   document.addEventListener("DOMContentLoaded", resolve, { once: true });

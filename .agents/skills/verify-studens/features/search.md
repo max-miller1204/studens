@@ -7,7 +7,7 @@ Find public lesson passages, question threads, glossary terms, and learning reco
 - Literal Unicode, HTML5 named entities and code-punctuation queries; escaped snippets and highlighted matches without double decoding.
 - Four source types, deterministic ordering, counts, and explicit pagination.
 - Canonical passage anchors, question-card links, accepted glossary term views, and record passages.
-- Honest context for orphaned questions and unavailable edited/deleted sources.
+- Honest context for orphaned questions and unavailable edited/deleted sources, including legacy lessons without a main element.
 - Private file exclusion, pretest/publication gates, read-only projection, and specific source errors with explicit retry.
 
 ## How to get to it (user POV)

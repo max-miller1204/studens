@@ -32,12 +32,14 @@
     "original-base/before-mobile-light.png": "17744bd8ddb817bb0bc0e90239858b2514cfbb6910937cde1f21f2e68225e792",
     "results-desktop-light.png": "0ff6d5f1a7670d7c1a4b77a8f882954cfba0290089f12777f3585d78cb715d8f",
     "results-mobile-dark.png": "db0cb3c8c1dcf22573c4d0f1f49347edce198c84a5cad903ef5c48154a0eca03",
-    "optional-tags.png": "c0b55a05f6f3b28966d289aa44e2b861189dc9f07538f6eb9307052acd6538d5"
+    "optional-tags.png": "c0b55a05f6f3b28966d289aa44e2b861189dc9f07538f6eb9307052acd6538d5",
+    "legacy-stale-before.png": "15981d94e1d50c099dc63708c3c80743dd57e38f898366484a181073664b7ad2",
+    "legacy-stale-after.png": "9be0c6640191616f2d4e5c168c29c81ca6a822bcebb6bc27a75a43d0302afcdc"
   },
   "focusedBrowserReport": {
-    "sourceParent": "b5cc9222a9f0007f2b8868526bfd5e8fc73ae78d",
-    "changes": "Independent maintained parse5 extraction and HTML5 entity regression, preserving privacy and optional-end-tag behavior.",
-    "rawRun": "/tmp/studens-search30/browser-parser"
+    "sourceParent": "f91664e75d55b5067699596736abdfb703e67f35",
+    "changes": "One-line notice container repair for valid legacy HTML without main, plus portable stale-link regression.",
+    "rawRun": "/tmp/studens-search30/browser-legacy-notice"
   },
   "optionalTags": {
     "sourceParent": "b5cc9222a9f0007f2b8868526bfd5e8fc73ae78d",
@@ -55,5 +57,17 @@
     "installedGraph": "/tmp/studens-search30/parser-installed-graph.json",
     "installedFiles": "/tmp/studens-search30/parser-installed-files.json",
     "rawBrowser": "/tmp/studens-search30/browser-parser"
+  },
+  "legacyStale": {
+    "beforeSource": "f91664e75d55b5067699596736abdfb703e67f35",
+    "afterChange": "One-line lesson-content container selection for the unavailable-passage notice.",
+    "viewport": [1280, 900],
+    "theme": "light",
+    "preferredDark": false,
+    "sameAuthoredSource": "Legacy document with no main and an edited public paragraph, opened at its old canonical passage hash.",
+    "rawBefore": "/tmp/studens-search30/legacy-stale-before-controlled",
+    "rawAfter": "/tmp/studens-search30/legacy-stale-after",
+    "inspection": "Before has no notice/Search link; after shows the honest notice and Search navigation while keeping the edited lesson readable.",
+    "runtimeSHA256": "971ac8cc99e75cae7d54449f2ab7fac13211977aff383b4bef3ac20a558c8814"
   }
 }

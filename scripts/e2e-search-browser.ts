@@ -200,6 +200,20 @@ export async function verifySearchBrowser(artifacts: string | null): Promise<voi
       }`,
     );
     readonly(optionalHashes, "optional-tags");
+    const legacyResults = await fetch(base + "/search?q=Last+visible+paragraph.");
+    const legacyLink = /href="([^"]+#cl-search-[^"]+)"/.exec(await legacyResults.text())?.[1];
+    if (!legacyLink) throw new Error("No legacy source link");
+    f.write(
+      "rust/001-ownership/lesson.html",
+      optionalSource.replace("Last visible paragraph.", "Edited legacy passage."),
+    );
+    const legacyHashes = hashes(f.root);
+    report.legacyStale = await playwrightCode(
+      session,
+      out,
+      `async page=>{await page.setViewportSize({width:1280,height:900});await page.evaluate(()=>localStorage.setItem('pi-classroom-theme','light'));await page.goto(${JSON.stringify(base)}+${JSON.stringify(legacyLink)});if(await page.locator('main').count())throw new Error('Legacy fixture unexpectedly has main');await page.getByRole('status').filter({hasText:'This exact passage is no longer available'}).waitFor();await page.locator('[data-cl-search-notice]').getByRole('link',{name:'Search across classrooms',exact:true}).waitFor();await page.screenshot({path:${JSON.stringify(path.join(out, "legacy-stale.png"))},fullPage:true});await page.setViewportSize({width:390,height:844});await page.evaluate(()=>localStorage.setItem('pi-classroom-theme','dark'));await page.goto(${JSON.stringify(base + "/search?q=")});return {noMain:true,honestNotice:true,searchNavigation:true};}`,
+    );
+    readonly(legacyHashes, "legacy-stale");
     f.write("rust/001-ownership/lesson.html", content);
     // Source edits invalidate exact anchors; no stale offset or duplicate guess.
     const searchResponse = await fetch(
