@@ -173,6 +173,34 @@ export async function verifySearchBrowser(artifacts: string | null): Promise<voi
  }`,
     );
     readonly(before, "public");
+    // Valid HTML optional closures must remain readable and resolve each sibling
+    // passage independently, including nested list and table scopes.
+    const optionalSource =
+      '<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Legacy reading</title></head><body><h1>Legacy reading</h1><p>First visible paragraph.<p>Second visible paragraph.<ul><li>Outer first.<ul><li>Inner first.<li>Inner second.</ul><li>Outer second.</ul><table><thead><tr><th>Heading one.<th>Heading two.<tbody><tr><td>Cell one.<table><tr><td>Nested cell one.<td>Nested cell two.</table><td>Cell two.<tr><td>Cell three.<td>Cell four.</table><p>Last visible paragraph.';
+    f.write("rust/001-ownership/lesson.html", optionalSource);
+    const optionalHashes = hashes(f.root);
+    report.optionalTags = await playwrightCode(
+      session,
+      out,
+      `async page=>{
+        const sourceResponse=await page.goto(${JSON.stringify(base + "/c/rust/001-ownership")});
+        if(sourceResponse.status()!==200)throw new Error('Optional end tags broke public lesson');
+        const cases=[['First visible paragraph.','P'],['Second visible paragraph.','P'],['Inner second.','LI'],['Outer second.','LI'],['Nested cell two.','TD'],['Cell four.','TD'],['Last visible paragraph.','P']];
+        for(const [text,tag]of cases){
+          const response=await page.goto(${JSON.stringify(base + "/search?q=")}+encodeURIComponent(text));
+          if(response.status()!==200||await page.locator('.cl-search-results h2 a').count()!==1)throw new Error('Optional passage search '+text);
+          await page.locator('.cl-search-results h2 a').click();const id=new URL(page.url()).hash.slice(1);
+          const target=page.locator('[id="'+id+'"]');await target.waitFor({state:'visible'});
+          if(!await target.evaluate((e,expected)=>e.tagName===expected.tag&&e.innerText.trim()===expected.text,{text,tag}))throw new Error('Wrong optional passage '+text);
+        }
+        await page.setViewportSize({width:1280,height:900});await page.evaluate(()=>localStorage.setItem('pi-classroom-theme','light'));await page.reload();
+        await page.screenshot({path:${JSON.stringify(path.join(out, "optional-tags.png"))},fullPage:true});
+        await page.setViewportSize({width:390,height:844});await page.evaluate(()=>localStorage.setItem('pi-classroom-theme','dark'));await page.goto(${JSON.stringify(base + "/search?q=")});
+        return {status:sourceResponse.status(),exactPassages:cases.length,nestedList:true,nestedTable:true};
+      }`,
+    );
+    readonly(optionalHashes, "optional-tags");
+    f.write("rust/001-ownership/lesson.html", content);
     // Source edits invalidate exact anchors; no stale offset or duplicate guess.
     const searchResponse = await fetch(
       base + "/search?q=" + encodeURIComponent("Borrow checker repeated."),

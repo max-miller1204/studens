@@ -58,6 +58,14 @@ const EXCLUDED = new Set([
   "iframe",
   "object",
 ]);
+// HTML optional end tags, not XML nesting. Scope boundaries keep nested lists,
+// tables and inert template contents from closing an outer source passage.
+const P_END = new Set(
+  "address article aside blockquote details dialog div dl fieldset figcaption figure footer form h1 h2 h3 h4 h5 h6 header hgroup hr main menu nav ol p pre search section table ul".split(
+    " ",
+  ),
+);
+const EOF_OPTIONAL = new Set(["html", "head", "body", "p"]);
 const RUNTIME =
   /(?:^|\s)(?:cl-(?:header|card-panel|ask-pill|badge-marker|term-pop|contract-error|diagram|teacher|teacher-notice|stepper-runtime|faded-runtime|code-runner|practice-feedback|q-verdict|quiz-footer|answer-report|order-controls|expected))(?:\s|$)/;
 export function canonicalText(text: string): string {
@@ -113,6 +121,19 @@ export function searchPassages(html: string): { html: string; passages: SearchPa
     if (!node.text) node.start = offset;
     node.text += text;
   };
+  const closeFrom = (index: number) => {
+    for (const node of stack.splice(index)) if (node.block) flush(node);
+  };
+  const closeInScope = (names: string[], boundaries: string[]) => {
+    for (let i = stack.length - 1; i > 0; i--) {
+      const tag = stack[i].tag;
+      if (names.includes(tag)) {
+        closeFrom(i);
+        return;
+      }
+      if (boundaries.includes(tag) || EXCLUDED.has(tag)) return;
+    }
+  };
   for (const token of html.matchAll(tokens)) {
     add(html.slice(cursor, token.index), cursor);
     cursor = token.index + token[0].length;
@@ -121,8 +142,26 @@ export function searchPassages(html: string): { html: string; passages: SearchPa
     if (token[0].startsWith("</")) {
       const index = stack.map((n) => n.tag).lastIndexOf(tag);
       if (index < 1) continue;
-      for (const node of stack.splice(index)) if (node.block) flush(node);
+      // An unrelated closing tag must never escape an unterminated inert subtree.
+      if (stack.slice(index + 1).some((n) => EXCLUDED.has(n.tag) && n.tag !== "option"))
+        throw new Error("Unclosed content element.");
+      closeFrom(index);
     } else {
+      if (P_END.has(tag)) closeInScope(["p"], ["table", "td", "th", "button"]);
+      if (tag === "li") closeInScope(["li"], ["ul", "ol", "menu"]);
+      if (tag === "dt" || tag === "dd") closeInScope(["dt", "dd"], ["dl"]);
+      if (tag === "rt" || tag === "rp") closeInScope(["rt", "rp"], ["ruby"]);
+      if (tag === "td" || tag === "th") closeInScope(["td", "th"], ["tr", "table"]);
+      if (tag === "tr") closeInScope(["tr"], ["table"]);
+      if (["tbody", "tfoot", "thead"].includes(tag))
+        closeInScope(["thead", "tbody", "tfoot"], ["table"]);
+      if (["colgroup", "thead", "tbody", "tfoot", "tr"].includes(tag))
+        closeInScope(["caption", "colgroup"], ["table"]);
+      if (
+        tag === "body" ||
+        (!EXCLUDED.has(tag) && !["html", "title", "meta", "link", "base"].includes(tag))
+      )
+        closeInScope(["head"], ["html"]);
       const attrs = htmlAttributes(token[0]);
       const skip =
         stack.some((n) => n.skip) ||
@@ -147,7 +186,9 @@ export function searchPassages(html: string): { html: string; passages: SearchPa
     }
   }
   add(html.slice(cursor), cursor);
-  if (stack.slice(1).some((n) => n.block || n.skip)) throw new Error("Unclosed content element.");
+  if (stack.slice(1).some((n) => !EOF_OPTIONAL.has(n.tag)))
+    throw new Error("Unclosed content element.");
+  closeFrom(1);
   flush(root);
   const occurrences = new Map<string, number>();
   const totals = new Map<string, number>();

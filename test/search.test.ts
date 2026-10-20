@@ -7,6 +7,7 @@ import type { Fixture } from "./helpers.ts";
 import { searchClassrooms, searchGlossarySource } from "../src/store/search.ts";
 import { searchPassages } from "../src/search-passages.ts";
 import { saveLessonRequests } from "../src/store/lesson-requests.ts";
+import * as server from "../src/server.ts";
 
 let f: Fixture;
 beforeEach(() => {
@@ -66,6 +67,59 @@ function publicSources() {
   return id;
 }
 describe("public classroom search", () => {
+  it("serves and searches legacy HTML optional paragraph, list and table endings", async () => {
+    const legacy =
+      '<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Legacy reading</title></head><body><h1>Legacy reading</h1><p>First visible paragraph.<p>Second visible paragraph.';
+    const nested =
+      "<ul><li>Outer first.<ul><li>Inner first.<li>Inner second.</ul><li>Outer second.</ul><dl><dt>Term one.<dd>Definition one.<dt>Term two.<dd>Definition two.</dl><table><caption>Table caption.<colgroup><col><thead><tr><th>Heading one.<th>Heading two.<tbody><tr><td>Cell one.<table><tr><td>Nested cell one.<td>Nested cell two.</table><td>Cell two.<tr><td>Cell three.<td>Cell four.</table><p>Last visible paragraph.";
+    const unexpected = () => {
+      throw new Error("Read-only search invoked a teacher");
+    };
+    server.setHooks({
+      onAsk: unexpected,
+      onFollowUp: unexpected,
+      onQuizSubmit: unexpected,
+      onReflect: unexpected,
+    });
+    const base = await server.start(0);
+    try {
+      for (const source of [
+        legacy,
+        legacy.replace("Second visible paragraph.", "Second visible paragraph." + nested),
+      ]) {
+        f.write("rust/001-ownership/lesson.html", source);
+        const response = await fetch(base + "/c/rust/001-ownership");
+        expect(response.status).toBe(200);
+        const served = await response.text();
+        for (const text of [
+          "First visible paragraph.",
+          "Second visible paragraph.",
+          ...(source.includes(nested)
+            ? [
+                "Inner second.",
+                "Outer second.",
+                "Nested cell two.",
+                "Cell four.",
+                "Last visible paragraph.",
+              ]
+            : []),
+        ]) {
+          const matches = searchClassrooms(text).results;
+          expect(matches).toHaveLength(1);
+          expect(matches[0].text).toBe(text);
+          expect(served).toContain(`id="${matches[0].url.split("#")[1]}"`);
+          const search = await fetch(base + "/search?q=" + encodeURIComponent(text));
+          expect(search.status).toBe(200);
+          expect(await search.text()).toContain(matches[0].url);
+        }
+        expect(fs.readFileSync(path.join(f.root, "rust/001-ownership/lesson.html"), "utf8")).toBe(
+          source,
+        );
+      }
+    } finally {
+      await server.close();
+    }
+  });
   it("searches all four domains and classrooms with canonical repeat anchors", () => {
     const id = publicSources(),
       r = searchClassrooms("Borrow checker");
@@ -191,7 +245,7 @@ describe("public classroom search", () => {
     for (const [file, bytes, detail] of [
       ["rust/001-ownership/annotations.json", "{PRIVATE_CANARY", "invalid question thread"],
       ["rust/GLOSSARY.md", "**PRIVATE_CANARY**\nMissing colon.", "invalid glossary format"],
-      ["rust/learning-records/0001-borrow.md", "<p>PRIVATE_CANARY", "malformed public content"],
+      ["rust/learning-records/0001-borrow.md", "<div>PRIVATE_CANARY", "malformed public content"],
     ]) {
       const target = path.join(f.root, file),
         original = fs.readFileSync(target);
@@ -292,6 +346,18 @@ describe("inert canonical source anchors", () => {
     expect(() => searchPassages("<!-- ATTRIBUTE_CANARY")).toThrow(
       "Malformed content tag or attribute",
     );
+    for (const source of [
+      "<div>Unclosed required block",
+      "<template><p>PRIVATE_CANARY",
+      "<p>Public<template><p>PRIVATE_CANARY</body>",
+      '<p title="PRIVATE_CANARY>Malformed<p>Visible',
+    ])
+      expect(() => searchPassages(source)).toThrow();
+    expect(
+      searchPassages(
+        "<p hidden>PRIVATE_CANARY<p>Public.<template><p>PRIVATE_CANARY</template><p>Also public.",
+      ).passages.map((p) => p.text),
+    ).toEqual(["Public.", "Also public."]);
   });
   it("keeps trailing direct prose after its preceding nested passage", () => {
     const result = searchPassages("<main><p>First.</p>Tail.</main>");
