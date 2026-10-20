@@ -225,10 +225,9 @@ try {
   const url = `${base}/c/rust/001-ownership?control=${address.port}${artifacts ? `&artifacts=${encodeURIComponent(artifacts)}` : ""}`;
   await playwright(session, fixture.root, "open", url);
   browserOpen = true;
-  const browserResult = await playwright(
+  const browserResult = await playwrightCode<{ dialogs: unknown[]; passed: string[] }>(
     session,
     fixture.root,
-    "run-code",
     `async page => {
       const highlightText = ${highlightText.toString()};
       const browserRegression = ${browserRegression.toString()};
@@ -286,7 +285,7 @@ try {
   )
     throw new Error("The reflection draft was not stored on disk before reload.");
   if (artifacts) {
-    fs.writeFileSync(path.join(artifacts, "browser-result.json"), browserResult);
+    fs.writeFileSync(path.join(artifacts, "browser-result.json"), JSON.stringify(browserResult));
     fs.writeFileSync(
       path.join(artifacts, "disk-draft-history.json"),
       JSON.stringify(draftHistory, null, 2),
@@ -353,6 +352,7 @@ try {
       JSON.stringify(
         {
           error: String(error),
+          browserDiagnostics: (error as { browserDiagnostics?: unknown }).browserDiagnostics,
           drafts: store.readDrafts("rust", "001-ownership"),
           annotations: store.listAnnotations("rust", "001-ownership"),
           reflections: store.listReflections("rust", "001-ownership"),

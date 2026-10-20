@@ -116,6 +116,9 @@ checks. Global retries refresh the matching owning controls.
 Dispute links scroll to their saved history after async state arrives and on later
 fragment navigation. Ordinary teacher refreshes preserve the reader's scroll and focus.
 A lost or unreadable status connection requires `Retry activity status`.
+Browser drives require a completed JSON result before advancing. On failure they retain
+snapshot, tab-list, and console diagnostics, including stdout/stderr when a diagnostic
+command fails. Native dialogs are never dismissed automatically.
 
 The default browser target includes `activity/`. Its fixture submits explanations
 on two lessons through their Save controls, follows classroom SSE, and verifies
