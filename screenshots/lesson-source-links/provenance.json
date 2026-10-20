@@ -1,9 +1,19 @@
 {
   "issue": 31,
   "base": "f09f261d69fee20fb6c353b184ba1f93049563c5",
-  "captureScripts": ["scripts/e2e-lesson-sources.ts", "scripts/e2e-source-authoring.ts"],
+  "captureScripts": {
+    "canonicalBefore": "external capture-base.ts (captured before implementation; retained packet)",
+    "canonicalAfter": "scripts/e2e-lesson-sources.ts under actual Node22.19",
+    "originalNativeProducer": "scripts/e2e-source-authoring.ts original directed first attempts, original source hashes/identities retained",
+    "finalNativeCapture": {
+      "script": "external replay-native-sources.ts (complete retained packet)",
+      "sha256": "19d85c091117bc136c1f8b0e12c33587bf92a4d0bbbc826865061a7b7b9b3e0a",
+      "command": "node /tmp/studens-issue31-packet/replay-native-sources.ts final-2a",
+      "newInference": false
+    }
+  },
   "beforeCapture": "external capture-base.ts retained in packet; captured before implementation",
-  "actualGeometry": "retained-{pi,claude,codex}-final/result.json ui.shots records target/header viewport coordinates after real link click and reload",
+  "actualGeometry": "final-2a-minimum-browser/result.json and retained-{pi,claude,codex}-final-2a/result.json record actual target/header viewport boxes after source clicks and reload; same-lesson dialog closes before reload",
   "images": [
     {
       "file": "before-glossary-desktop-dark.png",
@@ -113,8 +123,8 @@
       "file": "after-glossary-desktop-dark.png",
       "sha256": "b6b2a9421e8f19706bf48304bc0ac6bb5c9eeb62645e6a51909a8cfe15eb8c0f",
       "pixels": [1280, 1247],
-      "epoch": "final-browser",
-      "origin": "/tmp/studens-issue31-packet/final-source-browser-retryfix/glossary-desktop-dark.png",
+      "epoch": "final-2a-browser",
+      "origin": "/tmp/studens-issue31-packet/final-2a-minimum-browser/glossary-desktop-dark.png",
       "viewport": [1280, 900],
       "theme": "dark",
       "fullPage": true,
@@ -126,8 +136,8 @@
       "file": "after-glossary-desktop-light.png",
       "sha256": "1e0763f1c32e8316b35b3440f28f208ee3313af1dc982c94c718f0fdde1e0ae9",
       "pixels": [1280, 1247],
-      "epoch": "final-browser",
-      "origin": "/tmp/studens-issue31-packet/final-source-browser-retryfix/glossary-desktop-light.png",
+      "epoch": "final-2a-browser",
+      "origin": "/tmp/studens-issue31-packet/final-2a-minimum-browser/glossary-desktop-light.png",
       "viewport": [1280, 900],
       "theme": "light",
       "fullPage": true,
@@ -139,8 +149,8 @@
       "file": "after-glossary-mobile-dark.png",
       "sha256": "7642f98960b1056363098c9a0169b76ff26c439647d5dfe9d15d3fc9dfce0dac",
       "pixels": [390, 1303],
-      "epoch": "final-browser",
-      "origin": "/tmp/studens-issue31-packet/final-source-browser-retryfix/glossary-mobile-dark.png",
+      "epoch": "final-2a-browser",
+      "origin": "/tmp/studens-issue31-packet/final-2a-minimum-browser/glossary-mobile-dark.png",
       "viewport": [390, 844],
       "theme": "dark",
       "fullPage": true,
@@ -152,8 +162,8 @@
       "file": "after-glossary-mobile-light.png",
       "sha256": "c38c1ea5c2301456006cd794d8452a72c39d4ccb2d820fcd4835dcfbb07e22aa",
       "pixels": [390, 1303],
-      "epoch": "final-browser",
-      "origin": "/tmp/studens-issue31-packet/final-source-browser-retryfix/glossary-mobile-light.png",
+      "epoch": "final-2a-browser",
+      "origin": "/tmp/studens-issue31-packet/final-2a-minimum-browser/glossary-mobile-light.png",
       "viewport": [390, 844],
       "theme": "light",
       "fullPage": true,
@@ -165,8 +175,8 @@
       "file": "after-lesson-desktop-dark.png",
       "sha256": "eb2d513bcc732cf67041d89ea2c114cf3d1b02dca857cc9148fa1c77e367d6a4",
       "pixels": [1280, 1247],
-      "epoch": "final-browser",
-      "origin": "/tmp/studens-issue31-packet/final-source-browser-retryfix/lesson-desktop-dark.png",
+      "epoch": "final-2a-browser",
+      "origin": "/tmp/studens-issue31-packet/final-2a-minimum-browser/lesson-desktop-dark.png",
       "viewport": [1280, 900],
       "theme": "dark",
       "fullPage": true,
@@ -178,8 +188,8 @@
       "file": "after-lesson-desktop-light.png",
       "sha256": "ea8457e4b2d48ede0989f232794d486431f718e7cadef6d43e493638f3d90b7d",
       "pixels": [1280, 1247],
-      "epoch": "final-browser",
-      "origin": "/tmp/studens-issue31-packet/final-source-browser-retryfix/lesson-desktop-light.png",
+      "epoch": "final-2a-browser",
+      "origin": "/tmp/studens-issue31-packet/final-2a-minimum-browser/lesson-desktop-light.png",
       "viewport": [1280, 900],
       "theme": "light",
       "fullPage": true,
@@ -191,8 +201,8 @@
       "file": "after-lesson-mobile-dark.png",
       "sha256": "1232e2804958f727bdc68cdf995fb3710d6eb233f925ca4f69667950d5e17f0c",
       "pixels": [390, 1303],
-      "epoch": "final-browser",
-      "origin": "/tmp/studens-issue31-packet/final-source-browser-retryfix/lesson-mobile-dark.png",
+      "epoch": "final-2a-browser",
+      "origin": "/tmp/studens-issue31-packet/final-2a-minimum-browser/lesson-mobile-dark.png",
       "viewport": [390, 844],
       "theme": "dark",
       "fullPage": true,
@@ -204,8 +214,8 @@
       "file": "after-lesson-mobile-light.png",
       "sha256": "c6a2a24af7e78aeb0c0b84239444c2f724d8bafaf0a2826138f0079d4d22dab6",
       "pixels": [390, 1303],
-      "epoch": "final-browser",
-      "origin": "/tmp/studens-issue31-packet/final-source-browser-retryfix/lesson-mobile-light.png",
+      "epoch": "final-2a-browser",
+      "origin": "/tmp/studens-issue31-packet/final-2a-minimum-browser/lesson-mobile-light.png",
       "viewport": [390, 844],
       "theme": "light",
       "fullPage": true,
@@ -217,8 +227,8 @@
       "file": "native-pi-desktop-light.png",
       "sha256": "1693be7bcfd24759a6ed0bb5736500cd5a1d028d805c6c43dae8c0148af84d86",
       "pixels": [1280, 2082],
-      "epoch": "retained-genuine-native-output-current-checker-browser",
-      "origin": "/tmp/studens-issue31-packet/retained-pi-final/native-desktop-light.png",
+      "epoch": "genuine-original-native-output-replayed-on-final-2a-checker-browser",
+      "origin": "/tmp/studens-issue31-packet/retained-pi-final-2a/native-desktop-light.png",
       "viewport": [1280, 900],
       "theme": "light",
       "fullPage": true,
@@ -245,8 +255,8 @@
       "file": "native-claude-desktop-light.png",
       "sha256": "b3ea80f45fff580c2d355c26c34ceb2a231c4db4f156ea136fb7926b477d20e6",
       "pixels": [1280, 2404],
-      "epoch": "retained-genuine-native-output-current-checker-browser",
-      "origin": "/tmp/studens-issue31-packet/retained-claude-final/native-desktop-light.png",
+      "epoch": "genuine-original-native-output-replayed-on-final-2a-checker-browser",
+      "origin": "/tmp/studens-issue31-packet/retained-claude-final-2a/native-desktop-light.png",
       "viewport": [1280, 900],
       "theme": "light",
       "fullPage": true,
@@ -275,8 +285,8 @@
       "file": "native-codex-desktop-light.png",
       "sha256": "70260014fc00f70929be2dc8a9f757b6f13f37e865ddcb5a8b0ed03220f4eebb",
       "pixels": [1280, 2121],
-      "epoch": "retained-genuine-native-output-current-checker-browser",
-      "origin": "/tmp/studens-issue31-packet/retained-codex-final/native-desktop-light.png",
+      "epoch": "genuine-original-native-output-replayed-on-final-2a-checker-browser",
+      "origin": "/tmp/studens-issue31-packet/retained-codex-final-2a/native-desktop-light.png",
       "viewport": [1280, 900],
       "theme": "light",
       "fullPage": true,
@@ -301,5 +311,47 @@
       },
       "newInferenceForCapture": false
     }
-  ]
+  ],
+  "acceptedMain": "2a9c19f0f5dada19baa03ecac02fa5345c582b22",
+  "testedSourceCommit": "2ce9562d4500a848e5dd07c6a01d5bb86fe3f3a5",
+  "version": "0.11.10",
+  "runtimeSourceEpoch": "final-2a-frozen-source-manifest.json; native authoring remains original .9 epoch",
+  "captureComparability": {
+    "kind": "capture-fixture-comparability-not-runtime-source-equivalence",
+    "files": [
+      {
+        "file": "course/003-predictions/lesson.html",
+        "beforeSha256": "69e9027cbaa525547da6d12686b9fb0cd8b79ac503daf8382b9202a52a7944af",
+        "currentInitialSha256": "69e9027cbaa525547da6d12686b9fb0cd8b79ac503daf8382b9202a52a7944af",
+        "equal": true
+      },
+      {
+        "file": "course/003-predictions/lesson.json",
+        "beforeSha256": "e294d4ce43417c86861075a62918d504ca3e3df77733a64dd7f31c92f8e5eba9",
+        "currentInitialSha256": "e294d4ce43417c86861075a62918d504ca3e3df77733a64dd7f31c92f8e5eba9",
+        "equal": true
+      },
+      {
+        "file": "course/001-values/lesson.html",
+        "beforeSha256": "1858b40e9dca3c5ac53b1db5f852bb591c38d2fb0103b0576a456a8de223a051",
+        "currentInitialSha256": "1858b40e9dca3c5ac53b1db5f852bb591c38d2fb0103b0576a456a8de223a051",
+        "equal": true
+      },
+      {
+        "file": "course/MISSION.md",
+        "beforeSha256": "027a4ca0c9871ee3b3aacdeb6c18b5153ab8bdf5f7238782348e68bfee9a6be9",
+        "currentInitialSha256": "027a4ca0c9871ee3b3aacdeb6c18b5153ab8bdf5f7238782348e68bfee9a6be9",
+        "equal": true
+      },
+      {
+        "file": "course/GLOSSARY.md",
+        "beforeSha256": "969ac34103b9c6d6f2c478c0a783afdcac15b19c17b9ee87fec3390aaac17677",
+        "currentInitialSha256": "3c47ad29b69e1e3ec767993001d68c33b8f7583486a963a1f79b1d6129bd14db",
+        "equal": false
+      }
+    ],
+    "glossaryDifference": "Current fixture additionally defines Borrowing for the separate pretest-release probes. Captured Ownership definition and captured lesson HTML are unchanged.",
+    "beforeCaptureMetadata": "capture-base.ts records exact viewport/theme/.cl-lesson-shell and resets scroll to top; original before/classrooms preserved.",
+    "afterCaptureMetadata": "final-2a-minimum-browser/result.json records per-owner viewport/theme/shell/popover/target/header geometry."
+  }
 }
