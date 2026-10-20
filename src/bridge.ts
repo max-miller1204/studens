@@ -54,6 +54,7 @@ import {
 } from "./prompts.ts";
 import * as server from "./server.ts";
 import * as store from "./store.ts";
+import type { ToolContext } from "./tools.ts";
 
 import {
   completePreparedReview,
@@ -212,7 +213,7 @@ export class ClassroomBridge {
   }
 
   /** A resume turn can ask a question. It cannot write new assessment or evidence. */
-  assertCanWrite(toolName?: string): void {
+  assertCanWrite(toolName?: string): ToolContext | undefined {
     const origin = this.pending[0];
     if (origin?.kind === "refill" && toolName !== REFILL_TOOL.name)
       throw new Error("Background refill turns may only save private review variants.");
@@ -223,6 +224,14 @@ export class ClassroomBridge {
       throw new Error(
         "Teacher resumption permits only a panel message. Re-teaching also requires a learner reply before evidence. Wait for the learner's panel reply before writing evidence.",
       );
+    if (toolName === "record_retrieval_check" && origin?.kind === "panel") {
+      const { classroom, lesson, id } = origin.request;
+      const reply = store
+        .listPanelMessages(classroom, lesson)
+        .find((message) => message.role === "learner" && message.id === id);
+      if (!reply) throw new Error("The retrieval request has no saved learner reply timestamp.");
+      return { retrieval: { classroom, lesson, reply } };
+    }
   }
 
   /** Queue a separate panel turn. The initiating chat keeps its foreign origin. */

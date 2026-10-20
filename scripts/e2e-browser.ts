@@ -1,3 +1,4 @@
+import { verifyReviewWorkload } from "./e2e-review-workload.ts";
 import { verifyCriteriaBrowser } from "./e2e-criteria-browser.ts";
 import { verifySettingsBrowser } from "./e2e-settings-browser.ts";
 import { verifyReviewControls } from "./e2e-review-controls.ts";
@@ -385,6 +386,7 @@ await verifyFoldersBrowser(artifacts ? path.join(artifacts, "folders") : null);
 await verifyClosedBrowser(artifacts ? path.join(artifacts, "closed") : null);
 
 await verifyReviewControls(artifacts ? path.join(artifacts, "review-controls") : null);
+await verifyReviewWorkload(artifacts ? path.join(artifacts, "review-workload") : null);
 await verifyReviewCards(artifacts ? path.join(artifacts, "review-cards") : null);
 await verifyReteachBrowser(artifacts ? path.join(artifacts, "reteach") : null);
 

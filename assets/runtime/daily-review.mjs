@@ -33,14 +33,21 @@ export function initDailyReview(control) {
     clearTimeout(timer);
     const due = Object.values(result.due).reduce((sum, n) => sum + n, 0);
     if (!id) {
+      const work = result.workload;
+      if (!work || !Number.isFinite(work.remaining) || !Number.isFinite(work.nextWindowAt))
+        throw new Error("Daily review response has no valid workload state.");
       control.querySelector("h2").textContent = `${due} due across classrooms`;
+      control.querySelector("[data-daily-workload]").textContent =
+        `${work.eligible} due slots available across all classrooms today · ${work.used} reserved or used of today's ${work.allowance}-item shared allowance (cap ${work.cap}, UTC). ${work.deferred} due items deferred; their due dates are unchanged. Next workload window: ${new Date(work.nextWindowAt).toISOString()}. Prepared questions are required.`;
       action = daily ? "open" : "start";
       button.textContent = daily ? "Continue daily review" : "Start daily review";
-      button.disabled = !daily && due === 0;
+      button.disabled = !daily && (due === 0 || work.remaining === 0);
       status.textContent = daily
         ? "Your saved classroom groups are ready to continue."
         : due
-          ? "Review due ideas in separate classroom groups."
+          ? work.remaining === 0
+            ? "Today's shared allowance is used. Due work stays listed."
+            : "Review due ideas in separate classroom groups."
           : "Nothing is due. Return after your next review becomes due.";
       if (navigate && daily) location.assign(daily.url);
       return;

@@ -23,6 +23,7 @@ import { authoredQuizzes } from "../quiz-authoring.ts";
 import { stageLesson } from "../pretest.ts";
 import { reviewSessions } from "../review-session.ts";
 import { dailyDue } from "../store/daily-review.ts";
+import { classroomWorkload } from "../review-workload.ts";
 import { isDue, summarize } from "../review.ts";
 import * as store from "../store.ts";
 import { hooks } from "./hooks.ts";
@@ -90,8 +91,10 @@ export function handleClassroomRoute(
   if (second === undefined) {
     const now = Date.now();
     let items;
+    let workload;
     try {
       items = store.reviewItems(name);
+      workload = classroomWorkload(name, items, now);
     } catch (error) {
       return sendHtml(
         res,
@@ -118,6 +121,7 @@ export function handleClassroomRoute(
         referenceDocs: store.listReferenceDocs(name),
         progress: {
           review: summarize(items, now),
+          workload,
           dueByLesson,
           reteach: items
             .filter((item) => item.needsReteach && item.retiredAt === undefined)

@@ -6,10 +6,9 @@ import {
   type PerformanceEvidence,
 } from "./evidence.ts";
 import { objectiveReviewKey, reviewKey } from "../assets/runtime/quiz.mjs";
+import { initialMemory, recallMemory, incompleteMemory, MEMORY_POLICY } from "./review-memory.ts";
 import type { Objective } from "./teaching-plan.ts";
 
-/** Base intervals are a product policy, not a universal optimum. */
-export const REVIEW_INTERVALS_DAYS = [1, 3, 7, 21, 60] as const;
 export const REVIEW_POLICY = "elapsed-independent-v1";
 export const RETENTION_SPAN_DAYS = 7;
 export const RETENTION_SUCCESSES = 2;
@@ -31,14 +30,20 @@ export interface ReviewEvent {
   sourceQuestionKey?: string;
   /** When the learner answered. */
   at: number;
+  /** Immutable submission/check identity, absent only on legacy event callers. */
+  attemptId?: string;
   correct: boolean;
   /** Fraction of credit. Absent on historical binary events. */
   credit?: number;
   evidence?: PerformanceEvidence;
+  /** Saved independence can resolve a gap without inventing an old objective context. */
+  gapIndependent?: boolean;
   /** First feedback time for the attempt. A regrade does not create a new exposure. */
   feedbackAt?: number;
   /** Selected before its due date; replay must never extend this interval. */
   early?: boolean;
+  /** Original selected due time, including snapshots saved under an earlier scheduler. */
+  earlyDueAt?: number;
   source?: "chat";
   learningRecord?: string;
   prompt: string;
@@ -60,7 +65,13 @@ export interface ReviewItem {
   prompts?: string[];
   /** The prompt of the first graded question for this item: the original question. */
   prompt: string;
+  /** Legacy diagnostic counter; never used to calculate intervals. */
   box: number;
+  stability: number;
+  difficulty: number;
+  memoryPolicy: typeof MEMORY_POLICY;
+  /** Latest actual feedback/check boundary, distinct from selected-review elapsedDays. */
+  lastFeedbackAt: number;
   objective?: Objective;
   objectiveId?: string;
   context: EvidenceContext;
@@ -90,12 +101,6 @@ export interface ReviewItem {
   needsReteach?: boolean;
 }
 
-/** The box after one more graded answer. */
-export function nextBox(box: number, correct: boolean): number {
-  if (!correct) return 0;
-  return Math.min(box + 1, REVIEW_INTERVALS_DAYS.length - 1);
-}
-
 /** Stable identity from the saved answer, never the current teaching plan. */
 export function answerReviewKey(
   lesson: string,
@@ -116,14 +121,56 @@ export function findReviewItem(items: ReviewItem[], key: string): ReviewItem | u
   );
 }
 
+/** Ignore extra confidence/self-rating fields entirely. Known performance and
+ * context fields order policy ties; final text ties only make display deterministic.
+ * Delay always comes from the saved answer/feedback times, never narrative. */
+function eventTie(event: ReviewEvent): string {
+  const e = event.evidence;
+  return JSON.stringify([
+    event.source,
+    event.correct,
+    event.credit,
+    event.feedbackAt,
+    event.early,
+    event.earlyDueAt,
+    event.gapIndependent,
+    e?.objectiveId,
+    e?.task,
+    e?.support,
+    e?.assistance,
+    e?.objective.statement,
+    e?.objective.application,
+    e?.objective.retentionDays,
+    e?.objective.interleaveGroup,
+    e?.objective.strategy,
+    event.answer,
+    event.feedback,
+  ]);
+}
+
 /** Build each schedule from quiz answers and linked chat checks. */
 export function scheduleItems(events: ReviewEvent[]): ReviewItem[] {
   const byKey = new Map<string, ReviewEvent[]>();
+  for (const event of events) {
+    if (
+      !Number.isFinite(event.at) ||
+      Math.abs(event.at) > 8e15 ||
+      (event.earlyDueAt !== undefined &&
+        (!Number.isFinite(event.earlyDueAt) || Math.abs(event.earlyDueAt) > 8e15)) ||
+      !Number.isFinite(event.feedbackAt ?? event.at) ||
+      Math.abs(event.feedbackAt ?? event.at) > 8e15 ||
+      (event.credit !== undefined &&
+        (!Number.isFinite(event.credit) || event.credit < 0 || event.credit > 1))
+    )
+      throw new Error(`Invalid review event timing or credit for ${event.key}.`);
+  }
   const ordered = [...events].sort(
     (a, b) =>
       a.at - b.at ||
       a.key.localeCompare(b.key) ||
-      (a.questionKey ?? a.prompt).localeCompare(b.questionKey ?? b.prompt),
+      (a.attemptId ?? "").localeCompare(b.attemptId ?? "") ||
+      (a.questionKey ?? a.prompt).localeCompare(b.questionKey ?? b.prompt) ||
+      eventTie(a).localeCompare(eventTie(b)),
   );
   for (const event of ordered) {
     const list = byKey.get(event.key);
@@ -141,7 +188,12 @@ export function scheduleItems(events: ReviewEvent[]): ReviewItem[] {
     const list: ReviewEvent[] = [];
     for (const event of probes) {
       const previous = list.at(-1);
-      if (!previous || previous.at !== event.at || previous.source || event.source) {
+      if (
+        !previous ||
+        (previous.attemptId ?? previous.at) !== (event.attemptId ?? event.at) ||
+        previous.source ||
+        event.source
+      ) {
         list.push({ ...event });
         continue;
       }
@@ -157,11 +209,22 @@ export function scheduleItems(events: ReviewEvent[]): ReviewItem[] {
       list[list.length - 1] = {
         ...(weaker ? event : previous),
         correct: previous.correct && event.correct,
+        gapIndependent:
+          (previous.gapIndependent ?? independent(previous.evidence)) &&
+          (event.gapIndependent ?? independent(event.evidence)),
+        early: previous.early || event.early,
+        earlyDueAt:
+          previous.earlyDueAt === undefined
+            ? event.earlyDueAt
+            : event.earlyDueAt === undefined
+              ? previous.earlyDueAt
+              : Math.min(previous.earlyDueAt, event.earlyDueAt),
         credit: Math.min(credit(previous), credit(event)),
         feedbackAt: Math.max(previous.feedbackAt ?? previous.at, event.feedbackAt ?? event.at),
         evidence,
       };
     }
+    let memory = initialMemory();
     let misses = 0;
     let box = 0;
     let dueAt = list[0].at + DAY_MS;
@@ -190,13 +253,23 @@ export function scheduleItems(events: ReviewEvent[]): ReviewItem[] {
       if (i === 0) dueAt = feedbackAt + DAY_MS;
       if (!full) {
         misses++;
+        memory = incompleteMemory(memory, elapsedDays, event.credit ?? (event.correct ? 1 : 0));
         box = 0;
         delayedSuccesses = 0;
         delayedTransfers = 0;
         baselineAt = undefined;
         lastDelayedAt = undefined;
-        dueAt = feedbackAt + DAY_MS;
-        scheduleReason = "Incomplete retrieval: review in one day after feedback.";
+        const interval = Math.min(
+          Math.max(1, memory.stability),
+          objective?.retentionDays === undefined
+            ? Infinity
+            : Math.max(1, Math.floor(objective.retentionDays / 4)),
+        );
+        dueAt = feedbackAt + Math.ceil(interval * DAY_MS);
+        scheduleReason =
+          (event.credit ?? 0) > 0
+            ? `Partial retrieval: small stability setback; ${interval.toFixed(2)}-day interval after feedback.`
+            : `Missed retrieval: ${interval.toFixed(2)}-day interval after feedback.`;
       } else if (independentFull) {
         if (baselineAt !== undefined && elapsed >= DAY_MS) {
           delayedSuccesses++;
@@ -205,14 +278,15 @@ export function scheduleItems(events: ReviewEvent[]): ReviewItem[] {
         }
         baselineAt ??= event.at;
         if (i > 0 && !event.early && elapsed >= DAY_MS && event.at >= dueAt) {
-          box = nextBox(box, true);
-          const base = REVIEW_INTERVALS_DAYS[box];
+          box = Math.min(box + 1, 4);
+          memory = recallMemory(memory, elapsedDays);
+          const base = Math.max(1, memory.stability);
           const interval =
             objective?.retentionDays === undefined
               ? base
               : Math.min(base, Math.max(1, Math.floor(objective.retentionDays / 4)));
-          dueAt = feedbackAt + interval * DAY_MS;
-          scheduleReason = `Independent retrieval after ${elapsedDays.toFixed(1)} days: ${interval}-day interval${objective?.retentionDays === undefined ? "." : `; retention goal ${objective.retentionDays} days.`}`;
+          dueAt = feedbackAt + Math.ceil(interval * DAY_MS);
+          scheduleReason = `Independent retrieval after ${elapsedDays.toFixed(1)} days: ${interval.toFixed(2)}-day interval${objective?.retentionDays === undefined ? "." : `; retention-duration cap ${objective.retentionDays} days (not a deadline).`}`;
         } else if (i === 0) {
           dueAt = feedbackAt + DAY_MS;
         } else {
@@ -225,7 +299,7 @@ export function scheduleItems(events: ReviewEvent[]): ReviewItem[] {
             : "Unknown independence: keep the scheduled review; no retention claim.";
       }
       if (event.early) {
-        dueAt = Math.min(scheduledDueAt, dueAt);
+        dueAt = Math.min(scheduledDueAt, dueAt, event.earlyDueAt ?? Infinity);
         scheduleReason += " Early review cannot extend the scheduled interval.";
       }
       exposureAt = Math.max(exposureAt, feedbackAt);
@@ -236,7 +310,10 @@ export function scheduleItems(events: ReviewEvent[]): ReviewItem[] {
         : (lastDelayedAt - baselineAt) / DAY_MS;
     const retained = delayedSuccesses >= RETENTION_SUCCESSES && span >= RETENTION_SPAN_DAYS;
     const last = list[list.length - 1];
-    const progress: ReviewItem["progress"] = !last.correct
+    const progress: ReviewItem["progress"] = !(
+      last.correct &&
+      (last.credit === undefined || last.credit === 1)
+    )
       ? "needs-practice"
       : !objective
         ? "context-unknown"
@@ -260,6 +337,10 @@ export function scheduleItems(events: ReviewEvent[]): ReviewItem[] {
       prompts: [...new Set(probes.map((event) => event.prompt))],
       prompt: probes[0].prompt,
       box,
+      stability: memory.stability,
+      difficulty: memory.difficulty,
+      memoryPolicy: MEMORY_POLICY,
+      lastFeedbackAt: exposureAt,
       dueAt,
       objective,
       objectiveId,
@@ -282,7 +363,11 @@ export function scheduleItems(events: ReviewEvent[]): ReviewItem[] {
       misses,
       needsReteach:
         misses >= RETEACH_MISSES &&
-        !(last.correct && (last.credit === undefined || last.credit === 1)),
+        !(
+          last.correct &&
+          (last.credit === undefined || last.credit === 1) &&
+          (last.gapIndependent ?? independent(last.evidence))
+        ),
     });
   }
   return items.sort((a, b) => a.dueAt - b.dueAt || a.key.localeCompare(b.key));
@@ -303,7 +388,11 @@ export function pickReviewItems(
     .filter(
       (item) => item.retiredAt === undefined && !item.needsReteach && (early || isDue(item, now)),
     )
-    .sort((a, b) => a.dueAt - b.dueAt || a.key.localeCompare(b.key));
+    .sort(
+      (a, b) =>
+        Math.max(a.dueAt, a.lastFeedbackAt ?? a.lastAt) -
+          Math.max(b.dueAt, b.lastFeedbackAt ?? b.lastAt) || a.key.localeCompare(b.key),
+    );
   const pools = new Map<string, ReviewItem[]>();
   for (const item of due) {
     const group = item.objective?.interleaveGroup;
@@ -385,4 +474,17 @@ export function reviewTopic(item: ReviewItem): { id: string; label: string } {
     id: JSON.stringify([item.lesson, item.objective?.interleaveGroup ?? item.objectiveId ?? null]),
     label: `${item.lesson}: ${item.objective?.interleaveGroup ?? item.objective?.statement ?? "Historical questions"}`,
   };
+}
+
+/** Current corrective phase is measured from actual latest feedback, never saved selection metadata. */
+export function reviewTiming(items: ReviewItem[], answerAt: number) {
+  return items.map((item) => ({
+    key: item.key,
+    phase: "panel-corrective-reply",
+    answerAt,
+    feedbackAt: item.lastFeedbackAt,
+    elapsedMs: Math.max(0, answerAt - item.lastFeedbackAt),
+    delay: answerAt - item.lastFeedbackAt >= DAY_MS ? "delayed" : "immediate",
+    // Assistance and task still come from this actual reply, never this timing hint.
+  }));
 }
