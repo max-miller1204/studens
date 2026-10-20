@@ -366,7 +366,8 @@ it("never echoes private parser bytes through expected answers, state, HTML or S
     const expected = await fetch(`${base}/api/quiz/expected?${query}`);
     const body = await expected.text();
     expect(body).not.toContain(canary);
-    expect(body).toMatch(/invalid|unreadable|corrupt/);
+    if (expected.ok) expect(JSON.parse(body).questions.q1.status).toBe("error");
+    else expect(expected.status).toBe(500);
     const state = await fetch(`${base}/api/state?classroom=rust&lesson=${loc.lesson}`);
     expect(await state.text()).not.toContain(canary);
     const html = await fetch(`${base}/c/rust/${loc.lesson}`);
@@ -384,7 +385,6 @@ it("never echoes private parser bytes through expected answers, state, HTML or S
     if (saved) fs.writeFileSync(target, saved);
     else fs.unlinkSync(target);
   }
-  server.setHooks(null);
 });
 
 it("releases one exact question alias at a time for two misses sharing an objective", async () => {

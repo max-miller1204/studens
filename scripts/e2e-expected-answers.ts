@@ -10,6 +10,7 @@ import { applyGrade } from "../src/quiz-grading.ts";
 import * as server from "../src/server.ts";
 import * as store from "../src/store.ts";
 import { playwright, playwrightCode } from "./playwright.ts";
+import { highlightText } from "./browser-actions.ts";
 
 export async function verifyExpectedAnswers(artifacts: string): Promise<void> {
   fs.mkdirSync(artifacts, { recursive: true });
@@ -246,6 +247,30 @@ export async function verifyExpectedAnswers(artifacts: string): Promise<void> {
     const base = await server.start(0);
     await playwright(session, f.root, "open", `${base}/c/rust/${lesson}`);
     opened = true;
+    const anchor = await playwrightCode<{ after: string }>(
+      session,
+      f.root,
+      `async page=>{
+      let release;const held=new Promise(resolve=>release=resolve);
+      await page.route('**/api/quiz/expected?**',async route=>{await held;await route.continue()});
+      await page.reload();await page.locator('form[data-state="graded"]').waitFor();
+      const before=await page.evaluate(async()=>{const m=await import('/static/lesson-dom.mjs');return m.buildTextIndex(document.querySelector('main')).text});
+      release();await page.locator('.cl-expected[data-status="available"]').waitFor();
+      await page.unroute('**/api/quiz/expected?**');
+      const result=await page.evaluate(async before=>{
+        const m=await import('/static/lesson-dom.mjs'),root=document.querySelector('main'),index=m.buildTextIndex(root);
+        const expected=root.querySelector('.cl-expected-value').firstChild,prompt=root.querySelector('.cl-q-prompt').firstChild;
+        const start=index.text.indexOf(prompt.textContent),range=m.rangeFromOffsets(index,start,start+prompt.textContent.length);
+        return {before,after:index.text,expectedOutside:m.outsideIndex(expected),promptOutside:m.outsideIndex(prompt),promptRange:range?.toString(),offsets:range&&m.offsetsFromRange(index,range)};
+      },before);
+      if(result.before!==result.after||!result.expectedOutside||result.promptOutside||!result.offsets||!result.promptRange.includes('net force'))throw new Error('Expected panel changed canonical text anchors: '+JSON.stringify(result));
+      const highlightText=${highlightText.toString()};
+      await highlightText(page,'.cl-q-prompt >> nth=0','net force');await page.locator('.cl-ask-pill').waitFor({state:'visible'});
+      await page.evaluate(()=>getSelection().removeAllRanges());await page.locator('h1').click();
+      return result;
+    }`,
+    );
+    save("anchor-arrival", anchor);
     save(
       "initial",
       await playwrightCode(
@@ -311,6 +336,17 @@ export async function verifyExpectedAnswers(artifacts: string): Promise<void> {
       session,
       f.root,
       `async page=>{await page.getByRole('button',{name:'Retry expected answer',exact:true}).first().focus();await page.keyboard.press('Enter');await page.locator('[data-question-id="reason"] .cl-expected[data-status="available"]').waitFor();return true;}`,
+    );
+    save(
+      "anchor-retry",
+      await playwrightCode(
+        session,
+        f.root,
+        `async page=>{
+      return await page.evaluate(async before=>{const m=await import('/static/lesson-dom.mjs'),after=m.buildTextIndex(document.querySelector('main')).text;
+      if(before!==after)throw new Error('Expected answer error/retry changed canonical text index');return {before,after};},${JSON.stringify(anchor.after)});
+    }`,
+      ),
     );
     save(
       "formats",
