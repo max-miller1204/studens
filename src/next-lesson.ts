@@ -351,8 +351,14 @@ export function nextLessonPrompt(request: LessonRequest, host: "pi" | "service")
       : "Return typed lesson data: title, summary, lesson_html, message, objectives, quizzes and variants. Supply HTML as direct strings. Never encode JSON in strings: do not return calls, arguments_json, rubric_json, teaching_plan_json, learning_record or notes_markdown. The host alone serializes canonical private files and the saved publish_lesson plan. Each quiz question includes its rubric and teaching mapping. Each top-level private variant names its quiz and question; its objective stays the original and support stays independent. Use canonical expected values directly: a string for short/choice/code, an array of strings for multi/order/locate/term, and a numeric object with value and optional tolerance/unit for numeric. A code rubric's expected string describes the implementation and accepted equivalents; its public function-call tests belong in data-code on the question HTML. Code uses teacher judgment and declared criteria, never exact grading or points from browser results. Only match/cloze maps use an object with entries [{key,value}], which the host converts to keyed private data. Do not wrap strings or lists in kind/value tags. Use null for absent optional metadata and [] for no variants. Both interleaveGroup and strategy must be supplied together or both null. The private contracts below still apply and are validated before writes. Use only enabled web research tools. Classroom resources are supplied below.",
     authoringSteps(
       "lesson",
-      `${request.lesson}/lesson.html`,
-      "The host runs scripts/check-lesson.ts in a disposable classroom before publication.",
+      host === "service"
+        ? { mode: "service" }
+        : {
+            mode: "filesystem",
+            lessonPath: `${request.lesson}/lesson.html`,
+            checkPage:
+              "The host runs scripts/check-lesson.ts in a disposable classroom before publication.",
+          },
     ),
     ...["TEACHING.md", "TEACHING-PLAN.md", "CODE-EXERCISES.md"].map(
       (name) => `${name}:\n${read(docsDir(), name)}`,

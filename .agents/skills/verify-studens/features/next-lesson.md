@@ -50,7 +50,8 @@ all saved document fields. Service drives select the fixed verification model th
 Settings, check the requested and answering models on the authoring request, then
 reset to the configured default before the ordinary teacher checks. A rejected model plan is retained and
 receives at most one explicit browser retry with its actual error in context.
-Inspect `stored-next-lesson.json`, `*-next-lesson.png`, and any
+Inspect `next-lesson-source-provenance.json` for matching checkout and loaded-service
+hashes, `stored-next-lesson.json`, `*-next-lesson.png`, and any
 `next-lesson-failed.json` / `next-lesson-retry-failed.json`. Host model output may
 fail validation; a fixture success does not cancel a real-host failure.
 Inspect the owning native teacher trace before claiming actual research. A source
@@ -125,8 +126,17 @@ private HTML preservation, malformed and duplicate
 input refusal, and the installed CLI structured-schema boundary. These transport
 contracts do not replace the required real service drives.
 
-Run `npx vitest run test/next-lesson.test.ts` for authoring state recovery. Decoder
-rejections must retain raw output in private authoring state before failure. A
+Run `npx vitest run test/next-lesson.test.ts` for assembled request contracts and
+authoring state recovery. The producer-boundary checks capture the actual Pi,
+Claude and Codex service request: all inline teaching, plan, code, quiz, lesson,
+faded and stepper sources must remain complete; local contract paths and shell /
+browser launch commands must be absent from its operational guidance. Reference
+file instructions belong to the host, which serializes, checks and publishes the
+structured result. Scaffold tools and historical Pi bridge requests retain their
+explicit filesystem authoring mode. These controlled checks do not prove model
+adoption; inspect fresh real-host traces and preserve any original rejected output.
+
+Decoder rejections must retain raw output in private authoring state before failure. A
 restart must leave the failure visible without another turn; explicit retry must
 retain the rejected attempt, including older failures saved only in teacher state.
 

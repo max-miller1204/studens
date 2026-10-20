@@ -27,6 +27,8 @@ export async function driveRealNextLesson(
   const sourceFiles = [
     "src/lesson-output.ts",
     "src/next-lesson.ts",
+    "src/pi-teacher.ts",
+    "src/lesson-research.ts",
     "src/quiz.ts",
     "src/quiz-authoring.ts",
     "src/rubric.ts",
@@ -36,6 +38,9 @@ export async function driveRealNextLesson(
     "src/prompts.ts",
     "src/grade-dispute.ts",
     "assets/templates/quiz.html",
+    "assets/templates/lesson.html",
+    "assets/templates/faded.html",
+    "assets/templates/stepper.html",
     "assets/runtime/quiz.mjs",
     "assets/runtime/quiz-ui.mjs",
     "assets/runtime/code.mjs",
@@ -44,6 +49,7 @@ export async function driveRealNextLesson(
     "assets/runtime/vendor/quickjs/provenance.json",
     "package.json",
     "package-lock.json",
+    "docs/TEACHING.md",
     "docs/CODE-EXERCISES.md",
     "docs/TEACHING-PLAN.md",
   ];
@@ -56,12 +62,15 @@ export async function driveRealNextLesson(
           .digest("hex"),
       ]),
     );
-  const loaded = codeMode ? (await serviceStatus()).packageRoot : undefined;
-  const sourceHashes = codeMode ? inventory(ROOT) : undefined;
-  if (codeMode) {
-    assert.ok(loaded);
-    assert.deepEqual(inventory(loaded), sourceHashes);
-  }
+  const loaded = (await serviceStatus()).packageRoot;
+  const sourceHashes = inventory(ROOT);
+  assert.ok(loaded);
+  assert.deepEqual(inventory(loaded), sourceHashes);
+  if (artifacts)
+    fs.writeFileSync(
+      path.join(artifacts, "next-lesson-source-provenance.json"),
+      JSON.stringify({ host, mode, source: ROOT, loaded, sourceHashes }, null, 2),
+    );
   const topic = codeMode
     ? 'Create a short JavaScript function assessment, explicitly skip the pretest and teaching gate together. One objective, one data-type="code" question, one normal check quiz. Ask the learner to implement function sum(values) returning the total of finite numbers, zero for an empty array. Use synchronous JavaScript only, entry sum, a labelled starter editor with a TODO instead of the solution, 3 public function-call tests including empty/mixed/negative inputs. Use private teacher judgment criteria for accumulating every input and the zero identity; accept loops or reduce. Add two private runnable code review variants with the same objective. No libraries, network, imports, host execution or hidden tests. Do not include any other quiz questions.'
     : stepper
