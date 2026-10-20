@@ -1,6 +1,6 @@
 {
   "name": "studens",
-  "version": "0.11.9",
+  "version": "0.11.10",
   "private": true,
   "description": "Interactive HTML lessons for Pi, Claude Code, and Codex, with passage questions and graded quizzes.",
   "type": "module",
@@ -60,7 +60,8 @@
     "@types/node": "^24.5.2",
     "prettier": "^3.8.4",
     "typescript": "^5.9.3",
-    "vitest": "^3.2.4"
+    "vite": "~7.3.7",
+    "vitest": "^4.1.12"
   },
   "engines": {
     "node": ">=22.19.0"
@@ -74,6 +75,11 @@
       "@earendil-works/pi-mcp": "1.0.1",
       "@earendil-works/pi-tui": "1.0.1",
       "@earendil-works/pi-telemetry": "1.0.1"
+    },
+    "@stryker-mutator/core": {
+      "typed-rest-client": {
+        "qs": "6.16.0"
+      }
     }
   }
 }

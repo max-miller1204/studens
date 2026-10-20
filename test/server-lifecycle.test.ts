@@ -42,7 +42,8 @@ it("shares one server for concurrent start requests", async () => {
 async function startListener() {
   const listen = vi.spyOn(http.Server.prototype, "listen");
   const base = await server.start(0);
-  const listener = listen.mock.instances.at(-1)!;
+  const listener = listen.mock.contexts.at(-1);
+  if (!(listener instanceof http.Server)) throw new Error("No observed HTTP listener.");
   return { base, listener };
 }
 
