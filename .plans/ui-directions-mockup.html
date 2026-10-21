@@ -1,0 +1,1183 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Studens UI directions</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=IBM+Plex+Sans:wght@400;500;600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Nunito:wght@500;600;700;800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap"
+    />
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+      }
+      .wrap {
+        width: 100%;
+        font-family: var(--font-sans, system-ui);
+        color: var(--foreground);
+      }
+
+      /* ── Picker ─────────────────────────────────────────── */
+      .picker {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      .tabs {
+        display: flex;
+        gap: 4px;
+        padding: 4px;
+        border-radius: calc(var(--radius, 10px) + 4px);
+        background: var(--secondary);
+      }
+      .tab {
+        font: 500 13px/1 var(--font-sans, system-ui);
+        color: var(--muted-foreground);
+        background: transparent;
+        border: 1px solid transparent;
+        border-radius: var(--radius, 10px);
+        padding: 8px 12px;
+        cursor: pointer;
+        transition-property: background-color, color;
+        transition-duration: 150ms;
+        transition-timing-function: ease;
+      }
+      .tab[aria-selected="true"] {
+        background: var(--card);
+        color: var(--foreground);
+        box-shadow: 0 1px 2px rgb(0 0 0 / 0.08);
+      }
+      .mode {
+        margin-left: auto;
+        font: 500 13px/1 var(--font-sans, system-ui);
+        color: var(--foreground);
+        background: var(--secondary);
+        border: 1px solid var(--border);
+        border-radius: var(--radius, 10px);
+        padding: 8px 12px;
+        cursor: pointer;
+      }
+      .blurb {
+        font-size: 13px;
+        color: var(--muted-foreground);
+        margin: 0 0 12px;
+        line-height: 1.5;
+        min-height: 2.6em;
+      }
+      @media (prefers-reduced-motion: no-preference) {
+        .tab:not(:disabled):active,
+        .mode:active,
+        .btn:not(:disabled):active {
+          scale: 0.96;
+        }
+        .tab,
+        .mode,
+        .btn {
+          transition-property: scale, background-color, color;
+          transition-duration: 150ms;
+          transition-timing-function: ease-out;
+        }
+      }
+
+      /* ── Mock tokens per direction ──────────────────────── */
+      .mock {
+        --m-radius: 10px;
+        --m-radius-sm: 6px;
+        border-radius: var(--radius, 12px);
+        overflow: hidden;
+        background: var(--m-bg);
+        color: var(--m-text);
+        font-family: var(--m-ui);
+        border: 1px solid var(--m-line);
+      }
+      .mock[data-dir="editorial"] {
+        --m-bg: #f7f4ee;
+        --m-surface: #fffdf9;
+        --m-sunk: #efeae1;
+        --m-line: #ddd5c7;
+        --m-text: #22201c;
+        --m-muted: #6d665b;
+        --m-accent: #8c2f23;
+        --m-accent-ink: #fff;
+        --m-soft: #f3e3dc;
+        --m-mark: #f6e2a8;
+        --m-ok: #2f6a49;
+        --m-ok-soft: #e1eee5;
+        --m-warn: #9a5a00;
+        --m-ui: "Source Serif 4", Georgia, serif;
+        --m-head: "Newsreader", Georgia, serif;
+        --m-prose: "Newsreader", Georgia, serif;
+        --m-radius: 2px;
+        --m-radius-sm: 2px;
+        --m-shadow: none;
+      }
+      .mock[data-dir="editorial"][data-mode="dark"] {
+        --m-bg: #171512;
+        --m-surface: #1e1b17;
+        --m-sunk: #26221d;
+        --m-line: #3a342b;
+        --m-text: #ece6da;
+        --m-muted: #a69d8d;
+        --m-accent: #e08b7a;
+        --m-accent-ink: #1a0e0b;
+        --m-soft: #3a221d;
+        --m-mark: #5b4a1c;
+        --m-ok: #8cc9a4;
+        --m-ok-soft: #1f2d24;
+        --m-warn: #e2b062;
+      }
+      .mock[data-dir="product"] {
+        --m-bg: #fafafa;
+        --m-surface: #ffffff;
+        --m-sunk: #f2f2f3;
+        --m-line: #e6e6e8;
+        --m-text: #18181b;
+        --m-muted: #71717a;
+        --m-accent: #4f46e5;
+        --m-accent-ink: #fff;
+        --m-soft: #eef0ff;
+        --m-mark: #fdeeb5;
+        --m-ok: #15803d;
+        --m-ok-soft: #e8f6ec;
+        --m-warn: #b45309;
+        --m-ui: "Inter", system-ui, sans-serif;
+        --m-head: "Inter", system-ui, sans-serif;
+        --m-prose: "Source Serif 4", Georgia, serif;
+        --m-radius: 10px;
+        --m-radius-sm: 6px;
+        --m-shadow:
+          0 0 0 1px rgb(0 0 0 / 0.06), 0 1px 2px rgb(0 0 0 / 0.06), 0 4px 12px rgb(0 0 0 / 0.04);
+      }
+      .mock[data-dir="product"][data-mode="dark"] {
+        --m-bg: #0f0f11;
+        --m-surface: #17171a;
+        --m-sunk: #1d1d21;
+        --m-line: #2a2a2f;
+        --m-text: #ededef;
+        --m-muted: #9b9ba3;
+        --m-accent: #8b85ff;
+        --m-accent-ink: #0d0b2a;
+        --m-soft: #1f1d3a;
+        --m-mark: #4b4115;
+        --m-ok: #6fd391;
+        --m-ok-soft: #142a1c;
+        --m-warn: #f0a94a;
+        --m-shadow: 0 0 0 1px rgb(255 255 255 / 0.06), 0 4px 12px rgb(0 0 0 / 0.4);
+      }
+      .mock[data-dir="warm"] {
+        --m-bg: #fbf3e8;
+        --m-surface: #fffaf3;
+        --m-sunk: #f4e6d3;
+        --m-line: #ecdcc6;
+        --m-text: #2d2418;
+        --m-muted: #7a6a55;
+        --m-accent: #e2603a;
+        --m-accent-ink: #fff;
+        --m-soft: #fde3d6;
+        --m-mark: #ffe08a;
+        --m-ok: #2f8a57;
+        --m-ok-soft: #dcf3e3;
+        --m-warn: #c27a00;
+        --m-ui: "Nunito", system-ui, sans-serif;
+        --m-head: "Fraunces", Georgia, serif;
+        --m-prose: "Nunito", system-ui, sans-serif;
+        --m-radius: 20px;
+        --m-radius-sm: 12px;
+        --m-shadow: 0 1px 0 rgb(120 80 30 / 0.08), 0 6px 18px rgb(120 80 30 / 0.1);
+      }
+      .mock[data-dir="warm"][data-mode="dark"] {
+        --m-bg: #1d1712;
+        --m-surface: #261e17;
+        --m-sunk: #30261d;
+        --m-line: #3d3125;
+        --m-text: #f6ead8;
+        --m-muted: #bba68b;
+        --m-accent: #ff8a62;
+        --m-accent-ink: #2a0f05;
+        --m-soft: #42261b;
+        --m-mark: #5c4a12;
+        --m-ok: #79d3a0;
+        --m-ok-soft: #1b3125;
+        --m-warn: #f2b84b;
+        --m-shadow: 0 6px 18px rgb(0 0 0 / 0.35);
+      }
+      .mock[data-dir="terminal"] {
+        --m-bg: #f4f4ef;
+        --m-surface: #fbfbf7;
+        --m-sunk: #eaeae3;
+        --m-line: #cfcfc4;
+        --m-text: #1c1d1a;
+        --m-muted: #666a5e;
+        --m-accent: #0a7d55;
+        --m-accent-ink: #fff;
+        --m-soft: #dbefe6;
+        --m-mark: #f1e6a6;
+        --m-ok: #0a7d55;
+        --m-ok-soft: #dbefe6;
+        --m-warn: #a35c00;
+        --m-ui: "JetBrains Mono", ui-monospace, monospace;
+        --m-head: "JetBrains Mono", ui-monospace, monospace;
+        --m-prose: "IBM Plex Sans", system-ui, sans-serif;
+        --m-radius: 0px;
+        --m-radius-sm: 0px;
+        --m-shadow: none;
+      }
+      .mock[data-dir="terminal"][data-mode="dark"] {
+        --m-bg: #0d0f0c;
+        --m-surface: #131611;
+        --m-sunk: #191d16;
+        --m-line: #2b3127;
+        --m-text: #d8decf;
+        --m-muted: #8a9381;
+        --m-accent: #6ee7a8;
+        --m-accent-ink: #062014;
+        --m-soft: #12301f;
+        --m-mark: #3d3a12;
+        --m-ok: #6ee7a8;
+        --m-ok-soft: #12301f;
+        --m-warn: #f2c14e;
+      }
+
+      /* ── Shell ──────────────────────────────────────────── */
+      .bar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 18px;
+        border-bottom: 1px solid var(--m-line);
+        background: var(--m-surface);
+        font-size: 13px;
+      }
+      .brand {
+        font: 600 15px/1 var(--m-head);
+        letter-spacing: -0.01em;
+      }
+      .crumbs {
+        color: var(--m-muted);
+      }
+      .crumbs b {
+        color: var(--m-text);
+        font-weight: 600;
+      }
+      .bar .sp {
+        flex: 1;
+      }
+      .icon {
+        width: 30px;
+        height: 30px;
+        display: grid;
+        place-items: center;
+        border-radius: var(--m-radius-sm);
+        color: var(--m-muted);
+        border: 1px solid var(--m-line);
+      }
+      .icon svg {
+        width: 16px;
+        height: 16px;
+        stroke: currentColor;
+        stroke-width: 1.75;
+        fill: none;
+      }
+      .body {
+        display: grid;
+        grid-template-columns: 1fr;
+      }
+      .side {
+        display: none;
+      }
+      .content {
+        padding: 22px 22px 26px;
+        display: grid;
+        gap: 28px;
+      }
+      .screen-label {
+        font: 600 11px/1 var(--font-sans, system-ui);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--m-muted);
+        margin: 0 0 12px;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      .screen-label::after {
+        content: "";
+        height: 1px;
+        flex: 1;
+        background: var(--m-line);
+      }
+
+      /* ── Common pieces ──────────────────────────────────── */
+      h1.title {
+        font: 600 30px/1.1 var(--m-head);
+        letter-spacing: -0.02em;
+        margin: 0 0 4px;
+      }
+      .mission {
+        color: var(--m-muted);
+        margin: 0 0 18px;
+        font-size: 14px;
+      }
+      .card {
+        background: var(--m-surface);
+        border: 1px solid var(--m-line);
+        border-radius: var(--m-radius);
+        box-shadow: var(--m-shadow);
+      }
+      .hero {
+        padding: 18px;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 14px;
+        align-items: end;
+      }
+      .eyebrow {
+        font: 600 11px/1 var(--m-ui);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--m-accent);
+        margin-bottom: 8px;
+      }
+      .hero h2 {
+        font: 600 20px/1.25 var(--m-head);
+        margin: 0 0 6px;
+        letter-spacing: -0.01em;
+      }
+      .meta {
+        font-size: 13px;
+        color: var(--m-muted);
+      }
+      .actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+      .btn {
+        font: 600 13px/1 var(--m-ui);
+        padding: 10px 14px;
+        border-radius: var(--m-radius-sm);
+        border: 1px solid var(--m-line);
+        background: var(--m-surface);
+        color: var(--m-text);
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .btn.primary {
+        background: var(--m-accent);
+        color: var(--m-accent-ink);
+        border-color: transparent;
+      }
+      .row2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+        margin-top: 14px;
+      }
+      .sec-h {
+        font: 600 12px/1 var(--m-ui);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--m-muted);
+        margin: 0 0 10px;
+        display: flex;
+        justify-content: space-between;
+      }
+      .sec-h a {
+        color: var(--m-accent);
+        text-decoration: none;
+        text-transform: none;
+        letter-spacing: 0;
+        font-weight: 500;
+      }
+      .panel {
+        padding: 14px;
+      }
+
+      .lessons {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+      .lessons li {
+        display: grid;
+        grid-template-columns: 26px 1fr auto;
+        gap: 8px;
+        align-items: center;
+        padding: 9px 0;
+        border-top: 1px solid var(--m-line);
+        font-size: 14px;
+      }
+      .lessons li:first-child {
+        border-top: 0;
+        padding-top: 0;
+      }
+      .num {
+        font: 500 12px/1 var(--m-ui);
+        color: var(--m-muted);
+        font-variant-numeric: tabular-nums;
+      }
+      .chip {
+        font: 600 11px/1 var(--m-ui);
+        padding: 4px 7px;
+        border-radius: 999px;
+        background: var(--m-sunk);
+        color: var(--m-muted);
+        white-space: nowrap;
+      }
+      .chip.ok {
+        background: var(--m-ok-soft);
+        color: var(--m-ok);
+      }
+      .chip.now {
+        background: var(--m-soft);
+        color: var(--m-accent);
+      }
+      .chip.warn {
+        color: var(--m-warn);
+      }
+
+      .bars {
+        display: grid;
+        grid-template-columns: repeat(14, 1fr);
+        gap: 3px;
+        align-items: end;
+        height: 46px;
+        margin: 4px 0 8px;
+      }
+      .bars i {
+        display: block;
+        background: var(--m-sunk);
+        border-radius: 2px;
+        height: 4px;
+        transform-origin: bottom;
+      }
+      .bars i.on {
+        background: var(--m-accent);
+      }
+      .bars-legend {
+        display: flex;
+        justify-content: space-between;
+        font-size: 11px;
+        color: var(--m-muted);
+      }
+
+      .objs {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+      .objs li {
+        border-top: 1px solid var(--m-line);
+      }
+      .objs li:first-child {
+        border-top: 0;
+      }
+      .obj {
+        display: grid;
+        grid-template-columns: 1fr auto auto;
+        gap: 8px;
+        align-items: center;
+        padding: 9px 0;
+        font-size: 13px;
+      }
+      .obj .chev {
+        width: 14px;
+        height: 14px;
+        stroke: var(--m-muted);
+        stroke-width: 2;
+        fill: none;
+      }
+      .evidence {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        padding: 10px 12px;
+        margin: 0 0 10px;
+        background: var(--m-sunk);
+        border-radius: var(--m-radius-sm);
+        font-size: 12px;
+      }
+      .evidence dt {
+        color: var(--m-muted);
+        margin-bottom: 2px;
+      }
+      .evidence dd {
+        margin: 0;
+      }
+
+      /* Lesson */
+      .lesson-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 14px;
+      }
+      .prose {
+        font: 400 17px/1.65 var(--m-prose);
+        max-width: 34rem;
+      }
+      .prose h2 {
+        font: 600 22px/1.2 var(--m-head);
+        margin: 0 0 10px;
+        letter-spacing: -0.01em;
+      }
+      .prose p {
+        margin: 0 0 12px;
+      }
+      mark {
+        background: var(--m-mark);
+        color: inherit;
+        padding: 1px 0;
+        border-radius: 2px;
+      }
+      .ask {
+        padding: 14px;
+        font-size: 14px;
+        line-height: 1.55;
+        align-self: start;
+      }
+      .ask .quote {
+        font-style: italic;
+        color: var(--m-muted);
+        font-size: 12px;
+        margin-bottom: 8px;
+        border-left: 2px solid var(--m-accent);
+        padding-left: 8px;
+      }
+      .ask .q {
+        font-weight: 600;
+        margin: 0 0 6px;
+      }
+      .ask p {
+        margin: 0 0 10px;
+      }
+      .ask .follow {
+        display: flex;
+        gap: 6px;
+      }
+      .ask input {
+        flex: 1;
+        min-width: 0;
+        font: 400 13px var(--m-ui);
+        padding: 8px 10px;
+        border: 1px solid var(--m-line);
+        border-radius: var(--m-radius-sm);
+        background: var(--m-bg);
+        color: var(--m-text);
+      }
+      code {
+        font:
+          500 0.88em "JetBrains Mono",
+          ui-monospace,
+          monospace;
+        background: var(--m-sunk);
+        padding: 1px 4px;
+        border-radius: 3px;
+      }
+
+      /* Quiz */
+      .score {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 4px 14px;
+        align-items: center;
+        padding: 16px;
+      }
+      .score .big {
+        font: 650 34px/1 var(--m-head);
+        color: var(--m-ok);
+        grid-row: span 2;
+        font-variant-numeric: tabular-nums;
+      }
+      .score .line {
+        font-size: 14px;
+      }
+      .meter {
+        height: 6px;
+        background: var(--m-sunk);
+        border-radius: 999px;
+        overflow: hidden;
+      }
+      .meter i {
+        display: block;
+        height: 100%;
+        width: 92%;
+        background: var(--m-ok);
+        border-radius: inherit;
+        transform-origin: left;
+      }
+      .qcard {
+        padding: 16px;
+        margin-top: 12px;
+      }
+      .qcard h3 {
+        font: 600 16px/1.35 var(--m-head);
+        margin: 0 0 10px;
+      }
+      .opts {
+        display: grid;
+        gap: 6px;
+      }
+      .opt {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        padding: 10px 12px;
+        border: 1px solid var(--m-line);
+        border-radius: var(--m-radius-sm);
+        font-size: 14px;
+      }
+      .opt.picked {
+        border-color: var(--m-ok);
+        background: var(--m-ok-soft);
+      }
+      .dot {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        border: 1.5px solid var(--m-line);
+        flex: none;
+      }
+      .opt.picked .dot {
+        border: 4px solid var(--m-ok);
+      }
+      .fb {
+        display: flex;
+        gap: 8px;
+        margin-top: 10px;
+        padding: 10px 12px;
+        border-radius: var(--m-radius-sm);
+        background: var(--m-ok-soft);
+        color: var(--m-ok);
+        font-size: 13px;
+        line-height: 1.5;
+      }
+      .fb svg {
+        width: 16px;
+        height: 16px;
+        flex: none;
+        stroke: currentColor;
+        stroke-width: 2.25;
+        fill: none;
+        margin-top: 2px;
+      }
+
+      /* ── Direction overrides ────────────────────────────── */
+      /* Editorial: rules instead of boxes, margin notes. */
+      .mock[data-dir="editorial"] .card {
+        border: 0;
+        border-top: 1px solid var(--m-text);
+        background: transparent;
+      }
+      .mock[data-dir="editorial"] .hero {
+        padding: 14px 0 0;
+      }
+      .mock[data-dir="editorial"] .panel {
+        padding: 12px 0 0;
+      }
+      .mock[data-dir="editorial"] .title {
+        font-size: 38px;
+        font-weight: 500;
+      }
+      .mock[data-dir="editorial"] .eyebrow,
+      .mock[data-dir="editorial"] .sec-h {
+        font-family: "Inter", sans-serif;
+        font-size: 10px;
+        letter-spacing: 0.14em;
+      }
+      .mock[data-dir="editorial"] .chip {
+        background: transparent;
+        border: 1px solid currentColor;
+        border-radius: 2px;
+        font-family: "Inter", sans-serif;
+      }
+      .mock[data-dir="editorial"] .lesson-grid {
+        grid-template-columns: 1fr 200px;
+        gap: 22px;
+      }
+      .mock[data-dir="editorial"] .ask {
+        border-top: 2px solid var(--m-accent);
+        font-size: 13px;
+        padding-top: 10px;
+      }
+      .mock[data-dir="editorial"] .ask .quote {
+        border: 0;
+        padding: 0;
+      }
+      .mock[data-dir="editorial"] .score {
+        padding: 14px 0;
+      }
+      .mock[data-dir="editorial"] .qcard {
+        padding: 14px 0 0;
+      }
+      .mock[data-dir="editorial"] .fb {
+        background: transparent;
+        padding: 0;
+        border-left: 2px solid var(--m-ok);
+        padding-left: 10px;
+      }
+      .mock[data-dir="editorial"] .brand {
+        font-style: italic;
+        font-weight: 500;
+        font-size: 18px;
+      }
+
+      /* Product: sidebar app shell, sans chrome. */
+      .mock[data-dir="product"] .body {
+        grid-template-columns: 150px 1fr;
+      }
+      .mock[data-dir="product"] .side {
+        display: block;
+        border-right: 1px solid var(--m-line);
+        padding: 14px 10px;
+        font-size: 13px;
+        background: var(--m-surface);
+      }
+      .side a {
+        display: flex;
+        justify-content: space-between;
+        padding: 7px 8px;
+        border-radius: 6px;
+        color: var(--m-muted);
+        text-decoration: none;
+      }
+      .side a.cur {
+        background: var(--m-sunk);
+        color: var(--m-text);
+        font-weight: 500;
+      }
+      .side .grp {
+        font-size: 11px;
+        color: var(--m-muted);
+        margin: 14px 8px 6px;
+      }
+      .mock[data-dir="product"] .card {
+        border-color: transparent;
+      }
+      .mock[data-dir="product"] .title {
+        font-size: 24px;
+      }
+      .mock[data-dir="product"] .crumbs {
+        display: none;
+      }
+
+      /* Warm desk: soft fills, chunky pills, rings. */
+      .mock[data-dir="warm"] .btn {
+        border-radius: 999px;
+        padding: 11px 16px;
+        font-weight: 800;
+      }
+      .mock[data-dir="warm"] .btn.primary {
+        box-shadow: 0 3px 0 color-mix(in oklab, var(--m-accent), black 22%);
+      }
+      .mock[data-dir="warm"] .hero {
+        background: var(--m-soft);
+        border-color: transparent;
+      }
+      .mock[data-dir="warm"] .eyebrow {
+        text-transform: none;
+        letter-spacing: 0;
+        font-size: 13px;
+        font-weight: 800;
+      }
+      .mock[data-dir="warm"] .title::before {
+        content: "🦀 ";
+      }
+      .mock[data-dir="warm"] .meter {
+        height: 12px;
+      }
+      .mock[data-dir="warm"] .bars i {
+        border-radius: 6px;
+      }
+      .mock[data-dir="warm"] .sec-h {
+        text-transform: none;
+        letter-spacing: 0;
+        font-size: 15px;
+        color: var(--m-text);
+        font-family: var(--m-head);
+      }
+      .mock[data-dir="warm"] .score {
+        background: var(--m-ok-soft);
+        border-color: transparent;
+      }
+      .mock[data-dir="warm"] .ask {
+        background: var(--m-surface);
+      }
+
+      /* Terminal: mono chrome, square, bracketed. */
+      .mock[data-dir="terminal"] .title {
+        font-size: 22px;
+        font-weight: 700;
+      }
+      .mock[data-dir="terminal"] .title::before {
+        content: "# ";
+        color: var(--m-accent);
+      }
+      .mock[data-dir="terminal"] .eyebrow::before {
+        content: "> ";
+      }
+      .mock[data-dir="terminal"] .eyebrow,
+      .mock[data-dir="terminal"] .sec-h {
+        text-transform: lowercase;
+        letter-spacing: 0;
+      }
+      .mock[data-dir="terminal"] .btn {
+        text-transform: lowercase;
+      }
+      .mock[data-dir="terminal"] .btn::before {
+        content: "[";
+        opacity: 0.55;
+      }
+      .mock[data-dir="terminal"] .btn::after {
+        content: "]";
+        opacity: 0.55;
+      }
+      .mock[data-dir="terminal"] .chip {
+        border-radius: 0;
+      }
+      .mock[data-dir="terminal"] .chip::before {
+        content: "[";
+      }
+      .mock[data-dir="terminal"] .chip::after {
+        content: "]";
+      }
+      .mock[data-dir="terminal"] .hero h2,
+      .mock[data-dir="terminal"] .qcard h3 {
+        font-size: 15px;
+      }
+      .mock[data-dir="terminal"] .score .big {
+        font-size: 28px;
+      }
+      .mock[data-dir="terminal"] .meter {
+        border-radius: 0;
+        height: 8px;
+      }
+      .mock[data-dir="terminal"] .bars i {
+        border-radius: 0;
+      }
+      .mock[data-dir="terminal"] .dot {
+        border-radius: 0;
+      }
+      .mock[data-dir="terminal"] .brand::before {
+        content: "~/";
+        color: var(--m-muted);
+      }
+
+      /* ── Narrow ─────────────────────────────────────────── */
+      @media (max-width: 620px) {
+        .row2,
+        .hero {
+          grid-template-columns: 1fr;
+        }
+        .actions {
+          justify-content: flex-start;
+        }
+        .mock[data-dir] .lesson-grid {
+          grid-template-columns: 1fr;
+        }
+        .mock[data-dir="product"] .body {
+          grid-template-columns: 1fr;
+        }
+        .mock[data-dir="product"] .side {
+          display: none;
+        }
+        .evidence {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* ── Motion: staged entrance when switching direction ── */
+      @media (prefers-reduced-motion: no-preference) {
+        .mock.enter .stage {
+          animation: m-in 300ms ease-out both;
+          animation-delay: calc(var(--i) * 100ms);
+        }
+        .mock.enter .bars i {
+          animation: m-grow 300ms cubic-bezier(0.23, 1, 0.32, 1) both;
+          animation-delay: calc(200ms + var(--b) * 20ms);
+        }
+        .mock.enter .meter i {
+          animation: m-fill 600ms cubic-bezier(0.23, 1, 0.32, 1) both;
+          animation-delay: 500ms;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .mock.enter .stage {
+          animation: m-fade 200ms ease both;
+        }
+      }
+      @keyframes m-in {
+        from {
+          opacity: 0;
+          filter: blur(4px);
+          transform: translateY(12px);
+        }
+      }
+      @keyframes m-fade {
+        from {
+          opacity: 0;
+        }
+      }
+      @keyframes m-grow {
+        from {
+          transform: scaleY(0.2);
+          opacity: 0;
+        }
+      }
+      @keyframes m-fill {
+        from {
+          transform: scaleX(0);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="picker">
+        <div class="tabs" role="tablist" aria-label="Direction">
+          <button class="tab" role="tab" data-dir="editorial" aria-selected="true">
+            1 · Editorial
+          </button>
+          <button class="tab" role="tab" data-dir="product" aria-selected="false">
+            2 · Calm product
+          </button>
+          <button class="tab" role="tab" data-dir="warm" aria-selected="false">
+            3 · Warm desk
+          </button>
+          <button class="tab" role="tab" data-dir="terminal" aria-selected="false">
+            4 · Terminal
+          </button>
+        </div>
+        <button class="mode" id="mode" aria-pressed="false">Dark</button>
+      </div>
+      <p class="blurb" id="blurb"></p>
+
+      <div class="mock" id="mock" data-dir="editorial" data-mode="light">
+        <div class="bar">
+          <span class="brand">Studens</span>
+          <span class="crumbs">/ Classrooms / <b>Practical Rust</b></span>
+          <span class="sp"></span>
+          <span class="icon" title="Search"
+            ><svg viewBox="0 0 24 24">
+              <circle cx="11" cy="11" r="6.5" />
+              <path d="m20 20-4.2-4.2" /></svg
+          ></span>
+          <span class="icon" title="Theme"
+            ><svg viewBox="0 0 24 24">
+              <path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5Z" /></svg
+          ></span>
+        </div>
+        <div class="body">
+          <nav class="side">
+            <a href="#" class="cur">Today <span>5</span></a>
+            <a href="#">Review</a>
+            <a href="#">Search</a>
+            <div class="grp">Classrooms</div>
+            <a href="#" class="cur">Practical Rust</a>
+            <a href="#">Biology <span>2</span></a>
+            <div class="grp">Folders</div>
+            <a href="#">Languages</a>
+          </nav>
+
+          <div class="content">
+            <!-- Screen 1: Classroom -->
+            <section>
+              <p class="screen-label">Classroom page</p>
+              <div class="stage" style="--i: 0">
+                <h1 class="title">Practical Rust</h1>
+                <p class="mission">Ship a CLI to my team by October.</p>
+              </div>
+              <div class="card hero stage" style="--i: 1">
+                <div>
+                  <div class="eyebrow">Up next</div>
+                  <h2>02 · Lifetimes are not scopes</h2>
+                  <div class="meta">Resume at “Worked example” · about 6 min left</div>
+                </div>
+                <div class="actions">
+                  <button class="btn">Review 5 due</button>
+                  <button class="btn primary">Continue lesson</button>
+                </div>
+              </div>
+              <div class="row2">
+                <div class="card panel stage" style="--i: 2">
+                  <div class="sec-h"><span>Lessons</span><a href="#">Course map</a></div>
+                  <ul class="lessons">
+                    <li>
+                      <span class="num">01</span><span>Moves and borrows</span
+                      ><span class="chip ok">92%</span>
+                    </li>
+                    <li>
+                      <span class="num">02</span><span>Lifetimes are not scopes</span
+                      ><span class="chip now">In progress</span>
+                    </li>
+                    <li>
+                      <span class="num">03</span><span>When to clone</span
+                      ><span class="chip">Not started</span>
+                    </li>
+                  </ul>
+                </div>
+                <div class="card panel stage" style="--i: 3">
+                  <div class="sec-h"><span>Review · next 14 days</span><a href="#">Table</a></div>
+                  <div class="bars" id="bars"></div>
+                  <div class="bars-legend"><span>Today · 5 due</span><span>Nov 2</span></div>
+                </div>
+              </div>
+              <div class="card panel stage" style="--i: 4; margin-top: 14px">
+                <div class="sec-h"><span>Memory map</span><a href="#">All 8</a></div>
+                <ul class="objs">
+                  <li>
+                    <div class="obj">
+                      <span>Repair a borrow that outlives its owner</span
+                      ><span class="chip warn">Paused · re-teach</span
+                      ><svg class="chev" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg>
+                    </div>
+                    <dl class="evidence">
+                      <div>
+                        <dt>Strength</dt>
+                        <dd>More practice needed</dd>
+                      </div>
+                      <div>
+                        <dt>Last evidence</dt>
+                        <dd>Oct 7 · independent, 0%</dd>
+                      </div>
+                      <div>
+                        <dt>Open gap</dt>
+                        <dd>Repeated misses</dd>
+                      </div>
+                    </dl>
+                  </li>
+                  <li>
+                    <div class="obj">
+                      <span>Trace a moved value across functions</span
+                      ><span class="chip now">Due now</span
+                      ><svg class="chev" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6" /></svg>
+                    </div>
+                  </li>
+                  <li>
+                    <div class="obj">
+                      <span>Explain when an owner releases a value</span
+                      ><span class="chip ok">In 3 days</span
+                      ><svg class="chev" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6" /></svg>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+            </section>
+
+            <!-- Screen 2: Lesson + ask -->
+            <section>
+              <p class="screen-label">Lesson + question</p>
+              <div class="lesson-grid stage" style="--i: 5">
+                <div class="prose">
+                  <h2>Moves and borrows</h2>
+                  <p>
+                    Rust drops a value when its owner goes out of scope, and it must drop it exactly
+                    once. If two bindings owned the same heap allocation,
+                    <mark>both would try to free it, and you would have a double free</mark>. Moving
+                    the value keeps the count at one.
+                  </p>
+                </div>
+                <aside class="card ask">
+                  <div class="quote">both would try to free it…</div>
+                  <p class="q">Why a double free and not a leak?</p>
+                  <p>
+                    Because <code>drop</code> is automatic. Each owner that leaves scope frees what
+                    it owns, so two owners free twice.
+                  </p>
+                  <div class="follow">
+                    <input placeholder="Ask a follow-up…" aria-label="Follow-up" /><button
+                      class="btn primary"
+                    >
+                      Ask
+                    </button>
+                  </div>
+                </aside>
+              </div>
+            </section>
+
+            <!-- Screen 3: Quiz result -->
+            <section>
+              <p class="screen-label">Graded check</p>
+              <div class="card score stage" style="--i: 6">
+                <span class="big">92%</span>
+                <span class="line"
+                  ><b>3 of 3 correct.</b> Sharpen one word: <i>borrow</i> is the operation,
+                  <i>reference</i> is what you hold.</span
+                >
+                <div class="meter"><i></i></div>
+              </div>
+              <div class="card qcard stage" style="--i: 7">
+                <h3>1 · What problem does the move rule exist to prevent?</h3>
+                <div class="opts">
+                  <div class="opt picked">
+                    <span class="dot"></span>Two owners freeing one value
+                  </div>
+                  <div class="opt"><span class="dot"></span>Reading memory before it is set</div>
+                </div>
+                <div class="fb">
+                  <svg viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg
+                  ><span
+                    >Right, for the right reason: the rule is about destruction running twice.</span
+                  >
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script>
+      const blurbs = {
+        editorial:
+          "A literary textbook. Newsreader + Source Serif, hairline rules instead of boxes, questions as margin notes beside the passage, a single oxblood accent. Calm, reading-first.",
+        product:
+          "A focused app shell. Inter for chrome, Source Serif only for lesson prose, a persistent sidebar (Today / Review / classrooms), neutral grays, one indigo accent, soft ring shadows.",
+        warm: "A friendly study desk. Fraunces headings + Nunito body, big rounded cards, chunky pill buttons, tinted fills for the next step and for wins. Progress feels rewarding.",
+        terminal:
+          "Developer-native. JetBrains Mono chrome, IBM Plex Sans prose, square corners, bracketed controls, green accent. Dense, matches the Claude Code / Codex / Pi audience.",
+      };
+      const counts = [5, 0, 0, 1, 0, 0, 2, 0, 0, 0, 3, 0, 0, 1];
+      const bars = document.getElementById("bars");
+      counts.forEach((n, b) => {
+        const i = document.createElement("i");
+        i.style.height = n ? `${8 + n * 7}px` : "4px";
+        if (n) i.className = "on";
+        i.style.setProperty("--b", b);
+        bars.append(i);
+      });
+      const mock = document.getElementById("mock");
+      const blurb = document.getElementById("blurb");
+      const replay = () => {
+        mock.classList.remove("enter");
+        void mock.offsetWidth;
+        mock.classList.add("enter");
+      };
+      const pick = (dir) => {
+        mock.dataset.dir = dir;
+        blurb.textContent = blurbs[dir];
+        document
+          .querySelectorAll(".tab")
+          .forEach((t) => t.setAttribute("aria-selected", String(t.dataset.dir === dir)));
+        replay();
+      };
+      document
+        .querySelectorAll(".tab")
+        .forEach((t) => t.addEventListener("click", () => pick(t.dataset.dir)));
+      const mode = document.getElementById("mode");
+      mode.addEventListener("click", () => {
+        const dark = mock.dataset.mode !== "dark";
+        mock.dataset.mode = dark ? "dark" : "light";
+        mode.setAttribute("aria-pressed", String(dark));
+        mode.textContent = dark ? "Light" : "Dark";
+      });
+      pick("editorial");
+    </script>
+  </body>
+</html>
