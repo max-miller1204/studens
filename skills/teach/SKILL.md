@@ -12,9 +12,12 @@ description: Teach a topic or create challenging quizzes and tests in the classr
 3. Follow the method that `begin_teaching` returns. It is the full teaching brief.
 4. Before you give the learner a lesson URL, call `open_classroom`. Give the
    learner the link. Never open a browser for the learner.
-5. The persistent service selects a dedicated teacher for each classroom. Use the
-   initiating host or pass teacher_backend explicitly to `open_classroom`. Do not
-   change an existing classroom's backend.
+5. Opening selects the initiating app's dedicated teacher adapter. An existing
+   classroom switches automatically after active work and a readiness check.
+   Pass teacher_backend explicitly if the initiating host is unknown. It must
+   match a known host. Omit the classroom only to switch every classroom before
+   opening the list. A failed open returns no link. Report its error and retry
+   only on explicit request. Saved learner evidence stays with the classroom.
 6. Browser questions and quiz submissions start teacher work when they arrive.
    The initiating chat can end. Do not run a wait loop or a looping subagent.
 7. The dedicated teacher answers and grades through the service. Its results reach

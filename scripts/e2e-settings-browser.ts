@@ -203,7 +203,7 @@ require('node:readline').createInterface({input:process.stdin}).on('line',line=>
     });
     restart.restore();
     await restart.idle();
-    if (restart.settings("rust")?.identity.sessionId !== "settings-conversation")
+    if (readTeacherState("rust")?.identity.sessionId !== "settings-conversation")
       throw new Error("Conversation identity lost after restart.");
     await restart.stop();
     if (artifacts) {

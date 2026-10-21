@@ -1,3 +1,4 @@
+import { verifyOwnershipBrowser } from "./e2e-ownership-browser.ts";
 import { verifyAppearanceBrowser } from "./e2e-appearance-browser.ts";
 import { verifyReviewObserver } from "./e2e-review-observer.ts";
 import { verifyMemoryMapBrowser } from "./e2e-memory-map-browser.ts";
@@ -398,6 +399,7 @@ await verifyCourseMapBrowser(artifacts ? path.join(artifacts, "course-map") : nu
 await verifyLessonSources(artifacts ? path.join(artifacts, "lesson-sources") : null);
 
 await verifyPiPanelBrowser(artifacts ? path.join(artifacts, "pi-panel") : null);
+await verifyOwnershipBrowser(path.join(artifacts ?? fixture.root, "ownership"));
 await verifyServiceBrowser(artifacts ? path.join(artifacts, "service") : null);
 
 await verifyReviewBrowser(artifacts ? path.join(artifacts, "review") : null);

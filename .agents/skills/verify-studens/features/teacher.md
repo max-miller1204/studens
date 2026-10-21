@@ -15,6 +15,10 @@ The learner receives follow-up questions and answers them in the lesson's teache
 - Regenerate a plan rejected before writes. Keep valid plans for recovery.
 - Request a new grade plan after an explicit retry of a rejected score.
 - Keep the persistent service available after Pi or MCP exit.
+- Switch the dedicated teacher to the opening app after active work and readiness.
+- Check same-adapter readiness without replacing its saved session or model.
+- Migrate all classrooms together when opening the list. Keep prior owners if readiness fails.
+- Process concurrent opens in service order. Keep saved grades and request order.
 - Discover the packaged Pi teaching skills alongside the classroom extension.
 
 ## How to get to it (user POV)
@@ -30,6 +34,26 @@ The learner receives follow-up questions and answers them in the lesson's teache
 ## Driving it with playwright-cli
 
 Run `npm run verify -- browser --artifacts /tmp/studens-teacher`.
+
+The default browser target includes `ownership/`. It uses the public MCP dispatcher,
+HTTP and browser controls with a controlled dedicated-teacher boundary. Submit a
+quiz, start a Codex open during Claude grading, and send a panel reply while
+switching. Require one Claude grade before Codex readiness and a Codex reply after
+commit. Inspect `switching.png`, `after.png`, `active-boundary.json` and `result.json`.
+The same drive checks same-adapter session reuse, conflicting or unknown hosts,
+startup failure without a link, list-wide failure without partial ownership,
+concurrent list and named opens, private routes and restart without another grade.
+These fixture adapters do not prove real provider startup or model behavior.
+
+Run `npx vitest run test/teacher-ownership.test.ts test/service-process.test.ts`
+for active failure and explicit retry, pre/post-commit recovery, interrupted batch
+writes, session provenance and real MCP stdio transport. Use the real-host targets
+below to check provider access. A passing single-host run does not prove every
+cross-provider model combination.
+
+Run `npx vitest run test/service-control.test.ts test/service-process.test.ts` to
+check real control sockets and MCP. An ordered open must stay connected while
+it waits for bounded teacher turns. Other control calls retain their timeout.
 
 The legacy Pi bridge fixture checks `.cl-teacher` follows the quiz, a prose-only grading run fails, and an explicit retry permits grading. It checks the panel reply reaches the correct prompt and all three conversation messages survive reload.
 

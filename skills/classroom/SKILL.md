@@ -28,3 +28,10 @@ requests start teacher work.
   that also works on a phone. Give it as returned. The learner turns tailnet links
   off or changes their port in `classroom.json`.
 - If a port or route conflicts, report the error. Do not select another port silently.
+
+Opening selects this app's dedicated teacher adapter. It waits for active work and
+checks readiness before switching an existing classroom. Opening the list switches
+every classroom together. A readiness failure keeps prior ownership and returns no
+link. Report the error. Retry only on explicit request. Pass teacher_backend when
+the initiating host is unknown. It must match a known host. Native conversations do
+not transfer; saved classroom evidence supplies continuity.

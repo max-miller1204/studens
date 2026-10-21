@@ -1,3 +1,4 @@
+import { openingBackend } from "./teacher-host.ts";
 /** Detached service entry point. stdout is a diagnostic log, not MCP transport. */
 import { resumeTeacherTool } from "./teacher-resume.ts";
 import * as fs from "node:fs";
@@ -9,7 +10,6 @@ import { servicePaths, servicePort } from "./service-client.ts";
 import { PhoneAccess } from "./phone-access.ts";
 import { TailnetLinks } from "./tailnet-links.ts";
 import { TeacherService } from "./teacher-service.ts";
-import { readTeacherState } from "./service-state.ts";
 import type { Backend } from "./teacher.ts";
 import { serviceToolDefinitions } from "./service-tools.ts";
 import type { ClassroomTool, ToolResult } from "./tools.ts";
@@ -119,20 +119,16 @@ function session(id: string, backend?: Backend): McpSession {
   const mcp = new McpSession(inbox, {
     tools,
     async open(classroom, requested) {
-      if (
-        requested !== undefined &&
-        requested !== "claude" &&
-        requested !== "codex" &&
-        requested !== "pi"
-      )
-        throw new Error("Invalid teacher_backend.");
-      const selected = (requested as Backend | undefined) ?? backend;
-      for (const name of classroom ? [classroom] : store.listClassrooms().map((c) => c.name))
-        teacher.attach(
-          name,
-          requested === undefined && readTeacherState(name) ? undefined : selected,
+      const selected = openingBackend(backend, requested);
+      await teacher.open(classroom, selected);
+      try {
+        await links.share();
+      } catch (error) {
+        throw new Error(
+          `Teacher migration committed to ${selected}, but link setup failed: ${(error as Error).message}. Retry open_classroom explicitly.`,
+          { cause: error },
         );
-      await links.share();
+      }
       return server.urlFor(classroom ?? undefined)!;
     },
   });

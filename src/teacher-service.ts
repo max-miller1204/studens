@@ -1,4 +1,12 @@
 import {
+  saveOwnershipTransaction,
+  finishOwnershipTransaction,
+  recoverOwnershipTransaction,
+  pendingOwnershipTransaction,
+} from "./teacher-ownership.ts";
+import type { OwnershipChange } from "./teacher-ownership.ts";
+import type { TeacherIdentity } from "./teacher.ts";
+import {
   RESOLVE_DISPUTE,
   snapshotDispute,
   validateDisputeTarget,
@@ -87,12 +95,44 @@ export class TeacherService {
   private readonly active = new Map<string, Promise<void>>();
   private readonly run: RunTeacher;
   private stopping = false;
+  private readonly switching = new Map<string, Backend>();
+  private ownershipOrder: Promise<void> = Promise.resolve();
   private readonly controllers = new Set<AbortController>();
   constructor(run: RunTeacher = runTeacher) {
     this.run = run;
   }
 
   attach(classroom: string, backend?: Backend): void {
+    this.checkOwnership(classroom);
+    let state = this.states.get(classroom) ?? readTeacherState(classroom);
+    if (!state) {
+      if (!backend)
+        throw new Error(
+          "Select teacher_backend pi, codex, or claude. The initiating host is unknown.",
+        );
+      state = { version: 1, identity: { backend }, requests: [], messages: [] };
+    } else if (backend && backend !== state.identity.backend) {
+      throw new Error(
+        `Classroom ${classroom} belongs to ${state.identity.backend}. It cannot attach to ${backend}.`,
+      );
+    }
+    if (!this.states.has(classroom)) {
+      this.states.set(classroom, state);
+      for (const r of state.requests)
+        if (r.status === "running") {
+          r.status = "failed";
+          r.error = "Service stopped during teacher work. Retry this request.";
+          if (r.kind === "lesson")
+            updateLessonRequest(this.lessonRequest(r), { status: "failed", error: r.error });
+          if (r.kind === "review") updateReview(this.reviewSession(r), "failed", r.error);
+          if (r.kind === "refill") updateRefill(this.refillRequest(r), "failed", r.error);
+        }
+    }
+    saveTeacherState(classroom, state);
+    this.recover(classroom);
+    this.wake(classroom);
+  }
+  private checkOwnership(classroom: string): void {
     if (!store.readClassroom(classroom)) throw new Error(`No such classroom: ${classroom}`);
     const legacyLesson = lessonRequests(classroom).find(
       (r) => r.owner === "pi" && r.delivery !== "service" && r.status !== "done",
@@ -134,36 +174,123 @@ export class TeacherService {
       throw new Error(
         `Classroom ${classroom} has unfinished legacy Pi work ${legacyReview?.id ?? legacyRefill?.id ?? legacyResume?.id ?? legacyDaily?.plan.id}. Reopen the previous Pi package, explicitly retry and finish that request, then stop its server before retrying open_classroom. Saved plans and history have not been changed.`,
       );
-    let state = this.states.get(classroom) ?? readTeacherState(classroom);
-    if (!state) {
-      if (!backend)
-        throw new Error(
-          "Select teacher_backend pi, codex, or claude. The initiating host is unknown.",
-        );
-      state = { version: 1, identity: { backend }, requests: [], messages: [] };
-    } else if (backend && backend !== state.identity.backend) {
-      throw new Error(
-        `Classroom ${classroom} belongs to ${state.identity.backend}. It cannot attach to ${backend}.`,
-      );
-    }
-    if (!this.states.has(classroom)) {
-      this.states.set(classroom, state);
-      for (const r of state.requests)
-        if (r.status === "running") {
-          r.status = "failed";
-          r.error = "Service stopped during teacher work. Retry this request.";
-          if (r.kind === "lesson")
-            updateLessonRequest(this.lessonRequest(r), { status: "failed", error: r.error });
-          if (r.kind === "review") updateReview(this.reviewSession(r), "failed", r.error);
-          if (r.kind === "refill") updateRefill(this.refillRequest(r), "failed", r.error);
-        }
-    }
-    saveTeacherState(classroom, state);
-    this.recover(classroom);
-    this.wake(classroom);
   }
   restore(): void {
+    recoverOwnershipTransaction();
     for (const c of store.listClassrooms()) if (readTeacherState(c.name)) this.attach(c.name);
+  }
+  /** Serialize opens, including list reservations, before releasing learner work. */
+  open(classroom: string | null, backend: Backend): Promise<void> {
+    const work = this.ownershipOrder.then(async () => {
+      if (this.stopping) throw new Error("Teacher service is stopping.");
+      if (pendingOwnershipTransaction())
+        throw new Error("Teacher ownership recovery is required. Restart the service explicitly.");
+      const names = classroom ? [classroom] : store.listClassrooms().map((c) => c.name);
+      for (const name of names) this.switching.set(name, backend);
+      const changes: OwnershipChange[] = [];
+      try {
+        for (const name of names) {
+          // Attach checks legacy ownership and loads saved recovery without dispatching it.
+          this.checkOwnership(name);
+          if (readTeacherState(name)) this.attach(name);
+          this.publishOwnership(name);
+        }
+        await Promise.all(names.map((name) => this.active.get(name)));
+        if (this.stopping) throw new Error("Teacher service stopped before ownership preparation.");
+        for (const name of names) {
+          if (this.stopping)
+            throw new Error("Teacher service stopped during ownership preparation.");
+          const state = this.states.get(name);
+          const prior = state ? { ...state.identity } : null;
+          const candidate: TeacherIdentity =
+            prior?.backend === backend
+              ? { ...prior }
+              : {
+                  backend,
+                  selectionRevision: (prior?.selectionRevision ?? 0) + 1,
+                };
+          changes.push({ classroom: name, prior, candidate });
+          saveOwnershipTransaction({ version: 1, decision: "prepared", changes });
+          const controller = new AbortController();
+          this.controllers.add(controller);
+          try {
+            const plan = await this.run(
+              candidate,
+              "Readiness check only. Confirm that this dedicated teacher can run. Return an empty calls array, a brief readiness message, null learning_record and empty notes_markdown. Do not answer learner work, grade, research, publish or write evidence. Saved classroom evidence will be supplied with each later request.",
+              classroomDir(name),
+              (id) => {
+                candidate.sessionId = id;
+                saveOwnershipTransaction({ version: 1, decision: "prepared", changes });
+              },
+              controller.signal,
+              { operations: [], messageRequired: true },
+              undefined,
+              (model) => {
+                candidate.activeModel = model;
+                candidate.activeModelAt = Date.now();
+                candidate.activeRequestedModel = candidate.requestedModel ?? null;
+              },
+            );
+            if (
+              plan.calls.length ||
+              plan.learning_record.trim() ||
+              plan.notes_markdown.trim() ||
+              !plan.message.trim()
+            )
+              throw new Error(
+                "Readiness must return a message without operations or learning evidence.",
+              );
+          } catch (error) {
+            throw new Error(
+              `Cannot open classroom ${name} with ${backend} teacher: ${error instanceof Error ? error.message : String(error)}. Retry open_classroom explicitly.`,
+              { cause: error },
+            );
+          } finally {
+            this.controllers.delete(controller);
+          }
+        }
+        if (!changes.length) return;
+        if (this.stopping) throw new Error("Teacher service stopped before ownership commit.");
+        const transaction = {
+          version: 1 as const,
+          decision: "prepared" as "prepared" | "committed",
+          changes,
+        };
+        saveOwnershipTransaction(transaction);
+        transaction.decision = "committed";
+        saveOwnershipTransaction(transaction);
+        finishOwnershipTransaction(transaction);
+        // All files are committed before any public identity or queue is released.
+        for (const change of changes) {
+          const saved = readTeacherState(change.classroom)!;
+          const state = this.states.get(change.classroom);
+          if (state) {
+            state.identity = saved.identity;
+            state.previousIdentities = saved.previousIdentities;
+          } else {
+            this.states.set(change.classroom, saved);
+            this.recover(change.classroom);
+          }
+        }
+      } finally {
+        const unresolved = pendingOwnershipTransaction();
+        if (unresolved?.decision === "prepared") finishOwnershipTransaction(unresolved);
+        if (!unresolved || unresolved.decision === "prepared") {
+          for (const name of names) {
+            this.switching.delete(name);
+            this.publishOwnership(name);
+            this.wake(name);
+          }
+        }
+      }
+    });
+    this.ownershipOrder = work.catch(() => {});
+    return work;
+  }
+  private publishOwnership(classroom: string): void {
+    if (!this.states.has(classroom)) return;
+    this.publish(classroom, "");
+    for (const lesson of store.listLessons(classroom)) this.publish(classroom, lesson.name);
   }
   connect(applyConnectionSettings?: () => Promise<void>): void {
     server.setHooks({
@@ -638,7 +765,14 @@ export class TeacherService {
     const running = state.requests.find((request) => request.status === "running");
     const last = [...state.requests].reverse().find((request) => request.status === "failed");
     return {
-      identity: { ...state.identity },
+      identity: {
+        backend: state.identity.backend,
+        requestedModel: state.identity.requestedModel,
+        selectionRevision: state.identity.selectionRevision,
+        activeModel: state.identity.activeModel,
+        activeRequestedModel: state.identity.activeRequestedModel,
+        activeModelAt: state.identity.activeModelAt,
+      },
       running: running ? { id: running.id, requestedModel: running.requestedModel ?? null } : null,
       error: last?.error,
     };
@@ -647,6 +781,8 @@ export class TeacherService {
     const model = modelSelection(value);
     const state = this.states.get(classroom);
     if (!state) throw new Error("No teacher owns this classroom. Open it from your agent first.");
+    if (this.switching.has(classroom))
+      throw new Error("Teacher is switching. Retry model selection after opening finishes.");
     if (revision !== (state.identity.selectionRevision ?? 0))
       throw new Error(
         "Teacher model setting changed in another page. Reload settings before saving again.",
@@ -666,7 +802,13 @@ export class TeacherService {
     return {
       reteach: lesson === undefined ? [] : reteachOffers(classroom, lesson),
       disputes: lesson === undefined ? [] : publicDisputes(state.requests, lesson),
-      identity: { ...state.identity, persistent: true },
+      switching: this.switching.get(classroom) ?? null,
+      identity: {
+        backend: state.identity.backend,
+        requestedModel: state.identity.requestedModel,
+        activeModel: state.identity.activeModel,
+        persistent: true,
+      },
       requests: state.requests
         .filter((r) => lesson === undefined || r.lesson === lesson)
         .map((r) => ({
@@ -685,7 +827,13 @@ export class TeacherService {
     server.pushEvent(classroom, lesson, "teacher", this.publicState(classroom, lesson));
   }
   private wake(classroom: string): void {
-    if (this.stopping || this.active.has(classroom)) return;
+    if (
+      this.stopping ||
+      !this.states.has(classroom) ||
+      this.switching.has(classroom) ||
+      this.active.has(classroom)
+    )
+      return;
     // Defer execution until the request is fully saved and its HTTP response can finish.
     const work = Promise.resolve()
       .then(() => this.drain(classroom))
@@ -701,6 +849,7 @@ export class TeacherService {
     this.stopping = true;
     for (const controller of this.controllers) controller.abort();
     await this.idle();
+    await this.ownershipOrder;
   }
   private contract(r: TeacherRequest): PlanContract {
     switch (r.kind) {
@@ -888,7 +1037,7 @@ export class TeacherService {
   }
   private async drain(classroom: string): Promise<void> {
     const state = this.states.get(classroom)!;
-    while (!this.stopping) {
+    while (!this.stopping && !this.switching.has(classroom)) {
       const pending = (r: TeacherRequest) => r.status === "queued" || r.status === "planned";
       const r =
         state.requests.find((r) => r.kind !== "refill" && pending(r)) ??
@@ -900,6 +1049,7 @@ export class TeacherService {
         if (!r.plan) {
           r.status = "running";
           r.requestedModel = state.identity.requestedModel ?? null;
+          r.originatingIdentity = { ...state.identity };
           delete r.resolvedModel;
           if (r.kind === "lesson")
             updateLessonRequest(this.lessonRequest(r), { status: "running", error: undefined });
@@ -920,6 +1070,7 @@ export class TeacherService {
               classroomDir(classroom),
               (id) => {
                 state.identity.sessionId = id;
+                if (r.originatingIdentity) r.originatingIdentity.sessionId = id;
                 saveTeacherState(classroom, state);
               },
               controller.signal,

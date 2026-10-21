@@ -116,11 +116,17 @@ export function initTeacherActivity(classroom) {
         : working[r.kind];
     const label = (r) =>
       `${r.status === "queued" ? "Queued: " : r.status === "failed" ? "Failed: " : ""}${work(r)}`;
-    status.textContent = rows.length
-      ? label(rows[0]) +
-        (queued && rows[0].status !== "queued" ? ` · ${queued} queued` : "") +
-        (failures && rows[0].status !== "failed" ? ` · ${failures} failed` : "")
-      : "Teacher: no pending requests";
+    const teacher = data.teacher;
+    const identity = teacher
+      ? `${teacher.backend} teacher${teacher.model ? ` (${teacher.model})` : ""}`
+      : "Teacher";
+    status.textContent = teacher?.switching
+      ? `Switching teacher to ${teacher.switching}. Waiting for active work and readiness.`
+      : rows.length
+        ? label(rows[0]) +
+          (queued && rows[0].status !== "queued" ? ` · ${queued} queued` : "") +
+          (failures && rows[0].status !== "failed" ? ` · ${failures} failed` : "")
+        : `${identity}: no pending requests`;
     region.dataset.state = rows[0]?.status ?? "idle";
     if (!rows.length) return;
     const details = document.createElement("details");

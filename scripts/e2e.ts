@@ -281,7 +281,8 @@ async function main(): Promise<void> {
         path.join(artifacts, "composer-annotation.json"),
         JSON.stringify(savedAnnotation, null, 2),
       );
-    log(`dedicated session ${answered.teacher.identity.sessionId} answered the card`);
+    const answeredIdentity = { ...readTeacherState(CLASSROOM)!.identity };
+    log(`dedicated session ${answeredIdentity.sessionId} answered the card`);
     await playwrightCode(
       browser,
       root,
@@ -326,7 +327,7 @@ async function main(): Promise<void> {
         throw new Error("Native typed passage output differs from its durable answer.");
     }
     if (
-      passageState.identity.sessionId !== answered.teacher.identity.sessionId ||
+      passageState.identity.sessionId !== answeredIdentity.sessionId ||
       store.listGrades(CLASSROOM, LESSON).length ||
       store.listRetrievalChecks(CLASSROOM).length ||
       store.listLearningRecords(CLASSROOM).length
@@ -440,7 +441,7 @@ async function main(): Promise<void> {
     const reviewItem = store.reviewItems(CLASSROOM).find((item) => item.key === retrieval.key);
     if (!reviewItem || reviewItem.progress === "retained-evidence")
       throw new Error("An immediate panel correction must not establish retained knowledge.");
-    if (checked.teacher.identity.sessionId !== answered.teacher.identity.sessionId)
+    if (readTeacherState(CLASSROOM)!.identity.sessionId !== answeredIdentity.sessionId)
       throw new Error("Teacher changed session.");
     const grades = fs.readdirSync(path.join(root, CLASSROOM, LESSON, "quiz/grades"));
     if (grades.length !== 1) throw new Error("Teacher changed the historical grade.");
@@ -620,7 +621,7 @@ async function main(): Promise<void> {
       "PASS: actual host daily batch, separate Rust/Biology groups, real Rust correction/report, reload and completion",
     );
     const resumeInput = seedHistoricalReview(root);
-    const identity = checked.teacher.identity.sessionId;
+    const identity = readTeacherState(CLASSROOM)!.identity.sessionId;
     const [resumeCommand, resumeArgs] = harnessCommand(
       harness,
       `Call open_classroom with classroom rust. Call resume_lesson_teacher with ${JSON.stringify(resumeInput)}. Return only its lesson link and end this turn. Do not ask a corrective question in this chat.`,
@@ -667,7 +668,7 @@ async function main(): Promise<void> {
       if (!resumed?.teacher.requests.some((r: any) => r.kind === "resume" && r.status === "done"))
         throw new Error("Resume teacher timed out.");
       if (
-        resumed.teacher.identity.sessionId !== identity ||
+        readTeacherState(CLASSROOM)!.identity.sessionId !== identity ||
         resumed.quizzes[0].grade.score !== 67 ||
         resumed.teacher.messages.some((m: any) => m.role === "learner")
       )

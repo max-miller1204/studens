@@ -38,6 +38,7 @@ export interface TeacherRequest {
   /** Snapshot taken only when a new inference request starts. */
   requestedModel?: string | null;
   resolvedModel?: string;
+  originatingIdentity?: TeacherIdentity;
   /** Version 2 uses score-free grade_quiz_answers. Absent on older saved plans. */
   planVersion?: 2;
   planRubricDigest?: string;
@@ -57,6 +58,7 @@ export interface TeacherMessage {
 export interface TeacherState {
   version: 1;
   identity: TeacherIdentity;
+  previousIdentities?: TeacherIdentity[];
   requests: TeacherRequest[];
   messages: TeacherMessage[];
 }

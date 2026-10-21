@@ -1,3 +1,4 @@
+import { detectOpeningBackend } from "./teacher-host.ts";
 /** An MCP connection attaches to the persistent service. stdin does not own HTTP. */
 import { resumeTeacherTool } from "./teacher-resume.ts";
 import * as readline from "node:readline";
@@ -56,18 +57,10 @@ lines.on("line", (line) => {
   }
   const request = (async () => {
     if (message.method === "initialize") {
-      const configured = process.env.PI_CLASSROOM_TEACHER;
-      if (
-        configured !== undefined &&
-        configured !== "codex" &&
-        configured !== "claude" &&
-        configured !== "pi"
-      )
-        throw new Error("PI_CLASSROOM_TEACHER must be codex, claude, or pi.");
-      const name = String(message.params?.clientInfo?.name ?? "").toLowerCase();
-      backend =
-        (configured as Backend | undefined) ??
-        (name.includes("codex") ? "codex" : name.includes("claude") ? "claude" : undefined);
+      backend = detectOpeningBackend(
+        String(message.params?.clientInfo?.name ?? ""),
+        process.env.PI_CLASSROOM_TEACHER,
+      );
     }
     if (message.method !== "tools/call") {
       const response = await local.handle(message);

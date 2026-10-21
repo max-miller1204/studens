@@ -49,6 +49,12 @@ readline.createInterface({input:process.stdin}).on('line', line => {
  else if (m.method === 'model/list') send({id:m.id,result:{data:[{id:'fixture-model',model:'fixture-model',displayName:'Fixture model',isDefault:true}],nextCursor:null}});
  else if (m.method === 'thread/start' || m.method === 'thread/resume') send({id:m.id,result:{model:m.params.model,thread:{id:m.params.threadId || 'browser-teacher-session'}}});
  else if (m.method === 'turn/start') {
+  if (m.params.input[0].text.startsWith('Readiness check only.')) {
+   send({id:m.id,result:{turn:{id:'ready'}}});
+   send({method:'item/completed',params:{threadId:m.params.threadId,turnId:'ready',item:{type:'agentMessage',text:JSON.stringify({calls:[],message:'Ready.',learning_record:null,notes_markdown:''})}}});
+   send({method:'turn/completed',params:{threadId:m.params.threadId,turn:{id:'ready',status:'completed'}}});
+   return;
+  }
   const turns = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : [];
   turns.push({threadId:m.params.threadId, prompt:m.params.input[0].text, schema:m.params.outputSchema});
   fs.writeFileSync(file, JSON.stringify(turns));
