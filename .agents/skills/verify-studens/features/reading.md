@@ -88,7 +88,7 @@ same Pi session after reload. These ungraded actions must not create quiz grades
 Use a complete scaffold, including `NOTES.md`; this is a transport and persistence
 check, not an authored-lesson quality evaluation.
 
-The suite opens glossary definitions and changes the theme. It checks drawn diagrams, accessible descriptions, and a visible error for invalid Mermaid source. Diagram text must not offer the ask pill. It checks drawn math, literal TeX in code, a visible error for invalid TeX, and Markdown math in a card answer. Math text must not offer the ask pill. A highlight around a formula marks the whole formula and quotes it as TeX. Grading receives each formula as TeX.
+The suite opens glossary definitions and changes the theme. It checks drawn diagrams in both themes, accessible descriptions, and a visible error for invalid Mermaid source. Diagram text must not offer the ask pill. It checks drawn math, literal TeX in code, a visible error for invalid TeX, and Markdown math in a card answer. Math text must not offer the ask pill. A highlight around a formula marks the whole formula and quotes it as TeX. Grading receives each formula as TeX.
 
 The `lesson-sources/` drive opens the canonical `.cl-lesson-shell` with Pi, Claude,
 and Codex owner fixtures. Use the **Builds on** link to open the prerequisite lesson.

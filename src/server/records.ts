@@ -1,3 +1,4 @@
+import { appearanceHead } from "../appearance.ts";
 import * as fs from "node:fs";
 import type * as http from "node:http";
 import * as path from "node:path";
@@ -63,8 +64,8 @@ export function handleReference(res: http.ServerResponse, rest: string[]): void 
   // nothing to anchor questions to.
   const html = fs.readFileSync(file, "utf8");
   const head = `<script type="module">import{initTeacherActivity,pageClassroom}from"/static/teacher-activity.mjs";initTeacherActivity(pageClassroom());</script>
-<link rel="stylesheet" href="/static/classroom.css">
-<script>try{var t=localStorage.getItem("pi-classroom-theme");if(t==="dark"||t==="light")document.documentElement.setAttribute("data-theme",t);}catch(e){}</script>
+${appearanceHead()}
+<script type="module">import{initTheme}from"/static/theme.mjs";initTheme();</script>
 <script type="module">import{initLinks}from"/static/links.mjs";initLinks();</script>
 <script type="module">import{initDiagrams}from"/static/diagrams.mjs";initDiagrams(document.body);</script>
 <script type="module">import{initMath}from"/static/math.mjs";initMath(document.body);</script>`;

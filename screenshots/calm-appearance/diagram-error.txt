@@ -1,0 +1,13 @@
+### Result
+Total messages: 1 (Errors: 1, Warnings: 0)
+
+[ERROR] [classroom] diagrams failed Error: Unsupported color format: "light-dark(#f1f1f4, #29292e)"
+    at Object.parse (http://127.0.0.1:49647/static/vendor/mermaid/mermaid.min.js:1:26252)
+    at adjust (http://127.0.0.1:49647/static/vendor/mermaid/mermaid.min.js:1:27998)
+    at mkBorder (http://127.0.0.1:49647/static/vendor/mermaid/mermaid.min.js:1:28768)
+    at Theme.updateColors (http://127.0.0.1:49647/static/vendor/mermaid/mermaid.min.js:1:29742)
+    at Theme.calculate (http://127.0.0.1:49647/static/vendor/mermaid/mermaid.min.js:1:46681)
+    at Object.getThemeVariables (http://127.0.0.1:49647/static/vendor/mermaid/mermaid.min.js:1:46858)
+    at Object.initialize (http://127.0.0.1:49647/static/vendor/mermaid/mermaid.min.js:4291:2606)
+    at Object.initialize (http://127.0.0.1:49647/static/vendor/mermaid/mermaid.min.js:4291:4741)
+    at http://127.0.0.1:49647/static/diagrams.mjs:98:13 @ http://127.0.0.1:49647/static/classroom.js:56

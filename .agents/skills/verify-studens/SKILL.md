@@ -9,6 +9,12 @@ Use this skill from the repository root. Read [features/README.md](features/READ
 
 ## Launch
 
+On macOS, resolve the temporary directory before launch. The private path guard rejects symlink ancestors such as `/var`:
+
+```bash
+export TMPDIR="$(realpath "$TMPDIR")"
+```
+
 1. Install repository dependencies with `npm ci` when missing.
 2. Run `npm run verify -- --artifacts /tmp/studens-verify-local`.
 

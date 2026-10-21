@@ -1,113 +1,80 @@
 /*
- * classroom.css — one stylesheet for the whole course.
+ * classroom.css: one stylesheet for the whole course.
  *
  * Loaded by the landing page, classroom pages, document pages, and (injected at
  * serve time) every lesson. Lessons therefore inherit the course look without
  * each one re-inventing typography.
  *
- * Theming: tokens on :root are light; `prefers-color-scheme: dark` supplies the
- * dark values, and explicit [data-theme] wins over both so the header toggle can
- * override the system preference in either direction.
+ * light-dark() selects each token from the active color scheme.
+ * Explicit [data-theme] overrides the system preference.
  */
 
 /* Temml's MathML rules, drawn with the math font the device has. */
 @import url("vendor/temml/Temml-Local.css");
 
 :root {
-  --cl-bg: #fbfaf8;
-  --cl-surface: #ffffff;
-  --cl-surface-2: #f4f2ee;
-  --cl-border: #e4e0d8;
-  --cl-border-strong: #cfc9bd;
-  --cl-text: #1f1d1a;
-  --cl-text-muted: #6b6559;
-  --cl-text-faint: #948d80;
-  --cl-accent: #9a5b2c;
-  --cl-accent-soft: #f2e4d6;
-  --cl-highlight: #fbe9c3;
-  --cl-highlight-active: #f6d68a;
-  --cl-success: #2f6f4f;
-  --cl-success-soft: #dcefe3;
-  --cl-danger: #a63b34;
-  --cl-danger-soft: #f7e0de;
-  --cl-shadow: 0 1px 2px rgba(31, 29, 26, 0.05), 0 8px 24px rgba(31, 29, 26, 0.06);
-  --cl-shadow-lifted: 0 2px 6px rgba(31, 29, 26, 0.08), 0 18px 44px rgba(31, 29, 26, 0.14);
-  --cl-radius: 12px;
-  --cl-radius-sm: 8px;
+  color-scheme: light dark;
+  --cl-bg: light-dark(#fafafa, #18181b);
+  --cl-surface: light-dark(#ffffff, #202024);
+  --cl-surface-2: light-dark(#f1f1f4, #29292e);
+  --cl-border: light-dark(#dedee5, #41414a);
+  --cl-border-strong: light-dark(#a1a1aa, #71717a);
+  --cl-text: light-dark(#202024, #f4f4f5);
+  --cl-text-muted: light-dark(#62626c, #b4b4be);
+  --cl-text-faint: light-dark(#62626c, #a1a1aa);
+  --cl-accent: light-dark(#4f46e5, #a5b4fc);
+  --cl-accent-ink: light-dark(#ffffff, #18181b);
+  --cl-accent-soft: light-dark(#eeedff, #28243f);
+  --cl-highlight: light-dark(#fff0bd, #463b20);
+  --cl-highlight-active: light-dark(#ffe08a, #645124);
+  --cl-success: light-dark(#216c4c, #83cfaa);
+  --cl-success-soft: light-dark(#e1f2e8, #21392d);
+  --cl-danger: light-dark(#ae302b, #f2a19b);
+  --cl-danger-soft: light-dark(#fce9e7, #442724);
+  --cl-warn: light-dark(#875712, #edc36c);
+  --cl-warn-soft: light-dark(#fff0cf, #42351e);
+  --cl-ring: var(--cl-border);
+  --cl-shadow: 0 0 0 1px var(--cl-ring), 0 2px 4px light-dark(#18181b08, #00000024);
+  --cl-shadow-lifted: 0 0 0 1px var(--cl-ring), 0 8px 24px light-dark(#18181b12, #00000040);
+  --cl-radius: 10px;
+  --cl-radius-sm: 6px;
   --cl-serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
   --cl-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, system-ui, sans-serif;
   --cl-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
   --cl-measure: 34rem;
-  color-scheme: light;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --cl-bg: #14161a;
-    --cl-surface: #1b1e24;
-    --cl-surface-2: #21252c;
-    --cl-border: #2c313a;
-    --cl-border-strong: #3d434e;
-    --cl-text: #e8e6e1;
-    --cl-text-muted: #a6a49d;
-    --cl-text-faint: #7c7a73;
-    --cl-accent: #e0a06a;
-    --cl-accent-soft: #35281d;
-    --cl-highlight: #4a3d1c;
-    --cl-highlight-active: #6b5624;
-    --cl-success: #7fc9a2;
-    --cl-success-soft: #1e2f26;
-    --cl-danger: #e4837b;
-    --cl-danger-soft: #33211f;
-    --cl-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.3);
-    --cl-shadow-lifted: 0 2px 6px rgba(0, 0, 0, 0.5), 0 18px 44px rgba(0, 0, 0, 0.45);
-    color-scheme: dark;
-  }
-}
-
-/* Explicit choice beats the system preference, in both directions. */
 :root[data-theme="light"] {
-  --cl-bg: #fbfaf8;
-  --cl-surface: #ffffff;
-  --cl-surface-2: #f4f2ee;
-  --cl-border: #e4e0d8;
-  --cl-border-strong: #cfc9bd;
-  --cl-text: #1f1d1a;
-  --cl-text-muted: #6b6559;
-  --cl-text-faint: #948d80;
-  --cl-accent: #9a5b2c;
-  --cl-accent-soft: #f2e4d6;
-  --cl-highlight: #fbe9c3;
-  --cl-highlight-active: #f6d68a;
-  --cl-success: #2f6f4f;
-  --cl-success-soft: #dcefe3;
-  --cl-danger: #a63b34;
-  --cl-danger-soft: #f7e0de;
-  --cl-shadow: 0 1px 2px rgba(31, 29, 26, 0.05), 0 8px 24px rgba(31, 29, 26, 0.06);
-  --cl-shadow-lifted: 0 2px 6px rgba(31, 29, 26, 0.08), 0 18px 44px rgba(31, 29, 26, 0.14);
   color-scheme: light;
 }
 
 :root[data-theme="dark"] {
-  --cl-bg: #14161a;
-  --cl-surface: #1b1e24;
-  --cl-surface-2: #21252c;
-  --cl-border: #2c313a;
-  --cl-border-strong: #3d434e;
-  --cl-text: #e8e6e1;
-  --cl-text-muted: #a6a49d;
-  --cl-text-faint: #7c7a73;
-  --cl-accent: #e0a06a;
-  --cl-accent-soft: #35281d;
-  --cl-highlight: #4a3d1c;
-  --cl-highlight-active: #6b5624;
-  --cl-success: #7fc9a2;
-  --cl-success-soft: #1e2f26;
-  --cl-danger: #e4837b;
-  --cl-danger-soft: #33211f;
-  --cl-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.3);
-  --cl-shadow-lifted: 0 2px 6px rgba(0, 0, 0, 0.5), 0 18px 44px rgba(0, 0, 0, 0.45);
   color-scheme: dark;
+}
+
+:root[data-accent="copper"] {
+  --cl-accent: light-dark(#9a4d22, #edb18b);
+  --cl-accent-soft: light-dark(#fbecdf, #3b2a22);
+}
+
+:root[data-accent="green"] {
+  --cl-accent: light-dark(#216c4c, #83cfaa);
+  --cl-accent-soft: light-dark(#e1f2e8, #21392d);
+}
+
+:root[data-accent="neutral"] {
+  --cl-accent: light-dark(#52525b, #c4c4cc);
+  --cl-accent-soft: light-dark(#ededf0, #303036);
+}
+
+/* Keep a full paint frame free of transitions when appearance changes. */
+:root.cl-appearance-changing,
+:root.cl-appearance-changing::before,
+:root.cl-appearance-changing::after,
+:root.cl-appearance-changing *,
+:root.cl-appearance-changing *::before,
+:root.cl-appearance-changing *::after {
+  transition: none !important;
 }
 
 /* ── Base ─────────────────────────────────────────────────────────────────── */
@@ -774,10 +741,10 @@ mark.cl-hl.cl-hl-pending {
   height: 1.15rem;
   margin: 0 0.15rem;
   vertical-align: super;
-  border: 0;
+  border: 1px solid transparent;
   border-radius: 999px;
   background: var(--cl-accent);
-  color: var(--cl-bg);
+  color: var(--cl-accent-ink);
   font-family: var(--cl-sans);
   font-size: 0.62rem;
   font-weight: 700;
@@ -1055,7 +1022,7 @@ mark.cl-hl.cl-hl-pending {
 .cl-card-delete-error {
   margin: 0;
   padding: 0.5rem 0.75rem 0.6rem 0.9rem;
-  color: #b42318;
+  color: var(--cl-danger);
   font-size: 0.75rem;
 }
 
@@ -1066,7 +1033,7 @@ mark.cl-hl.cl-hl-pending {
   border: 1px solid transparent;
   border-radius: var(--cl-radius-sm);
   background: var(--cl-accent);
-  color: var(--cl-bg);
+  color: var(--cl-accent-ink);
   font-family: var(--cl-sans);
   font-size: 0.85rem;
   font-weight: 600;
@@ -1780,7 +1747,7 @@ figure:has(> .cl-diagram) figcaption {
   margin-block: 0.5rem;
 }
 .cl-teacher-error {
-  color: #b42318;
+  color: var(--cl-danger);
 }
 .cl-teacher-notice {
   position: fixed;
@@ -1788,10 +1755,10 @@ figure:has(> .cl-diagram) figcaption {
   bottom: 1rem;
   z-index: 60;
   padding: 0.5rem 0.9rem;
-  border: 0;
+  border: 1px solid transparent;
   border-radius: 999px;
   background: var(--cl-accent);
-  color: #fff;
+  color: var(--cl-accent-ink);
   box-shadow: var(--cl-shadow-lifted);
   cursor: pointer;
 }
@@ -1947,7 +1914,7 @@ figure:has(> .cl-diagram) figcaption {
   justify-self: start;
 }
 .cl-settings [role="alert"] {
-  color: var(--cl-error, #b42318);
+  color: var(--cl-danger);
   overflow-wrap: anywhere;
 }
 .cl-settings [role="status"] {
@@ -2503,7 +2470,7 @@ body > .cl-teacher-activity {
 }
 .cl-search-results mark {
   color: inherit;
-  background: #e8bf4855;
+  background: var(--cl-highlight);
 }
 
 /* Learner-owned passage actions and saved marks. */
@@ -2514,11 +2481,11 @@ body > .cl-teacher-activity {
   gap: 4px;
   padding: 5px;
   max-width: calc(100vw - 16px);
-  background: var(--cl-surface, Canvas);
-  color: var(--cl-text, CanvasText);
-  border: 1px solid var(--cl-border, GrayText);
+  background: var(--cl-surface);
+  color: var(--cl-text);
+  border: 1px solid var(--cl-border);
   border-radius: 10px;
-  box-shadow: 0 4px 20px #0002;
+  box-shadow: var(--cl-shadow-lifted);
   font:
     13px system-ui,
     sans-serif;
@@ -2535,8 +2502,8 @@ body > .cl-teacher-activity {
 .cl-selection-actions button,
 .cl-learner-marks button {
   cursor: pointer;
-  border: 1px solid var(--cl-border, GrayText);
-  background: var(--cl-surface, Canvas);
+  border: 1px solid var(--cl-border);
+  background: var(--cl-surface);
   color: inherit;
   padding: 6px 9px;
   border-radius: 6px;
@@ -2544,7 +2511,7 @@ body > .cl-teacher-activity {
 }
 .cl-selection-actions button:focus-visible,
 .cl-learner-marks :focus-visible {
-  outline: 2px solid var(--cl-accent, Highlight);
+  outline: 2px solid var(--cl-accent);
   outline-offset: 2px;
 }
 .cl-learner-marks {
@@ -2555,7 +2522,7 @@ body > .cl-teacher-activity {
   font:
     14px/1.5 system-ui,
     sans-serif;
-  color: var(--cl-text, CanvasText);
+  color: var(--cl-text);
 }
 .cl-learner-marks summary {
   cursor: pointer;
@@ -2566,14 +2533,14 @@ body > .cl-teacher-activity {
   list-style: none;
 }
 .cl-learner-marks li {
-  border-top: 1px solid var(--cl-border, GrayText);
+  border-top: 1px solid var(--cl-border);
   padding: 14px 0;
 }
 .cl-learner-marks blockquote,
 .cl-learner-marks [data-mark-quote] {
   margin: 8px 0;
   padding-left: 12px;
-  border-left: 3px solid #b08930;
+  border-left: 3px solid var(--cl-warn);
   overflow-wrap: anywhere;
 }
 .cl-mark-text {
@@ -2594,10 +2561,10 @@ body > .cl-teacher-activity {
 }
 .cl-learner-marks [role="alert"],
 .cl-mark-anchor-status {
-  color: var(--cl-danger, #b33b33);
+  color: var(--cl-danger);
 }
 ::highlight(cl-learner-highlight) {
-  background-color: #f6d66b99;
+  background-color: var(--cl-highlight);
   color: inherit;
 }
 ::highlight(cl-learner-note) {
@@ -2816,4 +2783,55 @@ body > .cl-teacher-activity {
   display: flex;
   flex-wrap: wrap;
   gap: 0.6rem;
+}
+
+/* Rings provide elevation. Borders remain available in forced colors. */
+.cl-card-link,
+.cl-quiz,
+.cl-card-panel,
+.cl-confirm,
+.cl-selection-actions {
+  border: 1px solid transparent;
+}
+
+:focus-visible {
+  outline: 2px solid var(--cl-accent);
+  outline-offset: 3px;
+}
+
+.cl-appearance-error {
+  margin: 1rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--cl-danger);
+  border-radius: var(--cl-radius-sm);
+  background: var(--cl-danger-soft);
+  color: var(--cl-danger);
+  font: 0.875rem/1.5 var(--cl-sans);
+}
+
+.cl-appearance-error button {
+  margin-inline-start: 0.75rem;
+}
+
+@media (forced-colors: active) {
+  .cl-card-link,
+  .cl-quiz,
+  .cl-card-panel,
+  .cl-confirm,
+  .cl-selection-actions,
+  .cl-ask-pill,
+  .cl-badge-marker,
+  .cl-teacher-notice,
+  .cl-button {
+    border: 1px solid ButtonText;
+    box-shadow: none;
+  }
+
+  :focus-visible {
+    outline-color: Highlight;
+  }
+}
+
+[data-cl-appearance] > div {
+  margin-block: 1rem;
 }

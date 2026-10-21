@@ -1,0 +1,110 @@
+{
+  dialogs: [],
+  passed: [
+    'self-explanation Save and draft reload',
+    'saved card follow-up draft reload',
+    'optional confidence and assistance survive drafts, submit, and grade state',
+    'glossary',
+    'locked graded quiz',
+    'pending saved attempt',
+    'cross-tab selections',
+    'stale grade',
+    'reload',
+    'newest grade revision after reload',
+    'invalid option values block submission',
+    'grade before response',
+    'all nine response types submit and restore',
+    'unsent answers and questions survive a reload',
+    'partial credit display and reload',
+    'MCP delivery explanation',
+    'diagrams draw, fail loudly, follow the theme, and send their source',
+    'math draws, fails loudly, stays out of highlights, and sends its TeX'
+  ]
+}
+{"pretestGate":{"automaticReloads":1,"teachingReleased":true,"draftPreserved":true}}
+PASS: four-domain public search and source navigation, canonical edits, Unicode/code/XSS, errors/retry, privacy/read-only state, adjacent Ask and graded quiz (fixture teacher).
+PASS: course map, explicit upcoming/connections, legacy/empty, keyboard/navigation, themes/mobile, corruption/retry, pretest redaction/release, privacy and read-only state.
+PASS: explicit lesson/glossary navigation, three host owners, recall, focus, themes/mobile, context exclusions, source errors, private neighbors, gates, reload and read-only state.
+PASS: quiz highlight and Pi teacher panel
+PASS: service browser reading, retry, drafts, and reconnect
+PASS: pi instant browser review, legacy skip, explicit publication retry, and continuation
+[teacher] codex rust/review-88ddb05e-1425-4ad9-bd17-fbabe3dc7a2c refill:58a326aa70d73ed7486cc0340eae7bce done in 10ms.
+[teacher] codex rust/review-88ddb05e-1425-4ad9-bd17-fbabe3dc7a2c quiz:8b4c65eb-f8ee-4c91-bec9-358cb9c03bf5 done in 13ms.
+[teacher] codex rust/review-88ddb05e-1425-4ad9-bd17-fbabe3dc7a2c chat:93525f39-fa5b-4333-a99a-231adf815eb8 done in 5ms.
+PASS: service instant browser review, legacy skip, explicit publication retry, and continuation
+PASS: pi empty historical review resume, panel reply, reload, and preserved grades
+PASS: pi saved-reply historical review resume, panel reply, reload, and preserved grades
+[teacher] claude rust/001-ownership resume:7b3d8f3f-a7c9-441c-8c4f-eb61ffda2ba4 done in 5ms.
+[teacher] claude rust/001-ownership chat:c9e38cdf-faa1-4809-9ace-64b40e7d86be done in 17ms.
+PASS: claude empty historical review resume, panel reply, reload, and preserved grades
+[teacher] claude rust/001-ownership chat:saved-reply done in 3ms.
+PASS: claude saved-reply historical review resume, panel reply, reload, and preserved grades
+[teacher] codex rust/001-ownership resume:65f6c452-1cfb-47ec-a4a7-e6b38464811e done in 3ms.
+[teacher] codex rust/001-ownership chat:ff9200a6-1837-419d-bf56-670ecd69eb5b done in 3ms.
+PASS: codex empty historical review resume, panel reply, reload, and preserved grades
+[teacher] codex rust/001-ownership chat:saved-reply done in 6ms.
+PASS: codex saved-reply historical review resume, panel reply, reload, and preserved grades
+PASS: early answer, minimised reload, refused delete, retry, and saved deletion
+PASS: canonical ask/follow-up rejection, specific inline errors, retained drafts/reload, no modal or implicit resend, pending-keyboard guard, one accepted request per explicit resend, original answer unchanged
+PASS: folder creation, moves, rename, reload, explicit retry, deletion, folder load errors, and mobile layout
+PASS: eight exact answer types, immediate grade, pretest release, reload, private state, and no teacher turns
+PASS: pi size 3..12, topic/classroom scope, early interval, retirement/history, report receipt/retry, stale actions and recovery
+[teacher] codex rust/review-919c03e5-3810-40e3-8a60-e4e70cb46d4f chat:dbdfe0dd-7b18-4d9f-a04f-243c5e764132 done in 9ms.
+PASS: service size 3..12, topic/classroom scope, early interval, retirement/history, report receipt/retry, stale actions and recovery
+PASS: workload 20 overdue -> 5 available / 15 deferred; 3+2 unique closed cards, explicit cap error/reload, unchanged due history and restart
+PASS: seven-classroom root cap, daily/classroom/early concurrency, midnight/reload, five real closed cards, remaining 3+2 allocation, restart and private state
+PASS: pi card order, instant grades, same-screen correction, mobile, history, legacy links, and recovery
+[teacher] codex rust/review-f1f9ab87-9e73-4ab7-bd6a-d4a08dcd37b8 resume:b54935b1-0cff-4dd1-a7f6-80118a13147c done in 4ms.
+[teacher] codex rust/review-f1f9ab87-9e73-4ab7-bd6a-d4a08dcd37b8 chat:0b858b57-3890-4a5b-826a-3bb470ea8b91 done in 4ms.
+PASS: service card order, instant grades, same-screen correction, mobile, history, legacy links, and recovery
+PASS: repeated misses pause review; real panel re-teach and assisted reply survive reload without grade or retention changes
+[teacher] codex rust/001-ownership refill:052d5d9fcbca0c6677222a7519decbb5 done in 5ms.
+[teacher] codex rust/001-ownership chat:reteach:b68bb1d355c5f136065e9d4bd7e334cbe2840d17ccbadfc4b1cda0c9022a24ab done in 4ms.
+[teacher] codex rust/001-ownership chat:1ca0f9c5-b89c-4a0b-9450-f6ac680e676d done in 6ms.
+PASS: repeated misses pause review; real panel re-teach and assisted reply survive reload without grade or retention changes
+[teacher] codex rust/997-grade-dispute dispute:cc582e77-c3e1-419d-b4c1-f88741b73cc6 done in 8ms.
+[teacher] codex rust/997-grade-dispute dispute:122f2ee3-fd8f-4b22-be9f-dbd0ef4cd8a2 done in 2ms.
+PASS: learner dispute reason, real resolution, judgment 2/4 to 4/4 in mixed 4/5 grade, machine explanation without override, immutable history, original timing, reload and locks
+[teacher] codex rust/996-retry-dispute dispute:d86838ad-6c3c-44cb-9fbe-7e0f32c03c84 done in 5ms.
+PASS: fixture dispute async activity navigation, encoded/later/malformed fragments, no refresh scroll/focus steal, failure, reload without retry, explicit retry once, second tab, stale/unknown/neighbor/blank targets and private routes
+[teacher] codex rust/001-ownership resume:e48f8bf4-77b6-4148-baca-c55ee7197615 done in 3ms.
+[teacher] codex rust/001-ownership chat:c91eb565-58cd-4107-a409-690a7f3a743e done in 7ms.
+[teacher] codex rust/002-formats quiz:2c377858-1ba3-4d31-93a8-197888cd338d done in 9ms.
+[teacher] codex rust/002-formats quiz:36310e43-fe2d-4cd3-8a4d-299cf9d7e7f1 done in 13ms.
+[teacher] codex rust/002-formats quiz:8cd82a41-7014-4744-bc8d-e153ec8e2ac5 done in 22ms.
+[teacher] codex rust/002-retry quiz:43a858a6-e33f-4567-9132-00b3a4415547 done in 11ms.
+PASS: private fixed criteria, partial allocations, reload, locked form, revision history, invalid rubric, durable teacher error and explicit retry
+PASS: isolated browser execution/error/security probes, no Run assessment work, immutable submit, duplicate refusal, two tabs, criterion grade, locked reload, private routes and adjacent closed quiz.
+[teacher] codex rust/review-0c022109-d127-4f1b-82aa-44785f290d58 quiz:72340c50-e2a8-40c2-8e1b-92d8d9603aad done in 13ms.
+PASS: prepared private code variant, actual browser tests, review submission, failed criterion plan, explicit retry and one immutable grade after reload (fixture teacher).
+[teacher] codex rust/001-ownership chat:f4849694-d819-4863-8d41-0f5363559ae8 done in 943ms.
+[teacher] codex rust/001-ownership chat:0bb6ac0a-0ba1-4d92-b202-2503d8a9d2b6 done in 4ms.
+[teacher] pi rust/002-lesson-e4e868ba lesson:e4e868ba-e79e-4c47-a148-7760e22c7fe4 done in 3777ms.
+[teacher] pi rust/003-lesson-e7ed7b0e lesson:e7ed7b0e-5b76-4053-81e5-c5a59aef6feb done in 4302ms.
+[teacher] claude rust/002-lesson-9ae79784 lesson:9ae79784-8e50-4f72-af68-e38550e30b33 done in 4071ms.
+[teacher] claude rust/003-lesson-76bf4bdb lesson:76bf4bdb-b319-44d2-8ea8-9f8f26147995 done in 3914ms.
+[teacher] codex rust/002-lesson-e21a0309 lesson:e21a0309-8169-4c5b-9a55-69d8e953e021 done in 3751ms.
+[teacher] codex rust/003-lesson-f76a758b lesson:f76a758b-6ebf-4c89-9dc5-d8c4fccf4733 done in 3651ms.
+PASS: pi daily landing, grouped progression, repeated start, drafts/reload, partial failure/retry, corrections, unchanged revisions, separate history, empty state and private routes
+[teacher] claude biology/review-9da6e592-e3e8-4bfc-9a94-839b5f520893 resume:df2c1464-233a-43b1-a2b1-d87cb42058ca done in 6ms.
+[teacher] claude biology/review-9da6e592-e3e8-4bfc-9a94-839b5f520893 chat:9864eff2-8ef4-4e90-9514-67aa83f41e9a done in 4ms.
+PASS: service daily landing, grouped progression, repeated start, drafts/reload, partial failure/retry, corrections, unchanged revisions, separate history, empty state and private routes
+PASS: local practice, eight exact types, feedback, keyboard retry, reload, private rubric isolation, no teacher or practice records, graded neighbor unchanged
+PASS: numeric practice required units, usable controls, scalar, wrong unit, parser errors, keyboard retry, reload, no HTTP or persisted writes
+PASS: faded worked example, 1/2/3-step handover, exact/open feedback, keyboard, two instances, pretest, reset/revisit/reload/navigation, malformed config/text safety, unchanged files/no teacher/no credit, graded neighbor/private key
+PASS: four causal domains, computed inputs, controls, diagrams/math, keyboard, themes/mobile, offline, malformed contracts, pretest gate, immutable files/no teacher, graded neighbor/private paths
+PASS: typed stepper HTML, canonical private serialization, real initial/released checker, four-file hashes, publication without learner state, malformed widget refused before publication
+[teacher] codex rust/002-borrowing reflect:26121966-c411-460f-acc3-5e756e669dd9 done in 738ms.
+[teacher] codex rust/001-ownership reflect:18babbcc-1ada-4b72-8979-89a26d1c4386 done in 3ms.
+[teacher] codex rust/001-ownership ask:4358fb00-148c-493f-9dd6-850b4fc9c0d5 done in 3ms.
+[teacher] codex rust/001-ownership follow-up:ed6607a6-76b2-480c-894a-0e6ed82aa339 done in 4ms.
+PASS: classroom activity SSE, sequential queue, failure, navigation, reload, restart, explicit retry, keyboard links, isolation, malformed state and privacy
+PASS: pi owner memory map, replay/forecast/why, keyboard/links, both themes/sizes, no read writes/inference, native correction/retirement, malformed explicit retry, restart/private routes
+PASS: claude owner memory map, replay/forecast/why, keyboard/links, both themes/sizes, no read writes/inference, native correction/retirement, malformed explicit retry, restart/private routes
+PASS: codex owner memory map, replay/forecast/why, keyboard/links, both themes/sizes, no read writes/inference, native correction/retirement, malformed explicit retry, restart/private routes
+[teacher] codex gates/001-gates resume:8efd42ec-749e-4a01-a9ed-a7f7cc9fbfbe done in 17ms.
+[teacher] codex gates/001-gates chat:7cf8d69b-71c0-4a94-b2cb-0534d0c26813 done in 7ms.
+[teacher] codex rust/001-ownership ask:967cce52-35f3-49a9-93cc-4aa40d6cebd0 done in 3ms.
+[teacher] codex rust/001-ownership follow-up:03ed9740-cb05-4625-bdaf-17e714f90685 done in 3ms.
+PASS: explicit marks, safe note edit/delete, failed saves/draft reload, concurrency, repeats/reflow/unresolved anchors, private routes, no teacher/evidence effects, adjacent durable Ask/follow-up and machine assessment
+PASS: corrective observer accepts a new imperative, rejects old/empty/hidden messages, and surfaces failures
