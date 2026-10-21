@@ -1,0 +1,283 @@
+{
+  "matrix": [
+    {
+      "theme": "light",
+      "accent": "indigo",
+      "colors": {
+        "accent": "rgb(79, 70, 229)",
+        "accent-ink": "rgb(255, 255, 255)",
+        "accent-soft": "rgb(238, 237, 255)",
+        "surface": "rgb(255, 255, 255)",
+        "surface-2": "rgb(241, 241, 244)",
+        "bg": "rgb(250, 250, 250)",
+        "text": "rgb(32, 32, 36)",
+        "text-muted": "rgb(98, 98, 108)",
+        "text-faint": "rgb(98, 98, 108)",
+        "warn": "rgb(135, 87, 18)",
+        "warn-soft": "rgb(255, 240, 207)"
+      },
+      "ratios": {
+        "soft": 5.447126527731226,
+        "solid": 6.287528596095884,
+        "button": 6.287528596095884,
+        "text": 15.554345347485976,
+        "muted": 6.029373394873939,
+        "faint": 5.348514711147012,
+        "warn": 5.472070623227338
+      }
+    },
+    {
+      "theme": "light",
+      "accent": "copper",
+      "colors": {
+        "accent": "rgb(154, 77, 34)",
+        "accent-ink": "rgb(255, 255, 255)",
+        "accent-soft": "rgb(251, 236, 223)",
+        "surface": "rgb(255, 255, 255)",
+        "surface-2": "rgb(241, 241, 244)",
+        "bg": "rgb(250, 250, 250)",
+        "text": "rgb(32, 32, 36)",
+        "text-muted": "rgb(98, 98, 108)",
+        "text-faint": "rgb(98, 98, 108)",
+        "warn": "rgb(135, 87, 18)",
+        "warn-soft": "rgb(255, 240, 207)"
+      },
+      "ratios": {
+        "soft": 5.252207139292513,
+        "solid": 6.071725370073846,
+        "button": 6.071725370073846,
+        "text": 15.554345347485976,
+        "muted": 6.029373394873939,
+        "faint": 5.348514711147012,
+        "warn": 5.472070623227338
+      }
+    },
+    {
+      "theme": "light",
+      "accent": "green",
+      "colors": {
+        "accent": "rgb(33, 108, 76)",
+        "accent-ink": "rgb(255, 255, 255)",
+        "accent-soft": "rgb(225, 242, 232)",
+        "surface": "rgb(255, 255, 255)",
+        "surface-2": "rgb(241, 241, 244)",
+        "bg": "rgb(250, 250, 250)",
+        "text": "rgb(32, 32, 36)",
+        "text-muted": "rgb(98, 98, 108)",
+        "text-faint": "rgb(98, 98, 108)",
+        "warn": "rgb(135, 87, 18)",
+        "warn-soft": "rgb(255, 240, 207)"
+      },
+      "ratios": {
+        "soft": 5.451815995365894,
+        "solid": 6.336653760615068,
+        "button": 6.336653760615068,
+        "text": 15.554345347485976,
+        "muted": 6.029373394873939,
+        "faint": 5.348514711147012,
+        "warn": 5.472070623227338
+      }
+    },
+    {
+      "theme": "light",
+      "accent": "neutral",
+      "colors": {
+        "accent": "rgb(82, 82, 91)",
+        "accent-ink": "rgb(255, 255, 255)",
+        "accent-soft": "rgb(237, 237, 240)",
+        "surface": "rgb(255, 255, 255)",
+        "surface-2": "rgb(241, 241, 244)",
+        "bg": "rgb(250, 250, 250)",
+        "text": "rgb(32, 32, 36)",
+        "text-muted": "rgb(98, 98, 108)",
+        "text-faint": "rgb(98, 98, 108)",
+        "warn": "rgb(135, 87, 18)",
+        "warn-soft": "rgb(255, 240, 207)"
+      },
+      "ratios": {
+        "soft": 6.615561228776843,
+        "solid": 7.729820868495424,
+        "button": 7.729820868495424,
+        "text": 15.554345347485976,
+        "muted": 6.029373394873939,
+        "faint": 5.348514711147012,
+        "warn": 5.472070623227338
+      }
+    },
+    {
+      "theme": "dark",
+      "accent": "indigo",
+      "colors": {
+        "accent": "rgb(165, 180, 252)",
+        "accent-ink": "rgb(24, 24, 27)",
+        "accent-soft": "rgb(40, 36, 63)",
+        "surface": "rgb(32, 32, 36)",
+        "surface-2": "rgb(41, 41, 46)",
+        "bg": "rgb(24, 24, 27)",
+        "text": "rgb(244, 244, 245)",
+        "text-muted": "rgb(180, 180, 190)",
+        "text-faint": "rgb(161, 161, 170)",
+        "warn": "rgb(237, 195, 108)",
+        "warn-soft": "rgb(66, 53, 30)"
+      },
+      "ratios": {
+        "soft": 7.447961675281585,
+        "solid": 8.143846924426288,
+        "button": 8.887087766450483,
+        "text": 16.118381484528566,
+        "muted": 7.89543407333333,
+        "faint": 5.647364162543944,
+        "warn": 7.173909389943601
+      }
+    },
+    {
+      "theme": "dark",
+      "accent": "copper",
+      "colors": {
+        "accent": "rgb(237, 177, 139)",
+        "accent-ink": "rgb(24, 24, 27)",
+        "accent-soft": "rgb(59, 42, 34)",
+        "surface": "rgb(32, 32, 36)",
+        "surface-2": "rgb(41, 41, 46)",
+        "bg": "rgb(24, 24, 27)",
+        "text": "rgb(244, 244, 245)",
+        "text-muted": "rgb(180, 180, 190)",
+        "text-faint": "rgb(161, 161, 170)",
+        "warn": "rgb(237, 195, 108)",
+        "warn-soft": "rgb(66, 53, 30)"
+      },
+      "ratios": {
+        "soft": 7.312195014558034,
+        "solid": 8.707090264576298,
+        "button": 9.501735001870433,
+        "text": 16.118381484528566,
+        "muted": 7.89543407333333,
+        "faint": 5.647364162543944,
+        "warn": 7.173909389943601
+      }
+    },
+    {
+      "theme": "dark",
+      "accent": "green",
+      "colors": {
+        "accent": "rgb(131, 207, 170)",
+        "accent-ink": "rgb(24, 24, 27)",
+        "accent-soft": "rgb(33, 57, 45)",
+        "surface": "rgb(32, 32, 36)",
+        "surface-2": "rgb(41, 41, 46)",
+        "bg": "rgb(24, 24, 27)",
+        "text": "rgb(244, 244, 245)",
+        "text-muted": "rgb(180, 180, 190)",
+        "text-faint": "rgb(161, 161, 170)",
+        "warn": "rgb(237, 195, 108)",
+        "warn-soft": "rgb(66, 53, 30)"
+      },
+      "ratios": {
+        "soft": 6.796170718961221,
+        "solid": 8.867946723351617,
+        "button": 9.677271880228124,
+        "text": 16.118381484528566,
+        "muted": 7.89543407333333,
+        "faint": 5.647364162543944,
+        "warn": 7.173909389943601
+      }
+    },
+    {
+      "theme": "dark",
+      "accent": "neutral",
+      "colors": {
+        "accent": "rgb(196, 196, 204)",
+        "accent-ink": "rgb(24, 24, 27)",
+        "accent-soft": "rgb(48, 48, 54)",
+        "surface": "rgb(32, 32, 36)",
+        "surface-2": "rgb(41, 41, 46)",
+        "bg": "rgb(24, 24, 27)",
+        "text": "rgb(244, 244, 245)",
+        "text-muted": "rgb(180, 180, 190)",
+        "text-faint": "rgb(161, 161, 170)",
+        "warn": "rgb(237, 195, 108)",
+        "warn-soft": "rgb(66, 53, 30)"
+      },
+      "ratios": {
+        "soft": 7.563751797648993,
+        "solid": 9.366136527621771,
+        "button": 10.220928527508677,
+        "text": 16.118381484528566,
+        "muted": 7.89543407333333,
+        "faint": 5.647364162543944,
+        "warn": 7.173909389943601
+      }
+    }
+  ],
+  "paint": [
+    {
+      "url": "/",
+      "theme": "dark",
+      "accent": "green",
+      "scheme": "normal"
+    },
+    {
+      "url": "/c/rust",
+      "theme": "dark",
+      "accent": "green",
+      "scheme": "normal"
+    },
+    {
+      "url": "/c/rust/settings",
+      "theme": "dark",
+      "accent": "green",
+      "scheme": "normal"
+    },
+    {
+      "url": "/c/rust/001-ownership",
+      "theme": "dark",
+      "accent": "green",
+      "scheme": "normal"
+    },
+    {
+      "url": "/doc/rust/NOTES.md",
+      "theme": "dark",
+      "accent": "green",
+      "scheme": "normal"
+    },
+    {
+      "url": "/r/rust/ownership.html",
+      "theme": "dark",
+      "accent": "green",
+      "scheme": "normal"
+    },
+    {
+      "url": "/c/rust/reviews",
+      "theme": "dark",
+      "accent": "green",
+      "scheme": "normal"
+    },
+    {
+      "url": "/c/rust/reviews/review-00000000-0000-4000-8000-000000000137",
+      "theme": "dark",
+      "accent": "green",
+      "scheme": "normal"
+    }
+  ],
+  "forced": {
+    "border": "1px",
+    "outline": "solid",
+    "shadow": "none"
+  },
+  "transition": {
+    "suppressed": true,
+    "duration": "0s"
+  },
+  "crossTab": true,
+  "diagramAccent": true,
+  "system": {
+    "dark": "rgb(24, 24, 27)",
+    "light": "rgb(250, 250, 250)"
+  },
+  "writes": [],
+  "errors": [],
+  "keyboard": true,
+  "reload": true,
+  "storageErrors": true,
+  "adjacentAsk": true
+}

@@ -1,3 +1,4 @@
+import { appearanceHead } from "./appearance.ts";
 import { searchPassages } from "./search-passages.ts";
 import { icon } from "../assets/runtime/icons.mjs";
 import { uiFontHead } from "./ui-assets.ts";
@@ -48,18 +49,8 @@ export function shell(options: ShellOptions): string {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${escapeHtml(options.title)}</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📚</text></svg>">
-<link rel="stylesheet" href="/static/classroom.css">
+${appearanceHead()}
 ${uiFontHead()}
-<script>
-(function () {
-  try {
-    var stored = localStorage.getItem("pi-classroom-theme");
-    if (stored === "dark" || stored === "light") {
-      document.documentElement.setAttribute("data-theme", stored);
-    }
-  } catch (e) {}
-})();
-</script>
 </head>
 <body class="${escapeHtml(options.bodyClass ?? "cl-shell")}">
 <header class="cl-header">
@@ -601,6 +592,13 @@ export function settingsPage(classroom: Classroom): string {
     body: `
 <div class="cl-settings" data-cl-settings="${escapeHtml(classroom.name)}">
   <div class="cl-hero"><h1>Settings</h1><p class="cl-lede">Make ${escapeHtml(classroom.title)} work for you.</p></div>
+  <section class="cl-settings-section" aria-labelledby="appearance-heading" data-cl-appearance>
+    <h2 id="appearance-heading">Appearance</h2>
+    <p>Theme and accent apply to all classrooms in this browser on this device.</p>
+    <div><label for="cl-theme-choice">Theme</label><select id="cl-theme-choice" data-cl-theme-choice><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></div>
+    <div><label for="cl-accent-choice">Accent</label><select id="cl-accent-choice" data-cl-accent-choice><option value="indigo">Indigo</option><option value="copper">Copper</option><option value="green">Green</option><option value="neutral">Neutral</option></select></div>
+    <p role="status" data-cl-appearance-status></p>
+  </section>
   <p role="alert" data-settings-error hidden></p><button class="cl-button cl-button-quiet" data-settings-load hidden>Reload settings</button>
   <div data-settings-content hidden>
     <section class="cl-settings-section" aria-labelledby="preferences-heading">

@@ -1,0 +1,23 @@
+{
+  "teacherRequests": 0,
+  "before": {
+    "rust/.reviews/review-00000000-0000-4000-8000-000000000137/lesson.html": "3082d94a92742b9d74627d48343cde8c860cb6786a2f91565b23abc039f6cb54",
+    "rust/.reviews/review-00000000-0000-4000-8000-000000000137/lesson.json": "fede5e3b8bc4f7a45ede0a6daf573efb06aa19f507600d289886e7af778bba8d",
+    "rust/001-ownership/lesson.html": "0001f923bb962a386541e178bba9027dfdb6ca1bbd15703e2a39b479fb11f5dd",
+    "rust/001-ownership/lesson.json": "9c32fe610b3fbb3b981211f8e8a048ac6239935362ae8c9ff0eba1012ff53b7d",
+    "rust/classroom.json": "610250b182e73d4e3634534abe439aa50fe943fa718cc5edda6a6f66c97ff5d7",
+    "rust/MISSION.md": "61e6ac54c5553f0c331827463176fed68acd89ab64880716068f402cf218296a",
+    "rust/NOTES.md": "365d0b84ae63c2afc293dedd2b00bdf0dc8d6ef70c9297d90f9e5682ab0d72ee",
+    "rust/reference/ownership.html": "6c3d1b3bf5c2dfbe9edf880ee12e1a218f08aa02abd5874dd1f79807e49d55b4"
+  },
+  "after": {
+    "rust/.reviews/review-00000000-0000-4000-8000-000000000137/lesson.html": "3082d94a92742b9d74627d48343cde8c860cb6786a2f91565b23abc039f6cb54",
+    "rust/.reviews/review-00000000-0000-4000-8000-000000000137/lesson.json": "fede5e3b8bc4f7a45ede0a6daf573efb06aa19f507600d289886e7af778bba8d",
+    "rust/001-ownership/lesson.html": "0001f923bb962a386541e178bba9027dfdb6ca1bbd15703e2a39b479fb11f5dd",
+    "rust/001-ownership/lesson.json": "9c32fe610b3fbb3b981211f8e8a048ac6239935362ae8c9ff0eba1012ff53b7d",
+    "rust/classroom.json": "610250b182e73d4e3634534abe439aa50fe943fa718cc5edda6a6f66c97ff5d7",
+    "rust/MISSION.md": "61e6ac54c5553f0c331827463176fed68acd89ab64880716068f402cf218296a",
+    "rust/NOTES.md": "365d0b84ae63c2afc293dedd2b00bdf0dc8d6ef70c9297d90f9e5682ab0d72ee",
+    "rust/reference/ownership.html": "6c3d1b3bf5c2dfbe9edf880ee12e1a218f08aa02abd5874dd1f79807e49d55b4"
+  }
+}

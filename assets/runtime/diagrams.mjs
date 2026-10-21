@@ -69,7 +69,7 @@ export function initDiagrams(root, { signal } = {}) {
   const observer = new MutationObserver(redraw);
   observer.observe(document.documentElement, {
     attributes: true,
-    attributeFilter: ["data-theme"],
+    attributeFilter: ["data-theme", "data-accent"],
   });
   const media = window.matchMedia("(prefers-color-scheme: dark)");
   media.addEventListener("change", redraw);
@@ -136,22 +136,39 @@ function themeVariables() {
     if (!value) throw new Error(`classroom.css defines no ${name}`);
     return value;
   };
-  return {
-    darkMode: token("color-scheme") === "dark",
-    background: token("--cl-bg"),
-    fontFamily: token("--cl-sans"),
-    primaryColor: token("--cl-accent-soft"),
-    primaryTextColor: token("--cl-text"),
-    primaryBorderColor: token("--cl-accent"),
-    secondaryColor: token("--cl-surface-2"),
-    tertiaryColor: token("--cl-surface"),
-    lineColor: token("--cl-text-muted"),
-    edgeLabelBackground: token("--cl-bg"),
-    textColor: token("--cl-text"),
-    noteBkgColor: token("--cl-highlight"),
-    noteTextColor: token("--cl-text"),
-    noteBorderColor: token("--cl-border-strong"),
+  // Custom properties retain light-dark() until a color property resolves them.
+  const sample = document.createElement("span");
+  sample.hidden = true;
+  document.body.append(sample);
+  const color = (name) => {
+    const value = token(name);
+    if (!CSS.supports("color", value)) throw new Error(`Invalid classroom color ${name}: ${value}`);
+    sample.style.color = value;
+    return getComputedStyle(sample).color;
   };
+  try {
+    const scheme = token("color-scheme");
+    return {
+      darkMode:
+        scheme === "dark" ||
+        (scheme === "light dark" && matchMedia("(prefers-color-scheme: dark)").matches),
+      background: color("--cl-bg"),
+      fontFamily: token("--cl-sans"),
+      primaryColor: color("--cl-accent-soft"),
+      primaryTextColor: color("--cl-text"),
+      primaryBorderColor: color("--cl-accent"),
+      secondaryColor: color("--cl-surface-2"),
+      tertiaryColor: color("--cl-surface"),
+      lineColor: color("--cl-text-muted"),
+      edgeLabelBackground: color("--cl-bg"),
+      textColor: color("--cl-text"),
+      noteBkgColor: color("--cl-highlight"),
+      noteTextColor: color("--cl-text"),
+      noteBorderColor: color("--cl-border-strong"),
+    };
+  } finally {
+    sample.remove();
+  }
 }
 
 /** Show why a diagram did not draw, above its source, so nobody mistakes it for art. */

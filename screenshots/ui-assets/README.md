@@ -51,3 +51,47 @@ Reproduce with the project launch preconditions:
 ```sh
 node scripts/e2e-ui-assets.ts /tmp/studens-ui-assets
 ```
+
+## Combined Calm appearance check
+
+The conflict resolution merges main at `2cb641178c89c4c12cffd27199ad5d02278a4c88`.
+It keeps the appearance bootstrap before the stylesheet and adds local fonts after it.
+The shell and lesson headers retain the Lucide SVG controls.
+The original before/after captures above remain unchanged.
+
+The expanded drive passed all 64 page, viewport, theme, and accent combinations.
+It selects each accent through Settings, then checks navigation and theme reload.
+It checks the actual Chromium font for each observed text role.
+The 12 face probes and all 12 WOFF2 URLs passed. Missing assets returned 404.
+Unknown icons and the external fetch failed as required.
+See the [combined runtime summary](combined/summary.json).
+
+All 64 captures were inspected in these contact sheets:
+
+| Page      | 390px                                         | 1280px                                         |
+| --------- | --------------------------------------------- | ---------------------------------------------- |
+| Shell     | [Capture](combined/contact-shell-390.jpg)     | [Capture](combined/contact-shell-1280.jpg)     |
+| Lesson    | [Capture](combined/contact-lesson-390.jpg)    | [Capture](combined/contact-lesson-1280.jpg)    |
+| Review    | [Capture](combined/contact-review-390.jpg)    | [Capture](combined/contact-review-1280.jpg)    |
+| Reference | [Capture](combined/contact-reference-390.jpg) | [Capture](combined/contact-reference-1280.jpg) |
+
+Columns use Indigo, Copper, Green, and Neutral. The first row uses Light.
+The second row uses Dark. Full captures and the complete runtime record remain in
+`/tmp/studens-pr150-merge/ui-assets/`.
+These fixture checks prove combined UI and asset delivery, not model behavior.
+
+The combined [appearance result](combined/appearance-result.json) passed all eight
+color pairs and eight before-paint routes. System mode, keyboard focus, cross-tab
+Mermaid redraw, transition suppression, and forced colors passed. Invalid saved
+values and blocked storage kept specific errors and explicit retry.
+The [state record](combined/appearance-state.json) shows zero teacher requests and
+unchanged durable classroom files. The [cleanup record](combined/appearance-cleanup.json)
+shows that the server stopped and the fixture was removed.
+
+The [full verification record](combined/verify-run.json) reports PASS for version,
+formatting, types, 1,380 tests, and the complete browser suite. It records the old
+HEAD plus the staged merge, because verification ran before the merge commit.
+The [source hashes](combined/verify-source-hashes.json) identify the checked source.
+The activity drive passed in this run. The earlier timeout remains unexplained.
+`npm run audit` also passed: 125 production package versions matched the lock,
+with zero vulnerabilities. Full local logs remain in `/tmp/studens-pr150-merge/verify/`.

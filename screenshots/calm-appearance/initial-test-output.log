@@ -1,0 +1,14 @@
+
+> studens@0.11.15 test
+> vitest run
+
+
+ RUN  v4.1.12 /Users/maxmiller/.t3/worktrees/studens/t3-a6aedca0
+
+ ❯ test/service-process.test.ts (17 tests | 1 failed) 43469ms
+   × stops explicitly before claude MCP exit without detaching again 6059ms
+
+ Test Files  1 failed | 96 passed (97)
+      Tests  1 failed | 1373 passed (1374)
+   Start at  10:44:00
+   Duration  44.52s (transform 9.01s, setup 0ms, import 62.92s, tests 140.43s, environment 17ms)

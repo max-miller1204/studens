@@ -1,39 +1,76 @@
-/**
- * theme.mjs — the header light/dark toggle.
- *
- * The default is always the system preference; the toggle writes an explicit
- * `data-theme` on <html> that the stylesheet lets win over the media query. Cycling
- * back to "system" is deliberately not offered — clearing the override is a rare
- * need and a three-state toggle reads as a bug.
- */
+/** Wire device appearance controls after the before-paint bootstrap. */
+const root = document.documentElement;
+let change = 0;
 
-const STORAGE_KEY = "pi-classroom-theme";
-
-function systemPrefersDark() {
-  return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+function withoutTransitions(apply) {
+  const current = ++change;
+  root.classList.add("cl-appearance-changing");
+  // Resolve the suppression rule before changing any colors.
+  getComputedStyle(root).color;
+  try {
+    apply();
+  } finally {
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        if (current === change) root.classList.remove("cl-appearance-changing");
+      }),
+    );
+  }
 }
 
 function currentTheme() {
-  const explicit = document.documentElement.getAttribute("data-theme");
-  if (explicit === "dark" || explicit === "light") return explicit;
-  return systemPrefersDark() ? "dark" : "light";
+  return (
+    root.dataset.theme ?? (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
+  );
 }
 
-function applyTheme(theme) {
-  document.documentElement.setAttribute("data-theme", theme);
-  try {
-    localStorage.setItem(STORAGE_KEY, theme);
-  } catch (err) {
-    /* private browsing — the toggle still works for this page view */
-  }
-}
-
-/** Wire up every `[data-cl-theme-toggle]` on the page. */
+/** Wire the header toggle and the device-local Settings selectors. */
 export function initTheme() {
-  const toggles = document.querySelectorAll("[data-cl-theme-toggle]");
-  for (const toggle of toggles) {
+  const theme = document.querySelector("[data-cl-theme-choice]");
+  const accent = document.querySelector("[data-cl-accent-choice]");
+  const status = document.querySelector("[data-cl-appearance-status]");
+  const sync = () => {
+    if (theme) theme.value = root.dataset.theme ?? "system";
+    if (accent) accent.value = root.dataset.accent;
+  };
+  const save = (kind, value) => {
+    withoutTransitions(() => {
+      try {
+        const key = `pi-classroom-${kind}`;
+        if (kind === "theme" && value === "system") localStorage.removeItem(key);
+        else localStorage.setItem(key, value);
+        window.classroomAppearance.read();
+        document.querySelector("[data-cl-appearance-error]")?.remove();
+        if (status) status.textContent = "Appearance saved on this device.";
+      } catch (error) {
+        if (status) status.textContent = "";
+        window.classroomAppearance.report(error);
+      }
+      sync();
+    });
+  };
+  sync();
+  for (const toggle of document.querySelectorAll("[data-cl-theme-toggle]")) {
     toggle.addEventListener("click", () => {
-      applyTheme(currentTheme() === "dark" ? "light" : "dark");
+      save("theme", currentTheme() === "dark" ? "light" : "dark");
     });
   }
+  theme?.addEventListener("change", () => save("theme", theme.value));
+  accent?.addEventListener("change", () => save("accent", accent.value));
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+    if (!root.hasAttribute("data-theme")) withoutTransitions(() => {});
+  });
+  window.addEventListener("storage", (event) => {
+    if (event.key !== null && !["pi-classroom-theme", "pi-classroom-accent"].includes(event.key))
+      return;
+    withoutTransitions(() => {
+      try {
+        window.classroomAppearance.read();
+        document.querySelector("[data-cl-appearance-error]")?.remove();
+        sync();
+      } catch (error) {
+        window.classroomAppearance.report(error);
+      }
+    });
+  });
 }

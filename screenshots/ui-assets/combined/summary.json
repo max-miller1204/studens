@@ -1,0 +1,971 @@
+{
+  "base": "2cb641178c89c4c12cffd27199ad5d02278a4c88",
+  "originalHead": "9b890cc0c42283237c639d9d77d13421e9128157",
+  "verdict": "PASS",
+  "states": 64,
+  "fontProbes": 12,
+  "fontUrls": [
+    "vendor/inter/inter-latin-ext-wght-italic.woff2",
+    "vendor/inter/inter-latin-ext-wght-normal.woff2",
+    "vendor/inter/inter-latin-wght-italic.woff2",
+    "vendor/inter/inter-latin-wght-normal.woff2",
+    "vendor/jetbrains-mono/jetbrains-mono-latin-ext-wght-italic.woff2",
+    "vendor/jetbrains-mono/jetbrains-mono-latin-ext-wght-normal.woff2",
+    "vendor/jetbrains-mono/jetbrains-mono-latin-wght-italic.woff2",
+    "vendor/jetbrains-mono/jetbrains-mono-latin-wght-normal.woff2",
+    "vendor/source-serif-4/source-serif-4-latin-ext-wght-italic.woff2",
+    "vendor/source-serif-4/source-serif-4-latin-ext-wght-normal.woff2",
+    "vendor/source-serif-4/source-serif-4-latin-wght-italic.woff2",
+    "vendor/source-serif-4/source-serif-4-latin-wght-normal.woff2"
+  ],
+  "missingStatus": 404,
+  "missingFontStatus": 404,
+  "unknown": "Unknown bundled icon: missing",
+  "external": "blocked",
+  "observations": [
+    {
+      "page": "shell",
+      "width": 1280,
+      "theme": "light",
+      "accent": "indigo",
+      "renderedFonts": {
+        ".cl-breadcrumb": ["Inter"]
+      },
+      "icons": 2,
+      "preloads": 2,
+      "scrollWidth": 1280,
+      "measure": "34rem"
+    },
+    {
+      "page": "shell",
+      "width": 1280,
+      "theme": "dark",
+      "accent": "indigo",
+      "renderedFonts": {
+        ".cl-breadcrumb": ["Inter"]
+      },
+      "icons": 2,
+      "preloads": 2,
+      "scrollWidth": 1280,
+      "measure": "34rem"
+    },
+    {
+      "page": "shell",
+      "width": 390,
+      "theme": "light",
+      "accent": "indigo",
+      "renderedFonts": {
+        ".cl-breadcrumb": ["Inter"]
+      },
+      "icons": 2,
+      "preloads": 2,
+      "scrollWidth": 390,
+      "measure": "34rem"
+    },
+    {
+      "page": "shell",
+      "width": 390,
+      "theme": "dark",
+      "accent": "indigo",
+      "renderedFonts": {
+        ".cl-breadcrumb": ["Inter"]
+      },
+      "icons": 2,
+      "preloads": 2,
+      "scrollWidth": 390,
+      "measure": "34rem"
+    },
+    {
+      "page": "shell",
+      "width": 1280,
+      "theme": "light",
+      "accent": "copper",
+      "renderedFonts": {
+        ".cl-breadcrumb": ["Inter"]
+      },
+      "icons": 2,
+      "preloads": 2,
+      "scrollWidth": 1280,
+      "measure": "34rem"
+    },
+    {
+      "page": "shell",
+      "width": 1280,
+      "theme": "dark",
+      "accent": "copper",
+      "renderedFonts": {
+        ".cl-breadcrumb": ["Inter"]
+      },
+      "icons": 2,
+      "preloads": 2,
+      "scrollWidth": 1280,
+      "measure": "34rem"
+    },
+    {
+      "page": "shell",
+      "width": 390,
+      "theme": "light",
+      "accent": "copper",
+      "renderedFonts": {
+        ".cl-breadcrumb": ["Inter"]
+      },
+      "icons": 2,
+      "preloads": 2,
+      "scrollWidth": 390,
+      "measure": "34rem"
+    },
+    {
+      "page": "shell",
+      "width": 390,
+      "theme": "dark",
+      "accent": "copper",
+      "renderedFonts": {
+        ".cl-breadcrumb": ["Inter"]
+      },
+      "icons": 2,
+      "preloads": 2,
+      "scrollWidth": 390,
+      "measure": "34rem"
+    },
+    {
+      "page": "shell",
+      "width": 1280,
+      "theme": "light",
+      "accent": "green",
+      "renderedFonts": {
+        ".cl-breadcrumb": ["Inter"]
+      },
+      "icons": 2,
+      "preloads": 2,
+      "scrollWidth": 1280,
+      "measure": "34rem"
+    },
+    {
+      "page": "shell",
+      "width": 1280,
+      "theme": "dark",
+      "accent": "green",
+      "renderedFonts": {
+        ".cl-breadcrumb": ["Inter"]
+      },
+      "icons": 2,
+      "preloads": 2,
+      "scrollWidth": 1280,
+      "measure": "34rem"
+    },
+    {
+      "page": "shell",
+      "width": 390,
+      "theme": "light",
+      "accent": "green",
+      "renderedFonts": {
+        ".cl-breadcrumb": ["Inter"]
+      },
+      "icons": 2,
+      "preloads": 2,
+      "scrollWidth": 390,
+      "measure": "34rem"
+    },
+    {
+      "page": "shell",
+      "width": 390,
+      "theme": "dark",
+      "accent": "green",
+      "renderedFonts": {
+        ".cl-breadcrumb": ["Inter"]
+      },
+      "icons": 2,
+      "preloads": 2,
+      "scrollWidth": 390,
+      "measure": "34rem"
+    },
+    {
+      "page": "shell",
+      "width": 1280,
+      "theme": "light",
+      "accent": "neutral",
+      "renderedFonts": {
+        ".cl-breadcrumb": ["Inter"]
+      },
+      "icons": 2,
+      "preloads": 2,
+      "scrollWidth": 1280,
+      "measure": "34rem"
+    },
+    {
+      "page": "shell",
+      "width": 1280,
+      "theme": "dark",
+      "accent": "neutral",
+      "renderedFonts": {
+        ".cl-breadcrumb": ["Inter"]
+      },
+      "icons": 2,
+      "preloads": 2,
+      "scrollWidth": 1280,
+      "measure": "34rem"
+    },
+    {
+      "page": "shell",
+      "width": 390,
+      "theme": "light",
+      "accent": "neutral",
+      "renderedFonts": {
+        ".cl-breadcrumb": ["Inter"]
+      },
+      "icons": 2,
+      "preloads": 2,
+      "scrollWidth": 390,
+      "measure": "34rem"
+    },
+    {
+      "page": "shell",
+      "width": 390,
+      "theme": "dark",
+      "accent": "neutral",
+      "renderedFonts": {
+        ".cl-breadcrumb": ["Inter"]
+      },
+      "icons": 2,
+      "preloads": 2,
+      "scrollWidth": 390,
+      "measure": "34rem"
+    },
+    {
+      "page": "lesson",
+      "width": 1280,
+      "theme": "light",
+      "accent": "indigo",
+      "renderedFonts": {
+        ".cl-breadcrumb": ["Inter"],
+        "[data-font-prose]": ["Source Serif 4"],
+        "[data-font-extended]": ["Source Serif 4"],
+        "[data-font-code]": ["JetBrains Mono"],
+        ".cl-q-prompt": ["Source Serif 4"]
+      },
+      "icons": 2,
+      "preloads": 2,
+      "scrollWidth": 1280,
+      "measure": "34rem"
+    },
+    {
+      "page": "lesson",
+      "width": 1280,
+      "theme": "dark",
+      "accent": "indigo",
+      "renderedFonts": {
+        ".cl-breadcrumb": ["Inter"],
+        "[data-font-prose]": ["Source Serif 4"],
+        "[data-font-extended]": ["Source Serif 4"],
+        "[data-font-code]": ["JetBrains Mono"],
+        ".cl-q-prompt": ["Source Serif 4"]
+      },
+      "icons": 2,
+      "preloads": 2,
+      "scrollWidth": 1280,
+      "measure": "34rem"
+    },
+    {
+      "page": "lesson",
+      "width": 390,
+      "theme": "light",
+      "accent": "indigo",
+      "renderedFonts": {
+        ".cl-breadcrumb": ["Inter"],
+        "[data-font-prose]": ["Source Serif 4"],
+        "[data-font-extended]": ["Source Serif 4"],
+        "[data-font-code]": ["JetBrains Mono"],
+        ".cl-q-prompt": ["Source Serif 4"]
+      },
+      "icons": 2,
+      "preloads": 2,
+      "scrollWidth": 390,
+      "measure": "34rem"
+    },
+    {
+      "page": "lesson",
+      "width": 390,
+      "theme": "dark",
+      "accent": "indigo",
+      "renderedFonts": {
+        ".cl-breadcrumb": ["Inter"],
+        "[data-font-prose]": ["Source Serif 4"],
+        "[data-font-extended]": ["Source Serif 4"],
+        "[data-font-code]": ["JetBrains Mono"],
+        ".cl-q-prompt": ["Source Serif 4"]
+      },
+      "icons": 2,
+      "preloads": 2,
+      "scrollWidth": 390,
+      "measure": "34rem"
+    },
+    {
+      "page": "lesson",
+      "width": 1280,
+      "theme": "light",
+      "accent": "copper",
+      "renderedFonts": {
+        ".cl-breadcrumb": ["Inter"],
+        "[data-font-prose]": ["Source Serif 4"],
+        "[data-font-extended]": ["Source Serif 4"],
+        "[data-font-code]": ["JetBrains Mono"],
+        ".cl-q-prompt": ["Source Serif 4"]
+      },
+      "icons": 2,
+      "preloads": 2,
+      "scrollWidth": 1280,
+      "measure": "34rem"
+    },
+    {
+      "page": "lesson",
+      "width": 1280,
+      "theme": "dark",
+      "accent": "copper",
+      "renderedFonts": {
+        ".cl-breadcrumb": ["Inter"],
+        "[data-font-prose]": ["Source Serif 4"],
+        "[data-font-extended]": ["Source Serif 4"],
+        "[data-font-code]": ["JetBrains Mono"],
+        ".cl-q-prompt": ["Source Serif 4"]
+      },
+      "icons": 2,
+      "preloads": 2,
+      "scrollWidth": 1280,
+      "measure": "34rem"
+    },
+    {
+      "page": "lesson",
+      "width": 390,
+      "theme": "light",
+      "accent": "copper",
+      "renderedFonts": {
+        ".cl-breadcrumb": ["Inter"],
+        "[data-font-prose]": ["Source Serif 4"],
+        "[data-font-extended]": ["Source Serif 4"],
+        "[data-font-code]": ["JetBrains Mono"],
+        ".cl-q-prompt": ["Source Serif 4"]
+      },
+      "icons": 2,
+      "preloads": 2,
+      "scrollWidth": 390,
+      "measure": "34rem"
+    },
+    {
+      "page": "lesson",
+      "width": 390,
+      "theme": "dark",
+      "accent": "copper",
+      "renderedFonts": {
+        ".cl-breadcrumb": ["Inter"],
+        "[data-font-prose]": ["Source Serif 4"],
+        "[data-font-extended]": ["Source Serif 4"],
+        "[data-font-code]": ["JetBrains Mono"],
+        ".cl-q-prompt": ["Source Serif 4"]
+      },
+      "icons": 2,
+      "preloads": 2,
+      "scrollWidth": 390,
+      "measure": "34rem"
+    },
+    {
+      "page": "lesson",
+      "width": 1280,
+      "theme": "light",
+      "accent": "green",
+      "renderedFonts": {
+        ".cl-breadcrumb": ["Inter"],
+        "[data-font-prose]": ["Source Serif 4"],
+        "[data-font-extended]": ["Source Serif 4"],
+        "[data-font-code]": ["JetBrains Mono"],
+        ".cl-q-prompt": ["Source Serif 4"]
+      },
+      "icons": 2,
+      "preloads": 2,
+      "scrollWidth": 1280,
+      "measure": "34rem"
+    },
+    {
+      "page": "lesson",
+      "width": 1280,
+      "theme": "dark",
+      "accent": "green",
+      "renderedFonts": {
+        ".cl-breadcrumb": ["Inter"],
+        "[data-font-prose]": ["Source Serif 4"],
+        "[data-font-extended]": ["Source Serif 4"],
+        "[data-font-code]": ["JetBrains Mono"],
+        ".cl-q-prompt": ["Source Serif 4"]
+      },
+      "icons": 2,
+      "preloads": 2,
+      "scrollWidth": 1280,
+      "measure": "34rem"
+    },
+    {
+      "page": "lesson",
+      "width": 390,
+      "theme": "light",
+      "accent": "green",
+      "renderedFonts": {
+        ".cl-breadcrumb": ["Inter"],
+        "[data-font-prose]": ["Source Serif 4"],
+        "[data-font-extended]": ["Source Serif 4"],
+        "[data-font-code]": ["JetBrains Mono"],
+        ".cl-q-prompt": ["Source Serif 4"]
+      },
+      "icons": 2,
+      "preloads": 2,
+      "scrollWidth": 390,
+      "measure": "34rem"
+    },
+    {
+      "page": "lesson",
+      "width": 390,
+      "theme": "dark",
+      "accent": "green",
+      "renderedFonts": {
+        ".cl-breadcrumb": ["Inter"],
+        "[data-font-prose]": ["Source Serif 4"],
+        "[data-font-extended]": ["Source Serif 4"],
+        "[data-font-code]": ["JetBrains Mono"],
+        ".cl-q-prompt": ["Source Serif 4"]
+      },
+      "icons": 2,
+      "preloads": 2,
+      "scrollWidth": 390,
+      "measure": "34rem"
+    },
+    {
+      "page": "lesson",
+      "width": 1280,
+      "theme": "light",
+      "accent": "neutral",
+      "renderedFonts": {
+        ".cl-breadcrumb": ["Inter"],
+        "[data-font-prose]": ["Source Serif 4"],
+        "[data-font-extended]": ["Source Serif 4"],
+        "[data-font-code]": ["JetBrains Mono"],
+        ".cl-q-prompt": ["Source Serif 4"]
+      },
+      "icons": 2,
+      "preloads": 2,
+      "scrollWidth": 1280,
+      "measure": "34rem"
+    },
+    {
+      "page": "lesson",
+      "width": 1280,
+      "theme": "dark",
+      "accent": "neutral",
+      "renderedFonts": {
+        ".cl-breadcrumb": ["Inter"],
+        "[data-font-prose]": ["Source Serif 4"],
+        "[data-font-extended]": ["Source Serif 4"],
+        "[data-font-code]": ["JetBrains Mono"],
+        ".cl-q-prompt": ["Source Serif 4"]
+      },
+      "icons": 2,
+      "preloads": 2,
+      "scrollWidth": 1280,
+      "measure": "34rem"
+    },
+    {
+      "page": "lesson",
+      "width": 390,
+      "theme": "light",
+      "accent": "neutral",
+      "renderedFonts": {
+        ".cl-breadcrumb": ["Inter"],
+        "[data-font-prose]": ["Source Serif 4"],
+        "[data-font-extended]": ["Source Serif 4"],
+        "[data-font-code]": ["JetBrains Mono"],
+        ".cl-q-prompt": ["Source Serif 4"]
+      },
+      "icons": 2,
+      "preloads": 2,
+      "scrollWidth": 390,
+      "measure": "34rem"
+    },
+    {
+      "page": "lesson",
+      "width": 390,
+      "theme": "dark",
+      "accent": "neutral",
+      "renderedFonts": {
+        ".cl-breadcrumb": ["Inter"],
+        "[data-font-prose]": ["Source Serif 4"],
+        "[data-font-extended]": ["Source Serif 4"],
+        "[data-font-code]": ["JetBrains Mono"],
+        ".cl-q-prompt": ["Source Serif 4"]
+      },
+      "icons": 2,
+      "preloads": 2,
+      "scrollWidth": 390,
+      "measure": "34rem"
+    },
+    {
+      "page": "review",
+      "width": 1280,
+      "theme": "light",
+      "accent": "indigo",
+      "renderedFonts": {
+        ".cl-breadcrumb": ["Inter"],
+        ".cl-q-prompt": ["Source Serif 4"]
+      },
+      "icons": 2,
+      "preloads": 2,
+      "scrollWidth": 1280,
+      "measure": "34rem"
+    },
+    {
+      "page": "review",
+      "width": 1280,
+      "theme": "dark",
+      "accent": "indigo",
+      "renderedFonts": {
+        ".cl-breadcrumb": ["Inter"],
+        ".cl-q-prompt": ["Source Serif 4"]
+      },
+      "icons": 2,
+      "preloads": 2,
+      "scrollWidth": 1280,
+      "measure": "34rem"
+    },
+    {
+      "page": "review",
+      "width": 390,
+      "theme": "light",
+      "accent": "indigo",
+      "renderedFonts": {
+        ".cl-breadcrumb": ["Inter"],
+        ".cl-q-prompt": ["Source Serif 4"]
+      },
+      "icons": 2,
+      "preloads": 2,
+      "scrollWidth": 390,
+      "measure": "34rem"
+    },
+    {
+      "page": "review",
+      "width": 390,
+      "theme": "dark",
+      "accent": "indigo",
+      "renderedFonts": {
+        ".cl-breadcrumb": ["Inter"],
+        ".cl-q-prompt": ["Source Serif 4"]
+      },
+      "icons": 2,
+      "preloads": 2,
+      "scrollWidth": 390,
+      "measure": "34rem"
+    },
+    {
+      "page": "review",
+      "width": 1280,
+      "theme": "light",
+      "accent": "copper",
+      "renderedFonts": {
+        ".cl-breadcrumb": ["Inter"],
+        ".cl-q-prompt": ["Source Serif 4"]
+      },
+      "icons": 2,
+      "preloads": 2,
+      "scrollWidth": 1280,
+      "measure": "34rem"
+    },
+    {
+      "page": "review",
+      "width": 1280,
+      "theme": "dark",
+      "accent": "copper",
+      "renderedFonts": {
+        ".cl-breadcrumb": ["Inter"],
+        ".cl-q-prompt": ["Source Serif 4"]
+      },
+      "icons": 2,
+      "preloads": 2,
+      "scrollWidth": 1280,
+      "measure": "34rem"
+    },
+    {
+      "page": "review",
+      "width": 390,
+      "theme": "light",
+      "accent": "copper",
+      "renderedFonts": {
+        ".cl-breadcrumb": ["Inter"],
+        ".cl-q-prompt": ["Source Serif 4"]
+      },
+      "icons": 2,
+      "preloads": 2,
+      "scrollWidth": 390,
+      "measure": "34rem"
+    },
+    {
+      "page": "review",
+      "width": 390,
+      "theme": "dark",
+      "accent": "copper",
+      "renderedFonts": {
+        ".cl-breadcrumb": ["Inter"],
+        ".cl-q-prompt": ["Source Serif 4"]
+      },
+      "icons": 2,
+      "preloads": 2,
+      "scrollWidth": 390,
+      "measure": "34rem"
+    },
+    {
+      "page": "review",
+      "width": 1280,
+      "theme": "light",
+      "accent": "green",
+      "renderedFonts": {
+        ".cl-breadcrumb": ["Inter"],
+        ".cl-q-prompt": ["Source Serif 4"]
+      },
+      "icons": 2,
+      "preloads": 2,
+      "scrollWidth": 1280,
+      "measure": "34rem"
+    },
+    {
+      "page": "review",
+      "width": 1280,
+      "theme": "dark",
+      "accent": "green",
+      "renderedFonts": {
+        ".cl-breadcrumb": ["Inter"],
+        ".cl-q-prompt": ["Source Serif 4"]
+      },
+      "icons": 2,
+      "preloads": 2,
+      "scrollWidth": 1280,
+      "measure": "34rem"
+    },
+    {
+      "page": "review",
+      "width": 390,
+      "theme": "light",
+      "accent": "green",
+      "renderedFonts": {
+        ".cl-breadcrumb": ["Inter"],
+        ".cl-q-prompt": ["Source Serif 4"]
+      },
+      "icons": 2,
+      "preloads": 2,
+      "scrollWidth": 390,
+      "measure": "34rem"
+    },
+    {
+      "page": "review",
+      "width": 390,
+      "theme": "dark",
+      "accent": "green",
+      "renderedFonts": {
+        ".cl-breadcrumb": ["Inter"],
+        ".cl-q-prompt": ["Source Serif 4"]
+      },
+      "icons": 2,
+      "preloads": 2,
+      "scrollWidth": 390,
+      "measure": "34rem"
+    },
+    {
+      "page": "review",
+      "width": 1280,
+      "theme": "light",
+      "accent": "neutral",
+      "renderedFonts": {
+        ".cl-breadcrumb": ["Inter"],
+        ".cl-q-prompt": ["Source Serif 4"]
+      },
+      "icons": 2,
+      "preloads": 2,
+      "scrollWidth": 1280,
+      "measure": "34rem"
+    },
+    {
+      "page": "review",
+      "width": 1280,
+      "theme": "dark",
+      "accent": "neutral",
+      "renderedFonts": {
+        ".cl-breadcrumb": ["Inter"],
+        ".cl-q-prompt": ["Source Serif 4"]
+      },
+      "icons": 2,
+      "preloads": 2,
+      "scrollWidth": 1280,
+      "measure": "34rem"
+    },
+    {
+      "page": "review",
+      "width": 390,
+      "theme": "light",
+      "accent": "neutral",
+      "renderedFonts": {
+        ".cl-breadcrumb": ["Inter"],
+        ".cl-q-prompt": ["Source Serif 4"]
+      },
+      "icons": 2,
+      "preloads": 2,
+      "scrollWidth": 390,
+      "measure": "34rem"
+    },
+    {
+      "page": "review",
+      "width": 390,
+      "theme": "dark",
+      "accent": "neutral",
+      "renderedFonts": {
+        ".cl-breadcrumb": ["Inter"],
+        ".cl-q-prompt": ["Source Serif 4"]
+      },
+      "icons": 2,
+      "preloads": 2,
+      "scrollWidth": 390,
+      "measure": "34rem"
+    },
+    {
+      "page": "reference",
+      "width": 1280,
+      "theme": "light",
+      "accent": "indigo",
+      "renderedFonts": {
+        "[data-font-prose]": ["Source Serif 4"],
+        "[data-font-extended]": ["Source Serif 4"],
+        "[data-font-code]": ["JetBrains Mono"]
+      },
+      "icons": 0,
+      "preloads": 2,
+      "scrollWidth": 1280,
+      "measure": "34rem"
+    },
+    {
+      "page": "reference",
+      "width": 1280,
+      "theme": "dark",
+      "accent": "indigo",
+      "renderedFonts": {
+        "[data-font-prose]": ["Source Serif 4"],
+        "[data-font-extended]": ["Source Serif 4"],
+        "[data-font-code]": ["JetBrains Mono"]
+      },
+      "icons": 0,
+      "preloads": 2,
+      "scrollWidth": 1280,
+      "measure": "34rem"
+    },
+    {
+      "page": "reference",
+      "width": 390,
+      "theme": "light",
+      "accent": "indigo",
+      "renderedFonts": {
+        "[data-font-prose]": ["Source Serif 4"],
+        "[data-font-extended]": ["Source Serif 4"],
+        "[data-font-code]": ["JetBrains Mono"]
+      },
+      "icons": 0,
+      "preloads": 2,
+      "scrollWidth": 390,
+      "measure": "34rem"
+    },
+    {
+      "page": "reference",
+      "width": 390,
+      "theme": "dark",
+      "accent": "indigo",
+      "renderedFonts": {
+        "[data-font-prose]": ["Source Serif 4"],
+        "[data-font-extended]": ["Source Serif 4"],
+        "[data-font-code]": ["JetBrains Mono"]
+      },
+      "icons": 0,
+      "preloads": 2,
+      "scrollWidth": 390,
+      "measure": "34rem"
+    },
+    {
+      "page": "reference",
+      "width": 1280,
+      "theme": "light",
+      "accent": "copper",
+      "renderedFonts": {
+        "[data-font-prose]": ["Source Serif 4"],
+        "[data-font-extended]": ["Source Serif 4"],
+        "[data-font-code]": ["JetBrains Mono"]
+      },
+      "icons": 0,
+      "preloads": 2,
+      "scrollWidth": 1280,
+      "measure": "34rem"
+    },
+    {
+      "page": "reference",
+      "width": 1280,
+      "theme": "dark",
+      "accent": "copper",
+      "renderedFonts": {
+        "[data-font-prose]": ["Source Serif 4"],
+        "[data-font-extended]": ["Source Serif 4"],
+        "[data-font-code]": ["JetBrains Mono"]
+      },
+      "icons": 0,
+      "preloads": 2,
+      "scrollWidth": 1280,
+      "measure": "34rem"
+    },
+    {
+      "page": "reference",
+      "width": 390,
+      "theme": "light",
+      "accent": "copper",
+      "renderedFonts": {
+        "[data-font-prose]": ["Source Serif 4"],
+        "[data-font-extended]": ["Source Serif 4"],
+        "[data-font-code]": ["JetBrains Mono"]
+      },
+      "icons": 0,
+      "preloads": 2,
+      "scrollWidth": 390,
+      "measure": "34rem"
+    },
+    {
+      "page": "reference",
+      "width": 390,
+      "theme": "dark",
+      "accent": "copper",
+      "renderedFonts": {
+        "[data-font-prose]": ["Source Serif 4"],
+        "[data-font-extended]": ["Source Serif 4"],
+        "[data-font-code]": ["JetBrains Mono"]
+      },
+      "icons": 0,
+      "preloads": 2,
+      "scrollWidth": 390,
+      "measure": "34rem"
+    },
+    {
+      "page": "reference",
+      "width": 1280,
+      "theme": "light",
+      "accent": "green",
+      "renderedFonts": {
+        "[data-font-prose]": ["Source Serif 4"],
+        "[data-font-extended]": ["Source Serif 4"],
+        "[data-font-code]": ["JetBrains Mono"]
+      },
+      "icons": 0,
+      "preloads": 2,
+      "scrollWidth": 1280,
+      "measure": "34rem"
+    },
+    {
+      "page": "reference",
+      "width": 1280,
+      "theme": "dark",
+      "accent": "green",
+      "renderedFonts": {
+        "[data-font-prose]": ["Source Serif 4"],
+        "[data-font-extended]": ["Source Serif 4"],
+        "[data-font-code]": ["JetBrains Mono"]
+      },
+      "icons": 0,
+      "preloads": 2,
+      "scrollWidth": 1280,
+      "measure": "34rem"
+    },
+    {
+      "page": "reference",
+      "width": 390,
+      "theme": "light",
+      "accent": "green",
+      "renderedFonts": {
+        "[data-font-prose]": ["Source Serif 4"],
+        "[data-font-extended]": ["Source Serif 4"],
+        "[data-font-code]": ["JetBrains Mono"]
+      },
+      "icons": 0,
+      "preloads": 2,
+      "scrollWidth": 390,
+      "measure": "34rem"
+    },
+    {
+      "page": "reference",
+      "width": 390,
+      "theme": "dark",
+      "accent": "green",
+      "renderedFonts": {
+        "[data-font-prose]": ["Source Serif 4"],
+        "[data-font-extended]": ["Source Serif 4"],
+        "[data-font-code]": ["JetBrains Mono"]
+      },
+      "icons": 0,
+      "preloads": 2,
+      "scrollWidth": 390,
+      "measure": "34rem"
+    },
+    {
+      "page": "reference",
+      "width": 1280,
+      "theme": "light",
+      "accent": "neutral",
+      "renderedFonts": {
+        "[data-font-prose]": ["Source Serif 4"],
+        "[data-font-extended]": ["Source Serif 4"],
+        "[data-font-code]": ["JetBrains Mono"]
+      },
+      "icons": 0,
+      "preloads": 2,
+      "scrollWidth": 1280,
+      "measure": "34rem"
+    },
+    {
+      "page": "reference",
+      "width": 1280,
+      "theme": "dark",
+      "accent": "neutral",
+      "renderedFonts": {
+        "[data-font-prose]": ["Source Serif 4"],
+        "[data-font-extended]": ["Source Serif 4"],
+        "[data-font-code]": ["JetBrains Mono"]
+      },
+      "icons": 0,
+      "preloads": 2,
+      "scrollWidth": 1280,
+      "measure": "34rem"
+    },
+    {
+      "page": "reference",
+      "width": 390,
+      "theme": "light",
+      "accent": "neutral",
+      "renderedFonts": {
+        "[data-font-prose]": ["Source Serif 4"],
+        "[data-font-extended]": ["Source Serif 4"],
+        "[data-font-code]": ["JetBrains Mono"]
+      },
+      "icons": 0,
+      "preloads": 2,
+      "scrollWidth": 390,
+      "measure": "34rem"
+    },
+    {
+      "page": "reference",
+      "width": 390,
+      "theme": "dark",
+      "accent": "neutral",
+      "renderedFonts": {
+        "[data-font-prose]": ["Source Serif 4"],
+        "[data-font-extended]": ["Source Serif 4"],
+        "[data-font-code]": ["JetBrains Mono"]
+      },
+      "icons": 0,
+      "preloads": 2,
+      "scrollWidth": 390,
+      "measure": "34rem"
+    }
+  ]
+}

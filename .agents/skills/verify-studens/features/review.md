@@ -96,7 +96,8 @@ Owner attachment happens before the fixture histories are seeded, so this drive
 isolates read projection from startup maintenance/refill work. It does not verify
 teacher maintenance or model behavior; select the existing host targets for those.
 
-The review fixtures check Pi and the service. They cover zero model turns during
+The review fixtures check Pi and the service. Wait for the active card to reach
+`data-state="fresh"` after opening Continue review, before selecting an answer. They cover zero model turns during
 assembly, legacy pool absence, a publication conflict and explicit retry, reload,
 automatic navigation, saved answers, another host opening the finished document,
 mobile controls, private routes, grading, and the original schedule. They also check

@@ -4,6 +4,11 @@ Edit learner preferences, connection settings, and the model for a persistent cl
 
 ## Sub-features
 
+- Save a device-local theme (System, Light, Dark) and accent (Indigo, Copper, Green, Neutral).
+- Apply appearance before paint on shell, lesson, review, document, and reference pages.
+- Keep keyboard focus, suppress switch transitions for one frame, and retain visible forced-color boundaries.
+- Show invalid saved values and unavailable storage with a specific error and explicit retry.
+
 - Keep pace, depth, and tone in NOTES.md without replacing other preferences or its index.
 - Validate local and tailnet ports; preserve unrelated configuration and routes.
 - Apply tailnet link changes on save; keep the current local listener until an explicit restart.
@@ -17,15 +22,18 @@ Edit learner preferences, connection settings, and the model for a persistent cl
 ## How to get to it (user POV)
 
 1. Open a classroom and select Settings beside Review history.
-2. Edit Pace, Depth, or Tone and select Save preferences.
-3. For Pi, Claude, or Codex, choose Teacher model or Custom model ID… and select Save teacher model.
-4. Return to the lesson and send a reply. Reopen Settings to read Last answering model separately from Requested setting.
-5. After a failed model request, choose a model in Settings, then use Retry request on the lesson.
-6. Save connection settings to apply links. Stop and restart the server explicitly to apply a local port change, then get its new link from the agent.
+2. Choose Theme and Accent in Appearance. These choices save immediately in this browser for all classrooms.
+3. Edit Pace, Depth, or Tone and select Save preferences.
+4. For Pi, Claude, or Codex, choose Teacher model or Custom model ID… and select Save teacher model.
+5. Return to the lesson and send a reply. Reopen Settings to read Last answering model separately from Requested setting.
+6. After a failed model request, choose a model in Settings, then use Retry request on the lesson.
+7. Save connection settings to apply links. Stop and restart the server explicitly to apply a local port change, then get its new link from the agent.
 
 ## Driving it with playwright-cli
 
 Run `npm run verify -- browser --artifacts /tmp/studens-settings-browser`.
+The `appearance/` fixture checks all eight theme/accent pairs with resolved color contrast, saved reload/navigation, pre-stylesheet attributes, keyboard selection, System theme changes, cross-tab changes with diagram redraw, one-frame transition suppression, 1280px and 390px layouts, reduced motion, and forced colors. It checks invalid saved theme/accent values and blocked storage at the browser storage boundary. It opens adjacent quiz/Ask controls without submitting them. Inspect `result.json`, `state.json`, matched screenshots, and `switch-reload.webm`. Durable classroom hashes must remain equal, except draft files. The teacher request count must remain zero. The review fixture is a read-only card with no graded source item; it does not prove grading or review scheduling.
+
 The settings fixture covers preference/config preservation, reload, default and custom model choices, a change during active work, unavailable-model errors, explicit retry, stale saves, restart, and 375px layout. Its nested-error probe checks literal HTML, exact original details, and refresh preserving the open details. Inspect `browser/settings/` screenshots, `settings-state.json`, and `NOTES.md`. It uses fixture teachers, so it does not prove account access.
 
 The connection check saves a port distinct from the original listener and requires

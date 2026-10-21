@@ -1,0 +1,33 @@
+{
+  "target": "local",
+  "verdict": "FAIL",
+  "error": "Error: browser failed with exit code 1. See /tmp/studens-issue-137/verify-repaired-2.",
+  "revision": "0633bdce0c8ba5697f2b87f38144fc43c0396bf7",
+  "changes": "M .agents/skills/verify-studens/SKILL.md\n M .agents/skills/verify-studens/features/reading.md\n M .agents/skills/verify-studens/features/settings.md\n M assets/runtime/classroom.css\n M assets/runtime/diagrams.mjs\n M assets/runtime/theme.mjs\n M scripts/e2e-browser.ts\n M src/lesson-html.ts\n M src/pages.ts\n M src/server/records.ts\n?? assets/runtime/appearance.js\n?? screenshots/calm-appearance/\n?? scripts/e2e-appearance-browser.ts\n?? src/appearance.ts",
+  "results": [
+    {
+      "command": ["npm", "run", "version:check"],
+      "exitCode": 0
+    },
+    {
+      "command": ["npm", "run", "format:check"],
+      "exitCode": 0
+    },
+    {
+      "command": ["npm", "run", "check"],
+      "exitCode": 0
+    },
+    {
+      "command": ["npm", "run", "test"],
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "/Users/maxmiller/.local/share/mise/installs/node/24.22.0/bin/node",
+        "scripts/e2e-browser.ts",
+        "/tmp/studens-issue-137/verify-repaired-2/browser"
+      ],
+      "exitCode": 1
+    }
+  ]
+}

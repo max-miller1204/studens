@@ -1,0 +1,98 @@
+Captured command error and later browser snapshot:
+
+  stdout: '### Error\n' +
+    `Error: locator.check: Error: strict mode violation: locator('form.cl-quiz:visible input[value="owner"]') resolved to 3 elements:\n` +
+    `    1) <input type="radio" name="r1-v1" value="owner"/> aka getByRole('radio', { name: 'The new owner' }).first()\n` +
+    `    2) <input type="radio" name="r2-v1" value="owner"/> aka getByRole('radio', { name: 'The new owner' }).nth(1)\n` +
+    `    3) <input type="radio" name="r3-v1" value="owner"/> aka getByRole('radio', { name: 'The new owner' }).nth(2)\n` +
+    '\n' +
+    'Call log:\n' +
+    `\x1B[2m  - waiting for locator('form.cl-quiz:visible input[value="owner"]')\x1B[22m\n` +
+    '\n',
+
+      command: 'snapshot',
+      stdout: '### Page\n' +
+        '- Page URL: http://127.0.0.1:52990/c/rust/reviews/review-c06039d8-1913-4a26-b52f-d341e408b5be#review\n' +
+        '- Page Title: Spaced review\n' +
+        '### Snapshot\n' +
+        '```yaml\n' +
+        '- generic [active] [ref=f19e1]:\n' +
+        '  - banner [ref=f19e2]:\n' +
+        '    - navigation [ref=f19e3]:\n' +
+        '      - link "Classrooms" [ref=f19e4] [cursor=pointer]:\n' +
+        '        - /url: /\n' +
+        '      - generic [aria-hidden] [ref=f19e5]: /\n' +
+        '      - link "Rust" [ref=f19e6] [cursor=pointer]:\n' +
+        '        - /url: /c/rust\n' +
+        '      - generic [aria-hidden] [ref=f19e7]: /\n' +
+        '      - generic [ref=f19e8]: "Review: 2026-10-21"\n' +
+        '    - button "Toggle colour theme" [ref=f19e9] [cursor=pointer]:\n' +
+        '      - generic [aria-hidden] [ref=f19e10]: ☾\n' +
+        '    - region "Teacher activity" [ref=f19e11]:\n' +
+        '      - status [ref=f19e12]: "Teacher: no pending requests"\n' +
+        '  - group [ref=f19e13]:\n' +
+        '    - generic "Saved marks (0)" [ref=f19e14] [cursor=pointer]\n' +
+        '  - main [ref=f19e15]:\n' +
+        '    - generic [ref=f19e16]:\n' +
+        '      - heading "Spaced review" [level=1] [ref=f19e17]\n' +
+        '      - paragraph [ref=f19e18]: Recall these ideas before looking anything up.\n' +
+        '    - status [ref=f19e19]: Question 1 of 3 · 0 answered\n' +
+        '    - generic [ref=f19e20]:\n' +
+        '      - paragraph [ref=f19e21]: Question 1\n' +
+        '      - list [ref=f19e22]:\n' +
+        '        - listitem [ref=f19e23]:\n' +
+        '          - paragraph [ref=f19e24]: A value moves into a new scope. Who releases it?\n' +
+        '          - list [ref=f19e25]:\n' +
+        '            - listitem [ref=f19e26]:\n' +
+        '              - generic [ref=f19e27] [cursor=pointer]:\n' +
+        '                - radio "The new owner" [ref=f19e28]\n' +
+        '                - text: The new owner\n' +
+        '            - listitem [ref=f19e29]:\n' +
+        '              - generic [ref=f19e30] [cursor=pointer]:\n' +
+        '                - radio "The old binding" [ref=f19e31]\n' +
+        '                - text: The old binding\n' +
+        '          - generic [ref=f19e32]:\n' +
+        '            - text: How did you answer?\n' +
+        '            - combobox "How did you answer?" [ref=f19e33]:\n' +
+        '              - option "Not reported" [selected]\n' +
+        '              - option "Without help"\n' +
+        '              - option "With a hint or reference"\n' +
+        '              - option "After seeing a solution"\n' +
+        '          - generic [ref=f19e34]:\n' +
+        '            - text: Confidence (optional)\n' +
+        '            - combobox "Confidence (optional)" [ref=f19e35]:\n' +
+        '              - option "Not reported" [selected]\n' +
+        '              - option "Guess"\n' +
+        '              - option "Unsure"\n' +
+        '              - option "Sure"\n' +
+        '      - generic [ref=f19e36]:\n' +
+        '        - button "Submit for grading" [ref=f19e37] [cursor=pointer]\n' +
+        '        - status\n' +
+        '    - region "Your teacher" [ref=f19e38]:\n' +
+        '      - heading "Your teacher" [level=2] [ref=f19e39]\n' +
+        '      - paragraph [ref=f19e40]: "codex teacher. Requested: report-after. Last answering model: report-after. Session: review-report-conversation."\n' +
+        '      - paragraph [ref=f19e41]: Feedback and follow-up questions appear here. Answer them here too.\n' +
+        '      - generic [ref=f19e42]:\n' +
+        '        - generic [ref=f19e43]:\n' +
+        '          - generic [ref=f19e44]: You\n' +
+        '          - generic [ref=f19e45]: "Bad question report Review item: 001-ownership/check-1/q1 Review: review-c06039d8-1913-4a26-b52f-d341e408b5be / review / r1 Question: A value moves into a new scope. Who releases it? Problem: The wording is ambiguous about the old binding."\n' +
+        '        - generic [ref=f19e46]:\n' +
+        '          - generic [ref=f19e47]: Teacher\n' +
+        '          - paragraph [ref=f19e49]: I received your bad-question report and will review the wording.\n' +
+        '      - generic [ref=f19e50]:\n' +
+        '        - generic [ref=f19e51]:\n' +
+        '          - text: Reply to your teacher\n' +
+        '          - textbox "Reply to your teacher" [ref=f19e52]\n' +
+        '        - generic [ref=f19e53]:\n' +
+        '          - generic [ref=f19e54]: ⌘/Ctrl + Enter to send\n' +
+        '          - button "Send reply" [ref=f19e55] [cursor=pointer]\n' +
+        '        - alert\n' +
+        '    - region "Review item controls" [ref=f19e56]:\n' +
+        '      - button "Retire item" [ref=f19e57] [cursor=pointer]\n' +
+        '      - button "Flag bad question" [ref=f19e58] [cursor=pointer]\n' +
+        '      - status [ref=f19e59]: Active review item.\n' +
+        '    - navigation "Review questions" [ref=f19e60]:\n' +
+        '      - button "Next question" [disabled] [ref=f19e61]\n' +
+        '      - link "Review history" [ref=f19e62] [cursor=pointer]:\n' +
+        '        - /url: /c/rust/reviews\n' +
+        '```\n',

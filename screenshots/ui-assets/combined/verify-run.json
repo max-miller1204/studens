@@ -1,0 +1,32 @@
+{
+  "target": "local",
+  "verdict": "PASS",
+  "revision": "9b890cc0c42283237c639d9d77d13421e9128157",
+  "changes": "M  .agents/skills/verify-studens/SKILL.md\nM  .agents/skills/verify-studens/features/reading.md\nM  .agents/skills/verify-studens/features/review.md\nM  .agents/skills/verify-studens/features/settings.md\nA  assets/runtime/appearance.js\nM  assets/runtime/classroom.css\nM  assets/runtime/diagrams.mjs\nM  assets/runtime/theme.mjs\nA  screenshots/calm-appearance/README.md\nA  screenshots/calm-appearance/after/classroom-desktop-light.png\nA  screenshots/calm-appearance/after/classroom-mobile-dark.png\nA  screenshots/calm-appearance/after/cleanup.json\nA  screenshots/calm-appearance/after/diagram-accent-copper.png\nA  screenshots/calm-appearance/after/diagrams-dark.png\nA  screenshots/calm-appearance/after/diagrams-light.png\nA  screenshots/calm-appearance/after/forced-colors-lesson.png\nA  screenshots/calm-appearance/after/forced-colors-settings.png\nA  screenshots/calm-appearance/after/invalid-accent.png\nA  screenshots/calm-appearance/after/landing-desktop-light.png\nA  screenshots/calm-appearance/after/landing-mobile-dark.png\nA  screenshots/calm-appearance/after/lesson-desktop-light.png\nA  screenshots/calm-appearance/after/lesson-mobile-dark-ask.png\nA  screenshots/calm-appearance/after/lesson-mobile-dark.png\nA  screenshots/calm-appearance/after/matrix-dark-copper.png\nA  screenshots/calm-appearance/after/matrix-dark-green.png\nA  screenshots/calm-appearance/after/matrix-dark-indigo.png\nA  screenshots/calm-appearance/after/matrix-dark-neutral.png\nA  screenshots/calm-appearance/after/matrix-light-copper.png\nA  screenshots/calm-appearance/after/matrix-light-green.png\nA  screenshots/calm-appearance/after/matrix-light-indigo.png\nA  screenshots/calm-appearance/after/matrix-light-neutral.png\nA  screenshots/calm-appearance/after/result.json\nA  screenshots/calm-appearance/after/settings-desktop-light.png\nA  screenshots/calm-appearance/after/settings-mobile-dark.png\nA  screenshots/calm-appearance/after/state.json\nA  screenshots/calm-appearance/after/switch-reload.webm\nA  screenshots/calm-appearance/after/unavailable-storage.png\nA  screenshots/calm-appearance/before/classroom-desktop-light.png\nA  screenshots/calm-appearance/before/classroom-mobile-dark.png\nA  screenshots/calm-appearance/before/landing-desktop-light.png\nA  screenshots/calm-appearance/before/landing-mobile-dark.png\nA  screenshots/calm-appearance/before/lesson-desktop-light.png\nA  screenshots/calm-appearance/before/lesson-mobile-dark.png\nA  screenshots/calm-appearance/before/revision.txt\nA  screenshots/calm-appearance/before/settings-desktop-light.png\nA  screenshots/calm-appearance/before/settings-mobile-dark.png\nA  screenshots/calm-appearance/before/switch-reload.webm\nA  screenshots/calm-appearance/browser-pass.log\nA  screenshots/calm-appearance/diagram-check-failure.json\nA  screenshots/calm-appearance/diagram-error.txt\nA  screenshots/calm-appearance/initial-check-failure.json\nA  screenshots/calm-appearance/initial-test-failure.log\nA  screenshots/calm-appearance/initial-test-output.log\nA  screenshots/calm-appearance/review-drive-check-failure.json\nA  screenshots/calm-appearance/review-drive-error.txt\nA  screenshots/calm-appearance/service-process-pass.log\nA  screenshots/calm-appearance/test-pass.log\nA  screenshots/calm-appearance/verification-pass.json\nM  screenshots/ui-assets/README.md\nA  screenshots/ui-assets/combined/appearance-cleanup.json\nA  screenshots/ui-assets/combined/appearance-result.json\nA  screenshots/ui-assets/combined/appearance-state.json\nA  screenshots/ui-assets/combined/contact-lesson-1280.jpg\nA  screenshots/ui-assets/combined/contact-lesson-390.jpg\nA  screenshots/ui-assets/combined/contact-reference-1280.jpg\nA  screenshots/ui-assets/combined/contact-reference-390.jpg\nA  screenshots/ui-assets/combined/contact-review-1280.jpg\nA  screenshots/ui-assets/combined/contact-review-390.jpg\nA  screenshots/ui-assets/combined/contact-shell-1280.jpg\nA  screenshots/ui-assets/combined/contact-shell-390.jpg\nA  screenshots/ui-assets/combined/summary.json\nA  scripts/e2e-appearance-browser.ts\nM  scripts/e2e-browser.ts\nM  scripts/e2e-review-controls.ts\nM  scripts/e2e-ui-assets.ts\nA  src/appearance.ts\nM  src/lesson-html.ts\nM  src/pages.ts\nM  src/server/records.ts",
+  "results": [
+    {
+      "command": ["npm", "run", "version:check"],
+      "exitCode": 0
+    },
+    {
+      "command": ["npm", "run", "format:check"],
+      "exitCode": 0
+    },
+    {
+      "command": ["npm", "run", "check"],
+      "exitCode": 0
+    },
+    {
+      "command": ["npm", "run", "test"],
+      "exitCode": 0
+    },
+    {
+      "command": [
+        "/Users/maxmiller/.local/share/mise/installs/node/24.22.0/bin/node",
+        "scripts/e2e-browser.ts",
+        "/tmp/studens-pr150-merge/verify/browser"
+      ],
+      "exitCode": 0
+    }
+  ]
+}

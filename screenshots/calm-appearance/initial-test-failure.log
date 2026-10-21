@@ -1,0 +1,15 @@
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/service-process.test.ts > stops explicitly before claude MCP exit without detaching again
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ test/service-process.test.ts:184:28
+    182|   };
+    183| }
+    184| it.each(["codex", "claude"])(
+       |                            ^
+    185|   "stops explicitly before %s MCP exit without detaching again",
+    186|   async (name) => {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯

@@ -322,6 +322,7 @@ export async function verifyReviewControls(artifacts: string | null): Promise<vo
         throw new Error("Stale retirement did not name its conflict.");
       await code(`
         await page.getByRole('button',{name:'Continue review',exact:true}).click();
+        await page.waitForFunction(()=>document.querySelector('[data-review-active="true"]')?.dataset.state==='fresh');
         for(let i=0;i<3;i++){
           await page.locator('form.cl-quiz:visible input[value="owner"]').check();
           await page.locator('form.cl-quiz:visible button[type="submit"]').click();

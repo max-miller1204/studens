@@ -89,12 +89,12 @@ same Pi session after reload. These ungraded actions must not create quiz grades
 Use a complete scaffold, including `NOTES.md`; this is a transport and persistence
 check, not an authored-lesson quality evaluation.
 
-The suite opens glossary definitions and changes the theme. It checks drawn diagrams, accessible descriptions, and a visible error for invalid Mermaid source. Diagram text must not offer the ask pill. It checks drawn math, literal TeX in code, a visible error for invalid TeX, and Markdown math in a card answer. Math text must not offer the ask pill. A highlight around a formula marks the whole formula and quotes it as TeX. Grading receives each formula as TeX.
+The suite opens glossary definitions and changes the theme. It checks drawn diagrams in both themes, accessible descriptions, and a visible error for invalid Mermaid source. Diagram text must not offer the ask pill. It checks drawn math, literal TeX in code, a visible error for invalid TeX, and Markdown math in a card answer. Math text must not offer the ask pill. A highlight around a formula marks the whole formula and quotes it as TeX. Grading receives each formula as TeX.
 
 For shared font or icon changes, run
 `node scripts/e2e-ui-assets.ts /tmp/studens-ui-assets` with the shared launch
 preconditions. This separate headless drive opens the classroom shell, lesson,
-review, and reference page at 1280×900 and 390×900 in both themes. It blocks
+review, and reference page at 1280×900 and 390×900 in both themes and all four accents. It blocks
 external requests and retains loopback access. It clicks `Start review`, then
 checks actual Chromium font use for header, prose, Latin-Extended text, code, and
 review questions. All 12 local normal/italic font subsets must return 200 with
@@ -105,7 +105,7 @@ Each header keeps the `Toggle colour theme` accessible name. Its decorative SVGs
 use `currentColor` and a 1.75 stroke. Click the control and reload to check theme
 persistence. Unknown icon names must throw a specific error. Missing font and SVG
 URLs must return 404. The external-fetch probe must fail. Inspect `runtime.json`
-and all 16 screenshots. The drive removes its temporary font probes, closes its
+and all 64 screenshots. Each saved accent must survive navigation, theme toggles, and reload. The drive removes its temporary font probes, closes its
 browser and server, and removes its fixture classroom. It does not run a model.
 
 The `lesson-sources/` drive opens the canonical `.cl-lesson-shell` with Pi, Claude,

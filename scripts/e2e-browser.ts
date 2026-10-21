@@ -1,3 +1,4 @@
+import { verifyAppearanceBrowser } from "./e2e-appearance-browser.ts";
 import { verifyReviewObserver } from "./e2e-review-observer.ts";
 import { verifyMemoryMapBrowser } from "./e2e-memory-map-browser.ts";
 import { verifySearchBrowser } from "./e2e-search-browser.ts";
@@ -422,6 +423,7 @@ await verifyExpectedAnswers(
 await verifyCriteriaBrowser(artifacts ? path.join(artifacts, "criteria") : null);
 await verifyCodeBrowser(artifacts ? path.join(artifacts, "code") : null);
 await verifyCodeReview(artifacts ? path.join(artifacts, "code-review") : null);
+await verifyAppearanceBrowser(artifacts ? path.join(artifacts, "appearance") : null);
 await verifySettingsBrowser(artifacts ? path.join(artifacts, "settings") : null);
 await verifyNextLessonBrowser(artifacts ? path.join(artifacts, "next-lesson") : null);
 

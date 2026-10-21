@@ -85,27 +85,29 @@ try {
  const observations=[];
  const cdp=await page.context().newCDPSession(page); await cdp.send('DOM.enable');await cdp.send('CSS.enable');
  for(const [name,url] of [['shell',${JSON.stringify(base + "/c/rust")}],['lesson',${JSON.stringify(base + "/c/rust/001-ownership")}],['review',review],['reference',${JSON.stringify(base + "/r/rust/ownership.html")}]]){
+ for(const accent of ['indigo','copper','green','neutral']){
+ await page.goto(${JSON.stringify(base + "/c/rust/settings")});await page.getByLabel('Accent',{exact:true}).selectOption(accent);
  for(const width of [1280,390]){for(const theme of ['light','dark']){
  await page.setViewportSize({width,height:900});await page.emulateMedia({colorScheme:theme});
  await page.goto(url); await page.evaluate(t=>localStorage.setItem('pi-classroom-theme',t),theme);await page.reload();
  await page.locator('main').waitFor(); if(name!=='reference')await page.getByRole('button',{name:'Toggle colour theme',exact:true}).waitFor();
  await page.evaluate(()=>document.fonts.ready);
- const state=await page.evaluate(()=>({theme:document.documentElement.dataset.theme,width:document.documentElement.scrollWidth,measure:getComputedStyle(document.documentElement).getPropertyValue('--cl-measure'),faces:[...document.fonts].map(f=>({family:f.family,status:f.status,weight:f.weight,style:f.style})),icons:[...document.querySelectorAll('.cl-theme-icon svg')].map(s=>s.outerHTML),preloads:[...document.querySelectorAll('link[rel="preload"]')].map(l=>l.getAttribute('href'))}));
+ const state=await page.evaluate(()=>({accent:document.documentElement.dataset.accent,theme:document.documentElement.dataset.theme,width:document.documentElement.scrollWidth,measure:getComputedStyle(document.documentElement).getPropertyValue('--cl-measure'),faces:[...document.fonts].map(f=>({family:f.family,status:f.status,weight:f.weight,style:f.style})),icons:[...document.querySelectorAll('.cl-theme-icon svg')].map(s=>s.outerHTML),preloads:[...document.querySelectorAll('link[rel="preload"]')].map(l=>l.getAttribute('href'))}));
  const fonts={}; const doc=await cdp.send('DOM.getDocument');
  for(const selector of ['.cl-breadcrumb','[data-font-prose]','[data-font-extended]','[data-font-code]','.cl-q-prompt']){
  const {nodeId}=await cdp.send('DOM.querySelector',{nodeId:doc.root.nodeId,selector}); if(nodeId) fonts[selector]=(await cdp.send('CSS.getPlatformFontsForNode',{nodeId})).fonts;
  }
- must(state.width<=width,name+' overflows');must(state.measure.trim()==='34rem',name+' changed the reading measure');must(state.theme===theme,name+' captured the wrong theme');
+ must(state.width<=width,name+' overflows');must(state.measure.trim()==='34rem',name+' changed the reading measure');must(state.theme===theme,name+' captured the wrong theme');must(state.accent===accent,name+' lost the saved accent');
  for(const [selector,actual] of Object.entries(fonts)){
  const expected=selector==='.cl-breadcrumb'?'inter':selector==='[data-font-code]'?'jetbrainsmono':'sourceserif4';
  must(actual.length>0&&actual.every(f=>f.isCustomFont&&f.familyName.replace(/[^a-z0-9]/gi,'').toLowerCase().includes(expected)),name+' uses unexpected rendered face at '+selector+': '+JSON.stringify(actual));
  }
 
  {must(state.preloads.length===2,name+' missing preloads');if(name!=='reference')must(state.faces.some(f=>f.family.replaceAll('\"','')==='Inter Variable'&&f.status==='loaded'),name+' Inter not loaded');if(name!=='shell')must(state.faces.some(f=>f.family.replaceAll('\"','')==='Source Serif 4 Variable'&&f.status==='loaded'),name+' serif not loaded'); if(name!=='reference')must(state.icons.length===2,name+' missing SVGs');}
- await page.screenshot({path:${JSON.stringify(out)}+'/'+name+'-'+width+'-'+theme+'.png',fullPage:true});
- observations.push({name,width,theme,state,fonts});
- if(name!=='reference'){await page.getByRole('button',{name:'Toggle colour theme',exact:true}).click();must(await page.evaluate(()=>document.documentElement.dataset.theme)!==theme,'theme did not toggle');await page.reload();must(await page.evaluate(()=>document.documentElement.dataset.theme)!==theme,'theme did not persist');}
- }}}
+ await page.screenshot({path:${JSON.stringify(out)}+'/'+name+'-'+width+'-'+theme+'-'+accent+'.png',fullPage:true});
+ observations.push({name,width,theme,accent,state,fonts});
+ if(name!=='reference'){await page.getByRole('button',{name:'Toggle colour theme',exact:true}).click();must(await page.evaluate(()=>document.documentElement.dataset.theme)!==theme,'theme did not toggle');await page.reload();must(await page.evaluate(()=>document.documentElement.dataset.theme)!==theme,'theme did not persist');must(await page.evaluate(()=>document.documentElement.dataset.accent)===accent,'theme toggle lost accent');}
+ }}}}
  const missing=await page.request.get(${JSON.stringify(base + "/static/vendor/lucide/missing.svg")});must(missing.status()===404,'missing asset exposed');
  const missingFont=await page.request.get(${JSON.stringify(base + "/static/vendor/inter/missing.woff2")});must(missingFont.status()===404,'missing font exposed');
  const unknown=await page.evaluate(async()=>{const {icon}=await import('/static/icons.mjs');try{icon('missing');return 'unexpected'}catch(error){return error.message}});must(unknown==='Unknown bundled icon: missing','unknown icon did not fail explicitly');

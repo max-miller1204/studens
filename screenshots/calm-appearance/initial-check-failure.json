@@ -1,0 +1,25 @@
+{
+  "target": "local",
+  "verdict": "FAIL",
+  "error": "Error: test failed with exit code 1. See /tmp/studens-issue-137/verify.",
+  "revision": "0633bdce0c8ba5697f2b87f38144fc43c0396bf7",
+  "changes": "M .agents/skills/verify-studens/SKILL.md\n M .agents/skills/verify-studens/features/settings.md\n M assets/runtime/classroom.css\n M assets/runtime/theme.mjs\n M scripts/e2e-browser.ts\n M src/lesson-html.ts\n M src/pages.ts\n M src/server/records.ts\n?? assets/runtime/appearance.js\n?? scripts/e2e-appearance-browser.ts\n?? src/appearance.ts",
+  "results": [
+    {
+      "command": ["npm", "run", "version:check"],
+      "exitCode": 0
+    },
+    {
+      "command": ["npm", "run", "format:check"],
+      "exitCode": 0
+    },
+    {
+      "command": ["npm", "run", "check"],
+      "exitCode": 0
+    },
+    {
+      "command": ["npm", "run", "test"],
+      "exitCode": 1
+    }
+  ]
+}
