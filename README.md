@@ -49,7 +49,7 @@ answers and feedback. The classroom page offers spaced reviews and folders.
 Choose **Export** for an Anki deck, printable classroom, or portable Markdown.
 Exports contain saved public material; expected answers stay excluded unless you
 select answers already unlocked under the original grading rules.
-Claude Code and Codex teachers run in a persistent local service.
+All three hosts share a persistent local teacher service.
 
 All three hosts save material in `~/.pi/agent/classrooms/`.
 
