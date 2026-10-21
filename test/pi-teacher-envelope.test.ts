@@ -187,8 +187,7 @@ it("sends the current canonical envelope and tool scope after lesson/refill hist
               .filter((c) => c.type === "text")
               .map((c) => c.text)
               .join("\n");
-      if (phase === "lesson") expect(text).not.toContain(JSON.stringify(schema));
-      else expect(text).toContain(JSON.stringify(schema));
+      expect(text).toContain(JSON.stringify(schema));
       expect(fs.readFileSync(file).subarray(0, priorBytes.length)).toEqual(priorBytes);
       if (phase === "ask" || phase === "follow-up") {
         expect(schema.required).toEqual(["annotation_id", "answer_markdown"]);
