@@ -72,6 +72,7 @@ it.each(["pi", "claude", "codex"] as const)(
       for (const name of [
         "TEACHING.md",
         "TEACHING-PLAN.md",
+        "LESSON-OUTPUT.md",
         "CODE-EXERCISES.md",
         "SOURCE-LINKS.md",
       ])
@@ -179,7 +180,7 @@ it.each(["pi", "codex"] as const)(
     await service.idle();
     expect(turns).toBe(1);
     const failed = lessonRequests("rust")[0];
-    expect(failed.error).toContain("Private variant names an unknown quiz or question");
+    expect(failed.error).toContain("unknown-quiz/q1");
     expect(failed.modelOutput).toEqual(raw);
     expect(readTeacherState("rust")!.requests[0].modelOutput).toEqual(raw);
     expect(failed.document).toBeUndefined();
@@ -645,3 +646,54 @@ it("keeps explicit teaching provenance through typed output and refuses unsafe o
     'data-cl-teaches="Ownership"',
   );
 });
+
+it("rejects unclosed gated teaching before saving a plan or publishing files", () => {
+  const request = startLessonRequest("rust", randomUUID(), "", "pi");
+  const document = nextLessonDocument(fixture.root);
+  document.lesson_html = document.lesson_html.replace("</section>", "");
+  const before = structuredClone(document);
+  expect(() => saveLessonDocument(request, document)).toThrow(/Unclosed content element/);
+  expect(document).toEqual(before);
+  expect(lessonRequests("rust")[0].document).toBeUndefined();
+  expect(fs.existsSync(path.join(fixture.root, "rust", request.lesson))).toBe(false);
+});
+
+it.each([
+  ["pi", "missing-original"],
+  ["codex", "missing-original"],
+  ["claude", "unclosed-gate"],
+] as const)(
+  "retains %s %s failures without publication or inference on restart",
+  async (backend, defect) => {
+    const raw = lessonOutput(nextLessonDocument(fixture.root));
+    if (defect === "missing-original") raw.quizzes = raw.quizzes.filter((q) => q.id !== "check-1");
+    else raw.lesson_html = raw.lesson_html.replace("</section>", "");
+    let turns = 0;
+    const run: RunTeacher = async (...args) => {
+      turns++;
+      args[6]?.(raw);
+      return lessonModelPlan(raw);
+    };
+    const service = new TeacherService(run);
+    service.attach("rust", backend);
+    const request = startLessonRequest("rust", randomUUID(), "next", backend, "service");
+    service.nextLesson(request);
+    await service.idle();
+    await service.stop();
+    const restarted = new TeacherService(run);
+    try {
+      restarted.attach("rust", backend);
+      await restarted.idle();
+      expect(turns).toBe(1);
+      const saved = readTeacherState("rust")!.requests[0];
+      expect(saved.status).toBe("failed");
+      expect(saved.modelOutput).toEqual(raw);
+      expect(saved.planValidated).not.toBe(true);
+      expect(saved.applied ?? 0).toBe(0);
+      expect(lessonRequests("rust")[0].document).toBeUndefined();
+      expect(fs.existsSync(path.join(fixture.root, "rust", request.lesson))).toBe(false);
+    } finally {
+      await restarted.stop();
+    }
+  },
+);

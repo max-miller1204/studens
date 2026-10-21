@@ -1,4 +1,5 @@
 /** Provider lesson data is typed; code alone serializes both private files and the durable call. */
+import { authoredQuizzes } from "./quiz-authoring.ts";
 import { validateCriteria } from "./criteria.ts";
 import type { TeacherPlan } from "./teacher.ts";
 import { MENTAL_TASKS } from "./teaching-plan.ts";
@@ -309,8 +310,22 @@ export function lessonModelPlan(value: unknown): TeacherPlan {
       questions,
     };
   });
-  if (usedVariants.size !== variantInputs.length)
-    throw new Error("Private variant names an unknown quiz or question.");
+  // HTML includes gated checks too. Diagnose the absent original, without ever
+  // borrowing a private variant's rubric or synthesizing a question mapping.
+  for (const quiz of authoredQuizzes(string(output.lesson_html, "Lesson HTML"))) {
+    for (const question of quiz.questions) {
+      if (!Object.hasOwn(keys, quiz.id!) || !Object.hasOwn(keys[quiz.id!] as object, question.id!))
+        throw new Error(
+          `Lesson response omits original rubric and mapping for ${quiz.id}/${question.id}. Private variants cannot replace it.`,
+        );
+    }
+  }
+  if (usedVariants.size !== variantInputs.length) {
+    const missing = variantInputs.find((v) => !usedVariants.has(v))!;
+    throw new Error(
+      `Private variant ${missing.id} names an unknown quiz or question: ${missing.quiz}/${missing.question}.`,
+    );
+  }
   const document = {
     title: string(output.title, "Title"),
     summary: string(output.summary, "Summary"),

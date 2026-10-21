@@ -27,6 +27,8 @@ import { parseTeachingPlan } from "./teaching-plan.ts";
 import { authoredVariants } from "./review-variants.ts";
 import { authoringSteps } from "./prompts.ts";
 import { LESSON_OUTPUT_SCHEMA } from "./lesson-output.ts";
+import { stageLesson } from "./pretest.ts";
+import { searchPassages } from "./search-passages.ts";
 
 export { lessonRequests, updateLessonRequest };
 export type { LessonRequest, LessonDocument };
@@ -157,6 +159,12 @@ export function validateLessonDocument(document: LessonDocument): void {
     throw new Error(
       "Lesson output needs title, summary, lesson_html, rubric_json, and teaching_plan_json only.",
     );
+  // Use the same inert parser as served pages before saving a publication plan.
+  // A hidden malformed section must not survive until the learner opens its gate.
+  searchPassages(document.lesson_html);
+  const initial = stageLesson(document.lesson_html, new Set());
+  searchPassages(initial.html);
+  searchPassages(stageLesson(document.lesson_html, new Set(initial.gatedPretests)).html);
   const quizzes = authoredQuizzes(document.lesson_html);
   if (!quizzes.length || quizzes.some((q) => q.kind === "review"))
     throw new Error("A next lesson needs lesson assessments, not a review.");
@@ -365,6 +373,7 @@ export function nextLessonPrompt(request: LessonRequest, host: "pi" | "service")
     ),
     "Lesson shell:\n" + read(templatesDir(), "lesson.html"),
     "Quiz contract:\n" + read(templatesDir(), "quiz.html"),
+    host === "service" ? read(docsDir(), "LESSON-OUTPUT.md") : "",
     "Classroom resources:\n" +
       JSON.stringify({
         docs,
@@ -397,7 +406,7 @@ export function nextLessonPrompt(request: LessonRequest, host: "pi" | "service")
     (host === "pi" ? "Required operation:\n" : "Required structured response schema:\n") +
       JSON.stringify(host === "pi" ? PI_LESSON_TOOL : LESSON_OUTPUT_SCHEMA),
     host === "service"
-      ? "Before submitting, check the complete document once: lesson_html contains the entire page, not just private variants. Inventory every quiz form and question in that HTML, including later checks inside the pretest template. Include each exact quiz/question identity in quizzes with its own original rubric and teaching mapping. Every variants row must point to one of those original questions; its rubric grades only the variant and cannot replace the original rubric. Return every required top-level field in this one response."
+      ? "Before submitting, check the complete document once: lesson_html contains the entire page, not just private variants. Inventory every quiz form and question in that HTML, including later checks inside the pretest template. Include each exact quiz/question identity in quizzes with its own original rubric and teaching mapping. Every variants row must point to one of those original questions; its rubric grades only the variant and cannot replace the original rubric. Return every required top-level field in this one response. Close each section, article, div, form, and other non-void container inside the same template where it opens. A browser silently repairing a missing close is not valid publication output. Check the initial page and each released gate."
       : "",
   ]
     .filter(Boolean)

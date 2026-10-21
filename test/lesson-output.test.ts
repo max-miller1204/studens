@@ -1,3 +1,4 @@
+import * as fs from "node:fs";
 import { expect, it } from "vitest";
 import { lessonModelPlan, LESSON_OUTPUT_SCHEMA } from "../src/lesson-output.ts";
 import { planSchema } from "../src/teacher.ts";
@@ -37,7 +38,9 @@ it("rejects the retained missing-page and omitted-original failures without deri
   ];
   missingOriginal.quizzes[0].id = "pretest-1";
   const retained = structuredClone(missingOriginal);
-  expect(() => lessonModelPlan(missingOriginal)).toThrow(/unknown quiz or question/);
+  expect(() => lessonModelPlan(missingOriginal)).toThrow(
+    /omits original rubric and mapping for check-1\/q1/,
+  );
   expect(missingOriginal).toEqual(retained);
 });
 
@@ -248,4 +251,22 @@ it("refuses legacy expected tags instead of carrying lesson transport into canon
   const input = structuredClone(simpleLessonOutput);
   input.quizzes[0].questions[0].rubric.expected = { kind: "text", value: "map" } as any;
   expect(() => lessonModelPlan(input)).toThrow(/extra fields/);
+});
+
+it("the complete dedicated response example satisfies the native schema and both private contracts", () => {
+  const doc = fs.readFileSync(new URL("../docs/LESSON-OUTPUT.md", import.meta.url), "utf8");
+  const example = JSON.parse(doc.match(/```json\n([\s\S]*?)\n```/)![1]);
+  validateToolCall(
+    [{ name: "submit_teacher_plan", description: "", parameters: LESSON_OUTPUT_SCHEMA as any }],
+    { type: "toolCall", id: "example", name: "submit_teacher_plan", arguments: example },
+  );
+  const document = JSON.parse(lessonModelPlan(example).calls[0].arguments_json);
+  expect(() => validateLessonDocument(document)).not.toThrow();
+  // A syntactically valid transport can still omit an original in gated HTML.
+  example.quizzes = example.quizzes.filter((q: any) => q.purpose !== "assessment");
+  const before = structuredClone(example);
+  expect(() => lessonModelPlan(example)).toThrow(
+    /omits original rubric and mapping for after\/compare/,
+  );
+  expect(example).toEqual(before);
 });

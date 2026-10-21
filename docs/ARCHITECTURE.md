@@ -225,7 +225,10 @@ points. See [code exercises](CODE-EXERCISES.md) for the authoring and isolation 
   turns on Pi's OpenAI Responses APIs require strict function output using the same
   all-required lesson schema; unsupported strict capability fails explicitly. Other
   Pi APIs retain their native tool schema validation. Cross-field HTML/private-key
-  coverage still requires host validation on every backend. New lesson
+  coverage still requires host validation on every backend. Dedicated authoring includes
+  a complete typed response example that separates original rubrics from variants.
+  Validate hidden HTML and both gate stages with the served-page parser before saving
+  a publication plan; never repair malformed tags or derive missing original rubrics. New lesson
   publication declares criterionContract1 and checks the fixed criteria on every
   visible question and private review variant. Save and validate complete output before
   publication, run `scripts/check-lesson.ts` in disposable state, then expose the
