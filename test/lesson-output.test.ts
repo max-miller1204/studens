@@ -7,6 +7,83 @@ import { nextLessonDocument } from "./next-lesson-fixture.ts";
 import { lessonOutput, simpleLessonOutput } from "./lesson-output-fixture.ts";
 import { authoredVariants } from "../src/review-variants.ts";
 import { assembleReview } from "../src/review-pool.ts";
+import { validateToolCall } from "@earendil-works/pi-ai";
+
+// Reduced forms of the retained Pi Next lesson failure: interspersed strings,
+// duplicate key rows and rows missing the private plan's task. Never repair them.
+it.each(["string", "missing-task", "duplicate", "split-task"])(
+  "rejects the saved Pi %s variant failure instead of normalizing it",
+  (kind) => {
+    const input: any = structuredClone(simpleLessonOutput);
+    const variant = {
+      quiz: "check-1",
+      question: "q1",
+      id: "v1",
+      html: '<li class="cl-q" data-question-id="v1" data-type="short"><p class="cl-q-prompt">Who owns the value?</p><textarea></textarea></li>',
+      rubric: structuredClone(input.quizzes[0].questions[0].rubric),
+      task: "application",
+    };
+    input.variants = [variant];
+    if (kind === "string") input.variants.push("task2 ");
+    if (kind === "missing-task") delete input.variants[0].task;
+    if (kind === "duplicate") input.variants.push(structuredClone(variant));
+    if (kind === "split-task") {
+      delete input.variants[0].task;
+      input.variants.push({ id: "v1", task: "application" });
+    }
+    expect(() => lessonModelPlan(input)).toThrow(/Variant/);
+    // Uniqueness is enforced by the decoder; the native SDK enforces row shape.
+    if (kind !== "duplicate")
+      expect(() =>
+        validateToolCall(
+          [
+            {
+              name: "submit_teacher_plan",
+              description: "",
+              parameters: LESSON_OUTPUT_SCHEMA as any,
+            },
+          ],
+          { type: "toolCall", id: "rejected-plan", name: "submit_teacher_plan", arguments: input },
+        ),
+      ).toThrow(/variants/);
+  },
+);
+
+it("keeps reused variant ids scoped to their source question in both private files", () => {
+  const input: any = structuredClone(simpleLessonOutput);
+  input.quizzes[0].questions.push({ ...structuredClone(input.quizzes[0].questions[0]), id: "q2" });
+  input.variants = ["q1", "q2"].flatMap((question) =>
+    ["v1", "v2"].map((id) => ({
+      quiz: "check-1",
+      question,
+      id,
+      html: `${question}/${id}`,
+      rubric: structuredClone(input.quizzes[0].questions[0].rubric),
+      task: question === "q1" ? "retrieval" : "application",
+    })),
+  );
+  const document = JSON.parse(lessonModelPlan(input).calls[0].arguments_json);
+  const key = JSON.parse(document.rubric_json)["check-1"];
+  const plan = JSON.parse(document.teaching_plan_json).quizzes["check-1"].questions;
+  for (const question of ["q1", "q2"]) {
+    expect(key[question].variants.map((v: any) => v.html)).toEqual([
+      `${question}/v1`,
+      `${question}/v2`,
+    ]);
+    expect(plan[question].variants).toEqual(
+      Object.fromEntries(
+        ["v1", "v2"].map((id) => [
+          id,
+          {
+            objective: "original",
+            support: "independent",
+            task: question === "q1" ? "retrieval" : "application",
+          },
+        ]),
+      ),
+    );
+  }
+});
 
 it("code serializes raw HTML, including private variant HTML, into a canonical valid document", () => {
   const f = makeFixture();

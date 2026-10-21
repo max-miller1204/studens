@@ -1,7 +1,16 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import * as fs from "node:fs";
 import { randomUUID } from "node:crypto";
-import { makeFixture, seedClassroom, type Fixture } from "./helpers.ts";
+import {
+  makeFixture,
+  seedClassroom,
+  seedPreparedReviewSource,
+  writeGradedAttempt,
+  termAnswer,
+  refillPlan,
+  type Fixture,
+} from "./helpers.ts";
+import { refillRequests } from "../src/review-refill.ts";
 import * as store from "../src/store.ts";
 import * as server from "../src/server.ts";
 import { applyGrade } from "../src/quiz-grading.ts";
@@ -133,6 +142,70 @@ afterEach(async () => {
   vi.useRealTimers();
   f.cleanup();
 });
+
+it.each(["complete", "stop"])(
+  "persists a dispute behind an active refill and drains it after refill %s",
+  async (finish) => {
+    const { input, grade } = seed();
+    seedPreparedReviewSource(f.root, "rust", "002-pool");
+    writeGradedAttempt({
+      lesson: "002-pool",
+      at: 1,
+      answers: [termAnswer("q1", "old owner")],
+      correct: { q1: false },
+    });
+    let release!: () => void;
+    let started!: () => void;
+    const entered = new Promise<void>((resolve) => {
+      started = resolve;
+    });
+    const order: string[] = [];
+    const runDispute = async () => {
+      order.push("dispute");
+      return plan(input.id, "declined", null);
+    };
+    const t = teacher(async (_id, _prompt, _cwd, _save, signal, contract) => {
+      if (!contract.operations.includes("save_review_variants")) return runDispute();
+      order.push("refill");
+      started();
+      await new Promise<void>((resolve, reject) => {
+        release = resolve;
+        signal?.addEventListener("abort", () => reject(new Error("Controlled service stop.")), {
+          once: true,
+        });
+      });
+      return refillPlan(refillRequests("rust")[0]);
+    });
+    await entered;
+    const id = t.dispute(input);
+    // Inference has started: a later learner request must be durable, not concurrent.
+    await Promise.resolve();
+    expect(order).toEqual(["refill"]);
+    expect(readTeacherState("rust")!.requests.find((r) => r.id === id)).toMatchObject({
+      status: "queued",
+    });
+    if (finish === "stop") {
+      await t.stop();
+      expect(refillRequests("rust")[0].status).toBe("failed");
+      expect(readTeacherState("rust")!.requests.find((r) => r.id === id)?.status).toBe("queued");
+      const restarted = new TeacherService(runDispute);
+      teachers.push(restarted);
+      restarted.restore();
+      await restarted.idle();
+      expect(refillRequests("rust")[0].status).toBe("failed");
+    } else {
+      release();
+      await t.idle();
+      expect(refillRequests("rust")[0].status).toBe("done");
+    }
+    expect(order).toEqual(["refill", "dispute"]);
+    expect(readTeacherState("rust")!.requests.find((r) => r.id === id)).toMatchObject({
+      status: "done",
+      disputeDecision: "declined",
+    });
+    expect(store.listGrades("rust", location.lesson)).toEqual([grade]);
+  },
+);
 
 it("records one revision, preserves original bytes and first-feedback provenance, replays once", async () => {
   const { submission, grade, input } = seed();
