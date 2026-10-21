@@ -157,6 +157,10 @@ points. See [code exercises](CODE-EXERCISES.md) for the authoring and isolation 
 - **Grade disputes are revisions of saved attempts.** An explicit learner action saves
   the question, grade timestamp, reason, original submission and verified rubric snapshot
   in the classroom FIFO. Dedicated teachers return only `resolve_grade_dispute` plans.
+  Fresh responses use typed dispute data with the exact saved dispute UUID and
+  question id bound in the response schema. Code serializes the canonical plan;
+  persisted plans keep their format and recovery checks. Machine disputes permit
+  only explanation/authoring-defect decisions and a null question allocation.
   Revalidate the exact target and snapshot before inference and application. Only the
   disputed judgment allocation can change; `mergeGrades` still rejects machine overrides.
   Explain or flag machine disputes without writing another grade. Save validated plans

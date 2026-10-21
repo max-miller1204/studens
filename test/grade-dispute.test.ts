@@ -20,6 +20,8 @@ import { readTeacherState, saveTeacherState } from "../src/service-state.ts";
 import { snapshotDispute, resolveDispute, disputePrompt } from "../src/grade-dispute.ts";
 import { DAY_MS } from "../src/review.ts";
 import type { TeacherPlan } from "../src/teacher.ts";
+import { planSchema } from "../src/teacher.ts";
+import { disputeOutputPlan } from "../src/dispute-output.ts";
 
 const location = { classroom: "rust", lesson: "001-ownership" };
 let f: Fixture;
@@ -215,11 +217,25 @@ it("records one revision, preserves original bytes and first-feedback provenance
   );
   const before = store.reviewEvents("rust");
   const t = teacher(async (_identity, prompt, _cwd, _save, _signal, contract) => {
-    expect(contract).toMatchObject({ operations: ["resolve_grade_dispute"], required: true });
+    expect(contract).toMatchObject({
+      operations: ["resolve_grade_dispute"],
+      required: true,
+      response: "dispute-resolution",
+      disputeTarget: { id: input.id, questionId: "q", machine: false },
+    });
+    expect(planSchema(contract).properties).toMatchObject({ dispute_id: { enum: [input.id] } });
     expect(prompt).not.toContain('"closed":');
     expect(prompt).toContain(input.reason);
     expect(prompt).toContain(submission.answers[0].value);
-    return plan(input.id);
+    return disputeOutputPlan(
+      {
+        dispute_id: input.id,
+        decision: "accepted",
+        question: revision(),
+        message: plan(input.id).message,
+      },
+      contract.disputeTarget,
+    );
   });
   const future = Date.now() + 20 * DAY_MS;
   vi.spyOn(Date, "now").mockReturnValue(future);
@@ -332,6 +348,11 @@ it.each([
   },
   (p: TeacherPlan) => {
     p.calls[0].arguments_json = JSON.stringify({ dispute_id: "other", decision: "declined" });
+  },
+  (p: TeacherPlan) => {
+    const args = JSON.parse(p.calls[0].arguments_json);
+    args.dispute_id = `dispute:${args.dispute_id}`;
+    p.calls[0].arguments_json = JSON.stringify(args);
   },
   (p: TeacherPlan) => {
     const args = JSON.parse(p.calls[0].arguments_json);

@@ -66,6 +66,7 @@ import {
   type Backend,
   type RunTeacher,
   type PlanContract,
+  planSchema,
   type TeacherPlan,
   parsePlan,
 } from "./teacher.ts";
@@ -292,27 +293,6 @@ export class TeacherService {
       prompt: "Resolve the saved learner grade dispute.",
     });
     return id;
-  }
-  private disputeDefinition() {
-    const grading = answerGradingTool(
-      classroomTools(PI_HOST).find((t) => t.name === "grade_lesson_quiz")!,
-    );
-    const question = (grading.parameters.properties as any).questions.items;
-    return {
-      name: RESOLVE_DISPUTE,
-      description:
-        "Resolve this exact saved dispute. Accepted judgment points use the original rubric; machine points cannot change.",
-      parameters: {
-        type: "object",
-        additionalProperties: false,
-        properties: {
-          dispute_id: { type: "string" },
-          decision: { type: "string", enum: ["accepted", "declined", "authoring-defect"] },
-          question,
-        },
-        required: ["dispute_id", "decision"],
-      },
-    };
   }
   reflection(r: store.Reflection): void {
     this.enqueue({
@@ -732,7 +712,22 @@ export class TeacherService {
           research: true,
         };
       case "dispute":
-        return { operations: [RESOLVE_DISPUTE], required: true, messageRequired: true };
+        return {
+          operations: [RESOLVE_DISPUTE],
+          required: true,
+          messageRequired: true,
+          response: "dispute-resolution",
+          disputeTarget: r.dispute
+            ? {
+                id: r.dispute.id,
+                questionId: r.dispute.questionId,
+                machine:
+                  r.dispute.submission.deterministicGrades?.some(
+                    (q) => q.questionId === r.dispute!.questionId,
+                  ) ?? false,
+              }
+            : undefined,
+        };
       case "quiz":
         return { operations: [GRADE_ANSWERS], required: true, messageRequired: true };
       case "ask":
@@ -771,7 +766,7 @@ export class TeacherService {
       )
         throw new Error("The dispute request does not match its target.");
       validateDisputeTarget(r.dispute, r.id);
-      return disputePrompt(r.dispute, r.id, this.disputeDefinition()) + `\n\n${r.prompt}`;
+      return disputePrompt(r.dispute, r.id, planSchema(this.contract(r))) + `\n\n${r.prompt}`;
     }
     if (r.kind === "review") return r.prompt;
     if (r.kind === "refill")

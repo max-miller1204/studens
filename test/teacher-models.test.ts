@@ -8,6 +8,7 @@ import { modelSelection } from "../src/teacher-models.ts";
 import { simpleLessonOutput } from "./lesson-output-fixture.ts";
 import { passageAnswerPlan, passageAnswerSchema } from "../src/passage-answer.ts";
 import { lessonModelPlan } from "../src/lesson-output.ts";
+import { disputeOutputPlan, disputeOutputSchema } from "../src/dispute-output.ts";
 let f: Fixture;
 let priorPath: string | undefined;
 let priorModel: string | undefined;
@@ -75,6 +76,69 @@ function messages(): any[] {
     .split("\n")
     .map((line) => JSON.parse(line));
 }
+it.each(["codex", "claude"] as const)(
+  "binds typed dispute output on %s and retains a rejected prefixed id",
+  async (backend) => {
+    const target = {
+      id: "ed3084de-41f7-4725-b652-dc99f88150ac",
+      questionId: "exact",
+      machine: true,
+    };
+    const contract = {
+      operations: ["resolve_grade_dispute"],
+      required: true,
+      response: "dispute-resolution" as const,
+      disputeTarget: target,
+    };
+    const output = {
+      dispute_id: target.id,
+      decision: "declined",
+      question: null,
+      message: "The original answer does not match the fixed key.",
+    };
+    f.write("behavior.json", JSON.stringify({ output }));
+    let sessionId: string | undefined;
+    const save = (id: string) => {
+      sessionId = id;
+    };
+    const identity = () => ({
+      backend,
+      sessionId,
+      requestedModel: backend === "claude" ? "quick" : "custom-id",
+    });
+    expect(
+      await runTeacher(identity(), "Resolve saved dispute", f.root, save, undefined, contract),
+    ).toEqual(disputeOutputPlan(output, target));
+    const wrong = { ...output, dispute_id: `dispute:${target.id}` };
+    f.write("behavior.json", JSON.stringify({ output: wrong }));
+    let raw: unknown;
+    await expect(
+      runTeacher(
+        identity(),
+        "Explicit next dispute",
+        f.root,
+        save,
+        undefined,
+        contract,
+        (value) => {
+          raw = value;
+        },
+      ),
+    ).rejects.toThrow(/exact saved dispute id/);
+    expect(raw).toEqual(wrong);
+    if (backend === "codex")
+      expect(
+        messages()
+          .filter((m) => m.method === "turn/start")
+          .map((m) => m.params.outputSchema),
+      ).toEqual([disputeOutputSchema(target), disputeOutputSchema(target)]);
+    else
+      for (const m of messages().filter((m) => m.args?.includes("--json-schema")))
+        expect(JSON.parse(m.args[m.args.indexOf("--json-schema") + 1])).toEqual(
+          disputeOutputSchema(target),
+        );
+  },
+);
 const schema = {
   type: "object",
   properties: { ok: { type: "boolean" } },

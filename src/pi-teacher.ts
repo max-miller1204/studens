@@ -275,14 +275,18 @@ export function piTeacherRequestPrompt(
     schema === LESSON_OUTPUT_SCHEMA
       ? `\n\nCURRENT submit_teacher_plan lesson schema for this request:\n${JSON.stringify(schema)}\nReturn the typed lesson fields. The inline private-file examples describe the files the host writes, not additional response rows. Each variants item combines quiz, question, id, html, rubric and task in one object, exactly once. Earlier service calls envelopes do not apply to this request.`
       : properties &&
-          Array.isArray(required) &&
-          ["annotation_id", "answer_markdown"].every(
-            (name) => Object.hasOwn(properties, name) && required.includes(name),
-          )
-        ? `\n\nCURRENT submit_teacher_plan passage answer schema for this request:\n${JSON.stringify(schema)}\nReturn only annotation_id and answer_markdown. The service serializes the operation. Earlier lesson, refill and canonical calls envelopes do not apply to this request.`
-        : canonical
-          ? `\n\nCURRENT submit_teacher_plan outer envelope and field constraints for this request:\n${JSON.stringify(schema)}\nInclude every required top-level field. When the current schema permits calls: [], a prose-only reply still needs its actual learner-facing message and every other required field. Use learning_record: null when no learning record qualifies, and notes_markdown: "" when there is no note. Do not omit these fields. Follow this current envelope rather than an earlier lesson or refill response format.`
-          : "";
+          Object.hasOwn(properties, "dispute_id") &&
+          Object.hasOwn(properties, "decision")
+        ? `\n\nCURRENT submit_teacher_plan dispute response schema:\n${JSON.stringify(schema)}\nReturn only dispute_id, decision, question and message. Use the exact dispute_id from this schema, not the prefixed queue id. Set question to null for a declined or flagged dispute. Earlier lesson, passage and canonical calls envelopes do not apply.`
+        : properties &&
+            Array.isArray(required) &&
+            ["annotation_id", "answer_markdown"].every(
+              (name) => Object.hasOwn(properties, name) && required.includes(name),
+            )
+          ? `\n\nCURRENT submit_teacher_plan passage answer schema for this request:\n${JSON.stringify(schema)}\nReturn only annotation_id and answer_markdown. The service serializes the operation. Earlier lesson, refill and canonical calls envelopes do not apply to this request.`
+          : canonical
+            ? `\n\nCURRENT submit_teacher_plan outer envelope and field constraints for this request:\n${JSON.stringify(schema)}\nInclude every required top-level field. When the current schema permits calls: [], a prose-only reply still needs its actual learner-facing message and every other required field. Use learning_record: null when no learning record qualifies, and notes_markdown: "" when there is no note. Do not omit these fields. Follow this current envelope rather than an earlier lesson or refill response format.`
+            : "";
   return `${prompt}${research ? "\n\nFor public web research use read_lesson_source. Classroom resources are supplied above. Return the typed lesson data through submit_teacher_plan; it does not publish directly." : ""}${envelope}\n\nReturn your complete structured result by calling submit_teacher_plan exactly once. Do not answer the learner outside that plan. End your turn after the tool accepts it.`;
 }
 

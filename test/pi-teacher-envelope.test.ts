@@ -92,7 +92,13 @@ it("sends the current canonical envelope and tool scope after lesson/refill hist
               : phase === "grade"
                 ? { operations: ["grade_quiz_answers"], required: true }
                 : phase === "dispute"
-                  ? { operations: ["resolve_grade_dispute"], required: true, messageRequired: true }
+                  ? {
+                      operations: ["resolve_grade_dispute"],
+                      required: true,
+                      messageRequired: true,
+                      response: "dispute-resolution",
+                      disputeTarget: { id: "exact-dispute", questionId: "q1", machine: true },
+                    }
                   : {
                       operations: ["record_retrieval_check"],
                       messageRequired: true,
@@ -123,10 +129,10 @@ it("sends the current canonical envelope and tool scope after lesson/refill hist
                   }
                 : phase === "dispute"
                   ? {
-                      calls: [{ name: "resolve_grade_dispute", arguments_json: "{}" }],
+                      dispute_id: "exact-dispute",
+                      decision: "declined",
+                      question: null,
                       message: "Controlled dispute explanation.",
-                      learning_record: null,
-                      notes_markdown: "",
                     }
                   : {
                       calls: [],
@@ -242,15 +248,9 @@ it("sends the current canonical envelope and tool scope after lesson/refill hist
         ).toBe(true);
       }
       if (phase === "dispute") {
-        expect(schema.required).toEqual(["calls", "message", "learning_record", "notes_markdown"]);
-        expect(schema.properties.calls).toMatchObject({
-          minItems: 1,
-          maxItems: 1,
-          items: { properties: { name: { enum: ["resolve_grade_dispute"] } } },
-        });
-        // The shared envelope advertises learning_record; dispute application rejects evidence writes.
-        expect(output).toMatchObject({ learning_record: null });
-        expect(schema.properties.notes_markdown).toEqual({ type: "string", enum: [""] });
+        expect(schema.required).toEqual(["dispute_id", "decision", "question", "message"]);
+        expect(schema.properties.dispute_id).toMatchObject({ enum: ["exact-dispute"] });
+        expect(schema.properties.question).toEqual({ type: "null" });
         expect([...active.keys()]).toEqual(["submit_teacher_plan"]);
         expect(text).toContain(JSON.stringify(schema));
         expect(text).not.toContain("For public web research use read_lesson_source");
