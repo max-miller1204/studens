@@ -5,7 +5,7 @@ import { claudeModels } from "./teacher-models.ts";
 import type { ModelCatalog, ModelChoice } from "./teacher-models.ts";
 import { TeacherDeadline } from "./teacher-deadline.ts";
 import { LESSON_OUTPUT_SCHEMA, lessonModelPlan } from "./lesson-output.ts";
-import { PASSAGE_ANSWER_SCHEMA, passageAnswerPlan } from "./passage-answer.ts";
+import { passageAnswerSchema, passageAnswerPlan } from "./passage-answer.ts";
 
 /** Process-wide discovery precedes per-thread settings; keep apps and plugins off at both boundaries. */
 export const CODEX_TEACHER_DISABLED_FEATURES = [
@@ -95,6 +95,7 @@ export interface PlanContract {
   operations: TeacherOperation[];
   /** Selected by the current request, never inferred from model output or saved plans. */
   response?: "passage-answer";
+  passageAnnotationId?: string;
   required?: boolean;
   messageRequired?: boolean;
   notesAllowed?: boolean;
@@ -103,7 +104,8 @@ export interface PlanContract {
 
 /** Limit structured output to operations permitted by the current request. */
 export function planSchema(contract: PlanContract) {
-  if (contract.response === "passage-answer") return PASSAGE_ANSWER_SCHEMA;
+  if (contract.response === "passage-answer")
+    return passageAnswerSchema(contract.passageAnnotationId);
   if (contract.operations.length === 1 && contract.operations[0] === "publish_lesson")
     return LESSON_OUTPUT_SCHEMA;
   const calls = PLAN_SCHEMA.properties.calls;
@@ -296,7 +298,7 @@ async function runClaude(
   child.stderr.on("data", (chunk) => {
     stderr = (stderr + chunk).slice(-8000);
   });
-  child.stdin.on("error", (err) => {
+  child.stdin.on("error", () => {
     child.kill();
   });
   child.stdin.end(prompt);

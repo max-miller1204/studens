@@ -26,13 +26,15 @@ export class PiServiceClient {
     return (response as any).result.tools;
   }
   async call(name: string, args: unknown): Promise<ToolResult> {
+    const action =
+      name === "classroom_service" ? (args as { action?: string } | null)?.action : undefined;
     let managementStatus: any;
-    if (name === "classroom_service" && ["status", "stop"].includes((args as any)?.action)) {
+    if (action === "status" || action === "stop") {
       const status = (managementStatus = await serviceStatus());
       if (!status.running) {
         const phone = new PhoneAccess();
-        const tailnet = (args as any).action === "stop" ? await phone.stop() : await phone.status();
-        if ((args as any).action === "stop") this.connected = false;
+        const tailnet = action === "stop" ? await phone.stop() : await phone.status();
+        if (action === "stop") this.connected = false;
         return {
           content: [{ type: "text", text: JSON.stringify({ ...status, tailnet }) }],
           details: {},
@@ -59,7 +61,7 @@ export class PiServiceClient {
     if (!response?.result) throw new Error("Pi service returned no tool result. Retry explicitly.");
     if (response.result.isError)
       throw new Error(response.result.content.map((c: any) => c.text ?? "").join("\n"));
-    if (name === "classroom_service" && (args as any)?.action === "stop") this.connected = false;
+    if (action === "stop") this.connected = false;
     return { content: response.result.content, details: {} };
   }
   async disconnect(): Promise<void> {

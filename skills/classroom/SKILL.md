@@ -12,7 +12,13 @@ description: Give the user a link to their classrooms, or list their classrooms 
 
 Pi, Claude Code, and Codex attach to a persistent local service. Closing this chat does
 not stop it. Each classroom has one dedicated teacher backend and session. Browser
-requests start teacher work. Use the teacher panel for retrieval questions and replies.
+requests start teacher work.
+
+- To request another lesson, choose **Next lesson** on the classroom page. The
+  learner can enter an optional topic there. The dedicated teacher prepares it
+  through the persistent service, so this initiating chat can close.
+- Tell the learner to answer teacher retrieval questions in the teacher panel on
+  the lesson page. After a lesson starts, keep learner questions and replies there.
 
 - Use `classroom_service` with action status to inspect ownership, the stable URL,
   and the tailnet route.

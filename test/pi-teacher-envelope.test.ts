@@ -58,7 +58,12 @@ it("sends the current canonical envelope and tool scope after lesson/refill hist
         phase === "lesson"
           ? { operations: ["publish_lesson"], required: true, research: true }
           : phase === "ask" || phase === "follow-up"
-            ? { operations: ["answer_lesson_question"], required: true, response: "passage-answer" }
+            ? {
+                operations: ["answer_lesson_question"],
+                required: true,
+                response: "passage-answer",
+                passageAnnotationId: "exact-annotation",
+              }
             : phase === "refill"
               ? { operations: ["save_review_variants"], required: true }
               : phase === "grade"
@@ -187,8 +192,7 @@ it("sends the current canonical envelope and tool scope after lesson/refill hist
               .filter((c) => c.type === "text")
               .map((c) => c.text)
               .join("\n");
-      if (phase === "lesson") expect(text).not.toContain(JSON.stringify(schema));
-      else expect(text).toContain(JSON.stringify(schema));
+      expect(text).toContain(JSON.stringify(schema));
       expect(fs.readFileSync(file).subarray(0, priorBytes.length)).toEqual(priorBytes);
       if (phase === "ask" || phase === "follow-up") {
         expect(schema.required).toEqual(["annotation_id", "answer_markdown"]);

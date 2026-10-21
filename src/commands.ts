@@ -127,7 +127,7 @@ async function handleStart(ctx: any, client: PiServiceClient): Promise<void> {
   const result = await client.call("open_classroom", {});
   await attachStatusWidget(ctx.ui);
   ctx.ui.notify(
-    `${(result.content[0] as any).text}\nThe persistent service continues after Pi exits.`,
+    `${result.content[0].text}\nThe persistent service continues after Pi exits.`,
     "info",
   );
 }
@@ -141,7 +141,7 @@ async function handleStop(ctx: any, client: PiServiceClient): Promise<void> {
 
 async function handleStatus(ctx: any, client: PiServiceClient): Promise<void> {
   const result = await client.call("classroom_service", { action: "status" });
-  const status = JSON.parse((result.content[0] as any).text);
+  const status = JSON.parse(result.content[0].text);
   await refreshStatusWidget();
   ctx.ui.notify(
     status.running
@@ -218,5 +218,5 @@ async function handleOpen(
 
   const result = await client.call("open_classroom", target ? { classroom: target } : {});
   await attachStatusWidget(ctx.ui);
-  ctx.ui.notify((result.content[0] as any).text, "info");
+  ctx.ui.notify(result.content[0].text, "info");
 }

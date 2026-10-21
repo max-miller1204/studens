@@ -40,7 +40,7 @@ export interface LessonHealthInput {
 }
 
 /** How many recent lessons the response type summary lists. */
-export const RECENT_LESSONS = 5;
+const RECENT_LESSONS = 5;
 
 function questionTypes(input: LessonHealthInput): QuestionType[] {
   return (input.questions ?? [])
@@ -49,10 +49,10 @@ function questionTypes(input: LessonHealthInput): QuestionType[] {
 }
 
 /** A card with this many turns or more is a hotspot: the passage did not land. */
-export const HOTSPOT_TURNS = 3;
+const HOTSPOT_TURNS = 3;
 
 /** A question missed this many times or more needs a lesson change, not one more answer. */
-export const REPEAT_MISS = 2;
+const REPEAT_MISS = 2;
 
 interface QuestionStats {
   lesson: string;

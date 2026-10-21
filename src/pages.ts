@@ -578,7 +578,7 @@ function emptyState(title: string, html: string): string {
 </div>`;
 }
 
-export function plural(n: number, noun: string): string {
+function plural(n: number, noun: string): string {
   return `${n} ${noun}${n === 1 ? "" : "s"}`;
 }
 

@@ -4,7 +4,7 @@ import type { Token, Tokens } from "marked";
 import { isContractId, parseReviewKey } from "../assets/runtime/quiz.mjs";
 import { createMarkdown, escapeHtml } from "./markdown.ts";
 
-export const COURSE_MAP_FENCE = "studens-course-map";
+const COURSE_MAP_FENCE = "studens-course-map";
 
 /** Cards and classroom heroes use prose tokens, never fenced metadata. Markdown
  * fences may interrupt a paragraph without a blank line and may use tildes.

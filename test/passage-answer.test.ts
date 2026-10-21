@@ -1,8 +1,9 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { afterEach, beforeEach, expect, it } from "vitest";
-import { passageAnswerPlan, PASSAGE_ANSWER_SCHEMA } from "../src/passage-answer.ts";
+import { passageAnswerPlan, passageAnswerSchema } from "../src/passage-answer.ts";
 import { parseModelPlan, planSchema } from "../src/teacher.ts";
+import { validateToolCall } from "@earendil-works/pi-ai";
 import { TeacherService } from "../src/teacher-service.ts";
 import { readTeacherState, saveTeacherState } from "../src/service-state.ts";
 import * as store from "../src/store.ts";
@@ -30,8 +31,9 @@ it("selects typed passage transport only by the explicit current request contrac
       operations: ["answer_lesson_question"],
       required: true,
       response: "passage-answer",
+      passageAnnotationId: "a",
     }),
-  ).toEqual(PASSAGE_ANSWER_SCHEMA);
+  ).toEqual(passageAnswerSchema("a"));
   expect(planSchema({ operations: ["answer_lesson_question"], required: true })).toHaveProperty(
     "properties.calls",
   );
@@ -43,6 +45,34 @@ it("selects typed passage transport only by the explicit current request contrac
   );
   expect(JSON.parse(plan.calls[0].arguments_json).answer_markdown).toBe(markdown);
 });
+it("constrains the provider to the current card and rejects the retained mixed UUID in the actual SDK", () => {
+  const target = "b068f173-ca0d-461d-8d81-ca76a68bc5f0";
+  const corrupted = "b068f173-ca0d-461d-8d81-88562c467d0c";
+  const schema = planSchema({
+    operations: ["answer_lesson_question"],
+    response: "passage-answer",
+    passageAnnotationId: target,
+    required: true,
+  });
+  const tools = [{ name: "submit_teacher_plan", description: "", parameters: schema as any }];
+  const call = (annotation_id: string) => ({
+    type: "toolCall" as const,
+    id: "retained-followup",
+    name: "submit_teacher_plan",
+    arguments: { annotation_id, answer_markdown: markdown },
+  });
+  expect(() => validateToolCall(tools, call(target))).not.toThrow();
+  expect(() => validateToolCall(tools, call(corrupted))).toThrow(/annotation_id/);
+  expect(() => validateToolCall(tools, call("8fa78542-ffd8-41be-a187-88562c467d0c"))).toThrow(
+    /annotation_id/,
+  );
+  // An unbound response cannot silently fall back to an unrestricted schema.
+  expect(() =>
+    planSchema({ operations: ["answer_lesson_question"], response: "passage-answer" }),
+  ).toThrow(/annotation target/);
+  expect(() => passageAnswerSchema(" ")).toThrow(/annotation target/);
+});
+
 it.each([
   null,
   [],
@@ -74,6 +104,7 @@ it("keeps FIFO, validates before writes, saves the canonical plan, and recovers 
   const teacher = new TeacherService(
     async (_id, prompt, _cwd, _save, _signal, contract, saveOutput) => {
       expect(contract.response).toBe("passage-answer");
+      expect(contract.passageAnnotationId).toBe(a.id);
       expect(prompt).not.toContain("arguments_json contains");
       const state = readTeacherState("rust")!;
       const active = state.requests.find((r) => r.status === "running")!;
@@ -179,6 +210,7 @@ it("retains malformed historical canonical JSON as failed until explicit retry a
     async (_id, prompt, _cwd, _save, _signal, contract, saveOutput) => {
       runs++;
       expect(contract.response).toBe("passage-answer");
+      expect(contract.passageAnnotationId).toBe(a.id);
       expect(prompt).not.toContain("When you have the answer, call");
       const raw = { annotation_id: a.id, answer_markdown: markdown };
       saveOutput!(raw);

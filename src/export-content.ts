@@ -266,7 +266,7 @@ const svgAttrs = new Set(
   ),
 );
 /** Static SVG primitives only; discard scripts, foreignObject, styles and external references. */
-export function staticSvg(node: ContentNode): string {
+function staticSvg(node: ContentNode): string {
   if (node.kind === "text") return escapeHtml(node.text);
   if (node.attrs.has("hidden") || node.attrs.get("aria-hidden") === "true") return "";
   if (!svgTags.has(node.tag.toLowerCase())) return "";

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   harnessCommand,
+  toolCalls,
   directedLessonMode,
   isPlaywrightLaunch,
   packagedPageChecks,
@@ -294,4 +295,55 @@ describe("directed lesson mode selection", () => {
   ])("rejects every conflicting selection", (env) => {
     expect(() => directedLessonMode(env)).toThrow("Select one directed authoring mode per run");
   });
+});
+
+it("loads Pi package resources only in the explicit native skill mode", () => {
+  const [, native] = harnessCommand("pi", "test", [], [], { nativeSkills: true });
+  expect(native).not.toContain("--no-skills");
+  expect(native).not.toContain("--no-extensions");
+  expect(native).not.toContain("--extension");
+  const [, isolated] = harnessCommand("pi", "test", []);
+  expect(isolated).toContain("--no-skills");
+  expect(isolated).toContain("--extension");
+});
+
+it("binds Pi receipts to completed bash calls, with the existing private-file receipt contract", () => {
+  const start = {
+    type: "tool_execution_start",
+    toolName: "bash",
+    toolCallId: "t1",
+    args: { command },
+  };
+  const end = {
+    type: "tool_execution_end",
+    toolName: "bash",
+    toolCallId: "t1",
+    result: { content: [{ type: "text", text: JSON.stringify(receipt) }] },
+  };
+  const events = [start, end].map((e) => JSON.stringify(e)).join("\n");
+  expect(packagedPageChecks("pi", events)).toHaveLength(1);
+  expect(packagedPageChecks("pi", JSON.stringify(end))).toEqual([]);
+  expect(
+    packagedPageChecks(
+      "pi",
+      [{ ...start, args: { command: "echo pretend" } }, end]
+        .map((e) => JSON.stringify(e))
+        .join("\n"),
+    ),
+  ).toEqual([]);
+  const invalid = { ...receipt, learnerStateChanged: true };
+  end.result.content[0].text = JSON.stringify(invalid);
+  expect(packagedPageChecks("pi", [start, end].map((e) => JSON.stringify(e)).join("\n"))).toEqual(
+    [],
+  );
+});
+
+it("counts each Pi tool execution once rather than both its start and receipt", () => {
+  const events = [
+    { type: "tool_execution_start", toolName: "scaffold_lesson" },
+    { type: "tool_execution_end", toolName: "scaffold_lesson" },
+  ]
+    .map((e) => JSON.stringify(e))
+    .join("\n");
+  expect(toolCalls("pi", events)).toEqual(["scaffold_lesson"]);
 });

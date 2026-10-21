@@ -49,7 +49,10 @@ const variantSchema = object({
   id: text,
   html: text,
   rubric: rubricSchema,
-  task,
+  task: {
+    ...task,
+    description: "The mental task belongs inside this variant row, alongside its HTML and rubric.",
+  },
 });
 const questionSchema = object({
   id: text,
@@ -86,7 +89,11 @@ export const LESSON_OUTPUT_SCHEMA = object({
     }),
     1,
   ),
-  variants: array(variantSchema),
+  variants: {
+    ...array(variantSchema),
+    description:
+      "Flat private review pool. Emit each variant exactly once as a complete {quiz, question, id, html, rubric, task} object. Combine the private key's HTML/rubric and the private plan's task in that same row; do not emit separate key rows, plan rows, strings or task labels. Use two or three unique variant ids per check question. The host derives objective: original and support: independent and writes both private files. Use [] when no check needs a pool.",
+  },
 });
 function shape(value: unknown, keys: string[], label: string): Record<string, unknown> {
   if (

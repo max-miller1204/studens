@@ -52,7 +52,9 @@ export function allocateCriteria(
 ): CriterionGrade[] | undefined {
   const definitions = submission.rubricCriteria?.[questionId];
   if (!definitions) {
-    if (raw !== undefined)
+    // An empty allocation list declares no components; it must not create
+    // criterion evidence for an attempt that never saved definitions.
+    if (raw !== undefined && !(Array.isArray(raw) && raw.length === 0))
       throw new Error(
         `Question ${questionId}: no criterion definitions were saved before submission.`,
       );

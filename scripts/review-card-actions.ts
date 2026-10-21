@@ -1,11 +1,25 @@
 /** Real learner controls shared by Pi and persistent-host verification. */
-export const CLOSED_REVIEW_REPLY =
+const CLOSED_REVIEW_REPLY =
   "The current owner releases the value when its scope ends. I answered without help.";
+
+/** Wait for a new rendered body; punctuation and old history cannot establish readiness. */
+export function newTeacherMessageActions(count: string, phase: string, timeout = 120_000): string {
+  return `{
+    await page.waitForFunction(count =>
+      [...document.querySelectorAll('.cl-teacher-message[data-role="teacher"]')].slice(count)
+        .some(el => el.checkVisibility() && el.querySelector('.cl-teacher-body')?.textContent.trim()) ||
+      [...document.querySelectorAll('.cl-teacher-request')].some(el => el.textContent.includes('Teacher failed:')),
+      ${count}, {timeout:${timeout}});
+    const failed = page.locator('.cl-teacher-request').filter({hasText:'Teacher failed:'});
+    if (await failed.count()) throw new Error(${JSON.stringify(phase + " failed: ")} + (await failed.allTextContents()).join('; '));
+  }`;
+}
 
 export function closedReviewActions(screenshot: string | null): string {
   return `
     await page.locator('form.cl-quiz:visible').waitFor();
     if (await page.locator('form.cl-quiz:visible').count() !== 1) throw new Error('Review shows multiple cards.');
+    const previousTeacherCount = await page.locator('.cl-teacher-message[data-role="teacher"]').count();
     await page.locator('form.cl-quiz:visible input[value="old"]').check();
     await page.locator('form.cl-quiz:visible [data-cl-assistance]').selectOption('none');
     const response = page.waitForResponse(r => r.url().endsWith('/api/quiz/submit'));
@@ -13,29 +27,21 @@ export function closedReviewActions(screenshot: string | null): string {
     if ((await response).status() !== 201) throw new Error('Closed review submission failed.');
     await page.waitForFunction(() => document.querySelector('form.cl-quiz:not([hidden])')?.dataset.state === 'graded');
     if (!(await page.locator('form.cl-quiz:visible .cl-q-verdict').innerText()).includes('Incorrect')) throw new Error('Closed miss has no immediate feedback.');
-    await page.waitForFunction(() => [...document.querySelectorAll('.cl-teacher-message[data-role="teacher"]')].some(el => el.textContent.includes('?')), null, {timeout:120000});
+    ${newTeacherMessageActions("previousTeacherCount", "Original corrective task")}
     if (!await page.locator('form.cl-quiz:visible').evaluate(el => el.nextElementSibling?.id === 'cl-teacher')) throw new Error('Corrective panel left the review card.');
     ${screenshot ? `await page.screenshot({path:${JSON.stringify(screenshot)},fullPage:true});` : ""}
-    await page.getByRole('textbox', {name:'Reply to your teacher',exact:true}).fill(${JSON.stringify(CLOSED_REVIEW_REPLY)});
-    await page.getByRole('button', {name:'Send reply',exact:true}).click();
-    await page.waitForFunction(() => document.querySelectorAll('.cl-teacher-message[data-role="teacher"]').length > 1 || [...document.querySelectorAll('.cl-teacher-request')].some(el => el.textContent.includes('Teacher failed:')), null, {timeout:120000});
-    const correctiveFailures = [];
-    if (await page.locator('.cl-teacher-request').filter({hasText:'Teacher failed:'}).count()) {
-      const failed = page.locator('.cl-teacher-request').filter({hasText:'Teacher failed:'});
-      ${screenshot ? `await page.screenshot({path:${JSON.stringify(screenshot + ".reply-failed.png")},fullPage:true});` : ""}
-      throw new Error('Original corrective reply failed: ' + (await failed.allTextContents()).join('; '));
-    }
-    await page.waitForFunction(() => document.querySelectorAll('.cl-teacher-message[data-role="teacher"]').length > 1, null, {timeout:120000});
   `;
 }
 
-/** A failed background plan stays failed until the learner presses its retry button. */
-export function refillRetryActions(ids: string[], screenshot: string | null): string {
+/** Send only after the caller checks and records the current task's durable provenance. */
+export function closedReviewReplyActions(): string {
   return `
-    ${screenshot ? `await page.evaluate(() => window.scrollTo(0, 0)); await page.screenshot({path:${JSON.stringify(screenshot)},fullPage:true});` : ""}
-    for (const id of ${JSON.stringify(ids)}) {
-      await page.locator('.cl-teacher-request').filter({hasText:id}).getByRole('button', {name:'Retry request',exact:true}).click();
-    }
+    const previousReplyTeacherCount = await page.locator('.cl-teacher-message[data-role="teacher"]').count();
+    await page.getByRole('textbox', {name:'Reply to your teacher',exact:true}).fill(${JSON.stringify(CLOSED_REVIEW_REPLY)});
+    const replyResponse = page.waitForResponse(r => r.url().endsWith('/api/teacher/chat'));
+    await page.getByRole('button', {name:'Send reply',exact:true}).click();
+    if ((await replyResponse).status() !== 201) throw new Error('Corrective reply submission failed.');
+    ${newTeacherMessageActions("previousReplyTeacherCount", "Original corrective reply")}
   `;
 }
 

@@ -126,6 +126,7 @@ it("keeps definitions and answers private until grading, then persists the origi
 
 it.each([
   ["missing", undefined],
+  ["empty", []],
   ["incomplete", [raw()[0]]],
   ["duplicate", [raw()[0], raw()[0]]],
   ["unknown", [raw()[0], { ...raw()[1], criterion_id: "other" }]],
@@ -195,6 +196,38 @@ it("does not fabricate criteria on an old pending attempt, even if the rubric no
   ).toBeUndefined();
 });
 
+it.each([undefined, []].map((criteria) => [criteria]))(
+  "accepts no allocations on historical attempts (%j) without creating criterion evidence",
+  async (criteria) => {
+    const s = submit();
+    delete s.rubricCriteria;
+    f.write(`rust/001-ownership/quiz/submissions/${s.submittedAt}-${s.id}.json`, JSON.stringify(s));
+    const input = args(s.id);
+    input.questions[0].criteria = criteria as never;
+    expect(isFailure(await tool().execute(input))).toBe(false);
+    const grade = store.listGrades(location.classroom, location.lesson)[0];
+    expect(grade.score).toBe(50);
+    expect(grade.questions[0].criteria).toBeUndefined();
+    expect(store.findSubmission(s.id)).not.toHaveProperty("rubricCriteria");
+  },
+);
+
+it.each(
+  [null, {}, "", raw(), [{ criterion_id: "invented", points_earned: 2, feedback: "Invented" }]].map(
+    (criteria) => [criteria],
+  ),
+)("rejects historical allocations %j without writing a grade", async (criteria) => {
+  const s = submit();
+  delete s.rubricCriteria;
+  f.write(`rust/001-ownership/quiz/submissions/${s.submittedAt}-${s.id}.json`, JSON.stringify(s));
+  const input = args(s.id);
+  input.questions[0].criteria = criteria as never;
+  const result = await tool().execute(input);
+  expect(isFailure(result)).toBe(true);
+  expect(result.content[0].text).toContain("no criterion definitions were saved before submission");
+  expect(store.listGrades(location.classroom, location.lesson)).toHaveLength(0);
+});
+
 it("rejects rubric changes while retaining the submitted criterion snapshot", async () => {
   const s = submit();
   f.write("rust/001-ownership/quiz/key.json", key.replace("Square and sum", "Changed"));
@@ -234,9 +267,14 @@ it("keeps exact criteria code-owned, binary, private and idempotent through star
   expect(store.listGrades(location.classroom, location.lesson)).toEqual(grades);
 });
 
-it("applies an interrupted saved criterion plan once without another model turn", async () => {
+it.each([false, true])("recovers a saved plan once (historical: %s)", async (historical) => {
   const s = submit(["001-ownership/check/q"]);
+  if (historical) {
+    delete s.rubricCriteria;
+    f.write(`rust/001-ownership/quiz/submissions/${s.submittedAt}-${s.id}.json`, JSON.stringify(s));
+  }
   const input = args(s.id);
+  if (historical) input.questions[0].criteria = [];
   delete (input as { score?: number }).score;
   saveTeacherState("rust", {
     version: 1,
@@ -252,7 +290,7 @@ it("applies an interrupted saved criterion plan once without another model turn"
         status: "planned",
         at: 1,
         applied: 0,
-        planValidated: true,
+        planValidated: !historical,
         requestedModel: "original-selection",
         resolvedModel: "original-resolved",
         planRubricDigest: createHash("sha256").update(key).digest("hex"),
@@ -303,7 +341,7 @@ it("applies an interrupted saved criterion plan once without another model turn"
   expect(
     store.latestGrades(location.classroom, location.lesson)[0].questions[0].criteria?.[0]
       .pointsEarned,
-  ).toBe(2);
+  ).toBe(historical ? undefined : 2);
 });
 
 it("validates criterion sums against original definitions on every persistence path", () => {

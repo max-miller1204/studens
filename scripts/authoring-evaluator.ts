@@ -19,8 +19,10 @@ export async function evaluateContent(
     () => {},
     undefined,
     { operations: [] },
+    rawArtifact
+      ? (value) => fs.writeFileSync(rawArtifact, JSON.stringify(value, null, 2))
+      : undefined,
   );
-  if (rawArtifact) fs.writeFileSync(rawArtifact, JSON.stringify(raw, null, 2));
   if (raw.calls.length || raw.learning_record || raw.notes_markdown)
     throw new Error("Content evaluator must not request writes or learning records.");
   return {

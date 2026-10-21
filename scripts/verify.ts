@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { spawn, spawnSync } from "node:child_process";
 import * as fs from "node:fs";
 import * as os from "node:os";
@@ -9,7 +10,7 @@ import { directedLessonMode } from "./harness.ts";
 directedLessonMode();
 const root = packageRoot();
 const usage =
-  "Usage: npm run verify -- [local|checks|browser|pi|claude|codex|settings <claude|codex>|authoring <claude|codex>|feedback <claude|codex>|quality <claude|codex>|refill <claude|codex>|phone [pi]|doctor [browser|pi|claude|codex]] [--artifacts <directory>]";
+  "Usage: npm run verify -- [local|checks|browser|pi|claude|codex|settings <claude|codex>|authoring <claude|codex>|adoption <pi|claude|codex>|feedback <claude|codex>|quality <claude|codex>|refill <claude|codex>|phone [pi]|doctor [browser|pi|claude|codex]] [--artifacts <directory>]";
 const args = process.argv.slice(2);
 const artifactFlag = args.indexOf("--artifacts");
 let requestedArtifacts: string | undefined;
@@ -20,7 +21,7 @@ if (artifactFlag >= 0) {
 }
 const target = args[0] ?? "local";
 const host = args[1];
-const evaluations = ["settings", "authoring", "feedback", "quality", "refill"];
+const evaluations = ["settings", "authoring", "adoption", "feedback", "quality", "refill"];
 const targets = [
   "local",
   "checks",
@@ -34,7 +35,8 @@ const targets = [
 ];
 if (!targets.includes(target) || args.length > 2) throw new Error(usage);
 if (evaluations.includes(target)) {
-  if (host !== "claude" && host !== "codex") throw new Error(usage);
+  if (host !== "claude" && host !== "codex" && !(target === "adoption" && host === "pi"))
+    throw new Error(usage);
 } else if (target === "phone") {
   if (host && host !== "pi") throw new Error(usage);
 } else if (target === "doctor") {
@@ -72,6 +74,30 @@ function doctor(surface: string): void {
 }
 
 fs.mkdirSync(artifacts, { recursive: true });
+// Bind native evidence to the working bytes, including uncommitted evaluation changes.
+const tracked = spawnSync("git", ["ls-files", "-z", "--cached", "--others", "--exclude-standard"], {
+  cwd: root,
+  encoding: "utf8",
+});
+if (tracked.status !== 0) throw new Error(`Cannot snapshot evaluation source: ${tracked.stderr}`);
+fs.writeFileSync(
+  path.join(artifacts, "source-hashes.json"),
+  JSON.stringify(
+    Object.fromEntries(
+      [...new Set(tracked.stdout.split("\0").filter(Boolean))]
+        .sort()
+        .filter((file) => fs.existsSync(path.join(root, file)))
+        .map((file) => [
+          file,
+          createHash("sha256")
+            .update(fs.readFileSync(path.join(root, file)))
+            .digest("hex"),
+        ]),
+    ),
+    null,
+    2,
+  ),
+);
 const results: Array<{ command: string[]; exitCode: number | null }> = [];
 let failure: string | undefined;
 console.log(`Evidence: ${artifacts}`);
@@ -131,7 +157,12 @@ try {
   if (evaluations.includes(target))
     await run(
       process.execPath,
-      [`scripts/e2e-${target}.ts`, host!, path.join(artifacts, `${target}-${host}`)],
+      [
+        `scripts/e2e-${target === "adoption" ? "authoring" : target}.ts`,
+        host!,
+        path.join(artifacts, `${target}-${host}`),
+        ...(target === "adoption" ? ["adoption"] : []),
+      ],
       `${target}-${host}`,
     );
 } catch (error) {

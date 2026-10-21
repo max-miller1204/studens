@@ -11,7 +11,11 @@ import { driveCriterionProbe } from "./criterion-probe.ts";
 import { seedReteach, driveReteach } from "./e2e-reteach-browser.ts";
 import { driveRealNextLesson } from "./next-lesson-actions.ts";
 /** Real host and dedicated teacher evaluation. All material is a temporary fixture. */
-import { closedReviewActions, reportQuestionActions } from "./review-card-actions.ts";
+import {
+  closedReviewActions,
+  closedReviewReplyActions,
+  reportQuestionActions,
+} from "./review-card-actions.ts";
 import { highlightText } from "./browser-actions.ts";
 import { spawn } from "node:child_process";
 import * as fs from "node:fs";
@@ -98,7 +102,12 @@ function seedClassroom(root: string): void {
 
 /** Mechanical receipt plus mandatory human review of the actual retrieval task.
  * Punctuation cannot establish whether an imperative asks for fresh retrieval. */
-function retrievalTask(state: any, kind: "quiz" | "resume", lesson: string) {
+function retrievalTask(
+  state: any,
+  kind: "quiz" | "resume",
+  lesson: string,
+  receiptName = `${kind}-retrieval-task`,
+) {
   const message = state.teacher.messages.filter((m: any) => m.role === "teacher").at(-1);
   const saved = readTeacherState(CLASSROOM);
   const request = saved?.requests.find((r) => r.id === message?.id);
@@ -120,7 +129,7 @@ function retrievalTask(state: any, kind: "quiz" | "resume", lesson: string) {
     throw new Error(
       "Retrieval task is missing its completed, validated request or durable panel message.",
     );
-  if (kind === "quiz" && !state.quizzes.some((q: any) => q.grade?.submissionId === request.target))
+  if (!state.quizzes.some((q: any) => q.grade?.submissionId === request.target))
     throw new Error("Retrieval task is not attached to its saved grade.");
   const receipt = {
     request,
@@ -130,10 +139,7 @@ function retrievalTask(state: any, kind: "quiz" | "resume", lesson: string) {
       "REQUIRED: inspect this complete task for a new answerable retrieval example, no supplied answer, and correct lesson ownership. Mechanical success does not accept generic feedback.",
   };
   if (artifacts)
-    fs.writeFileSync(
-      path.join(artifacts, `${kind}-retrieval-task.json`),
-      JSON.stringify(receipt, null, 2),
-    );
+    fs.writeFileSync(path.join(artifacts, `${receiptName}.json`), JSON.stringify(receipt, null, 2));
   log(`MANUAL REVIEW ${kind} retrieval task: ${message.text}`);
   return message;
 }
@@ -510,12 +516,30 @@ async function main(): Promise<void> {
     if (artifacts)
       fs.writeFileSync(path.join(artifacts, "stored-review.json"), JSON.stringify(review, null, 2));
     log("PASS: prepared review opens through the daily landing without authoring");
-    const correctionResult = await playwrightCode(
+    await playwrightCode(
       browser,
       root,
       `async page => {
       ${closedReviewActions(artifacts ? path.join(artifacts, `${harness}-review-correction.png`) : null)}
-      return { failures: correctiveFailures };
+      return true;
+    }`,
+    );
+    const correctionState = await (
+      await fetch(`${base}/api/state?classroom=rust&lesson=${review.lesson}`)
+    ).json();
+    const correctionTask = retrievalTask(
+      correctionState,
+      "resume",
+      review.lesson,
+      "review-corrective-task",
+    );
+    const correctionResult = await playwrightCode(
+      browser,
+      root,
+      `async page => {
+      ${visibleTask(correctionTask.html)}
+      ${closedReviewReplyActions()}
+      return { failures: [], task: ${JSON.stringify(correctionTask)} };
     }`,
     );
     if (artifacts)
