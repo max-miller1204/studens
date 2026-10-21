@@ -10,6 +10,12 @@ import { readTeacherState } from "../src/service-state.ts";
 import * as store from "../src/store.ts";
 import { useTestModel, TEST_MODELS, ROOT } from "./harness.ts";
 import { playwright, playwrightCode } from "./playwright.ts";
+import {
+  readOwnedService,
+  serviceOwnerExited,
+  type ServiceOwner,
+} from "../test/service-process-owner.ts";
+import { waitForOwnedServiceStop } from "./service-stop-observer.ts";
 
 export async function verifyPiLifecycle(artifacts: string): Promise<void> {
   fs.mkdirSync(artifacts, { recursive: true });
@@ -105,6 +111,22 @@ export async function verifyPiLifecycle(artifacts: string): Promise<void> {
       if (failed) throw new Error(failed.error);
       return s.requests.every((r) => r.status === "done") ? s : null;
     });
+  }
+  let acknowledgedStop: ServiceOwner | undefined;
+  const paths = servicePaths();
+  const owner = () => {
+    const current = readOwnedService(paths.lock, {
+      packageRoot: ROOT,
+      port: Number(process.env.PI_CLASSROOM_SERVICE_PORT),
+    });
+    if (!current) throw new Error("Pi lifecycle fixture has no recorded service owner.");
+    return current;
+  };
+  async function stopOwnedService() {
+    const current = owner();
+    await control("/stop", {});
+    acknowledgedStop = current;
+    await waitForOwnedServiceStop(current, paths);
   }
   const sessionHash = () =>
     createHash("sha256")
@@ -223,8 +245,7 @@ export async function verifyPiLifecycle(artifacts: string): Promise<void> {
     );
     const hash = sessionHash();
     fs.chmodSync(grades, 0o700);
-    await control("/stop", {});
-    await wait("service stop", async () => (!(await serviceStatus()).running ? true : null));
+    await stopOwnedService();
     await ensureService();
     if (saved().requests.find((r) => r.id === gradeRequest.id)!.status !== "failed")
       throw new Error("Restart silently retried the saved failed plan.");
@@ -240,8 +261,7 @@ export async function verifyPiLifecycle(artifacts: string): Promise<void> {
     if (JSON.stringify(recoveredPlan.plan) !== JSON.stringify(gradeRequest.plan))
       throw new Error("Recovery replaced the saved Pi plan.");
     const savedGrades = JSON.stringify(store.listGrades("rust", "001-ownership"));
-    await control("/stop", {});
-    await wait("second service stop", async () => (!(await serviceStatus()).running ? true : null));
+    await stopOwnedService();
     await ensureService();
     if (
       store.listGrades("rust", "001-ownership").length !== 1 ||
@@ -282,8 +302,10 @@ export async function verifyPiLifecycle(artifacts: string): Promise<void> {
       ),
     );
     const finalHost = launch();
+    const finalOwner = owner();
     await command(finalHost, "stop", "/classroom stop");
-    await wait("Pi command stop", async () => (!(await serviceStatus()).running ? true : null));
+    acknowledgedStop = finalOwner;
+    await waitForOwnedServiceStop(finalOwner, paths);
     await close(finalHost);
     const extensionErrors = events.filter((event) => event.type === "extension_error");
     if (extensionErrors.length) throw new Error(JSON.stringify(extensionErrors));
@@ -301,10 +323,15 @@ export async function verifyPiLifecycle(artifacts: string): Promise<void> {
     for (const child of owned)
       if (child.exitCode === null && child.signalCode === null) await close(child);
     if (browserOpen) await playwright(browser, f.root, "close");
-    if ((await serviceStatus()).running) {
-      await control("/stop", {});
-      await wait("cleanup stop", async () => (!(await serviceStatus()).running ? true : null));
-    }
+    const remaining = readOwnedService(paths.lock, {
+      packageRoot: ROOT,
+      port: Number(process.env.PI_CLASSROOM_SERVICE_PORT),
+    });
+    if (remaining && remaining.pid !== acknowledgedStop?.pid) await stopOwnedService();
+    else if (acknowledgedStop && !serviceOwnerExited(acknowledgedStop, paths))
+      await waitForOwnedServiceStop(acknowledgedStop, paths);
+    else if (!acknowledgedStop && (await serviceStatus()).running)
+      throw new Error("Unrecorded service remains during Pi lifecycle cleanup.");
     f.cleanup();
     restore();
   }
