@@ -344,3 +344,5 @@ export function lessonModelPlan(value: unknown): TeacherPlan {
     notes_markdown: "",
   };
 }
+
+export { rubricSchema as MODEL_RUBRIC_SCHEMA, rubric as modelRubric, task as MODEL_TASK_SCHEMA };

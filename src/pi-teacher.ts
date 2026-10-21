@@ -15,6 +15,7 @@ import { readLessonSource } from "./lesson-research.ts";
 import { privateStatePath, safeStaticFile } from "./paths.ts";
 import type { ModelCatalog } from "./teacher-models.ts";
 import type { TeacherIdentity } from "./teacher.ts";
+import { isRefillOutputSchema } from "./refill-output.ts";
 import { LESSON_OUTPUT_SCHEMA } from "./lesson-output.ts";
 
 /** Responses supports the lesson's structured unions, which Pi's generic strict
@@ -25,7 +26,7 @@ import { LESSON_OUTPUT_SCHEMA } from "./lesson-output.ts";
 export function piLessonPayload(schema: Record<string, unknown>): SimpleStreamOptions["onPayload"] {
   return (payload, model) => {
     if (
-      schema !== LESSON_OUTPUT_SCHEMA ||
+      (schema !== LESSON_OUTPUT_SCHEMA && !isRefillOutputSchema(schema)) ||
       !["openai-codex-responses", "openai-responses"].includes(model.api)
     )
       return;
@@ -35,7 +36,7 @@ export function piLessonPayload(schema: Record<string, unknown>): SimpleStreamOp
       model.compat.supportsStrictMode === false
     )
       throw new Error(
-        "Pi lesson authoring requires Responses strict tools. Choose a compatible model and retry explicitly.",
+        "Pi lesson/refill authoring requires Responses strict tools. Choose a compatible model and retry explicitly.",
       );
     const body = payload as {
       tools?: Array<{ type?: string; name?: string; parameters?: unknown; strict?: boolean }>;
@@ -45,7 +46,7 @@ export function piLessonPayload(schema: Record<string, unknown>): SimpleStreamOp
     );
     if (plans?.length !== 1 || JSON.stringify(plans[0].parameters) !== JSON.stringify(schema))
       throw new Error(
-        "Pi lesson request did not serialize the current submit_teacher_plan schema. Retry explicitly.",
+        "Pi lesson/refill request did not serialize the current submit_teacher_plan schema. Retry explicitly.",
       );
     plans[0].strict = true;
   };
@@ -271,8 +272,9 @@ export function piTeacherRequestPrompt(
     ["calls", "message", "learning_record", "notes_markdown"].every(
       (name) => Object.hasOwn(properties, name) && required.includes(name),
     );
-  const envelope =
-    schema === LESSON_OUTPUT_SCHEMA
+  const envelope = isRefillOutputSchema(schema)
+    ? `\n\nCURRENT submit_teacher_plan refill schema:\n${JSON.stringify(schema)}\nReturn classroom, request_id and variants only. Copy the saved identity and exact variant count. Each variant contains id, html, rubric and task, with direct HTML strings. Earlier canonical calls and lesson envelopes do not apply.`
+    : schema === LESSON_OUTPUT_SCHEMA
       ? `\n\nCURRENT submit_teacher_plan lesson schema for this request:\n${JSON.stringify(schema)}\nReturn the typed lesson fields. The inline private-file examples describe the files the host writes, not additional response rows. Each variants item combines quiz, question, id, html, rubric and task in one object, exactly once. Earlier service calls envelopes do not apply to this request.`
       : properties &&
           Object.hasOwn(properties, "dispute_id") &&

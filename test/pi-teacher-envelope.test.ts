@@ -1,3 +1,4 @@
+import { refillOutputSchema } from "../src/refill-output.ts";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { expect, it, vi } from "vitest";
@@ -34,6 +35,16 @@ it("enforces the complete lesson schema on the actual Responses tool serializati
   expect(() => hook(original, { ...model, compat: { supportsStrictMode: false } })).toThrow(
     /strict tools/,
   );
+  const refillSchema = refillOutputSchema({
+    classroom: "rust",
+    requestId: "refill:exact",
+    count: 1,
+  });
+  const refillTools = {
+    tools: convertResponsesTools(piTeacherTools(refillSchema).customTools, { strict: null }),
+  };
+  await piLessonPayload(refillSchema)!(refillTools, model);
+  expect(refillTools.tools[0]).toMatchObject({ strict: true, parameters: refillSchema });
   const ordinary = structuredClone(original);
   await piLessonPayload(planSchema({ operations: ["grade_quiz_answers"] }))!(ordinary, model);
   expect(ordinary).toEqual(original);
@@ -88,7 +99,12 @@ it("sends the current canonical envelope and tool scope after lesson/refill hist
                 passageAnnotationId: "exact-annotation",
               }
             : phase === "refill"
-              ? { operations: ["save_review_variants"], required: true }
+              ? {
+                  operations: ["save_review_variants"],
+                  required: true,
+                  response: "review-variants",
+                  refillTarget: { classroom: "rust", requestId: "refill:exact", count: 1 },
+                }
               : phase === "grade"
                 ? { operations: ["grade_quiz_answers"], required: true }
                 : phase === "dispute"
@@ -115,10 +131,16 @@ it("sends the current canonical envelope and tool scope after lesson/refill hist
               }
             : phase === "refill"
               ? {
-                  calls: [{ name: "save_review_variants", arguments_json: "{}" }],
-                  message: "",
-                  learning_record: null,
-                  notes_markdown: "",
+                  classroom: "rust",
+                  request_id: "refill:exact",
+                  variants: [
+                    {
+                      id: "v3",
+                      html: "<li>raw</li>",
+                      rubric: simpleLessonOutput.quizzes[0].questions[0].rubric,
+                      task: "application",
+                    },
+                  ],
                 }
               : phase === "grade"
                 ? {
@@ -243,7 +265,7 @@ it("sends the current canonical envelope and tool scope after lesson/refill hist
         ).toBe(true);
         expect(
           earlier.some((m) =>
-            m.content.some((c) => c.type === "toolCall" && "calls" in c.arguments),
+            m.content.some((c) => c.type === "toolCall" && "request_id" in c.arguments),
           ),
         ).toBe(true);
       }

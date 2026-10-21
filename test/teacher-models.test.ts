@@ -1,3 +1,4 @@
+import { refillOutputPlan, refillOutputSchema } from "../src/refill-output.ts";
 /** Installed CLI transport contracts; these fixtures do not establish account access. */
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -567,5 +568,61 @@ it.each(["codex", "claude"] as const)(
         expect(turn.args).toContain(sessionId);
       }
     }
+  },
+);
+
+it.each(["codex", "claude"] as const)(
+  "binds typed refill identity/count on %s and retains a rejected extra variant",
+  async (backend) => {
+    const target = { classroom: "rust", requestId: "refill:exact", count: 1 as const };
+    const contract = {
+      operations: ["save_review_variants"],
+      response: "review-variants" as const,
+      refillTarget: target,
+      required: true,
+    };
+    const output = {
+      classroom: "rust",
+      request_id: target.requestId,
+      variants: [
+        {
+          id: "v3",
+          html: '<li class="cl-q">quoted "value"\n</li>',
+          rubric: simpleLessonOutput.quizzes[0].questions[0].rubric,
+          task: "application",
+        },
+      ],
+    };
+    f.write("behavior.json", JSON.stringify({ output }));
+    const identity = { backend, requestedModel: backend === "claude" ? "quick" : "custom-id" };
+    expect(
+      await runTeacher(identity, "Saved refill", f.root, () => {}, undefined, contract),
+    ).toEqual(refillOutputPlan(output, target));
+    const wrong = {
+      ...output,
+      variants: [...output.variants, { ...output.variants[0], id: "v4" }],
+    };
+    f.write("behavior.json", JSON.stringify({ output: wrong }));
+    let raw: unknown;
+    await expect(
+      runTeacher(
+        identity,
+        "Next refill",
+        f.root,
+        () => {},
+        undefined,
+        contract,
+        (value) => {
+          raw = value;
+        },
+      ),
+    ).rejects.toThrow(/exactly 1/);
+    expect(raw).toEqual(wrong);
+    if (backend === "codex")
+      expect(
+        messages()
+          .filter((m) => m.method === "turn/start")
+          .map((m) => m.params.outputSchema),
+      ).toEqual([refillOutputSchema(target), refillOutputSchema(target)]);
   },
 );

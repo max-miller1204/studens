@@ -246,7 +246,9 @@ points. See [code exercises](CODE-EXERCISES.md) for the authoring and isolation 
   compatible. Public attempts redact criterion and early-timing snapshots.
 - **Variant refills are background work.** Save private refill requests with their host
   and learner mistake. Run them after queued learner requests in the same sequential
-  teacher session. Save validated output before atomically adding a supplemental
+  teacher session. Fresh service responses use typed variants bound to the saved
+  classroom, request id, and exact count; the host serializes the canonical plan.
+  Keep saved canonical plans recoverable without a model turn. Save validated output before atomically adding a supplemental
   private pool; never rewrite a submitted rubric. Recover saved output once. Failed
   model work requires explicit retry and cannot block an already prepared review.
   Replaying the same saved batch never duplicates variants.

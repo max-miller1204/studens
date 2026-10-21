@@ -189,7 +189,7 @@ export function authoringSteps(
         ]
       : [
           `6. Check the page in a headless browser. Each control must work, and no contract error may show. ${context.checkPage}`,
-          `For every page, run node ${JSON.stringify(path.join(templatesDir(), "..", "..", "scripts", "check-lesson.ts"))} <classroom> <lesson>. It checks the initial and released page in a disposable copy. It does not change learner state. Never submit a synthetic pretest to the learner's page to reveal controls.`,
+          `For every page, run node ${JSON.stringify(path.join(templatesDir(), "..", "..", "scripts", "check-lesson.ts"))} <classroom> <lesson>. Run the packaged check as its own standalone shell command after all file edits finish; do not combine it with heredocs, file writes, Python, or other commands. Keep its complete JSON receipt. It checks the initial and released page in a disposable copy. It does not change learner state. Never submit a synthetic pretest to the learner's page to reveal controls.`,
           `For playwright-cli, use a new named session and pass --config=${JSON.stringify(path.join(assetsDir(), "playwright-headless.json"))} to open. This config sets headless to true. Do not use --headed, show, an attached user browser, or a tool that opens a visible window. Close the test session when checks finish. Report a headless launch failure instead of changing browser mode.`,
         ]),
   ].join("\n");

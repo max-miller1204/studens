@@ -1,3 +1,5 @@
+import { refillOutputPlan, refillOutputSchema } from "./refill-output.ts";
+import type { RefillOutputTarget } from "./refill-output.ts";
 /** Dedicated teachers return a plan. Only the classroom service applies it. */
 import { spawn } from "node:child_process";
 import { JsonObjectStream } from "./json-object-stream.ts";
@@ -96,9 +98,10 @@ export type TeacherOperation = TeacherPlan["calls"][number]["name"];
 export interface PlanContract {
   operations: TeacherOperation[];
   /** Selected by the current request, never inferred from model output or saved plans. */
-  response?: "passage-answer" | "dispute-resolution";
+  response?: "passage-answer" | "dispute-resolution" | "review-variants";
   passageAnnotationId?: string;
   disputeTarget?: DisputeOutputTarget;
+  refillTarget?: RefillOutputTarget;
   required?: boolean;
   messageRequired?: boolean;
   notesAllowed?: boolean;
@@ -107,6 +110,7 @@ export interface PlanContract {
 
 /** Limit structured output to operations permitted by the current request. */
 export function planSchema(contract: PlanContract) {
+  if (contract.response === "review-variants") return refillOutputSchema(contract.refillTarget);
   if (contract.response === "dispute-resolution")
     return disputeOutputSchema(contract.disputeTarget);
   if (contract.response === "passage-answer")
@@ -202,10 +206,13 @@ export const runTeacher: RunTeacher = async (
 ) => {
   const raw = await runStructured(
     identity,
-    contract.operations.includes("save_review_variants")
+    contract.response === "review-variants"
       ? prompt +
+          "\n\nCurrent response format: typed refill data only: classroom, request_id, variants. Each variant contains id, html, rubric, task. Return direct HTML strings, not calls or arguments_json. The host supplies original objective and independent support and serializes the canonical call. Use null for absent grading. Supply criteria on each rubric. Expected answers use the same typed data as lesson output: direct strings/lists/numeric objects, and {entries:[{key,value}]} only for keyed match/cloze maps."
+      : contract.operations.includes("save_review_variants")
+        ? prompt +
           "\n\nCurrent response format: canonical service plan and save_review_variants tool arguments. The earlier explicit-lesson response schema applies only to publish_lesson. Here rubric.expected uses canonical private keys directly: a string option id for choice, id arrays for multi/order/locate, a value/tolerance/unit object for numeric, or keyed objects for match/cloze. Never use lesson-transport wrappers such as kind/value or entries around an expected answer. Follow this request's tool definitions and inline canonical contract."
-      : prompt,
+        : prompt,
     cwd,
     saveIdentity,
     planSchema(contract),
@@ -215,6 +222,7 @@ export const runTeacher: RunTeacher = async (
     saveModelOutput,
   );
   saveModelOutput?.(raw);
+  if (contract.response === "review-variants") return refillOutputPlan(raw, contract.refillTarget);
   if (contract.response === "passage-answer") return passageAnswerPlan(raw);
   if (contract.response === "dispute-resolution")
     return disputeOutputPlan(raw, contract.disputeTarget);

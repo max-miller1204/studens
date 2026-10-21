@@ -738,8 +738,19 @@ export class TeacherService {
           response: "passage-answer",
           passageAnnotationId: r.target,
         };
-      case "refill":
-        return { operations: [REFILL_TOOL.name], required: true };
+      case "refill": {
+        const request = this.refillRequest(r);
+        return {
+          operations: [REFILL_TOOL.name],
+          required: true,
+          response: "review-variants",
+          refillTarget: {
+            classroom: request.classroom,
+            requestId: request.id,
+            count: request.reason === "miss" ? 1 : 2,
+          },
+        };
+      }
       case "review":
         return { operations: ["publish_review"], required: true, messageRequired: true };
       case "chat":
@@ -770,7 +781,7 @@ export class TeacherService {
     }
     if (r.kind === "review") return r.prompt;
     if (r.kind === "refill")
-      return `${r.prompt}\n\nTool definition: ${JSON.stringify(REFILL_TOOL)}`;
+      return `${r.prompt}\n\nRequired typed response schema: ${JSON.stringify(planSchema(this.contract(r)))}`;
     const lesson = store.readLesson(r.classroom, r.lesson);
     if (!lesson) throw new Error("The request lesson no longer exists.");
     const rubric = path.join(lessonDir(r.classroom, r.lesson), "quiz", "key.json");
