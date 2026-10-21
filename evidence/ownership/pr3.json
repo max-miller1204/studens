@@ -1,0 +1,19 @@
+{
+  "base": "5ece4671fd82f3ebabdeb99c8cbee23c3e09f632",
+  "baseTree": "32fcb3b15834f39619c394bef8b46eef63434f30",
+  "changeTree": "c0293c6c4a62ae63ef5448852ea2f52982796ec3",
+  "desktop": {
+    "width": 1280,
+    "height": 800
+  },
+  "mobile": {
+    "width": 390,
+    "height": 844
+  },
+  "states": [
+    "active grading held during Codex open",
+    "idle with identical saved fixture identity"
+  ],
+  "method": "Public MCP dispatcher, live HTTP and browser, controlled RunTeacher boundary",
+  "inspected": true
+}
