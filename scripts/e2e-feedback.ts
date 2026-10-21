@@ -13,6 +13,7 @@ import { answerGradingTool, GRADE_ANSWERS } from "../src/teacher-grading.ts";
 import { parsePlan, runTeacher } from "../src/teacher.ts";
 import * as store from "../src/store.ts";
 import { parseHarness, useTestModel } from "./harness.ts";
+import { evaluateFeedback, FEEDBACK_CALIBRATION } from "./feedback-evaluation.ts";
 
 const backend = parseHarness(
   process.argv[2],
@@ -268,10 +269,86 @@ try {
       await server.close();
     }
   }
+  // Keep the fixed grading evidence even when the separate semantic evaluator
+  // rejects its own output. Neither failure may erase the other result.
+  if (artifacts)
+    fs.writeFileSync(
+      path.join(artifacts, `${backend}-feedback-mechanical-report.json`),
+      JSON.stringify(
+        {
+          backend,
+          inference: !replayPath,
+          expectedScore,
+          actualScore: result.details.score,
+          savedGrades: store.listGrades("rust", "001-ownership"),
+          savedSubmission: submission,
+          humanLearningEvidence: false,
+        },
+        null,
+        2,
+      ),
+    );
+  let quality;
+  if (!replayPath) {
+    const content = {
+      assessment: JSON.stringify({
+        questions,
+        rubric: Object.fromEntries(
+          questions.map((q) => [q.id, rubric.check[q.id as keyof typeof rubric.check]]),
+        ),
+        gradingScope:
+          "These are the judgment questions only. The service separately graded the closed question 2/2; it is deliberately absent from this teacher's allocations. A short-answer subtotal of 14/16 is correct; the merged score is 16/18.",
+        timing: "Immediate grading; no panel reply yet.",
+      }),
+      response: JSON.stringify({ message: plan.message, grading: args }),
+    };
+    if (artifacts)
+      fs.writeFileSync(
+        path.join(artifacts, `${backend}-feedback-quality-source.json`),
+        JSON.stringify(content, null, 2),
+      );
+    quality = await evaluateFeedback(
+      backend,
+      fixture.root,
+      content,
+      artifacts ? path.join(artifacts, `${backend}-feedback-quality-raw.json`) : null,
+    );
+    if (artifacts)
+      fs.writeFileSync(
+        path.join(artifacts, `${backend}-feedback-quality-report.json`),
+        JSON.stringify({ content, ...quality }, null, 2),
+      );
+    for (const sample of FEEDBACK_CALIBRATION) {
+      const review = await evaluateFeedback(
+        backend,
+        fixture.root,
+        sample.content,
+        artifacts ? path.join(artifacts, `${backend}-feedback-${sample.id}-raw.json`) : null,
+      );
+      const actualFailures = review.judgments
+        .filter((j) => j.verdict === "fail")
+        .map((j) => j.criterion);
+      const report = {
+        ...sample,
+        ...review,
+        missedDefects: sample.expectedFailures.filter((id) => !actualFailures.includes(id)),
+        unexpectedFailures: actualFailures.filter(
+          (id) => !(sample.expectedFailures as readonly string[]).includes(id),
+        ),
+      };
+      if (artifacts)
+        fs.writeFileSync(
+          path.join(artifacts, `${backend}-feedback-${sample.id}-report.json`),
+          JSON.stringify(report, null, 2),
+        );
+      console.log(JSON.stringify({ feedbackCalibration: report }));
+    }
+  }
   const report = {
     backend,
     kind: replayPath ? "saved-model-plan-replay" : "agent-adherence",
     inference: !replayPath,
+    quality,
     ...(replayPath
       ? {
           replaySource: replayPath,

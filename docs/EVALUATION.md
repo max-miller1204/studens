@@ -34,6 +34,24 @@ Run grading cases through dedicated teacher plans and the Pi bridge. Compare poi
 allocations and feedback with a fixed rubric. Check confidence invariance. Report
 leaks and grading disagreements separately from authoring failures.
 
+The feedback target also reports a separate semantic review of the teacher's
+corrective task, answer cues, rubric consistency, and evidence claims. Each judgment
+must quote both the original assessment and the teacher response. It includes a
+fixed bad case (a near-restatement with premature delayed-mastery claims) and a
+fresh application control; report missed defects and false alarms. Semantic scores
+do not set the mechanical verdict. Raw evaluator output is saved before parsing;
+an invalid or invented quotation is an evaluator failure, never a passing score.
+Saved-plan replay performs no new inference and omits this semantic review.
+
+A passing grade allocation alone does not establish useful corrective teaching.
+In the retained Codex legacy-grading run, the corrective question closely restated
+the original despite guidance requiring a different situation. The service saved
+the reply without granting delayed retention. This remains a model-quality finding;
+one fresh passing generation cannot establish its elimination. Historical invalid
+keys, instruction violations, and missing or truncated page-check receipts likewise
+remain failed evidence. Keep original artifacts and distinguish new checks from
+recovery or replay. Human learning outcomes require the pilot below.
+
 ## Human retention and transfer pilot
 
 Recruit consenting learners. Record prior knowledge before instruction. Explain
