@@ -14,7 +14,6 @@ import { readLessonSource } from "./lesson-research.ts";
 import { privateStatePath, safeStaticFile } from "./paths.ts";
 import type { ModelCatalog } from "./teacher-models.ts";
 import type { TeacherIdentity } from "./teacher.ts";
-import { PASSAGE_ANSWER_SCHEMA } from "./passage-answer.ts";
 import { LESSON_OUTPUT_SCHEMA } from "./lesson-output.ts";
 
 export function piTeacherResources(cwd: string) {
@@ -240,7 +239,11 @@ export function piTeacherRequestPrompt(
   const envelope =
     schema === LESSON_OUTPUT_SCHEMA
       ? `\n\nCURRENT submit_teacher_plan lesson schema for this request:\n${JSON.stringify(schema)}\nReturn the typed lesson fields. The inline private-file examples describe the files the host writes, not additional response rows. Each variants item combines quiz, question, id, html, rubric and task in one object, exactly once. Earlier service calls envelopes do not apply to this request.`
-      : schema === PASSAGE_ANSWER_SCHEMA
+      : properties &&
+          Array.isArray(required) &&
+          ["annotation_id", "answer_markdown"].every(
+            (name) => Object.hasOwn(properties, name) && required.includes(name),
+          )
         ? `\n\nCURRENT submit_teacher_plan passage answer schema for this request:\n${JSON.stringify(schema)}\nReturn only annotation_id and answer_markdown. The service serializes the operation. Earlier lesson, refill and canonical calls envelopes do not apply to this request.`
         : canonical
           ? `\n\nCURRENT submit_teacher_plan outer envelope and field constraints for this request:\n${JSON.stringify(schema)}\nInclude every required top-level field. When the current schema permits calls: [], a prose-only reply still needs its actual learner-facing message and every other required field. Use learning_record: null when no learning record qualifies, and notes_markdown: "" when there is no note. Do not omit these fields. Follow this current envelope rather than an earlier lesson or refill response format.`

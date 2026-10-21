@@ -6,7 +6,7 @@ import { makeFixture, type Fixture } from "./helpers.ts";
 import { runStructured, teacherModels, runTeacher } from "../src/teacher.ts";
 import { modelSelection } from "../src/teacher-models.ts";
 import { simpleLessonOutput } from "./lesson-output-fixture.ts";
-import { passageAnswerPlan, PASSAGE_ANSWER_SCHEMA } from "../src/passage-answer.ts";
+import { passageAnswerPlan, passageAnswerSchema } from "../src/passage-answer.ts";
 import { lessonModelPlan } from "../src/lesson-output.ts";
 let f: Fixture;
 let priorPath: string | undefined;
@@ -454,6 +454,7 @@ it.each(["codex", "claude"] as const)(
       operations: ["answer_lesson_question"],
       required: true,
       response: "passage-answer" as const,
+      passageAnnotationId: "exact-owner",
     };
     f.write("behavior.json", JSON.stringify({ output }));
     let raw: unknown;
@@ -482,8 +483,8 @@ it.each(["codex", "claude"] as const)(
     if (backend === "codex") {
       const turns = all.filter((m) => m.method === "turn/start");
       expect(turns.slice(1).map((m) => m.params.outputSchema)).toEqual([
-        PASSAGE_ANSWER_SCHEMA,
-        PASSAGE_ANSWER_SCHEMA,
+        passageAnswerSchema("exact-owner"),
+        passageAnswerSchema("exact-owner"),
       ]);
       const resumes = all.filter((m) => m.method === "thread/resume");
       expect(resumes).toHaveLength(2);
@@ -496,7 +497,7 @@ it.each(["codex", "claude"] as const)(
       const turns = all.filter((m) => m.args && !m.args.includes("--input-format"));
       for (const turn of turns.slice(1)) {
         expect(JSON.parse(turn.args[turn.args.indexOf("--json-schema") + 1])).toEqual(
-          PASSAGE_ANSWER_SCHEMA,
+          passageAnswerSchema("exact-owner"),
         );
         expect(turn.args[turn.args.indexOf("--tools") + 1]).toBe("");
         expect(turn.args).toContain(sessionId);

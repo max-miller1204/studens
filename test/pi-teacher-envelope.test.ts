@@ -58,7 +58,12 @@ it("sends the current canonical envelope and tool scope after lesson/refill hist
         phase === "lesson"
           ? { operations: ["publish_lesson"], required: true, research: true }
           : phase === "ask" || phase === "follow-up"
-            ? { operations: ["answer_lesson_question"], required: true, response: "passage-answer" }
+            ? {
+                operations: ["answer_lesson_question"],
+                required: true,
+                response: "passage-answer",
+                passageAnnotationId: "exact-annotation",
+              }
             : phase === "refill"
               ? { operations: ["save_review_variants"], required: true }
               : phase === "grade"
