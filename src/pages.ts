@@ -1,5 +1,7 @@
 import { appearanceHead } from "./appearance.ts";
 import { searchPassages } from "./search-passages.ts";
+import { icon } from "../assets/runtime/icons.mjs";
+import { uiFontHead } from "./ui-assets.ts";
 /**
  * pages.ts — the shell pages: landing (all classrooms), classroom (its lessons and
  * documents), and the markdown document view.
@@ -48,13 +50,14 @@ export function shell(options: ShellOptions): string {
 <title>${escapeHtml(options.title)}</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📚</text></svg>">
 ${appearanceHead()}
+${uiFontHead()}
 </head>
 <body class="${escapeHtml(options.bodyClass ?? "cl-shell")}">
 <header class="cl-header">
   <nav class="cl-breadcrumb">${options.breadcrumb}</nav>
   <button type="button" class="cl-theme-toggle" data-cl-theme-toggle aria-label="Toggle colour theme">
-    <span class="cl-theme-icon cl-theme-icon-light" aria-hidden="true">☀</span>
-    <span class="cl-theme-icon cl-theme-icon-dark" aria-hidden="true">☾</span>
+    <span class="cl-theme-icon cl-theme-icon-light" aria-hidden="true">${icon("sun")}</span>
+    <span class="cl-theme-icon cl-theme-icon-dark" aria-hidden="true">${icon("moon")}</span>
   </button>
 </header>
 <main class="cl-main">

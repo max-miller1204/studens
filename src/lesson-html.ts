@@ -9,6 +9,7 @@ import { appearanceHead } from "./appearance.ts";
  */
 
 import { toScriptJson } from "./markdown.ts";
+import { uiFontHead } from "./ui-assets.ts";
 
 export interface LessonRuntimeConfig {
   classroom: string;
@@ -58,6 +59,7 @@ function insertBeforeBodyEnd(html: string, snippet: string): string {
  */
 export function injectLessonRuntime(html: string, config: LessonRuntimeConfig): string {
   if (html.includes('id="cl-config"')) {
+    if (!html.includes('href="/static/ui-fonts.css"')) html = insertInHead(html, uiFontHead());
     return html.replace(
       /<script\b[^>]*\bid="cl-config"[^>]*>[\s\S]*?<\/script\s*>/i,
       () => `<script type="application/json" id="cl-config">${toScriptJson(config)}</script>`,
@@ -65,5 +67,12 @@ export function injectLessonRuntime(html: string, config: LessonRuntimeConfig): 
   }
   if (config.reviewScreen)
     html = html.replace(/<body\b([^>]*)>/i, "<body$1 data-cl-review-screen>");
-  return insertBeforeBodyEnd(insertInHead(html, appearanceHead()), bodyInjection(config));
+  return insertBeforeBodyEnd(
+    insertInHead(
+      html,
+      `${appearanceHead()}
+${uiFontHead()}`,
+    ),
+    bodyInjection(config),
+  );
 }

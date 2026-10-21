@@ -17,6 +17,8 @@ import { startDailyReview } from "../src/store/daily-review.ts";
 import { reviewSessions } from "../src/review-session.ts";
 import { TeacherService } from "../src/teacher-service.ts";
 import { DAY_MS } from "../src/review.ts";
+import { waitForOwnedServiceStop } from "../scripts/service-stop-observer.ts";
+import type { ServiceOwner } from "./service-process-owner.ts";
 
 it("rejects recorded legacy Pi route ownership without replacing the route or starting a service", async () => {
   const f = makeFixture();
@@ -45,8 +47,11 @@ it("rejects legacy route ownership even when the persistent service already runs
   process.env.PI_CLASSROOM_SERVICE_PORT = String((listener.address() as net.AddressInfo).port);
   await new Promise<void>((resolve) => listener.close(() => resolve()));
   process.env.PI_CLASSROOM_TAILSCALE = "0";
+  let owner: ServiceOwner | undefined;
+  let stopAcknowledged = false;
   try {
     const original = await ensureService();
+    owner = original;
     const file = f.write(
       ".pi-teach-pi/phone.json",
       JSON.stringify({ host: "old.tailnet.ts.net", port: 8444, target: "http://127.0.0.1:40000" }),
@@ -60,10 +65,12 @@ it("rejects legacy route ownership even when the persistent service already runs
     expect((await serviceStatus()).pid).toBe(original.pid);
     // Management remains available so this error cannot trap an incompatible owner.
     await new PiServiceClient().call("classroom_service", { action: "stop" });
+    stopAcknowledged = true;
   } finally {
-    if ((await serviceStatus()).running) await control("/stop", {});
-    for (let i = 0; i < 100 && (await serviceStatus()).running; i++)
-      await new Promise((resolve) => setTimeout(resolve, 50));
+    if (owner) {
+      if (!stopAcknowledged) await control("/stop", {});
+      await waitForOwnedServiceStop(owner, servicePaths());
+    }
     if (previousPort === undefined) delete process.env.PI_CLASSROOM_SERVICE_PORT;
     else process.env.PI_CLASSROOM_SERVICE_PORT = previousPort;
     if (previousTailnet === undefined) delete process.env.PI_CLASSROOM_TAILSCALE;

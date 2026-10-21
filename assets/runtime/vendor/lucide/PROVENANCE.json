@@ -1,0 +1,41 @@
+{
+  "package": "lucide-static",
+  "version": "1.61.0",
+  "source": "https://registry.npmjs.org/lucide-static/-/lucide-static-1.61.0.tgz",
+  "integrity": "sha512-yLAiQB3MWUJEstsEDAwenSA3m7vr1tdLvgnC16Q/XMxRRma0DWwMs8M2bWlvgShrIs1m2mWMJ+0AiahqQO4GrA==",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lucide-icons/lucide.git"
+  },
+  "transformation": "Named subset. Decorative SVGs use currentColor, 18px size, and 1.75 stroke. icons.mjs contains the same SVG bytes.",
+  "files": {
+    "LICENSE": "b495047bd93a9b06913511076f504daba17d5bbeb3e0650f3bb53a4220329c57",
+    "VERSION": "b37685c6d7646baf7933322dcbdadf302fa6d575cf2be7c6c3a2402424453113",
+    "arrow-left.svg": "dab30ac2fcd6f48c3e8af2a5df792d59f274955f2b664186105e8032c2a8916e",
+    "arrow-right.svg": "ca68f715a897dcd0044de58a39e8e5b8e9aa6feab7714016cb9730bf2221cf60",
+    "book-open.svg": "97a5fbf1b9b926d2be4b210f6afdf8e052ff833927c9978563d487fb90a11104",
+    "bookmark.svg": "c742bdfc20fc090587655d766d2b18be43a54aa2d7cecbef215ecc6d0cd1f972",
+    "check.svg": "fb11d288a8b2b307c40bfd0445adacbc1fcdb49513c40b88d7799afba37f5aaf",
+    "chevron-down.svg": "33d5c7441a5be9f53ad7f5f97536df3739401902bfb509f1d5731ad3b8679bd7",
+    "chevron-left.svg": "188f38a872a6c90a0bebe2cde88829121f70120f59682440e1a398cf101ea8d7",
+    "chevron-right.svg": "3005bb89bcb90acd5b4d5d367ee067b0debb2fac9895e65b7937f428cec1e61c",
+    "circle-alert.svg": "4aaf73dc10f9cc6bcfd99b2beeb8255832464e6ada5b8a19baa0e493f8ed17a0",
+    "clock.svg": "466c8b8b80f4b7dd52493b68bb5670f3da434abd0cc27d8e400d1d5c92f50b63",
+    "download.svg": "cbbaee138a9485583b78401c52ca913e534f462c4c433f80b21f3d86d66c8864",
+    "external-link.svg": "f2f2a932075e2a1c20e2ad97883f57965efdf26320ec6e992df07f2f1075436e",
+    "folder-open.svg": "4d1b042fc491a0333f44a8c06930d60eb25703e6e6a5ef06d927c48a40e2c5cb",
+    "folder.svg": "56cb5a7f600a9b51cbd4a75fce5b28c74058710420502f8b7afb5b6b549f382a",
+    "highlighter.svg": "834455e93808fcd021485552f84672105ce8af8e7de50fbbf75d7d001547c2c6",
+    "icons.mjs": "5a18bc9c42144cc5590ce9dcba7fd042742af2f550191437011f03f62f24549e",
+    "info.svg": "29282964a67cce371747c0b51efe09e920008e06aea6f43e03292718edb0a0c8",
+    "library.svg": "ebd63794392ce925cbb09be761fa5ce14ef6615c536d8877664b60222a19ac98",
+    "message-circle.svg": "4cf0606cb9dd1046ce63b880d61b83768e9983bf5a49e33c8554ade510b38209",
+    "moon.svg": "11803a025e8f9a544bf7fa3aa01d038565c6dbbcee85cbd5459cce38627ac952",
+    "plus.svg": "12cf59294a711074a751b68bdfd793d92536b3c0da7a2896a3f2931794c77aeb",
+    "rotate-ccw.svg": "2e743e4d99315eff28517fac7e60fa211ec22307fcc95baca4193094032b55ef",
+    "search.svg": "effb6f149baf9b93b08fd7d42d4076d4a3109bae8310623bd15cc400399f9fc5",
+    "settings.svg": "51e57d82406356361387be61bfbcc1677d1e0fe8c8174a938fba5a04ba327836",
+    "sun.svg": "5b6a8856dff9e12c765509a053183fc5974b582cc3e09578a9d90bedcb6cb4f7",
+    "x.svg": "1fd063c5d28f3de30b4574f0f70123463712f5c975cbb5c286474c4a703e1112"
+  }
+}

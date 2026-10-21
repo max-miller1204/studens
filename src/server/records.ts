@@ -6,6 +6,7 @@ import { documentPage, learningRecordsPage } from "../pages.ts";
 import { classroomDir, isFile, isValidSlug, safeStaticFile } from "../paths.ts";
 import * as store from "../store.ts";
 import { sendHtml, sendNotFound } from "./http.ts";
+import { uiFontHead } from "../ui-assets.ts";
 
 export function handleDoc(res: http.ServerResponse, rest: string[]): void {
   const [name, ...tail] = rest;
@@ -65,6 +66,7 @@ export function handleReference(res: http.ServerResponse, rest: string[]): void 
   const html = fs.readFileSync(file, "utf8");
   const head = `<script type="module">import{initTeacherActivity,pageClassroom}from"/static/teacher-activity.mjs";initTeacherActivity(pageClassroom());</script>
 ${appearanceHead()}
+${uiFontHead()}
 <script type="module">import{initTheme}from"/static/theme.mjs";initTheme();</script>
 <script type="module">import{initLinks}from"/static/links.mjs";initLinks();</script>
 <script type="module">import{initDiagrams}from"/static/diagrams.mjs";initDiagrams(document.body);</script>

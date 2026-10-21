@@ -6,6 +6,7 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { runtimeAssetsDir } from "../src/paths.ts";
 
 import { applyAnswer, applyGrade } from "../src/bridge.ts";
 import * as server from "../src/server.ts";
@@ -434,6 +435,74 @@ describe("pages", () => {
 });
 
 describe("refusals", () => {
+  it("serves UI fonts and icons through the existing guarded static route", async () => {
+    const stylesheet = await get("/static/ui-fonts.css");
+    expect(stylesheet.status).toBe(200);
+    expect(stylesheet.headers.get("content-type")).toMatch(/text\/css/);
+    for (const id of ["inter", "source-serif-4", "jetbrains-mono"]) {
+      expect((await get(`/static/vendor/${id}/font.css`)).headers.get("content-type")).toMatch(
+        /text\/css/,
+      );
+      for (const subset of ["latin", "latin-ext"])
+        for (const style of ["normal", "italic"]) {
+          const response = await get(`/static/vendor/${id}/${id}-${subset}-wght-${style}.woff2`);
+          expect(response.status).toBe(200);
+          expect(response.headers.get("content-type")).toBe("font/woff2");
+          expect(
+            Buffer.from(await response.arrayBuffer())
+              .subarray(0, 4)
+              .toString(),
+          ).toBe("wOF2");
+        }
+    }
+    const svg = await get("/static/vendor/lucide/sun.svg");
+    expect(svg.status).toBe(200);
+    expect(svg.headers.get("content-type")).toMatch(/image\/svg\+xml/);
+    for (const file of ["icons.mjs", "vendor/lucide/icons.mjs"]) {
+      const response = await get(`/static/${file}`);
+      expect(response.status).toBe(200);
+      expect(response.headers.get("content-type")).toMatch(/javascript/);
+    }
+    for (const route of ["/", "/c/rust/001-ownership", "/r/rust/fonts.html"]) {
+      fixture.write(
+        "rust/reference/fonts.html",
+        "<html><head></head><body>Reference</body></html>",
+      );
+      const response = await get(route);
+      expect(response.status).toBe(200);
+      expect((await response.text()).match(/rel="preload"/g), route).toHaveLength(2);
+    }
+    for (const route of [
+      "/static/vendor/lucide/missing.svg",
+      "/static/vendor/inter/missing.woff2",
+      "/static/vendor/inter/%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2fpackage.json",
+      "/static/vendor/lucide/%2e%2e%5c%2e%2e%5cpackage.json",
+      "/static/vendor/inter/%00.woff2",
+      "/c/rust/001-ownership/quiz/key.json",
+      "/c/rust/.teacher.json",
+    ])
+      expect((await get(route)).status, route).toBe(404);
+
+    const privateFile = fixture.write(
+      "rust/001-ownership/quiz/ui-assets-private.json",
+      '{"answer":"private"}',
+    );
+    const link = path.join(runtimeAssetsDir(), `vendor/lucide/test-private-${process.pid}.svg`);
+    const directoryLink = path.join(runtimeAssetsDir(), `vendor/inter/test-private-${process.pid}`);
+    try {
+      fs.symlinkSync(privateFile, link);
+      fs.symlinkSync(path.dirname(privateFile), directoryLink);
+      expect((await get(`/static/vendor/lucide/${path.basename(link)}`)).status).toBe(404);
+      expect(
+        (await get(`/static/vendor/inter/${path.basename(directoryLink)}/ui-assets-private.json`))
+          .status,
+      ).toBe(404);
+    } finally {
+      fs.rmSync(link, { force: true });
+      fs.rmSync(directoryLink, { force: true });
+    }
+  });
+
   it("404s unknown classrooms and lessons", async () => {
     expect((await get("/c/nope")).status).toBe(404);
     expect((await get("/c/rust/nope")).status).toBe(404);
