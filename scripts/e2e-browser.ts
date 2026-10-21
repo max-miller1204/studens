@@ -1,3 +1,4 @@
+import { verifyReviewObserver } from "./e2e-review-observer.ts";
 import { verifyMemoryMapBrowser } from "./e2e-memory-map-browser.ts";
 import { verifySearchBrowser } from "./e2e-search-browser.ts";
 import { verifyLearnerMarksBrowser } from "./e2e-learner-marks-browser.ts";
@@ -440,3 +441,5 @@ await verifyMemoryMapBrowser(artifacts ? path.join(artifacts, "memory-map") : nu
 await verifyClassroomExportBrowser(artifacts ? path.join(artifacts, "export") : null);
 await verifyExportTemplateBrowser(artifacts ? path.join(artifacts, "export-template") : null);
 await verifyLearnerMarksBrowser(artifacts ? path.join(artifacts, "learner-marks") : null);
+
+await verifyReviewObserver(artifacts ? path.join(artifacts, "review-observer") : null);
