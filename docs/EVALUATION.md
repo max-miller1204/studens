@@ -136,3 +136,10 @@ authoring submissions are mechanical failures regardless of semantic scores.
 Malformed evaluator envelopes and invalid exact-source quotes remain evaluator
 errors, with native raw output saved before envelope parsing. Do not call an
 unscored evaluation a correctness pass.
+
+The classroom entrypoint also asks how to request another lesson from the page,
+whether initiating chat must stay open, and where to answer retrieval questions.
+`<host>-guidance.json` retains the exact reply and calls for manual source-bound
+review of #113/#118/#123 guidance, including incorrect or absent claims. To probe
+only these previously untested claims without repeating authoring, use
+`node scripts/e2e-authoring.ts <pi|claude|codex> <new-directory> guidance`.

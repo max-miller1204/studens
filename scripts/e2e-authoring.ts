@@ -79,9 +79,10 @@ const GRADING_TIMEOUT_MS = 20 * 60_000;
 const CLASSROOM = "os";
 const EARLIER_LESSON = "001-processes";
 const mode = process.argv[4] ?? "standard";
-if (!["standard", "code", "adoption"].includes(mode)) throw new Error("Unknown authoring mode.");
+if (!["standard", "code", "adoption", "guidance"].includes(mode))
+  throw new Error("Unknown authoring mode.");
 const codeMode = mode === "code";
-const adoptionMode = mode === "adoption";
+const adoptionMode = mode === "adoption" || mode === "guidance";
 
 const OBJECTIVES = adoptionMode
   ? ["Predict how many processes a short C program with several fork() calls creates."]
@@ -97,7 +98,7 @@ const OBJECTIVES = adoptionMode
 
 const harness: Harness = parseHarness(
   process.argv[2],
-  "Usage: node scripts/e2e-authoring.ts <pi|claude|codex> [artifacts] [standard|code|adoption]",
+  "Usage: node scripts/e2e-authoring.ts <pi|claude|codex> [artifacts] [standard|code|adoption|guidance]",
 );
 const artifacts = process.argv[3] ? path.resolve(process.argv[3]) : null;
 if (artifacts) fs.mkdirSync(artifacts); // Never replace a previous run, including failures.
@@ -538,7 +539,7 @@ async function main(): Promise<void> {
     checkpoint();
     if (adoptionMode) {
       classroomSession = startSession(
-        `Use the packaged classroom skill to open my "${CLASSROOM}" classroom. Give its link. Do not author anything or open a browser.`,
+        `Use the packaged classroom skill to open my "${CLASSROOM}" classroom. Give its link. Explain how I can request another lesson from that page, whether this chat must stay open for answers and grading, and where I should answer a teacher retrieval question. Do not author anything or open a browser.`,
         ["open_classroom", "list_classrooms"],
         ["Read", "Skill"],
         env,
@@ -553,6 +554,30 @@ async function main(): Promise<void> {
         failures.push("Classroom skill session opened a browser for the learner.");
       if (!(await serviceStatus()).running)
         failures.push("The service did not survive the initiating classroom session.");
+      if (artifacts)
+        fs.writeFileSync(
+          path.join(artifacts, `${harness}-guidance.json`),
+          JSON.stringify(
+            {
+              mode,
+              model: TEST_MODELS[harness],
+              toolCalls: toolCalls(harness, classroomSession.stream()),
+              summary: finalText(classroomSession.stream()),
+              failures,
+              semanticGuidanceReview:
+                "Inspect Next lesson, persistent service and on-page retrieval claims; calls alone do not prove guidance adoption.",
+              humanLearningEvidence: false,
+            },
+            null,
+            2,
+          ),
+        );
+      if (mode === "guidance") {
+        if (failures.length) throw new Error(failures.join("\n"));
+        stage = "complete";
+        checkpoint();
+        return;
+      }
     }
     // Authoring session.
     const authoring = startSession(
