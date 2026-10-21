@@ -10,11 +10,47 @@ import {
   SettingsManager,
 } from "@earendil-works/pi-coding-agent";
 import type { AgentSession, ToolDefinition } from "@earendil-works/pi-coding-agent";
+import type { SimpleStreamOptions } from "@earendil-works/pi-ai";
 import { readLessonSource } from "./lesson-research.ts";
 import { privateStatePath, safeStaticFile } from "./paths.ts";
 import type { ModelCatalog } from "./teacher-models.ts";
 import type { TeacherIdentity } from "./teacher.ts";
+import { isRefillOutputSchema } from "./refill-output.ts";
 import { LESSON_OUTPUT_SCHEMA } from "./lesson-output.ts";
+
+/** Responses supports the lesson's structured unions, which Pi's generic strict
+ * schema converter currently refuses. Set strict on the serialized function via
+ * the SDK payload hook, preserving our already closed, all-required schema.
+ * This is generation enforcement; SDK and service validation still run as usual.
+ */
+export function piLessonPayload(schema: Record<string, unknown>): SimpleStreamOptions["onPayload"] {
+  return (payload, model) => {
+    if (
+      (schema !== LESSON_OUTPUT_SCHEMA && !isRefillOutputSchema(schema)) ||
+      !["openai-codex-responses", "openai-responses"].includes(model.api)
+    )
+      return;
+    if (
+      model.compat &&
+      "supportsStrictMode" in model.compat &&
+      model.compat.supportsStrictMode === false
+    )
+      throw new Error(
+        "Pi lesson/refill authoring requires Responses strict tools. Choose a compatible model and retry explicitly.",
+      );
+    const body = payload as {
+      tools?: Array<{ type?: string; name?: string; parameters?: unknown; strict?: boolean }>;
+    };
+    const plans = body.tools?.filter(
+      (tool) => tool.type === "function" && tool.name === "submit_teacher_plan",
+    );
+    if (plans?.length !== 1 || JSON.stringify(plans[0].parameters) !== JSON.stringify(schema))
+      throw new Error(
+        "Pi lesson/refill request did not serialize the current submit_teacher_plan schema. Retry explicitly.",
+      );
+    plans[0].strict = true;
+  };
+}
 
 export function piTeacherResources(cwd: string) {
   const source = SettingsManager.create(cwd, getAgentDir());
@@ -236,18 +272,23 @@ export function piTeacherRequestPrompt(
     ["calls", "message", "learning_record", "notes_markdown"].every(
       (name) => Object.hasOwn(properties, name) && required.includes(name),
     );
-  const envelope =
-    schema === LESSON_OUTPUT_SCHEMA
+  const envelope = isRefillOutputSchema(schema)
+    ? `\n\nCURRENT submit_teacher_plan refill schema:\n${JSON.stringify(schema)}\nReturn classroom, request_id and variants only. Copy the saved identity and exact variant count. Each variant contains id, html, rubric and task, with direct HTML strings. Earlier canonical calls and lesson envelopes do not apply.`
+    : schema === LESSON_OUTPUT_SCHEMA
       ? `\n\nCURRENT submit_teacher_plan lesson schema for this request:\n${JSON.stringify(schema)}\nReturn the typed lesson fields. The inline private-file examples describe the files the host writes, not additional response rows. Each variants item combines quiz, question, id, html, rubric and task in one object, exactly once. Earlier service calls envelopes do not apply to this request.`
       : properties &&
-          Array.isArray(required) &&
-          ["annotation_id", "answer_markdown"].every(
-            (name) => Object.hasOwn(properties, name) && required.includes(name),
-          )
-        ? `\n\nCURRENT submit_teacher_plan passage answer schema for this request:\n${JSON.stringify(schema)}\nReturn only annotation_id and answer_markdown. The service serializes the operation. Earlier lesson, refill and canonical calls envelopes do not apply to this request.`
-        : canonical
-          ? `\n\nCURRENT submit_teacher_plan outer envelope and field constraints for this request:\n${JSON.stringify(schema)}\nInclude every required top-level field. When the current schema permits calls: [], a prose-only reply still needs its actual learner-facing message and every other required field. Use learning_record: null when no learning record qualifies, and notes_markdown: "" when there is no note. Do not omit these fields. Follow this current envelope rather than an earlier lesson or refill response format.`
-          : "";
+          Object.hasOwn(properties, "dispute_id") &&
+          Object.hasOwn(properties, "decision")
+        ? `\n\nCURRENT submit_teacher_plan dispute response schema:\n${JSON.stringify(schema)}\nReturn only dispute_id, decision, question and message. Use the exact dispute_id from this schema, not the prefixed queue id. Set question to null for a declined or flagged dispute. Earlier lesson, passage and canonical calls envelopes do not apply.`
+        : properties &&
+            Array.isArray(required) &&
+            ["annotation_id", "answer_markdown"].every(
+              (name) => Object.hasOwn(properties, name) && required.includes(name),
+            )
+          ? `\n\nCURRENT submit_teacher_plan passage answer schema for this request:\n${JSON.stringify(schema)}\nReturn only annotation_id and answer_markdown. The service serializes the operation. Earlier lesson, refill and canonical calls envelopes do not apply to this request.`
+          : canonical
+            ? `\n\nCURRENT submit_teacher_plan outer envelope and field constraints for this request:\n${JSON.stringify(schema)}\nInclude every required top-level field. When the current schema permits calls: [], a prose-only reply still needs its actual learner-facing message and every other required field. Use learning_record: null when no learning record qualifies, and notes_markdown: "" when there is no note. Do not omit these fields. Follow this current envelope rather than an earlier lesson or refill response format.`
+            : "";
   return `${prompt}${research ? "\n\nFor public web research use read_lesson_source. Classroom resources are supplied above. Return the typed lesson data through submit_teacher_plan; it does not publish directly." : ""}${envelope}\n\nReturn your complete structured result by calling submit_teacher_plan exactly once. Do not answer the learner outside that plan. End your turn after the tool accepts it.`;
 }
 
@@ -316,6 +357,7 @@ export async function runPi(
     tools: loadout.tools,
     customTools: loadout.customTools,
   });
+  session.agent.onPayload = piLessonPayload(schema);
   const unsubscribe = observePiTeacherRequest(
     session,
     loadout,

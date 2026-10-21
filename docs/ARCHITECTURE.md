@@ -157,6 +157,10 @@ points. See [code exercises](CODE-EXERCISES.md) for the authoring and isolation 
 - **Grade disputes are revisions of saved attempts.** An explicit learner action saves
   the question, grade timestamp, reason, original submission and verified rubric snapshot
   in the classroom FIFO. Dedicated teachers return only `resolve_grade_dispute` plans.
+  Fresh responses use typed dispute data with the exact saved dispute UUID and
+  question id bound in the response schema. Code serializes the canonical plan;
+  persisted plans keep their format and recovery checks. Machine disputes permit
+  only explanation/authoring-defect decisions and a null question allocation.
   Revalidate the exact target and snapshot before inference and application. Only the
   disputed judgment allocation can change; `mergeGrades` still rejects machine overrides.
   Explain or flag machine disputes without writing another grade. Save validated plans
@@ -218,6 +222,13 @@ points. See [code exercises](CODE-EXERCISES.md) for the authoring and isolation 
   Provider lesson responses carry HTML, rubric entries, objective mappings and private
   variants as typed data. Code serializes both private JSON files and the canonical
   saved publication call; models never encode nested JSON strings. New lesson
+  turns on Pi's OpenAI Responses APIs require strict function output using the same
+  all-required lesson schema; unsupported strict capability fails explicitly. Other
+  Pi APIs retain their native tool schema validation. Cross-field HTML/private-key
+  coverage still requires host validation on every backend. Dedicated authoring includes
+  a complete typed response example that separates original rubrics from variants.
+  Validate hidden HTML and both gate stages with the served-page parser before saving
+  a publication plan; never repair malformed tags or derive missing original rubrics. New lesson
   publication declares criterionContract1 and checks the fixed criteria on every
   visible question and private review variant. Save and validate complete output before
   publication, run `scripts/check-lesson.ts` in disposable state, then expose the
@@ -235,7 +246,9 @@ points. See [code exercises](CODE-EXERCISES.md) for the authoring and isolation 
   compatible. Public attempts redact criterion and early-timing snapshots.
 - **Variant refills are background work.** Save private refill requests with their host
   and learner mistake. Run them after queued learner requests in the same sequential
-  teacher session. Save validated output before atomically adding a supplemental
+  teacher session. Fresh service responses use typed variants bound to the saved
+  classroom, request id, and exact count; the host serializes the canonical plan.
+  Keep saved canonical plans recoverable without a model turn. Save validated output before atomically adding a supplemental
   private pool; never rewrite a submitted rubric. Recover saved output once. Failed
   model work requires explicit retry and cannot block an already prepared review.
   Replaying the same saved batch never duplicates variants.

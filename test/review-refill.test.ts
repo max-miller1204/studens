@@ -1,3 +1,4 @@
+import { refillOutputPlan } from "../src/refill-output.ts";
 import { afterEach, beforeEach, expect, it } from "vitest";
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -316,4 +317,52 @@ it("refreshes queued refills after earlier pool writes and keeps explicit retry 
   const retried = refreshRefill(request);
   updateRefill(retried, "queued");
   expect(refreshRefill(refillRequests("rust")[0]).prompt).toContain(request.error);
+});
+
+it("binds fresh refill count to durable intent and retains wrong-count data across restart", async () => {
+  const request = discoverRefills("rust", "service")[0];
+  let turns = 0;
+  const raw = {
+    classroom: request.classroom,
+    request_id: request.id,
+    variants: [{ id: "a" }, { id: "b" }],
+  };
+  const before = fs.readFileSync(
+    path.join(fixture.root, "rust/001-ownership/quiz/key.json"),
+    "utf8",
+  );
+  const service = new TeacherService(
+    async (_id, _prompt, _cwd, _save, _signal, contract, saveOutput) => {
+      turns++;
+      expect(contract.response).toBe("review-variants");
+      expect(contract.refillTarget).toEqual({ classroom: "rust", requestId: request.id, count: 1 });
+      saveOutput?.(raw);
+      return refillOutputPlan(raw, contract.refillTarget);
+    },
+  );
+  service.attach("rust", "codex");
+  await service.idle();
+  await service.stop();
+  const resumed = new TeacherService(async () => {
+    turns++;
+    throw new Error("No automatic retry");
+  });
+  try {
+    resumed.restore();
+    await resumed.idle();
+    expect(turns).toBe(1);
+    const saved = readTeacherState("rust")!.requests.find((r) => r.id === request.id)!;
+    expect(saved.status).toBe("failed");
+    expect(saved.modelOutput).toEqual(raw);
+    expect(saved.applied ?? 0).toBe(0);
+    expect(saved.planValidated).not.toBe(true);
+    expect(refillRequests("rust")[0].plan).toBeUndefined();
+    expect(lessonPools("rust", "001-ownership").get("check-1/q1")).toHaveLength(2);
+    expect(
+      fs.readFileSync(path.join(fixture.root, "rust/001-ownership/quiz/key.json"), "utf8"),
+    ).toBe(before);
+    expect(store.listGrades("rust", "001-ownership")).toHaveLength(1);
+  } finally {
+    await resumed.stop();
+  }
 });

@@ -1,20 +1,54 @@
+import { refillOutputSchema } from "../src/refill-output.ts";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { expect, it, vi } from "vitest";
 import { createAgentSession, ModelRuntime, SessionManager } from "@earendil-works/pi-coding-agent";
 import type { AgentSession } from "@earendil-works/pi-coding-agent";
 import { createAssistantMessageEventStream } from "@earendil-works/pi-ai";
+import { convertResponsesTools } from "@earendil-works/pi-ai/api/openai-responses-shared";
 import type { AssistantMessage, Tool, TranscriptContext, ToolCall } from "@earendil-works/pi-ai";
 import {
   observePiTeacherRequest,
   piTeacherRequestPrompt,
   piTeacherResources,
   piTeacherTools,
+  piLessonPayload,
 } from "../src/pi-teacher.ts";
 import { passageAnswerPlan } from "../src/passage-answer.ts";
 import { parseModelPlan, planSchema } from "../src/teacher.ts";
 import { simpleLessonOutput } from "./lesson-output-fixture.ts";
+import { LESSON_OUTPUT_SCHEMA } from "../src/lesson-output.ts";
 import { makeFixture } from "./helpers.ts";
+
+it("enforces the complete lesson schema on the actual Responses tool serialization without rewriting unions or research", async () => {
+  const runtime = await ModelRuntime.create();
+  const model = runtime.getModel("openai-codex", "gpt-6-luna")!;
+  const loadout = piTeacherTools(LESSON_OUTPUT_SCHEMA, true);
+  const body = { tools: convertResponsesTools(loadout.customTools, { strict: null }) };
+  const original = structuredClone(body);
+  const hook = piLessonPayload(LESSON_OUTPUT_SCHEMA)!;
+  await hook(body, model);
+  expect(body.tools[0]).toEqual({ ...original.tools[0], strict: true });
+  expect(body.tools[1]).toEqual(original.tools[1]);
+  expect(body.tools[0]).toHaveProperty("parameters", LESSON_OUTPUT_SCHEMA);
+  expect(() => hook({ tools: [] }, model)).toThrow(/serialize/);
+  expect(() => hook(original, { ...model, compat: { supportsStrictMode: false } })).toThrow(
+    /strict tools/,
+  );
+  const refillSchema = refillOutputSchema({
+    classroom: "rust",
+    requestId: "refill:exact",
+    count: 1,
+  });
+  const refillTools = {
+    tools: convertResponsesTools(piTeacherTools(refillSchema).customTools, { strict: null }),
+  };
+  await piLessonPayload(refillSchema)!(refillTools, model);
+  expect(refillTools.tools[0]).toMatchObject({ strict: true, parameters: refillSchema });
+  const ordinary = structuredClone(original);
+  await piLessonPayload(planSchema({ operations: ["grade_quiz_answers"] }))!(ordinary, model);
+  expect(ordinary).toEqual(original);
+});
 
 it("sends the current canonical envelope and tool scope after lesson/refill history, including a dispute in the actual SDK", async () => {
   const f = makeFixture();
@@ -65,11 +99,22 @@ it("sends the current canonical envelope and tool scope after lesson/refill hist
                 passageAnnotationId: "exact-annotation",
               }
             : phase === "refill"
-              ? { operations: ["save_review_variants"], required: true }
+              ? {
+                  operations: ["save_review_variants"],
+                  required: true,
+                  response: "review-variants",
+                  refillTarget: { classroom: "rust", requestId: "refill:exact", count: 1 },
+                }
               : phase === "grade"
                 ? { operations: ["grade_quiz_answers"], required: true }
                 : phase === "dispute"
-                  ? { operations: ["resolve_grade_dispute"], required: true, messageRequired: true }
+                  ? {
+                      operations: ["resolve_grade_dispute"],
+                      required: true,
+                      messageRequired: true,
+                      response: "dispute-resolution",
+                      disputeTarget: { id: "exact-dispute", questionId: "q1", machine: true },
+                    }
                   : {
                       operations: ["record_retrieval_check"],
                       messageRequired: true,
@@ -86,10 +131,16 @@ it("sends the current canonical envelope and tool scope after lesson/refill hist
               }
             : phase === "refill"
               ? {
-                  calls: [{ name: "save_review_variants", arguments_json: "{}" }],
-                  message: "",
-                  learning_record: null,
-                  notes_markdown: "",
+                  classroom: "rust",
+                  request_id: "refill:exact",
+                  variants: [
+                    {
+                      id: "v3",
+                      html: "<li>raw</li>",
+                      rubric: simpleLessonOutput.quizzes[0].questions[0].rubric,
+                      task: "application",
+                    },
+                  ],
                 }
               : phase === "grade"
                 ? {
@@ -100,10 +151,10 @@ it("sends the current canonical envelope and tool scope after lesson/refill hist
                   }
                 : phase === "dispute"
                   ? {
-                      calls: [{ name: "resolve_grade_dispute", arguments_json: "{}" }],
+                      dispute_id: "exact-dispute",
+                      decision: "declined",
+                      question: null,
                       message: "Controlled dispute explanation.",
-                      learning_record: null,
-                      notes_markdown: "",
                     }
                   : {
                       calls: [],
@@ -214,20 +265,14 @@ it("sends the current canonical envelope and tool scope after lesson/refill hist
         ).toBe(true);
         expect(
           earlier.some((m) =>
-            m.content.some((c) => c.type === "toolCall" && "calls" in c.arguments),
+            m.content.some((c) => c.type === "toolCall" && "request_id" in c.arguments),
           ),
         ).toBe(true);
       }
       if (phase === "dispute") {
-        expect(schema.required).toEqual(["calls", "message", "learning_record", "notes_markdown"]);
-        expect(schema.properties.calls).toMatchObject({
-          minItems: 1,
-          maxItems: 1,
-          items: { properties: { name: { enum: ["resolve_grade_dispute"] } } },
-        });
-        // The shared envelope advertises learning_record; dispute application rejects evidence writes.
-        expect(output).toMatchObject({ learning_record: null });
-        expect(schema.properties.notes_markdown).toEqual({ type: "string", enum: [""] });
+        expect(schema.required).toEqual(["dispute_id", "decision", "question", "message"]);
+        expect(schema.properties.dispute_id).toMatchObject({ enum: ["exact-dispute"] });
+        expect(schema.properties.question).toEqual({ type: "null" });
         expect([...active.keys()]).toEqual(["submit_teacher_plan"]);
         expect(text).toContain(JSON.stringify(schema));
         expect(text).not.toContain("For public web research use read_lesson_source");

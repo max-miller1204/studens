@@ -1,3 +1,4 @@
+import * as fs from "node:fs";
 import { expect, it } from "vitest";
 import { lessonModelPlan, LESSON_OUTPUT_SCHEMA } from "../src/lesson-output.ts";
 import { planSchema } from "../src/teacher.ts";
@@ -8,6 +9,40 @@ import { lessonOutput, simpleLessonOutput } from "./lesson-output-fixture.ts";
 import { authoredVariants } from "../src/review-variants.ts";
 import { assembleReview } from "../src/review-pool.ts";
 import { validateToolCall } from "@earendil-works/pi-ai";
+
+it("rejects the retained missing-page and omitted-original failures without deriving content from variants", () => {
+  const missingPage: any = structuredClone(simpleLessonOutput);
+  delete missingPage.lesson_html;
+  const before = structuredClone(missingPage);
+  expect(() =>
+    validateToolCall(
+      [{ name: "submit_teacher_plan", description: "", parameters: LESSON_OUTPUT_SCHEMA as any }],
+      { type: "toolCall", id: "missing-page", name: "submit_teacher_plan", arguments: missingPage },
+    ),
+  ).toThrow(/lesson_html/);
+  expect(() => lessonModelPlan(missingPage)).toThrow(/missing/);
+  expect(missingPage).toEqual(before);
+
+  const missingOriginal: any = structuredClone(simpleLessonOutput);
+  missingOriginal.lesson_html =
+    '<form class="cl-quiz" data-quiz-id="check-1"><li class="cl-q" data-question-id="q1" data-type="short"><p>Who owns it?</p><textarea></textarea></li></form>';
+  missingOriginal.variants = [
+    {
+      quiz: "check-1",
+      question: "q1",
+      id: "v1",
+      html: "private variant",
+      rubric: structuredClone(missingOriginal.quizzes[0].questions[0].rubric),
+      task: "application",
+    },
+  ];
+  missingOriginal.quizzes[0].id = "pretest-1";
+  const retained = structuredClone(missingOriginal);
+  expect(() => lessonModelPlan(missingOriginal)).toThrow(
+    /omits original rubric and mapping for check-1\/q1/,
+  );
+  expect(missingOriginal).toEqual(retained);
+});
 
 // Reduced forms of the retained Pi Next lesson failure: interspersed strings,
 // duplicate key rows and rows missing the private plan's task. Never repair them.
@@ -216,4 +251,22 @@ it("refuses legacy expected tags instead of carrying lesson transport into canon
   const input = structuredClone(simpleLessonOutput);
   input.quizzes[0].questions[0].rubric.expected = { kind: "text", value: "map" } as any;
   expect(() => lessonModelPlan(input)).toThrow(/extra fields/);
+});
+
+it("the complete dedicated response example satisfies the native schema and both private contracts", () => {
+  const doc = fs.readFileSync(new URL("../docs/LESSON-OUTPUT.md", import.meta.url), "utf8");
+  const example = JSON.parse(doc.match(/```json\n([\s\S]*?)\n```/)![1]);
+  validateToolCall(
+    [{ name: "submit_teacher_plan", description: "", parameters: LESSON_OUTPUT_SCHEMA as any }],
+    { type: "toolCall", id: "example", name: "submit_teacher_plan", arguments: example },
+  );
+  const document = JSON.parse(lessonModelPlan(example).calls[0].arguments_json);
+  expect(() => validateLessonDocument(document)).not.toThrow();
+  // A syntactically valid transport can still omit an original in gated HTML.
+  example.quizzes = example.quizzes.filter((q: any) => q.purpose !== "assessment");
+  const before = structuredClone(example);
+  expect(() => lessonModelPlan(example)).toThrow(
+    /omits original rubric and mapping for after\/compare/,
+  );
+  expect(example).toEqual(before);
 });

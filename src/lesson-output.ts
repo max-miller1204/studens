@@ -1,8 +1,9 @@
 /** Provider lesson data is typed; code alone serializes both private files and the durable call. */
+import { authoredQuizzes } from "./quiz-authoring.ts";
 import { validateCriteria } from "./criteria.ts";
 import type { TeacherPlan } from "./teacher.ts";
 import { MENTAL_TASKS } from "./teaching-plan.ts";
-import { isContractId } from "../assets/runtime/quiz.mjs";
+import { isContractId, QUESTION_TYPES } from "../assets/runtime/quiz.mjs";
 const text = { type: "string", minLength: 1, pattern: "\\S" };
 const nullable = (schema: Record<string, unknown>) => ({ anyOf: [schema, { type: "null" }] });
 const object = (properties: Record<string, unknown>) => ({
@@ -42,16 +43,27 @@ const rubricSchema = object({
   partial: text,
   grading: nullable({ type: "string", enum: ["teacher", "exact"] }),
 });
-const task = { type: "string", enum: [...MENTAL_TASKS] };
+const task = {
+  type: "string",
+  enum: [...MENTAL_TASKS],
+  description: `Private cognitive task, never an HTML response type. For example, task prediction with a written explanation uses data-type="short" and a textarea. HTML data-type must be one of: ${QUESTION_TYPES.join(", ")}.`,
+};
 const variantSchema = object({
-  quiz: text,
-  question: text,
+  quiz: {
+    ...text,
+    description: "Exact id of a quiz included in quizzes, not just in lesson_html.",
+  },
+  question: {
+    ...text,
+    description:
+      "Exact id of a question included in that quiz's questions, with its own original rubric and mapping.",
+  },
   id: text,
   html: text,
   rubric: rubricSchema,
   task: {
     ...task,
-    description: "The mental task belongs inside this variant row, alongside its HTML and rubric.",
+    description: `${task.description} This task belongs inside the variant row, alongside its HTML and rubric.`,
   },
 });
 const questionSchema = object({
@@ -65,7 +77,11 @@ const questionSchema = object({
 export const LESSON_OUTPUT_SCHEMA = object({
   title: text,
   summary: text,
-  lesson_html: text,
+  lesson_html: {
+    ...text,
+    description:
+      "Required complete learner page, including every quiz and the gated teaching. Private variant HTML does not replace this field.",
+  },
   message: text,
   objectives: array(
     object({
@@ -78,17 +94,21 @@ export const LESSON_OUTPUT_SCHEMA = object({
     }),
     1,
   ),
-  quizzes: array(
-    object({
-      id: text,
-      purpose: {
-        type: "string",
-        enum: ["prequestion", "prerequisite", "prior-retrieval", "assessment"],
-      },
-      questions: array(questionSchema, 1),
-    }),
-    1,
-  ),
+  quizzes: {
+    ...array(
+      object({
+        id: text,
+        purpose: {
+          type: "string",
+          enum: ["prequestion", "prerequisite", "prior-retrieval", "assessment"],
+        },
+        questions: array(questionSchema, 1),
+      }),
+      1,
+    ),
+    description:
+      "Complete private coverage of lesson_html: include every quiz form and every question, both prequestions and later checks inside templates. Each question needs its original rubric and teaching mapping even when it also has private variants. Variants do not supply or replace the original question's rubric.",
+  },
   variants: {
     ...array(variantSchema),
     description:
@@ -294,8 +314,22 @@ export function lessonModelPlan(value: unknown): TeacherPlan {
       questions,
     };
   });
-  if (usedVariants.size !== variantInputs.length)
-    throw new Error("Private variant names an unknown quiz or question.");
+  // HTML includes gated checks too. Diagnose the absent original, without ever
+  // borrowing a private variant's rubric or synthesizing a question mapping.
+  for (const quiz of authoredQuizzes(string(output.lesson_html, "Lesson HTML"))) {
+    for (const question of quiz.questions) {
+      if (!Object.hasOwn(keys, quiz.id!) || !Object.hasOwn(keys[quiz.id!] as object, question.id!))
+        throw new Error(
+          `Lesson response omits original rubric and mapping for ${quiz.id}/${question.id}. Private variants cannot replace it.`,
+        );
+    }
+  }
+  if (usedVariants.size !== variantInputs.length) {
+    const missing = variantInputs.find((v) => !usedVariants.has(v))!;
+    throw new Error(
+      `Private variant ${missing.id} names an unknown quiz or question: ${missing.quiz}/${missing.question}.`,
+    );
+  }
   const document = {
     title: string(output.title, "Title"),
     summary: string(output.summary, "Summary"),
@@ -310,3 +344,5 @@ export function lessonModelPlan(value: unknown): TeacherPlan {
     notes_markdown: "",
   };
 }
+
+export { rubricSchema as MODEL_RUBRIC_SCHEMA, rubric as modelRubric, task as MODEL_TASK_SCHEMA };
