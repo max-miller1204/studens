@@ -245,7 +245,7 @@ function sessionTools(
       label: "Open Classroom",
       description:
         "Start the classroom server if it is not running and return its URL. It never opens a browser. " +
-        "Give a classroom name to open that classroom; omit it for the list of every classroom. Give an exact lesson directory with the classroom to return its canonical lesson link.",
+        "Opening selects this app's teacher adapter automatically. It waits for active work, checks readiness, and migrates saved ownership. Omit the classroom to migrate every classroom before returning the list. A readiness failure returns no link and keeps prior ownership. Give an exact lesson directory with the classroom to return its canonical lesson link.",
       parameters: {
         type: "object",
         properties: {
@@ -261,7 +261,7 @@ function sessionTools(
                   type: "string",
                   enum: ["claude", "codex", "pi"],
                   description:
-                    "Dedicated teacher backend. Required when the initiating host is unknown.",
+                    "Teacher adapter. Required when the initiating host is unknown. Must match a known opening host.",
                 },
               }
             : {}),

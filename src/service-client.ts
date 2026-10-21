@@ -57,7 +57,17 @@ export function control<T = any>(endpoint: string, value?: unknown): Promise<T> 
       },
     );
     req.on("error", reject);
-    req.setTimeout(190_000, () => req.destroy(new Error("Classroom control request timed out.")));
+    const message = (
+      value as { message?: { method?: unknown; params?: { name?: unknown } } } | undefined
+    )?.message;
+    const opening =
+      endpoint === "/rpc" &&
+      message?.method === "tools/call" &&
+      message.params?.name === "open_classroom";
+    // An ordered open can wait for several bounded teacher turns. Keep their deadlines.
+    req.setTimeout(opening ? 0 : 190_000, () =>
+      req.destroy(new Error("Classroom control request timed out.")),
+    );
     req.end(value === undefined ? undefined : JSON.stringify(value));
   });
 }

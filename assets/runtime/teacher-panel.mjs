@@ -39,7 +39,7 @@ export function createTeacherPanel({ config, contentRoot, drafts }) {
     teacherPanel.querySelector(".cl-teacher-identity").textContent =
       state.identity.backend === "pi" && !state.identity.persistent
         ? "Your teacher is the Pi session that opened this classroom."
-        : `${state.identity.backend} teacher. Requested: ${state.identity.requestedModel ?? "tool’s configured default"}. ${state.identity.backend === "pi" ? "Last Pi SDK model selection" : "Last answering model"}: ${state.identity.activeModel || "No answer yet"}. Session: ${state.identity.sessionId || "Starts with your first request"}.`;
+        : `${state.identity.backend} teacher. Requested: ${state.identity.requestedModel ?? "tool’s configured default"}. ${state.identity.backend === "pi" ? "Last Pi SDK model selection" : "Last answering model"}: ${state.identity.activeModel || "No answer yet"}.`;
 
     for (const request of state.requests) reteachRequested.add(request.id);
     for (const message of state.messages) {

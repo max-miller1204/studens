@@ -64,6 +64,12 @@ lines.on('line', line => {
  else if (m.method === 'model/list') send({id:m.id,result:{data:[{id:'fixture-model',model:'fixture-model',displayName:'Fixture model',isDefault:true}],nextCursor:null}});
  else if (m.method === 'thread/start' || m.method === 'thread/resume') send({id:m.id,result:{model:m.params.model,thread:{id:m.params.threadId || 'test-dedicated-session'}}});
  else if (m.method === 'turn/start') {
+  if (m.params.input[0].text.startsWith('Readiness check only.')) {
+   send({id:m.id,result:{turn:{id:'ready'}}});
+   send({method:'item/completed',params:{threadId:m.params.threadId,turnId:'ready',item:{type:'agentMessage',text:JSON.stringify({calls:[],message:'Ready.',learning_record:null,notes_markdown:''})}}});
+   send({method:'turn/completed',params:{threadId:m.params.threadId,turn:{id:'ready',status:'completed'}}});
+   return;
+  }
   if (behavior.invalid) { process.stdout.write('diagnostic text\n'); return; }
   if (behavior.truncated) { process.stdout.write('{"method":'); process.exit(0); return; }
   const prompt = m.params.input[0].text;
@@ -377,7 +383,8 @@ it("keeps HTTP and submissions alive after MCP exit, reconnects, and preserves g
   }
   const restarted = await (await fetch(stateUrl)).json();
   expect(restarted.quizzes[0].grade.score).toBe(0);
-  expect(restarted.teacher.identity.sessionId).toBe("test-dedicated-session");
+  expect(restarted.teacher.identity).not.toHaveProperty("sessionId");
+  expect(readTeacherState("rust")!.identity.sessionId).toBe("test-dedicated-session");
   const grades = fs.readdirSync(path.join(f.root, "rust/001-ownership/quiz/grades"));
   expect(grades).toHaveLength(1);
   expect((await fetch(`${base}/c/rust/001-ownership/quiz/key.json`)).status).toBe(404);

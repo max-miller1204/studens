@@ -48,8 +48,11 @@ strict empty MCP configuration. Pi exposes only its plan-return tool.
 
 One service owns one classrooms root and stable loopback port. Each classroom has
 one selected backend and dedicated teacher session. Browser requests start teacher
-work without a listening initiating agent. A different backend, package, version,
-or configured port requires an explicit stop or error, never an automatic replacement.
+work without a listening initiating agent. An explicit open selects the opening app's teacher adapter. A cross-adapter open
+waits for the active request and migrates ownership after a read-only readiness turn.
+A list open reserves all classrooms and commits them together. Same-adapter opens
+check readiness and retain the native session and model selection. Package, version,
+and configured port mismatches still require an explicit stop or error.
 
 The teaching brief is read by skills and `begin_teaching`. Keep it out of the system
 prompt and MCP `instructions`. Wake-up prompts must include the classroom, lesson,
@@ -127,6 +130,13 @@ No learner source executes on the host, and Run grants no learning evidence or
 points. See [code exercises](CODE-EXERCISES.md) for the authoring and isolation contract.
 
 ## State invariants
+
+- **Ownership changes use a private journal.** Opens run in service order. Pause
+  affected queues after their active request. Prepare every candidate before the
+  durable commit decision. Recovery drops uncommitted decisions and completes
+  committed identity and unfinished service lesson-owner writes before queue restore.
+  Keep prior native identities privately. Readiness never applies learner plans.
+  Failed opens return no link and never retry failed learner inference.
 
 - **Requests are sequential and durable per classroom.** Save each plan before writes.
   Save raw model output before decoding. Recovery completes saved calls and skips
