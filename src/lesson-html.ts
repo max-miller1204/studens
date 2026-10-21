@@ -1,3 +1,4 @@
+import { appearanceHead } from "./appearance.ts";
 /**
  * lesson-html.ts — wire a lesson document up to the classroom runtime at serve time.
  *
@@ -20,22 +21,6 @@ export interface LessonRuntimeConfig {
   reviewScreen?: boolean;
   prerequisites?: { title: string; url: string }[];
   prerequisiteError?: string;
-}
-
-/** The `<head>` additions: shared stylesheet plus the no-flash theme bootstrap. */
-function headInjection(): string {
-  return `<link rel="stylesheet" href="/static/classroom.css">
-<script>
-(function () {
-  // Applied before first paint so a dark-mode reader never sees a white flash.
-  try {
-    var stored = localStorage.getItem("pi-classroom-theme");
-    if (stored === "dark" || stored === "light") {
-      document.documentElement.setAttribute("data-theme", stored);
-    }
-  } catch (e) {}
-})();
-</script>`;
 }
 
 function bodyInjection(config: LessonRuntimeConfig): string {
@@ -80,5 +65,5 @@ export function injectLessonRuntime(html: string, config: LessonRuntimeConfig): 
   }
   if (config.reviewScreen)
     html = html.replace(/<body\b([^>]*)>/i, "<body$1 data-cl-review-screen>");
-  return insertBeforeBodyEnd(insertInHead(html, headInjection()), bodyInjection(config));
+  return insertBeforeBodyEnd(insertInHead(html, appearanceHead()), bodyInjection(config));
 }

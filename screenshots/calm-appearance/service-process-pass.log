@@ -1,0 +1,25 @@
+
+ RUN  v4.1.12 /Users/maxmiller/.t3/worktrees/studens/t3-a6aedca0
+
+ ✓ test/service-process.test.ts > stops explicitly before codex MCP exit without detaching again 1705ms
+ ✓ test/service-process.test.ts > stops explicitly before claude MCP exit without detaching again 1211ms
+ ✓ test/service-process.test.ts > keeps a refused explicit stop visible and HTTP live after MCP exit 890ms
+ ✓ test/service-process.test.ts > rejects an unconfigured service root: undefined 449ms
+ ✓ test/service-process.test.ts > rejects an unconfigured service root: "   " 276ms
+ ✓ test/service-process.test.ts > keeps HTTP and submissions alive after MCP exit, reconnects, and preserves grades after restart 1682ms
+ ✓ test/service-process.test.ts > attaches simultaneous MCP clients to one owner without a port conflict 1185ms
+ ✓ test/service-process.test.ts > rejects an occupied explicit port without selecting another port 210ms
+ ✓ test/service-process.test.ts > reads several Codex JSON values without a newline 617ms
+ ✓ test/service-process.test.ts > accepts another lesson submission and control requests during a long Codex grade 2902ms
+ ✓ test/service-process.test.ts > fails malformed Codex stdout loudly: invalid 655ms
+ ✓ test/service-process.test.ts > fails malformed Codex stdout loudly: truncated 571ms
+ ✓ test/service-process.test.ts > times out an unfinished grade despite noise and requires retry 3112ms
+ ✓ test/service-process.test.ts > times out an unfinished grade despite progress and requires retry 3247ms
+ ✓ test/service-process.test.ts > discovers and resumes a historical review through the actual MCP transport 793ms
+ ✓ test/service-process.test.ts > uses local links without Tailscale and reports a failed tailnet route 1412ms
+ ✓ test/service-process.test.ts > opens a prepared review through MCP without a review authoring request 526ms
+
+ Test Files  1 passed (1)
+      Tests  17 passed (17)
+   Start at  10:47:06
+   Duration  22.43s (transform 622ms, setup 0ms, import 845ms, tests 21.44s, environment 0ms)
