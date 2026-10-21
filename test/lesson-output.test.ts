@@ -9,6 +9,38 @@ import { authoredVariants } from "../src/review-variants.ts";
 import { assembleReview } from "../src/review-pool.ts";
 import { validateToolCall } from "@earendil-works/pi-ai";
 
+it("rejects the retained missing-page and omitted-original failures without deriving content from variants", () => {
+  const missingPage: any = structuredClone(simpleLessonOutput);
+  delete missingPage.lesson_html;
+  const before = structuredClone(missingPage);
+  expect(() =>
+    validateToolCall(
+      [{ name: "submit_teacher_plan", description: "", parameters: LESSON_OUTPUT_SCHEMA as any }],
+      { type: "toolCall", id: "missing-page", name: "submit_teacher_plan", arguments: missingPage },
+    ),
+  ).toThrow(/lesson_html/);
+  expect(() => lessonModelPlan(missingPage)).toThrow(/missing/);
+  expect(missingPage).toEqual(before);
+
+  const missingOriginal: any = structuredClone(simpleLessonOutput);
+  missingOriginal.lesson_html =
+    '<form class="cl-quiz" data-quiz-id="check-1"><li class="cl-q" data-question-id="q1" data-type="short"><p>Who owns it?</p><textarea></textarea></li></form>';
+  missingOriginal.variants = [
+    {
+      quiz: "check-1",
+      question: "q1",
+      id: "v1",
+      html: "private variant",
+      rubric: structuredClone(missingOriginal.quizzes[0].questions[0].rubric),
+      task: "application",
+    },
+  ];
+  missingOriginal.quizzes[0].id = "pretest-1";
+  const retained = structuredClone(missingOriginal);
+  expect(() => lessonModelPlan(missingOriginal)).toThrow(/unknown quiz or question/);
+  expect(missingOriginal).toEqual(retained);
+});
+
 // Reduced forms of the retained Pi Next lesson failure: interspersed strings,
 // duplicate key rows and rows missing the private plan's task. Never repair them.
 it.each(["string", "missing-task", "duplicate", "split-task"])(

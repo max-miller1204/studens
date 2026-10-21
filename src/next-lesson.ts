@@ -396,6 +396,9 @@ export function nextLessonPrompt(request: LessonRequest, host: "pi" | "service")
       }),
     (host === "pi" ? "Required operation:\n" : "Required structured response schema:\n") +
       JSON.stringify(host === "pi" ? PI_LESSON_TOOL : LESSON_OUTPUT_SCHEMA),
+    host === "service"
+      ? "Before submitting, check the complete document once: lesson_html contains the entire page, not just private variants. Inventory every quiz form and question in that HTML, including later checks inside the pretest template. Include each exact quiz/question identity in quizzes with its own original rubric and teaching mapping. Every variants row must point to one of those original questions; its rubric grades only the variant and cannot replace the original rubric. Return every required top-level field in this one response."
+      : "",
   ]
     .filter(Boolean)
     .join("\n\n");

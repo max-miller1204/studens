@@ -4,17 +4,40 @@ import { expect, it, vi } from "vitest";
 import { createAgentSession, ModelRuntime, SessionManager } from "@earendil-works/pi-coding-agent";
 import type { AgentSession } from "@earendil-works/pi-coding-agent";
 import { createAssistantMessageEventStream } from "@earendil-works/pi-ai";
+import { convertResponsesTools } from "@earendil-works/pi-ai/api/openai-responses-shared";
 import type { AssistantMessage, Tool, TranscriptContext, ToolCall } from "@earendil-works/pi-ai";
 import {
   observePiTeacherRequest,
   piTeacherRequestPrompt,
   piTeacherResources,
   piTeacherTools,
+  piLessonPayload,
 } from "../src/pi-teacher.ts";
 import { passageAnswerPlan } from "../src/passage-answer.ts";
 import { parseModelPlan, planSchema } from "../src/teacher.ts";
 import { simpleLessonOutput } from "./lesson-output-fixture.ts";
+import { LESSON_OUTPUT_SCHEMA } from "../src/lesson-output.ts";
 import { makeFixture } from "./helpers.ts";
+
+it("enforces the complete lesson schema on the actual Responses tool serialization without rewriting unions or research", async () => {
+  const runtime = await ModelRuntime.create();
+  const model = runtime.getModel("openai-codex", "gpt-6-luna")!;
+  const loadout = piTeacherTools(LESSON_OUTPUT_SCHEMA, true);
+  const body = { tools: convertResponsesTools(loadout.customTools, { strict: null }) };
+  const original = structuredClone(body);
+  const hook = piLessonPayload(LESSON_OUTPUT_SCHEMA)!;
+  await hook(body, model);
+  expect(body.tools[0]).toEqual({ ...original.tools[0], strict: true });
+  expect(body.tools[1]).toEqual(original.tools[1]);
+  expect(body.tools[0]).toHaveProperty("parameters", LESSON_OUTPUT_SCHEMA);
+  expect(() => hook({ tools: [] }, model)).toThrow(/serialize/);
+  expect(() => hook(original, { ...model, compat: { supportsStrictMode: false } })).toThrow(
+    /strict tools/,
+  );
+  const ordinary = structuredClone(original);
+  await piLessonPayload(planSchema({ operations: ["grade_quiz_answers"] }))!(ordinary, model);
+  expect(ordinary).toEqual(original);
+});
 
 it("sends the current canonical envelope and tool scope after lesson/refill history, including a dispute in the actual SDK", async () => {
   const f = makeFixture();

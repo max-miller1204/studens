@@ -218,6 +218,10 @@ points. See [code exercises](CODE-EXERCISES.md) for the authoring and isolation 
   Provider lesson responses carry HTML, rubric entries, objective mappings and private
   variants as typed data. Code serializes both private JSON files and the canonical
   saved publication call; models never encode nested JSON strings. New lesson
+  turns on Pi's OpenAI Responses APIs require strict function output using the same
+  all-required lesson schema; unsupported strict capability fails explicitly. Other
+  Pi APIs retain their native tool schema validation. Cross-field HTML/private-key
+  coverage still requires host validation on every backend. New lesson
   publication declares criterionContract1 and checks the fixed criteria on every
   visible question and private review variant. Save and validate complete output before
   publication, run `scripts/check-lesson.ts` in disposable state, then expose the

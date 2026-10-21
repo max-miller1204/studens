@@ -44,8 +44,15 @@ const rubricSchema = object({
 });
 const task = { type: "string", enum: [...MENTAL_TASKS] };
 const variantSchema = object({
-  quiz: text,
-  question: text,
+  quiz: {
+    ...text,
+    description: "Exact id of a quiz included in quizzes, not just in lesson_html.",
+  },
+  question: {
+    ...text,
+    description:
+      "Exact id of a question included in that quiz's questions, with its own original rubric and mapping.",
+  },
   id: text,
   html: text,
   rubric: rubricSchema,
@@ -65,7 +72,11 @@ const questionSchema = object({
 export const LESSON_OUTPUT_SCHEMA = object({
   title: text,
   summary: text,
-  lesson_html: text,
+  lesson_html: {
+    ...text,
+    description:
+      "Required complete learner page, including every quiz and the gated teaching. Private variant HTML does not replace this field.",
+  },
   message: text,
   objectives: array(
     object({
@@ -78,17 +89,21 @@ export const LESSON_OUTPUT_SCHEMA = object({
     }),
     1,
   ),
-  quizzes: array(
-    object({
-      id: text,
-      purpose: {
-        type: "string",
-        enum: ["prequestion", "prerequisite", "prior-retrieval", "assessment"],
-      },
-      questions: array(questionSchema, 1),
-    }),
-    1,
-  ),
+  quizzes: {
+    ...array(
+      object({
+        id: text,
+        purpose: {
+          type: "string",
+          enum: ["prequestion", "prerequisite", "prior-retrieval", "assessment"],
+        },
+        questions: array(questionSchema, 1),
+      }),
+      1,
+    ),
+    description:
+      "Complete private coverage of lesson_html: include every quiz form and every question, both prequestions and later checks inside templates. Each question needs its original rubric and teaching mapping even when it also has private variants. Variants do not supply or replace the original question's rubric.",
+  },
   variants: {
     ...array(variantSchema),
     description:

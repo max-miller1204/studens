@@ -10,11 +10,46 @@ import {
   SettingsManager,
 } from "@earendil-works/pi-coding-agent";
 import type { AgentSession, ToolDefinition } from "@earendil-works/pi-coding-agent";
+import type { SimpleStreamOptions } from "@earendil-works/pi-ai";
 import { readLessonSource } from "./lesson-research.ts";
 import { privateStatePath, safeStaticFile } from "./paths.ts";
 import type { ModelCatalog } from "./teacher-models.ts";
 import type { TeacherIdentity } from "./teacher.ts";
 import { LESSON_OUTPUT_SCHEMA } from "./lesson-output.ts";
+
+/** Responses supports the lesson's structured unions, which Pi's generic strict
+ * schema converter currently refuses. Set strict on the serialized function via
+ * the SDK payload hook, preserving our already closed, all-required schema.
+ * This is generation enforcement; SDK and service validation still run as usual.
+ */
+export function piLessonPayload(schema: Record<string, unknown>): SimpleStreamOptions["onPayload"] {
+  return (payload, model) => {
+    if (
+      schema !== LESSON_OUTPUT_SCHEMA ||
+      !["openai-codex-responses", "openai-responses"].includes(model.api)
+    )
+      return;
+    if (
+      model.compat &&
+      "supportsStrictMode" in model.compat &&
+      model.compat.supportsStrictMode === false
+    )
+      throw new Error(
+        "Pi lesson authoring requires Responses strict tools. Choose a compatible model and retry explicitly.",
+      );
+    const body = payload as {
+      tools?: Array<{ type?: string; name?: string; parameters?: unknown; strict?: boolean }>;
+    };
+    const plans = body.tools?.filter(
+      (tool) => tool.type === "function" && tool.name === "submit_teacher_plan",
+    );
+    if (plans?.length !== 1 || JSON.stringify(plans[0].parameters) !== JSON.stringify(schema))
+      throw new Error(
+        "Pi lesson request did not serialize the current submit_teacher_plan schema. Retry explicitly.",
+      );
+    plans[0].strict = true;
+  };
+}
 
 export function piTeacherResources(cwd: string) {
   const source = SettingsManager.create(cwd, getAgentDir());
@@ -316,6 +351,7 @@ export async function runPi(
     tools: loadout.tools,
     customTools: loadout.customTools,
   });
+  session.agent.onPayload = piLessonPayload(schema);
   const unsubscribe = observePiTeacherRequest(
     session,
     loadout,
