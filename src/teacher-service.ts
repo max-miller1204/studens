@@ -741,6 +741,7 @@ export class TeacherService {
           operations: ["answer_lesson_question"],
           required: true,
           response: "passage-answer",
+          passageAnnotationId: r.target,
         };
       case "refill":
         return { operations: [REFILL_TOOL.name], required: true };

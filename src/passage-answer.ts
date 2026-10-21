@@ -9,6 +9,19 @@ export const PASSAGE_ANSWER_SCHEMA = {
   required: ["annotation_id", "answer_markdown"],
 };
 
+/** Bind identity to the durable request rather than asking the model to reconstruct it. */
+export function passageAnswerSchema(annotationId: string | undefined) {
+  if (typeof annotationId !== "string" || !annotationId.trim())
+    throw new Error("A passage response schema requires its annotation target.");
+  return {
+    ...PASSAGE_ANSWER_SCHEMA,
+    properties: {
+      ...PASSAGE_ANSWER_SCHEMA.properties,
+      annotation_id: { ...text, enum: [annotationId] },
+    },
+  };
+}
+
 /** Also validate at the host boundary: provider schema enforcement is not trusted. */
 export function passageAnswerPlan(value: unknown): TeacherPlan {
   if (
