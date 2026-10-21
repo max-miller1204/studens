@@ -15,6 +15,14 @@ mapping. Then add two or three variants per check question. Cross-check exact id
 against the original inventory. Keep private expected answers, criteria, mappings,
 and variant HTML out of `lesson_html`.
 
+The response control and the cognitive task are separate contracts. HTML
+`data-type` chooses a control: `choice`, `multi`, `term`, `short`, `numeric`,
+`cloze`, `order`, `match`, `locate`, or `code`. The private `task` chooses what
+thinking the question requires. For a written prediction, use `data-type="short"`
+with a textarea and `task: "prediction"` in the private question row. Never put
+`prediction`, `explanation`, `application`, or another mental-task label in
+`data-type`. Check this separately for every original and variant fragment.
+
 Gates require balanced HTML. Close all containers opened inside a template before
 `</template>`; close containers outside it outside it. Indent the teaching and
 check as siblings where appropriate. Do not rely on the browser to repair tags.

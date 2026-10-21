@@ -3,7 +3,7 @@ import { authoredQuizzes } from "./quiz-authoring.ts";
 import { validateCriteria } from "./criteria.ts";
 import type { TeacherPlan } from "./teacher.ts";
 import { MENTAL_TASKS } from "./teaching-plan.ts";
-import { isContractId } from "../assets/runtime/quiz.mjs";
+import { isContractId, QUESTION_TYPES } from "../assets/runtime/quiz.mjs";
 const text = { type: "string", minLength: 1, pattern: "\\S" };
 const nullable = (schema: Record<string, unknown>) => ({ anyOf: [schema, { type: "null" }] });
 const object = (properties: Record<string, unknown>) => ({
@@ -43,7 +43,11 @@ const rubricSchema = object({
   partial: text,
   grading: nullable({ type: "string", enum: ["teacher", "exact"] }),
 });
-const task = { type: "string", enum: [...MENTAL_TASKS] };
+const task = {
+  type: "string",
+  enum: [...MENTAL_TASKS],
+  description: `Private cognitive task, never an HTML response type. For example, task prediction with a written explanation uses data-type="short" and a textarea. HTML data-type must be one of: ${QUESTION_TYPES.join(", ")}.`,
+};
 const variantSchema = object({
   quiz: {
     ...text,
@@ -59,7 +63,7 @@ const variantSchema = object({
   rubric: rubricSchema,
   task: {
     ...task,
-    description: "The mental task belongs inside this variant row, alongside its HTML and rubric.",
+    description: `${task.description} This task belongs inside the variant row, alongside its HTML and rubric.`,
   },
 });
 const questionSchema = object({

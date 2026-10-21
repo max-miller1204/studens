@@ -662,12 +662,15 @@ it.each([
   ["pi", "missing-original"],
   ["codex", "missing-original"],
   ["claude", "unclosed-gate"],
+  ["codex", "mental-task-control"],
 ] as const)(
   "retains %s %s failures without publication or inference on restart",
   async (backend, defect) => {
     const raw = lessonOutput(nextLessonDocument(fixture.root));
     if (defect === "missing-original") raw.quizzes = raw.quizzes.filter((q) => q.id !== "check-1");
-    else raw.lesson_html = raw.lesson_html.replace("</section>", "");
+    else if (defect === "unclosed-gate")
+      raw.lesson_html = raw.lesson_html.replace("</section>", "");
+    else raw.lesson_html = raw.lesson_html.replace('data-type="short"', 'data-type="prediction"');
     let turns = 0;
     const run: RunTeacher = async (...args) => {
       turns++;
