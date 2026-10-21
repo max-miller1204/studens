@@ -4,24 +4,26 @@
  * The service runs it under its ownership lock before reading any classroom. It never
  * grades, answers or authors. Unfinished live-session Pi work stops the upgrade with a
  * specific error; the previous package finishes it. Every rewritten file is copied
- * first to `.migrations/<version>/` under the root, and the marker is written last, so
- * an interrupted upgrade repeats safely.
+ * first to `.migrations/<version>/` under the root. A durable plan precedes
+ * conversion, and an atomic marker is written last so interruption repeats safely.
  */
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { classroomsRoot, isValidSlug, isStoredReview } from "./paths.ts";
+import { classroomsRoot, isValidSlug, isStoredReview, privateStatePath } from "./paths.ts";
 import { askPrompt, followUpPrompt } from "./prompts.ts";
 import type { Annotation } from "./store.ts";
 import type { TeacherRequest, TeacherState } from "./service-state.ts";
 
 export const FORMAT_VERSION = 1;
 const MARKER = ".studens-format.json";
+const JOURNAL = `.migrations/${FORMAT_VERSION}/.plan.json`;
 const PREVIOUS =
   "Reopen the previous Studens package, finish or explicitly retry that request, then stop its server before starting this version. No saved data was changed.";
 
 export class MigrationError extends Error {}
 
-function readJson(file: string): any {
+function readJson(file: string, root: string): any {
+  privateStatePath(path.relative(root, file), root);
   try {
     return JSON.parse(fs.readFileSync(file, "utf8"));
   } catch (error) {
@@ -39,16 +41,57 @@ interface Change {
 
 /** Upgrade the root once. Returns the files it changed. */
 export function migrateClassrooms(root = classroomsRoot()): string[] {
+  try {
+    return upgrade(root);
+  } catch (error) {
+    if (error instanceof MigrationError) throw error;
+    throw new MigrationError(
+      `Cannot upgrade classrooms root ${root}: ${(error as Error).message} Restore the saved state, then restart explicitly.`,
+    );
+  }
+}
+
+function upgrade(root: string): string[] {
   if (!fs.existsSync(root)) return [];
-  const marker = readJson(path.join(root, MARKER));
+  root = privateStatePath(".", root);
+  const guard = (file: string) => privateStatePath(path.relative(root, file), root);
+  const read = (file: string) => readJson(file, root);
+  const atomicWrite = (file: string, content: string) => {
+    fs.writeFileSync(guard(`${file}.migrate.tmp`), content, { mode: 0o600 });
+    fs.renameSync(guard(`${file}.migrate.tmp`), guard(file));
+  };
+  const marker = read(path.join(root, MARKER));
   if (marker !== undefined) {
     if (marker?.version === FORMAT_VERSION) return [];
     throw new MigrationError(
       `${path.join(root, MARKER)} records format ${JSON.stringify(marker?.version)}. This package reads format ${FORMAT_VERSION}. Use the package that wrote it.`,
     );
   }
+  const finish = (plan: { version: number; changes: Change[]; removals: string[] }) => {
+    if (
+      plan?.version !== FORMAT_VERSION ||
+      !Array.isArray(plan.changes) ||
+      !Array.isArray(plan.removals) ||
+      plan.changes.some((c) => !c || typeof c.file !== "string" || !("value" in c)) ||
+      plan.removals.some((file) => typeof file !== "string")
+    )
+      throw new MigrationError(`Invalid format upgrade plan ${path.join(root, JOURNAL)}.`);
+    const target = (relative: string) => privateStatePath(relative, root);
+    // Preflight every destination before changing any saved state, including on recovery.
+    for (const file of [...plan.changes.map((c) => c.file), ...plan.removals, MARKER]) {
+      target(file);
+      target(`${file}.migrate.tmp`);
+    }
+    for (const { file, value } of plan.changes)
+      atomicWrite(target(file), JSON.stringify(value, null, 2));
+    for (const file of plan.removals) fs.rmSync(target(file), { force: true });
+    atomicWrite(target(MARKER), JSON.stringify({ version: FORMAT_VERSION }) + "\n");
+    return [...new Set([...plan.changes.map((c) => target(c.file)), ...plan.removals.map(target)])];
+  };
+  const journal = read(path.join(root, JOURNAL));
+  if (journal !== undefined) return finish(journal);
   const legacyRoute = path.join(root, ".pi-teach-pi", "phone.json");
-  if (fs.existsSync(legacyRoute))
+  if (fs.existsSync(guard(legacyRoute)))
     throw new MigrationError(
       `A live-session Pi tailnet route is still recorded at ${legacyRoute}. Stop that server with the previous Studens package before starting this version. No route or saved data was replaced.`,
     );
@@ -60,12 +103,12 @@ export function migrateClassrooms(root = classroomsRoot()): string[] {
   const removals: string[] = [];
   const classrooms = fs
     .readdirSync(root)
-    .filter((name) => isValidSlug(name) && fs.statSync(path.join(root, name)).isDirectory());
+    .filter((name) => isValidSlug(name) && fs.statSync(guard(path.join(root, name))).isDirectory());
   const reviews = new Map(
-    classrooms.map((c) => [c, readJson(path.join(root, c, ".reviews.json"))?.requests ?? []]),
+    classrooms.map((c) => [c, read(path.join(root, c, ".reviews.json"))?.requests ?? []]),
   );
 
-  const daily = readJson(path.join(root, ".daily-reviews.json"));
+  const daily = read(path.join(root, ".daily-reviews.json"));
   if (
     daily?.requests?.some(
       (r: any) => r.owner === "pi" || r.groups?.some((g: any) => g.plan?.owner === "pi"),
@@ -73,10 +116,10 @@ export function migrateClassrooms(root = classroomsRoot()): string[] {
   ) {
     for (const request of daily.requests)
       for (const group of request.groups ?? []) {
-        if (group.empty || group.plan?.owner !== "pi") continue;
+        if (group.plan?.owner !== "pi") continue;
         const session =
           reviews.get(group.classroom)?.find((r: any) => r.id === group.plan.id) ?? group.plan;
-        if (session.status !== "done")
+        if (!group.empty && session.status !== "done")
           throw new MigrationError(
             `Daily review ${request.id} has unfinished live-session Pi work for ${group.classroom}. ${PREVIOUS}`,
           );
@@ -93,9 +136,9 @@ export function migrateClassrooms(root = classroomsRoot()): string[] {
         `Classroom ${classroom} has unfinished live-session Pi ${what} ${id}. ${PREVIOUS}`,
       );
 
-    const lessons = readJson(path.join(dir, ".lesson-requests.json"));
+    const lessons = read(path.join(dir, ".lesson-requests.json"));
     const teacherFile = path.join(dir, ".teacher.json");
-    let state: TeacherState | undefined = readJson(teacherFile);
+    let state: TeacherState | undefined = read(teacherFile);
     let stateChanged = false;
     for (const r of lessons?.requests ?? []) {
       if (r.owner === "pi" && r.delivery !== "service" && r.status !== "done")
@@ -116,7 +159,7 @@ export function migrateClassrooms(root = classroomsRoot()): string[] {
       change(path.join(dir, ".reviews.json"), { version: 1, requests: sessions });
     }
 
-    const refills = readJson(path.join(dir, ".review-refills.json"));
+    const refills = read(path.join(dir, ".review-refills.json"));
     if (refills?.requests?.some((r: any) => r.owner === "pi")) {
       for (const r of refills.requests) {
         if (r.owner !== "pi") continue;
@@ -127,7 +170,7 @@ export function migrateClassrooms(root = classroomsRoot()): string[] {
     }
 
     const resumesFile = path.join(dir, ".pi-teacher-resumes.json");
-    const resumes = readJson(resumesFile);
+    const resumes = read(resumesFile);
     if (resumes !== undefined) {
       const open = Array.isArray(resumes) ? resumes.find((r: any) => r?.status !== "done") : null;
       if (open !== undefined && open !== null) throw unfinished("teacher panel request", open.id);
@@ -180,16 +223,16 @@ export function migrateClassrooms(root = classroomsRoot()): string[] {
         .readdirSync(dir)
         .filter((name) => isValidSlug(name) && !isStoredReview(name))
         .map((name) => ({ name, dir: path.join(dir, name) })),
-      ...(fs.existsSync(path.join(dir, ".reviews"))
+      ...(fs.existsSync(guard(path.join(dir, ".reviews")))
         ? fs
-            .readdirSync(path.join(dir, ".reviews"))
+            .readdirSync(guard(path.join(dir, ".reviews")))
             .filter(isStoredReview)
             .map((name) => ({ name, dir: path.join(dir, ".reviews", name) }))
         : []),
-    ].filter((lesson) => fs.statSync(lesson.dir).isDirectory());
+    ].filter((lesson) => fs.statSync(guard(lesson.dir)).isDirectory());
     for (const lesson of lessonDirs) {
       const messagesFile = path.join(lesson.dir, "teacher-messages.json");
-      const messages = readJson(messagesFile);
+      const messages = read(messagesFile);
       if (messages !== undefined) {
         if (!Array.isArray(messages))
           throw new MigrationError(`Invalid live-session Pi panel history ${messagesFile}.`);
@@ -209,7 +252,7 @@ export function migrateClassrooms(root = classroomsRoot()): string[] {
         removals.push(messagesFile);
       }
       const annotationsFile = path.join(lesson.dir, "annotations.json");
-      const annotations: Annotation[] | undefined = readJson(annotationsFile);
+      const annotations: Annotation[] | undefined = read(annotationsFile);
       let annotationsChanged = false;
       for (const a of annotations ?? [])
         for (const turn of [a, ...(a.followUps ?? [])]) {
@@ -247,23 +290,40 @@ export function migrateClassrooms(root = classroomsRoot()): string[] {
   }
 
   const backup = path.join(root, ".migrations", String(FORMAT_VERSION));
-  for (const file of [...changes.map((c) => c.file), ...removals]) {
-    const copy = path.join(backup, path.relative(root, file));
-    if (fs.existsSync(copy) || !fs.existsSync(file)) continue;
-    fs.mkdirSync(path.dirname(copy), { recursive: true, mode: 0o700 });
-    fs.copyFileSync(file, copy, fs.constants.COPYFILE_EXCL);
+  // Validate sources, backup paths and temporary files before the first mutation.
+  const files = [...changes.map((c) => c.file), ...removals];
+  for (const file of [...files, path.join(root, JOURNAL), path.join(root, MARKER)]) {
+    guard(file);
+    guard(`${file}.migrate.tmp`);
+  }
+  for (const file of files) {
+    const copy = guard(path.join(backup, path.relative(root, file)));
+    guard(`${copy}.migrate.tmp`);
+  }
+  for (const file of files) {
+    const copy = guard(path.join(backup, path.relative(root, file)));
+    if (fs.existsSync(copy) || !fs.existsSync(guard(file))) continue;
+    fs.mkdirSync(guard(path.dirname(copy)), { recursive: true, mode: 0o700 });
+    // A crash while copying must not leave a partial backup recorded as complete.
+    fs.copyFileSync(guard(file), guard(`${copy}.migrate.tmp`));
+    fs.renameSync(guard(`${copy}.migrate.tmp`), guard(copy));
   }
   // Teacher state first: a failed passage request must exist before its turn is pending.
   changes.sort(
     (a, b) => Number(b.file.endsWith(".teacher.json")) - Number(a.file.endsWith(".teacher.json")),
   );
-  for (const { file, value } of changes) {
-    fs.writeFileSync(`${file}.migrate.tmp`, JSON.stringify(value, null, 2), { mode: 0o600 });
-    fs.renameSync(`${file}.migrate.tmp`, file);
+  const plan = {
+    version: FORMAT_VERSION,
+    changes: changes.map((c) => ({ ...c, file: path.relative(root, c.file) })),
+    removals: removals.map((file) => path.relative(root, file)),
+  };
+  if (!files.length) {
+    atomicWrite(path.join(root, MARKER), JSON.stringify({ version: FORMAT_VERSION }) + "\n");
+    return [];
   }
-  for (const file of removals) fs.rmSync(file, { force: true });
-  fs.writeFileSync(path.join(root, MARKER), JSON.stringify({ version: FORMAT_VERSION }) + "\n", {
-    mode: 0o600,
-  });
-  return [...new Set([...changes.map((c) => c.file), ...removals])];
+  fs.mkdirSync(guard(backup), { recursive: true, mode: 0o700 });
+  // Keep the complete immutable plan as the recovery receipt. Never reclassify a
+  // partly converted file after delivery/planVersion discriminators were removed.
+  atomicWrite(path.join(root, JOURNAL), JSON.stringify(plan, null, 2));
+  return finish(plan);
 }

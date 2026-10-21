@@ -1,3 +1,4 @@
+import { migrateClassrooms } from "../src/migrate.ts";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { createHash } from "node:crypto";
 import { parseRubric } from "../src/rubric.ts";
@@ -303,6 +304,15 @@ it.each([false, true])("recovers a saved plan once (historical: %s)", async (his
       },
     ],
   });
+  // Upgrade an actual current saved grading plan before service recovery. Repeat
+  // recovery after the grade write to prove the migration cannot cause regrading.
+  const legacy = readTeacherState("rust")!;
+  const file = "rust/.teacher.json";
+  f.write(
+    file,
+    JSON.stringify({ ...legacy, requests: legacy.requests.map((r) => ({ ...r, planVersion: 2 })) }),
+  );
+  migrateClassrooms();
   const savedPlan = readTeacherState("rust")!.requests[0].plan;
   for (let i = 0; i < 2; i++) {
     if (i === 1) {

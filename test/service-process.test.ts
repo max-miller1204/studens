@@ -771,3 +771,85 @@ it("opens a prepared review through MCP without a review authoring request", asy
     await mcp.exited;
   }
 });
+
+it("recovers a hard-interrupted migration at service startup without starting teacher work", async () => {
+  const legacy = {
+    version: 1,
+    identity: { backend: "pi" },
+    messages: [],
+    requests: [
+      {
+        id: "quiz:current",
+        classroom: "rust",
+        lesson: "001-ownership",
+        kind: "quiz",
+        target: "current",
+        prompt: "saved",
+        at: 1,
+        status: "failed",
+        applied: 1,
+        planVersion: 2,
+        planValidated: true,
+        plan: { calls: [{ name: "grade_quiz_answers", arguments_json: "{}" }] },
+      },
+    ],
+  };
+  f.write("rust/.teacher.json", JSON.stringify(legacy));
+  f.write(
+    "rust/001-ownership/teacher-messages.json",
+    JSON.stringify([{ id: "historical", role: "teacher", text: "Private feedback", at: 1 }]),
+  );
+  const preload = f.write(
+    "interrupt.mjs",
+    `
+import fs from 'node:fs';
+import { syncBuiltinESMExports } from 'node:module';
+const rename = fs.renameSync;
+fs.renameSync = (from, to) => {
+  rename(from, to);
+  if (to === ${JSON.stringify(path.join(f.root, "rust/.teacher.json"))}) process.exit(77);
+};
+syncBuiltinESMExports();
+`,
+  );
+  await expect(
+    promisify(execFile)(
+      process.execPath,
+      ["--import", preload, path.join(packageRoot(), "src/service-main.ts")],
+      { env, timeout: 5000 },
+    ),
+  ).rejects.toMatchObject({ code: 77 });
+  expect(fs.existsSync(path.join(f.root, ".studens-format.json"))).toBe(false);
+  expect(readTeacherState("rust")!.requests[0]).not.toHaveProperty("planVersion");
+  const status = await ensureService();
+  expect(status.running).toBe(true);
+  expect(status.url).toContain("http://127.0.0.1:");
+  const state = readTeacherState("rust")!;
+  expect(state.requests[0]).toMatchObject({
+    status: "failed",
+    applied: 1,
+    plan: legacy.requests[0].plan,
+  });
+  expect(state.messages.filter((m) => m.id === "historical")).toHaveLength(1);
+  expect(store.listGrades("rust", "001-ownership")).toEqual([]);
+  expect(fs.existsSync(path.join(f.root, "rust/001-ownership/teacher-messages.json"))).toBe(false);
+  for (const relative of [
+    ".migrations/1/.plan.json",
+    "rust/.teacher.json",
+    "rust/001-ownership/teacher-messages.json",
+  ])
+    expect((await fetch(`${status.url}/${relative}`)).status).toBe(404);
+}, 15000);
+
+it("reports a guarded migration error through the service client and requires explicit restart", async () => {
+  const source = f.write("original.json", "{}");
+  const file = path.join(f.root, "rust/.teacher.json");
+  fs.symlinkSync(source, file);
+  await expect(ensureService()).rejects.toThrow(/Classroom format upgrade failed:.*symlink/);
+  expect((await serviceStatus()).running).toBe(false);
+  expect(fs.existsSync(servicePaths().lock)).toBe(false);
+  expect(fs.readFileSync(source, "utf8")).toBe("{}");
+  fs.rmSync(file);
+  expect((await serviceStatus()).running).toBe(false);
+  expect((await ensureService()).running).toBe(true);
+}, 15000);

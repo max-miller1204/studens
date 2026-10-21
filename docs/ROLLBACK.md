@@ -29,8 +29,13 @@ On first start, the service upgrades the root once before it reads any classroom
 It folds live-session Pi panel history into `.teacher.json`, turns failed Pi
 passage answers and unapplied earlier-format grading plans into failed requests
 that need an explicit retry, and drops fields only the old bridge read. It copies
-each file it changes to `.migrations/1/` under the root, then writes
-`.studens-format.json` last. An interrupted upgrade repeats safely.
+each file it changes to `.migrations/1/` under the root. Before conversion it
+atomically saves the complete migration plan at `.migrations/1/.plan.json`. On an
+explicit service restart, an interrupted upgrade reapplies that saved plan without
+reclassifying partially converted requests or running a teacher. Backups and the
+final `.studens-format.json` marker use atomic replacement too. Temporary partial
+writes are replaced on restart. Keep the plan and backups private and intact; the
+format marker prevents replay after normal service work begins.
 
 It changes nothing and stops with a specific error while unfinished live-session
 Pi work or a legacy Pi tailnet route remains. Finish or explicitly retry that work

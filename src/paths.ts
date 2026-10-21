@@ -207,8 +207,8 @@ export function isFile(p: string): boolean {
 }
 
 /** Guard private state reads/writes, including existing symlink ancestors. */
-export function privateStatePath(relative: string): string {
-  const target = safeJoin(classroomsRoot(), relative);
+export function privateStatePath(relative: string, root = classroomsRoot()): string {
+  const target = safeJoin(root, relative);
   if (!target) throw new Error("Private state path leaves the classrooms root.");
   let current = path.parse(target).root;
   for (const segment of target.slice(current.length).split(path.sep).filter(Boolean)) {
