@@ -304,7 +304,7 @@ export function classroomTools(host: ToolHost): ClassroomTool[] {
               criteria: {
                 type: "array",
                 description:
-                  "For questions with saved criteria, allocate every criterion once. Omit for historical questions without criteria. Never supply descriptions or weights.",
+                  "For questions with saved criteria, allocate every criterion once. Omit or supply [] for historical questions without criteria. Never supply descriptions or weights.",
                 items: object({
                   criterion_id: str("The fixed private criterion id."),
                   points_earned: {
