@@ -46,10 +46,17 @@ function readActivity<T>(context: string, read: () => T): T {
   }
 }
 
-export function classroomActivity(classroom: string): { requests: ActivityRequest[] } {
+export function classroomActivity(classroom: string) {
   const state = readActivity(`teacher state ${classroom}/.teacher.json`, () =>
     hooks?.teacherState?.(classroom),
-  ) as { requests: unknown[]; identity?: { backend?: string } } | null | undefined;
+  ) as
+    | {
+        requests: unknown[];
+        switching?: string | null;
+        identity?: { backend?: string; activeModel?: string };
+      }
+    | null
+    | undefined;
   if (state && !Array.isArray(state.requests))
     throw new Error("Invalid teacher activity requests.");
   const requests = new Map<string, Record<string, unknown>>();
@@ -227,7 +234,16 @@ export function classroomActivity(classroom: string): { requests: ActivityReques
     ];
   });
   result.sort((a, b) => priority[a.status] - priority[b.status] || a.order - b.order);
-  return { requests: result.map(({ order: _order, ...r }) => r) };
+  return {
+    requests: result.map(({ order: _order, ...r }) => r),
+    teacher: state?.identity
+      ? {
+          backend: state.identity.backend,
+          model: state.identity.activeModel,
+          switching: state.switching ?? null,
+        }
+      : null,
+  };
 }
 
 export function handleActivity(res: http.ServerResponse, url: URL): void {
@@ -249,7 +265,10 @@ export function handleActivity(res: http.ServerResponse, url: URL): void {
         )
       : classroomActivity(classroom!).requests;
     requests.sort((a, b) => priority[a.status] - priority[b.status]);
-    sendJson(res, { requests });
+    sendJson(res, {
+      requests,
+      ...(!root ? { teacher: classroomActivity(classroom!).teacher } : {}),
+    });
   } catch (error) {
     console.error("[classroom] activity state read failed", error);
     sendJson(res, { error: (error as Error).message }, 500);

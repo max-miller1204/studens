@@ -36,8 +36,9 @@ export function createTeacherPanel({ config, contentRoot, drafts }) {
     const firstRender = !teacherPanel;
     if (firstRender) buildTeacherPanel();
     placeTeacherPanel();
-    teacherPanel.querySelector(".cl-teacher-identity").textContent =
-      state.identity.backend === "pi" && !state.identity.persistent
+    teacherPanel.querySelector(".cl-teacher-identity").textContent = state.switching
+      ? `Switching teacher to ${state.switching}. Waiting for active work and readiness.`
+      : state.identity.backend === "pi" && !state.identity.persistent
         ? "Your teacher is the Pi session that opened this classroom."
         : `${state.identity.backend} teacher. Requested: ${state.identity.requestedModel ?? "tool’s configured default"}. ${state.identity.backend === "pi" ? "Last Pi SDK model selection" : "Last answering model"}: ${state.identity.activeModel || "No answer yet"}.`;
 
