@@ -78,3 +78,61 @@ Compare policies at equal workload when possible. Do not choose the winning poli
 from immediate scores alone. A small pilot can find usability problems. It cannot
 establish broad scientific validation. No human outcome study has been run for this
 redesign. Do not infer human benefit from passing software or agent evaluations.
+
+## Bounded native guidance adoption
+
+`npm run verify -- adoption pi --artifacts <new-directory>` (also `claude` or
+`codex`) runs two fresh initiating sessions against the checkout. The first asks the
+packaged classroom skill for the classroom link without browser or authoring work.
+The second asks the packaged teach skill for one new lesson, with an objective but
+no tool names or widget/source-declaration directions. Pi discovers extension and
+skills through the package manifest in disposable settings; ordinary Pi harnesses
+still disable skill discovery. This is checkout-package adoption, not a public
+release installation test. Naming a skill is directed entrypoint adoption; choices
+of activities and teaching origins remain undirected.
+
+The run checks `open_classroom`, service survival after initiating exit,
+`begin_teaching`, scaffold count, immutable four-file packaged-check receipts,
+zero live learner submissions during authoring, and the normal browser/submission/
+grading/reload contracts. It reports actual teaching-origin declarations, including
+zero, without making an optional feature mandatory. Inspect the classroom-skill
+transcript and final summary for lifecycle/Next lesson guidance: tool calls alone
+do not prove every sentence of guidance was followed or that a skill was read.
+Dedicated-teacher isolation remains the responsibility of the host suites.
+
+Use the same fixed native settings as the other verification targets: Pi
+`openai-codex/gpt-6-luna` low, Codex `gpt-6-luna` low, and Claude
+`claude-haiku-5-5` low. Delegated implementation-agent profiles do not change native
+verification settings. Never substitute models after a failed run. Compare reports
+only when the host settings, objectives, mode and source epoch match.
+
+Authoring artifacts now include a checkpoint with stage/error and partial reports,
+raw initiating transcripts, recognized receipts, and the retained classroom on
+failure. Use a new evidence directory for every run. The live-submission snapshot
+is taken before the evaluator and learner drive; an author must check in disposable
+state. Missing or truncated receipts still fail. New checkpoints never rehabilitate
+historical failed receipts from #78/#82/#84/#104.
+
+Semantic review independently checks visible questions and private variants for
+answer correctness, in addition to alignment and teaching quality. The `quality`
+target includes a correct arithmetic control, an incorrect visible key, and an
+incorrect private-variant key. These report expected versus actual correctness
+judgments, including false positives/negatives; they do not force a judge verdict.
+Exact-source quotes remain required, and evaluator errors remain errors. This is
+bounded content evaluation, not a proof of domain correctness or human learning.
+
+To run one previously unattempted calibration case without repeating completed
+cases, use `node scripts/e2e-quality.ts <host> <new-directory>
+<none|visible-key|variant-key>`. Record that selection with the result. A later
+selected-case result never replaces a failed full evaluation. The default quality
+run attempts each independent control once, retains evaluator errors, then fails if
+any evaluator returned unusable judgments. Verification saves source hashes before
+launching checks so later edits cannot be mistaken for the tested source epoch.
+
+A `correctness: fail` judgment is a semantic quality finding. It does not change a
+mechanical PASS into FAIL: a page can publish, submit, grade and reload while its
+answer key is mathematically wrong. Missing/truncated page-check receipts and live
+authoring submissions are mechanical failures regardless of semantic scores.
+Malformed evaluator envelopes and invalid exact-source quotes remain evaluator
+errors, with native raw output saved before envelope parsing. Do not call an
+unscored evaluation a correctness pass.

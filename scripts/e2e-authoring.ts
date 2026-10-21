@@ -39,6 +39,7 @@
  * classrooms root and any CODEX_HOME are temporary directories, deleted at the end.
  */
 
+import { teachingSources } from "../src/lesson-sources.ts";
 import { evaluateContent } from "./authoring-evaluator.ts";
 import { parseTeachingPlan } from "../src/teaching-plan.ts";
 import { inputNames, readLessonInputs } from "./lesson-inputs.ts";
@@ -65,6 +66,7 @@ import {
   toolCalls,
   until,
   type Harness,
+  TEST_MODELS,
 } from "./harness.ts";
 import { checkPractice, selectLocateAnswer } from "./browser-actions.ts";
 import { checkFaded } from "./faded-browser-actions.ts";
@@ -76,24 +78,29 @@ const AUTHORING_TIMEOUT_MS = 30 * 60_000;
 const GRADING_TIMEOUT_MS = 20 * 60_000;
 const CLASSROOM = "os";
 const EARLIER_LESSON = "001-processes";
-const codeMode = process.argv[4] === "code";
+const mode = process.argv[4] ?? "standard";
+if (!["standard", "code", "adoption"].includes(mode)) throw new Error("Unknown authoring mode.");
+const codeMode = mode === "code";
+const adoptionMode = mode === "adoption";
 
-const OBJECTIVES = codeMode
-  ? [
-      "Implement a synchronous JavaScript function compressRuns(values) that replaces each run of adjacent repeated integer values with one copy, preserving separated repeats and empty input. Make a runnable browser code exercise with starter source and public input/output tests.",
-    ]
-  : [
-      "Predict how many processes a short C program with several fork() calls creates.",
-      "Find which pipe file descriptors each process must close, so that the reader sees end of file.",
-      "Explain how two threads that increment a shared counter without a lock can lose an update.",
-    ];
+const OBJECTIVES = adoptionMode
+  ? ["Predict how many processes a short C program with several fork() calls creates."]
+  : codeMode
+    ? [
+        "Implement a synchronous JavaScript function compressRuns(values) that replaces each run of adjacent repeated integer values with one copy, preserving separated repeats and empty input. Make a runnable browser code exercise with starter source and public input/output tests.",
+      ]
+    : [
+        "Predict how many processes a short C program with several fork() calls creates.",
+        "Find which pipe file descriptors each process must close, so that the reader sees end of file.",
+        "Explain how two threads that increment a shared counter without a lock can lose an update.",
+      ];
 
 const harness: Harness = parseHarness(
   process.argv[2],
-  "Usage: node scripts/e2e-authoring.ts <claude|codex> [artifacts]",
+  "Usage: node scripts/e2e-authoring.ts <pi|claude|codex> [artifacts] [standard|code|adoption]",
 );
 const artifacts = process.argv[3] ? path.resolve(process.argv[3]) : null;
-if (artifacts) fs.mkdirSync(artifacts, { recursive: true });
+if (artifacts) fs.mkdirSync(artifacts); // Never replace a previous run, including failures.
 
 function log(message: string): void {
   console.log(`[e2e:authoring:${harness}] ${message}`);
@@ -159,13 +166,19 @@ ${[1, 2, 3].map((i) => `<li class="cl-q" data-question-id="q${i}" data-type="sho
 
 const AUTHORING_PROMPT = [
   "This is an automated authoring run in a temporary classroom.",
-  `Call begin_teaching with topic "${CLASSROOM}". The mission and notes are written, so do not interview the learner.`,
+  adoptionMode
+    ? `Use the packaged teach skill to teach in classroom "${CLASSROOM}". The mission and notes are written; do not interview the learner.`
+    : `Call begin_teaching with topic "${CLASSROOM}". The mission and notes are written, so do not interview the learner.`,
   "The learner has agreed to the following requests. Create one page for each, in this order:",
   ...OBJECTIVES.map(
     (objective, i) =>
       `${i + 1}. ${i === 2 || codeMode ? "Make a challenging quiz only, with no teaching, to test this objective:" : "Teach a new lesson with this objective:"} ${objective}`,
   ),
-  "Create each lesson with scaffold_lesson and follow the authoring steps it returns. Write the files with your file tools.",
+  ...(adoptionMode
+    ? []
+    : [
+        "Create each lesson with scaffold_lesson and follow the authoring steps it returns. Write the files with your file tools.",
+      ]),
   "Do not call wait_for_learner and do not ask the learner anything. Nobody will reply during this run.",
   // Reason: a real session knows its own browser tool. This run has only a shell
   // command, so name it. This describes the environment and gives no authoring hint.
@@ -187,7 +200,9 @@ function startSession(
   env: NodeJS.ProcessEnv,
   cwd: string,
 ): Session {
-  const [command, args] = harnessCommand(harness, prompt, tools, extraTools);
+  const [command, args] = harnessCommand(harness, prompt, tools, extraTools, {
+    nativeSkills: adoptionMode,
+  });
   log(`starting ${command} ${args.slice(0, 2).join(" ")} ...`);
   const child = spawn(command, args, { cwd, env, stdio: ["ignore", "pipe", "pipe"] });
   let stream = "";
@@ -224,6 +239,14 @@ function finalText(stream: string): string {
     const event = JSON.parse(line);
     if (harness === "claude" && event.type === "result" && typeof event.result === "string") {
       texts.push(event.result);
+    }
+    if (harness === "pi" && event.type === "message_end" && event.message?.role === "assistant") {
+      texts.push(
+        (event.message.content ?? [])
+          .filter((part: { type: string }) => part.type === "text")
+          .map((part: { text: string }) => part.text)
+          .join("\n"),
+      );
     }
     if (
       harness === "codex" &&
@@ -264,6 +287,7 @@ interface LessonReport {
   /** Set when the semantic evaluator returned no usable judgments. */
   qualityError?: string;
   problems: string[];
+  teachingOrigins: ReturnType<typeof teachingSources>;
 }
 
 function count(html: string, pattern: RegExp): number {
@@ -325,6 +349,7 @@ function inspectLesson(root: string, lesson: string, objective: string): LessonR
     tables: count(body, /<table\b/g),
     images: count(body, /<(?:img|svg)\b/g),
     rubric,
+    teachingOrigins: teachingSources(html),
     qualityFindings: [],
     problems,
   };
@@ -467,7 +492,7 @@ async function main(): Promise<void> {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "studens-e2e-authoring-"));
   _overrideClassroomsDir(root);
   seedClassroom(root);
-  const restoreModel = useTestModel(harness);
+  const restoreModel = useTestModel(harness, { nativeSkills: adoptionMode });
   const listener = net.createServer();
   await new Promise<void>((resolve) => listener.listen(0, "127.0.0.1", resolve));
   process.env.PI_CLASSROOM_SERVICE_PORT = String((listener.address() as net.AddressInfo).port);
@@ -482,15 +507,60 @@ async function main(): Promise<void> {
   let browserOpen = false;
   const sessions: Session[] = [];
   const failures: string[] = [];
+  let stage = "authoring";
+  let failure: string | undefined;
+  let reports: LessonReport[] = [];
+  let authoringSubmissions: Array<{ lesson: string; submissions: unknown[] }> = [];
+  let classroomSession: Session | undefined;
+  const checkpoint = () => {
+    if (artifacts)
+      fs.writeFileSync(
+        path.join(artifacts, `${harness}-checkpoint.json`),
+        JSON.stringify(
+          {
+            mode,
+            harness,
+            model: TEST_MODELS[harness],
+            stage,
+            failure,
+            failures,
+            lessons: reports,
+            authoringSubmissions,
+            humanLearningEvidence: false,
+          },
+          null,
+          2,
+        ),
+      );
+  };
 
   try {
+    checkpoint();
+    if (adoptionMode) {
+      classroomSession = startSession(
+        `Use the packaged classroom skill to open my "${CLASSROOM}" classroom. Give its link. Do not author anything or open a browser.`,
+        ["open_classroom", "list_classrooms"],
+        ["Read", "Skill"],
+        env,
+        root,
+      );
+      sessions.push(classroomSession);
+      const code = await within("classroom skill adoption", 5 * 60_000, classroomSession.exited);
+      if (code !== 0) throw new Error(`Classroom skill session exited with ${code}.`);
+      if (!toolCalls(harness, classroomSession.stream()).includes("open_classroom"))
+        failures.push("Classroom skill session did not open the classroom.");
+      if (browserCommands(harness, classroomSession.stream()).length)
+        failures.push("Classroom skill session opened a browser for the learner.");
+      if (!(await serviceStatus()).running)
+        failures.push("The service did not survive the initiating classroom session.");
+    }
     // Authoring session.
     const authoring = startSession(
       AUTHORING_PROMPT,
       ["begin_teaching", "list_classrooms", "lesson_health", "scaffold_lesson", "open_classroom"],
       // Reason: this evaluation explicitly requests browser checks.
       // Claude Code runs with an allowlist, so allow the browser CLI explicitly.
-      ["Read", "Write", "Edit", "Glob", "Grep", "Bash(playwright-cli:*)", "Bash(node:*)"],
+      ["Read", "Write", "Edit", "Glob", "Grep", "Skill", "Bash(playwright-cli:*)", "Bash(node:*)"],
       env,
       root,
     );
@@ -499,6 +569,9 @@ async function main(): Promise<void> {
     if (code !== 0) throw new Error(`The authoring session exited with ${code}.`);
     const authoringCalls = toolCalls(harness, authoring.stream());
     log(`authoring tool calls: ${authoringCalls.join(" → ")}`);
+    stage = "authored-inputs";
+    if (adoptionMode && !authoringCalls.includes("begin_teaching"))
+      failures.push("Teach skill session did not request the teaching brief.");
     const pageChecks = browserCommands(harness, authoring.stream());
     log(`browser commands: ${pageChecks.length}`);
     if (pageChecks.length === 0) failures.push("The agent never opened a lesson in a browser.");
@@ -527,10 +600,26 @@ async function main(): Promise<void> {
       .listLessons(CLASSROOM)
       .map((lesson) => lesson.name)
       .filter((name) => name !== EARLIER_LESSON);
+    // Snapshot before the evaluator or learner drive. A checker must use disposable state.
+    authoringSubmissions = store.listLessons(CLASSROOM).map(({ name }) => ({
+      lesson: name,
+      submissions: store.listSubmissions(CLASSROOM, name),
+    }));
+    for (const saved of authoringSubmissions)
+      if (saved.submissions.length)
+        failures.push(
+          `The authoring agent created ${saved.submissions.length} live learner submissions in ${saved.lesson}.`,
+        );
+    checkpoint();
     if (lessons.length !== OBJECTIVES.length) {
       throw new Error(`Expected ${OBJECTIVES.length} new lessons, found: ${lessons.join(", ")}`);
     }
     const packagedChecks = packagedPageChecks(harness, authoring.stream());
+    if (artifacts)
+      fs.writeFileSync(
+        path.join(artifacts, `${harness}-receipts.json`),
+        JSON.stringify(packagedChecks, null, 2),
+      );
     for (const lesson of lessons) {
       const inputs = readLessonInputs(CLASSROOM, lesson);
       if (
@@ -544,7 +633,8 @@ async function main(): Promise<void> {
       )
         failures.push(`The agent did not complete the packaged page check for ${lesson}.`);
     }
-    const reports = lessons.map((lesson, i) => inspectLesson(root, lesson, OBJECTIVES[i]!));
+    reports = lessons.map((lesson, i) => inspectLesson(root, lesson, OBJECTIVES[i]!));
+    checkpoint();
     for (const [i, report] of reports.entries()) {
       const html = fs.readFileSync(
         path.join(root, CLASSROOM, report.lesson, "lesson.html"),
@@ -583,6 +673,8 @@ async function main(): Promise<void> {
       }
     }
 
+    stage = "semantic-review";
+    checkpoint();
     // A separate evaluator reads question content, teaching, and rubric before submission.
     for (const [i, report] of reports.entries()) {
       const dir = path.join(root, CLASSROOM, report.lesson);
@@ -612,8 +704,11 @@ async function main(): Promise<void> {
       } catch (err) {
         report.qualityError = (err as Error).message;
       }
+      checkpoint();
     }
 
+    stage = "learner-drive";
+    checkpoint();
     // Browser: check, press, answer, submit.
     const service = await serviceStatus();
     if (!service.running) throw new Error("Authoring agent did not open the persistent service.");
@@ -748,9 +843,13 @@ async function main(): Promise<void> {
       }));
     const summary = {
       codeMode,
+      mode,
+      model: TEST_MODELS[harness],
+      authoringSubmissions,
       harness,
       backgroundRefills,
       agentSummary: finalText(authoring.stream()),
+      classroomSkillSummary: classroomSession ? finalText(classroomSession.stream()) : undefined,
       humanLearningEvidence: false,
       browserCommands: pageChecks,
       lessons: reports.map((r) => ({ ...r, submitted: undefined })),
@@ -765,6 +864,7 @@ async function main(): Promise<void> {
         lessonsWithLocalControls: reports.filter((r) => r.localControls.length > 0).length,
         lessonsWithStepperWidgets: reports.filter((r) => r.stepperWidgets > 0).length,
         lessonsWithFadedWidgets: reports.filter((r) => r.fadedWidgets > 0).length,
+        lessonsWithTeachingOrigins: reports.filter((r) => r.teachingOrigins.length > 0).length,
         lessonsWithReflection: reports.filter((r) => r.reflections > 0).length,
         lessonsWithDiagrams: reports.filter((r) => r.diagrams > 0).length,
         lessonsWithMath: reports.filter((r) => r.formulas > 0).length,
@@ -816,12 +916,20 @@ async function main(): Promise<void> {
     }
     if (failures.length > 0)
       throw new Error(`Authoring evaluation failed:\n- ${failures.join("\n- ")}`);
+    stage = "complete";
+    checkpoint();
     log("PASS: the agent authored, the learner submitted, the agent graded, and reload kept it.");
+  } catch (error) {
+    failure = String(error);
+    checkpoint();
+    throw error;
   } finally {
-    if (artifacts && sessions[0]) {
-      fs.writeFileSync(path.join(artifacts, `${harness}-authoring.jsonl`), sessions[0].stream());
-      fs.writeFileSync(path.join(artifacts, `${harness}-authoring.stderr`), sessions[0].stderr());
-    }
+    if (artifacts)
+      for (const [i, session] of sessions.entries()) {
+        const name = adoptionMode && i === 0 ? "classroom-skill" : "authoring";
+        fs.writeFileSync(path.join(artifacts, `${harness}-${name}.jsonl`), session.stream());
+        fs.writeFileSync(path.join(artifacts, `${harness}-${name}.stderr`), session.stderr());
+      }
     for (const session of sessions) session.stop();
     if (browserOpen) await playwright(browser, root, "close");
     await server.close();

@@ -101,7 +101,10 @@ function codexHome(): string {
 }
 
 /** Pin child sessions, service teachers, and evaluators. Restore the test process on cleanup. */
-export function useTestModel(harness: Harness): () => void {
+export function useTestModel(
+  harness: Harness,
+  options: { nativeSkills?: boolean } = {},
+): () => void {
   const home = harness === "codex" ? codexHome() : null;
   let piHome: string | undefined;
   if (harness === "pi") {
@@ -117,6 +120,7 @@ export function useTestModel(harness: Harness): () => void {
     fs.writeFileSync(
       path.join(piHome, "settings.json"),
       JSON.stringify({
+        ...(options.nativeSkills ? { packages: [ROOT] } : {}),
         defaultProvider: TEST_MODELS.pi.provider,
         defaultModel: TEST_MODELS.pi.model,
         defaultThinkingLevel: TEST_MODELS.pi.effort,
@@ -158,6 +162,7 @@ export function harnessCommand(
   prompt: string,
   tools: string[],
   extraTools: string[] = ["Read"],
+  options: { nativeSkills?: boolean } = {},
 ): [string, string[]] {
   if (harness === "pi")
     return [
@@ -173,14 +178,12 @@ export function harnessCommand(
         "--thinking",
         TEST_MODELS.pi.effort,
         "--no-session",
-        "--no-extensions",
-        "--no-skills",
+        ...(options.nativeSkills ? [] : ["--no-extensions", "--no-skills"]),
         "--no-context-files",
         "--no-prompt-templates",
         "--no-themes",
         "--offline",
-        "--extension",
-        path.join(ROOT, "index.ts"),
+        ...(options.nativeSkills ? [] : ["--extension", path.join(ROOT, "index.ts")]),
         prompt,
       ],
     ];
@@ -230,12 +233,17 @@ export function harnessCommand(
  * `"server":"classroom","tool":"<tool>"` on each MCP call's start and end events.
  */
 export function toolCalls(harness: Harness, events: string): string[] {
+  if (harness === "pi")
+    return events
+      .split("\n")
+      .filter(Boolean)
+      .map((line) => JSON.parse(line))
+      .filter((event) => event.type === "tool_execution_start")
+      .map((event) => event.toolName);
   const pattern =
-    harness === "pi"
-      ? /"toolName":"([a-z_]+)"/g
-      : harness === "claude"
-        ? new RegExp(`"name":"${CLAUDE_PREFIX}([a-z_]+)"`, "g")
-        : /"server":"classroom","tool":"([a-z_]+)"[^\n]*?"status":"in_progress"/g;
+    harness === "claude"
+      ? new RegExp(`"name":"${CLAUDE_PREFIX}([a-z_]+)"`, "g")
+      : /"server":"classroom","tool":"([a-z_]+)"[^\n]*?"status":"in_progress"/g;
   return [...events.matchAll(pattern)].map((match) => match[1]!);
 }
 
@@ -249,6 +257,11 @@ export function browserCommands(harness: Harness, events: string): string[] {
   const commands: string[] = [];
   for (const line of events.split("\n").filter(Boolean)) {
     const event = JSON.parse(line);
+    if (harness === "pi" && event.type === "tool_execution_start" && event.toolName === "bash") {
+      const command = event.args?.command;
+      if (typeof command === "string" && /playwright-cli|scripts\/check-lesson\.ts/.test(command))
+        commands.push(command);
+    }
     if (harness === "claude" && event.type === "assistant") {
       for (const block of event.message.content) {
         if (block.type !== "tool_use") continue;
@@ -445,6 +458,15 @@ export function packagedPageChecks(harness: Harness, events: string): PackagedPa
   }
   for (const line of events.split("\n").filter(Boolean)) {
     const event = JSON.parse(line);
+    if (harness === "pi" && event.type === "tool_execution_start" && event.toolName === "bash")
+      commands.set(event.toolCallId, event.args?.command ?? "");
+    if (harness === "pi" && event.type === "tool_execution_end" && event.toolName === "bash") {
+      const output = (event.result?.content ?? [])
+        .filter((part: { type: string }) => part.type === "text")
+        .map((part: { text: string }) => part.text)
+        .join("\n");
+      collect(commands.get(event.toolCallId) ?? "", output);
+    }
     if (harness === "codex" && event.type === "item.completed") {
       const item = event.item;
       if (item?.type === "command_execution") collect(item.command, item.aggregated_output);
