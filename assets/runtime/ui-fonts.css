@@ -1,0 +1,26 @@
+@import url("vendor/inter/font.css");
+@import url("vendor/source-serif-4/font.css");
+@import url("vendor/jetbrains-mono/font.css");
+
+:root {
+  --cl-sans: "Inter Variable";
+  --cl-serif: "Source Serif 4 Variable";
+  --cl-mono: "JetBrains Mono Variable";
+}
+
+.cl-shell {
+  font-family: var(--cl-sans);
+}
+
+.cl-doc {
+  font-family: var(--cl-serif);
+}
+
+.cl-q textarea.cl-code-source {
+  font-family: var(--cl-mono);
+}
+
+.cl-icon {
+  display: inline-block;
+  vertical-align: middle;
+}

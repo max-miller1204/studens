@@ -14,6 +14,10 @@ Use this skill from the repository root. Read [features/README.md](features/READ
 
 The default target runs formatting, types, automated tests, and the browser suite. The browser suite starts isolated classrooms and loopback servers. It drives reading, quizzes, legacy Pi recovery fixtures, and the shared persistent service. It closes owned sessions and removes scratch classrooms.
 
+On macOS, prefix verification commands with `TMPDIR=/private/tmp`. This uses a
+canonical temporary path. The private-state guard rejects symlink ancestors such
+as `/var`.
+
 ## Doctor
 
 Run `npm run verify -- doctor`. For a real host, use `npm run verify -- doctor pi`, `doctor claude`, or `doctor codex`.

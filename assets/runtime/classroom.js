@@ -5,6 +5,7 @@ import { initDiagrams } from "./diagrams.mjs";
 import { initLinks } from "./links.mjs";
 import { initMath } from "./math.mjs";
 import { initTheme } from "./theme.mjs";
+import { icon } from "./icons.mjs";
 import { initSteppers } from "./stepper.mjs";
 import { initFaded } from "./faded.mjs";
 import { createReviewScreen } from "./review-screen.mjs";
@@ -108,8 +109,8 @@ function buildHeader() {
       <span class="cl-crumb cl-crumb-current"></span>
     </nav>
     <button type="button" class="cl-theme-toggle" data-cl-theme-toggle aria-label="Toggle colour theme">
-      <span class="cl-theme-icon cl-theme-icon-light" aria-hidden="true">☀</span>
-      <span class="cl-theme-icon cl-theme-icon-dark" aria-hidden="true">☾</span>
+      <span class="cl-theme-icon cl-theme-icon-light" aria-hidden="true">${icon("sun")}</span>
+      <span class="cl-theme-icon cl-theme-icon-dark" aria-hidden="true">${icon("moon")}</span>
     </button>`;
 
   // textContent, not innerHTML: these titles come from files on disk.

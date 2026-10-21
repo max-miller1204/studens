@@ -1,0 +1,24 @@
+{
+  "package": "@fontsource-variable/source-serif-4",
+  "version": "5.3.1",
+  "source": "https://registry.npmjs.org/@fontsource-variable/source-serif-4/-/source-serif-4-5.3.1.tgz",
+  "integrity": "sha512-4Rtay22SC4lMvw11r/+9kxANB6P3M0X8s1NudBC2v0J1KU2y3DcMoNcT3lBoZ/CqLirzf+StlO6UlJilyrvaUg==",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fontsource/font-files.git",
+    "directory": "fonts/variable/source-serif-4"
+  },
+  "upstreamLicense": "https://raw.githubusercontent.com/google/fonts/01aa15d05749e35be9167f3f44e6a243f00cd2fc/ofl/sourceserif4/OFL.txt",
+  "transformation": "Unmodified variable weight Latin and Latin-Extended normal/italic WOFF2. Subset CSS retains upstream unicode ranges.",
+  "files": {
+    "LICENSE": "18aabf190848725e2576eefb5c29ba06aac1029d02132252a7f312eac2e50cf3",
+    "OFL.upstream.txt": "5f94c3fd3a23131a417ab5a0c8452de57e70c3cfb9f604d88241f7065ebf9fd9",
+    "VERSION": "ee059d0775289e876f5e34efd57679411860c0164ae0dc69dcf7877dce4e66fb",
+    "font.css": "5bce07ab757fe7ba72df4a846dcb9a773e790aaf15d0baf61736091e048afa0e",
+    "metadata.json": "e9df0b218b6bad71618c81765b8f01963daf511362c0041c5ce32fdb92ac66f3",
+    "source-serif-4-latin-ext-wght-italic.woff2": "14e38c2d6a4ea6effcddde38f0262c03af252cbf82dbc68037f2d6c9112f2097",
+    "source-serif-4-latin-ext-wght-normal.woff2": "d10ccbbd0dc4ebae2938958dc1f622a53460fe297e9c958564742dd684309c3f",
+    "source-serif-4-latin-wght-italic.woff2": "b4f56ddc9873487f1c9a3ad5bbce31982fe89b951f57e4604f62b4c8a540fb19",
+    "source-serif-4-latin-wght-normal.woff2": "382475f38242c52d42a3e5ff8dc69b5d73f10d0d21e4550b5fe232984688779a"
+  }
+}

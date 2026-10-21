@@ -8,6 +8,7 @@
  */
 
 import { toScriptJson } from "./markdown.ts";
+import { uiFontHead } from "./ui-assets.ts";
 
 export interface LessonRuntimeConfig {
   classroom: string;
@@ -25,6 +26,7 @@ export interface LessonRuntimeConfig {
 /** The `<head>` additions: shared stylesheet plus the no-flash theme bootstrap. */
 function headInjection(): string {
   return `<link rel="stylesheet" href="/static/classroom.css">
+${uiFontHead()}
 <script>
 (function () {
   // Applied before first paint so a dark-mode reader never sees a white flash.
@@ -73,6 +75,7 @@ function insertBeforeBodyEnd(html: string, snippet: string): string {
  */
 export function injectLessonRuntime(html: string, config: LessonRuntimeConfig): string {
   if (html.includes('id="cl-config"')) {
+    if (!html.includes('href="/static/ui-fonts.css"')) html = insertInHead(html, uiFontHead());
     return html.replace(
       /<script\b[^>]*\bid="cl-config"[^>]*>[\s\S]*?<\/script\s*>/i,
       () => `<script type="application/json" id="cl-config">${toScriptJson(config)}</script>`,
