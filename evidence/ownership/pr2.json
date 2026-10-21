@@ -1,0 +1,10 @@
+{
+  "base": "6bc9897c7cef94bb62570d1677a7dea77c6f9971",
+  "change": "PR2 session identifier privacy",
+  "viewport": {
+    "width": 1280,
+    "height": 800
+  },
+  "fixture": "Identical seeded classroom, no teacher inference",
+  "inspected": true
+}
