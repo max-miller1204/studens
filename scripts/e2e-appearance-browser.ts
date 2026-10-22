@@ -134,11 +134,11 @@ export async function verifyAppearanceBrowser(artifacts: string | null): Promise
         if(await page.locator('[data-cl-appearance-error]').count())throw Error('Saved appearance failed on '+url);
       }
       await settings();await settings();
-      await page.evaluate(()=>{const select=document.querySelector('[data-cl-accent-choice]');select.style.transition='color 2s';select.addEventListener('change',()=>{window.appearanceSwitch={suppressed:document.documentElement.classList.contains('cl-appearance-changing'),duration:getComputedStyle(select).transitionDuration};});});
+      await page.evaluate(()=>{const select=document.querySelector('#cl-accent-choice');select.style.transition='color 2s';select.addEventListener('change',()=>{window.appearanceSwitch={suppressed:document.documentElement.classList.contains('cl-appearance-changing'),duration:getComputedStyle(select).transitionDuration};});});
       await accent('neutral');const transition=await page.evaluate(()=>window.appearanceSwitch);
       if(!transition.suppressed||transition.duration!=='0s')throw Error('Appearance transition was not suppressed.');
       await page.waitForFunction(()=>!document.documentElement.classList.contains('cl-appearance-changing'));
-      await page.locator('[data-cl-accent-choice]').evaluate(e=>e.style.removeProperty('transition'));
+      await page.locator('#cl-accent-choice').evaluate(e=>e.style.removeProperty('transition'));
       const neighbor=await page.context().newPage();await neighbor.goto(base+'/r/rust/ownership.html');
       const diagram=neighbor.locator('.cl-diagram svg');await diagram.waitFor();
       const diagramId=await diagram.getAttribute('id');
@@ -165,7 +165,7 @@ export async function verifyAppearanceBrowser(artifacts: string | null): Promise
       await page.evaluate(()=>localStorage.setItem('pi-classroom-theme','invalid-theme'));await settings();await page.getByRole('alert').filter({hasText:'Invalid saved theme'}).waitFor();await theme('light');
       // Simulate unavailable browser storage at the production localStorage boundary.
       const blocked=await page.context().newPage();await blocked.addInitScript(()=>Object.defineProperty(window,'localStorage',{configurable:true,get(){throw new Error('Storage access denied for appearance probe.');}}));
-      await blocked.goto(base+'/c/rust/settings');await blocked.getByRole('alert').filter({hasText:'Storage access denied'}).waitFor();
+      await blocked.goto(base+'/c/rust/settings');await blocked.locator('[data-cl-appearance-error]').filter({hasText:'Storage access denied'}).waitFor();
       await blocked.getByLabel('Accent',{exact:true}).selectOption('green');
       if(await blocked.locator('[data-cl-appearance-status]').textContent())throw Error('Blocked save claimed success.');
       await blocked.screenshot({path:out+'/unavailable-storage.png',fullPage:true});await blocked.close();

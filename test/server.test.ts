@@ -1199,7 +1199,7 @@ it("groups classrooms through folder edits while keeping lesson URLs private and
     ).toBe(200);
     const root = await (await get("/")).text();
     expect(root).toContain("&lt;Work &amp; study&gt;");
-    expect(root).not.toContain('href="/c/rust"');
+    expect(root).toContain('href="/c/rust"');
     const grouped = await (await get(`/?folder=${folder.id}`)).text();
     expect(grouped).toContain('href="/c/rust"');
     expect(grouped).toContain("&lt;Work &amp; study&gt;");

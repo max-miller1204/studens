@@ -1,3 +1,4 @@
+import { navigationChrome } from "../assets/runtime/navigation.mjs";
 import { appearanceHead } from "./appearance.ts";
 import { searchPassages } from "./search-passages.ts";
 import { icon } from "../assets/runtime/icons.mjs";
@@ -52,14 +53,8 @@ export function shell(options: ShellOptions): string {
 ${appearanceHead()}
 ${uiFontHead()}
 </head>
-<body class="${escapeHtml(options.bodyClass ?? "cl-shell")}">
-<header class="cl-header">
-  <nav class="cl-breadcrumb">${options.breadcrumb}</nav>
-  <button type="button" class="cl-theme-toggle" data-cl-theme-toggle aria-label="Toggle colour theme">
-    <span class="cl-theme-icon cl-theme-icon-light" aria-hidden="true">${icon("sun")}</span>
-    <span class="cl-theme-icon cl-theme-icon-dark" aria-hidden="true">${icon("moon")}</span>
-  </button>
-</header>
+<body class="cl-app ${escapeHtml(options.bodyClass ?? "cl-shell")}">
+${navigationChrome(options.breadcrumb)}
 <main class="cl-main">
 ${options.body}
 </main>
@@ -83,11 +78,8 @@ export function landingPage(
 ): string {
   const folder = folders.find((f) => f.id === folderId);
   if (folderId !== null && !folder) throw new Error("Unknown classroom folder.");
-  const filed = new Set(folders.flatMap((f) => f.classrooms));
-  const visible = classrooms.filter((c) =>
-    folder ? folder.classrooms.includes(c.name) : !filed.has(c.name),
-  );
-  const title = folder?.name ?? "Classrooms";
+  const visible = classrooms.filter((c) => (folder ? folder.classrooms.includes(c.name) : true));
+  const title = folder?.name ?? "Today";
   const body = `<div data-cl-folders data-folder-id="${escapeHtml(folderId ?? "")}">
 <div class="cl-hero">
   <div class="cl-folder-heading"><h1>${escapeHtml(title)}</h1>
@@ -95,13 +87,13 @@ export function landingPage(
   </div>
   <p class="cl-lede">${folder ? "Keep related classrooms together." : "Pick up where you left off, or start something new with <code>/teach</code>."}</p>
 </div>
-<p class="cl-search-entry"><a href="/search">Search across classrooms</a></p>
-${!folder ? `<section class="cl-daily-summary" aria-label="Daily review" data-cl-daily><h2>${Object.values(dueByClassroom).reduce((sum, count) => sum + count, 0)} due across classrooms</h2><p data-daily-workload>One shared daily allowance bounds new selections across all classrooms, topics, and early reviews. Deferred work stays due.</p><button type="button" class="cl-button" data-daily-action disabled>Start daily review</button><p class="cl-progress-note" role="status" aria-live="polite" data-daily-status>Checking daily review…</p><a href="/reviews/daily">Daily review history</a></section>` : ""}
-${!folder && folders.length ? `<section aria-label="Folders"><h2 class="cl-section-title">Folders</h2><ul class="cl-grid cl-folder-grid">${folders.map((f) => `<li class="cl-card"><a class="cl-card-link" href="/?folder=${encodeURIComponent(f.id)}"><span class="cl-card-emoji" aria-hidden="true">📁</span><span class="cl-card-body"><span class="cl-card-title">${escapeHtml(f.name)}</span><span class="cl-card-meta">${plural(classrooms.filter((c) => f.classrooms.includes(c.name)).length, "classroom")}</span></span></a></li>`).join("\n")}</ul></section>` : ""}
-<section aria-label="${folder ? "Classrooms in folder" : "Unfiled classrooms"}">
-${!folder && folders.length ? '<h2 class="cl-section-title">Unfiled classrooms</h2>' : ""}
-${visible.length ? `<ul class="cl-grid">${visible.map((c) => classroomCard(c, dueByClassroom[c.name] ?? 0)).join("\n")}</ul>` : folder ? '<p class="cl-folder-empty">This folder is empty. Use “Move to folder” on a classroom to add it here.</p>' : classrooms.length ? '<p class="cl-folder-empty">All classrooms are in folders.</p>' : emptyState("No classrooms yet", "Ask your agent to teach you a topic (<code>/teach &lt;topic&gt;</code> in Pi) and your first classroom will appear here.")}
+${!folder ? `<section class="cl-continue cl-card-box" data-cl-continue hidden aria-label="Continue learning"><span class="cl-section-title">Pick up where you left off</span><h2></h2><p></p><a class="cl-button" href="/">Continue lesson</a></section>` : ""}
+${!folder ? `<section class="cl-daily-summary" aria-label="Daily review" data-cl-daily><h2>${Object.values(dueByClassroom).reduce((sum, count) => sum + count, 0)} due across classrooms</h2><button type="button" class="cl-button" data-daily-action disabled>Start daily review</button><p class="cl-progress-note" role="status" aria-live="polite" data-daily-status>Checking daily review…</p><a href="/reviews/daily">Daily review history</a><details class="cl-daily-details"><summary>How daily review works</summary><p data-daily-workload>One shared daily allowance bounds new selections across all classrooms, topics, and early reviews. Deferred work stays due.</p></details></section>` : ""}
+<section aria-label="${folder ? "Classrooms in folder" : "Classrooms"}">
+${!folder ? '<h2 class="cl-section-title">Classrooms</h2>' : ""}
+${visible.length ? `<ul class="cl-grid">${visible.map((c) => classroomCard(c, dueByClassroom[c.name] ?? 0, folders.find((f) => f.classrooms.includes(c.name))?.id ?? "")).join("\n")}</ul>` : folder ? '<p class="cl-folder-empty">This folder is empty. Use “Move to folder” on a classroom to add it here.</p>' : emptyState("No classrooms yet", "Ask your agent to teach you a topic (<code>/teach &lt;topic&gt;</code> in Pi) and your first classroom will appear here.")}
 </section>
+${!folder && folders.length ? `<section aria-label="Folders"><h2 class="cl-section-title">Folders</h2><ul class="cl-grid cl-folder-grid">${folders.map((f) => `<li class="cl-card"><a class="cl-card-link" href="/?folder=${encodeURIComponent(f.id)}"><span class="cl-card-emoji" aria-hidden="true">📁</span><span class="cl-card-body"><span class="cl-card-title">${escapeHtml(f.name)}</span><span class="cl-card-meta">${plural(classrooms.filter((c) => f.classrooms.includes(c.name)).length, "classroom")}</span></span></a></li>`).join("\n")}</ul></section>` : ""}
 <dialog class="cl-confirm cl-folder-dialog" aria-labelledby="cl-folder-dialog-title">
   <form data-cl-folder-form>
     <h2 class="cl-confirm-title" id="cl-folder-dialog-title"></h2>
@@ -126,7 +118,7 @@ ${visible.length ? `<ul class="cl-grid">${visible.map((c) => classroomCard(c, du
     title,
     breadcrumb: folder
       ? `<a class="cl-crumb" href="/">Classrooms</a><span class="cl-crumb-sep" aria-hidden="true">/</span><span class="cl-crumb cl-crumb-current">${escapeHtml(folder.name)}</span>`
-      : `<span class="cl-crumb cl-crumb-current">Classrooms</span>`,
+      : `<span class="cl-crumb cl-crumb-current">Today</span>`,
     body,
   });
 }
@@ -150,7 +142,7 @@ export function reviewLoadErrorPage(message: string, retryUrl: string): string {
   });
 }
 
-function classroomCard(classroom: Classroom, due: number): string {
+function classroomCard(classroom: Classroom, due: number, folderId: string): string {
   const why = missionWhy(classroom.mission);
   return `<li class="cl-card cl-classroom-card">
   <a class="cl-card-link" href="/c/${encodeURIComponent(classroom.name)}">
@@ -161,7 +153,7 @@ function classroomCard(classroom: Classroom, due: number): string {
       <span class="cl-card-meta">${plural(classroom.lessonCount, "lesson")}${due > 0 ? ` · <span class="cl-card-due">${due} due for review</span>` : ""}</span>
     </span>
   </a>
-  <button type="button" class="cl-classroom-move" data-cl-move="${escapeHtml(classroom.name)}" data-classroom-title="${escapeHtml(classroom.title)}" aria-label="Move ${escapeHtml(classroom.title)} to folder">Move to folder</button>
+  <details class="cl-classroom-overflow"><summary aria-label="Classroom actions for ${escapeHtml(classroom.title)}" title="Classroom actions"><span aria-hidden="true">⋯</span></summary><button type="button" class="cl-classroom-move" data-current-folder="${escapeHtml(folderId)}" data-cl-move="${escapeHtml(classroom.name)}" data-classroom-title="${escapeHtml(classroom.title)}" aria-label="Move ${escapeHtml(classroom.title)} to folder">Move to folder</button></details>
 </li>`;
 }
 

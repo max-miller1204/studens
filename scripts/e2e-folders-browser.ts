@@ -34,9 +34,10 @@ export async function verifyFoldersBrowser(artifacts: string | null): Promise<vo
           await dialog.getByLabel('Folder name', {exact:true}).fill(name);
           await dialog.getByRole('button', {name:'Create folder',exact:true}).click();
           await dialog.waitFor({state:'hidden'});
-          await page.getByRole('link').filter({hasText:name}).waitFor();
+          await page.getByRole('main').getByRole('link').filter({hasText:name}).waitFor();
         };
         const move = async (classroom, target) => {
+          await page.getByRole('main').getByLabel('Classroom actions for '+classroom,{exact:true}).click();
           await page.getByRole('button', {name:'Move '+classroom+' to folder',exact:true}).click();
           await dialog.getByLabel('Folder', {exact:true}).selectOption({label:target});
           await dialog.getByRole('button', {name:'Move classroom',exact:true}).click();
@@ -51,21 +52,22 @@ export async function verifyFoldersBrowser(artifacts: string | null): Promise<vo
         await dialog.getByRole('alert').filter({hasText:'already exists'}).waitFor();
         await dialog.getByRole('button', {name:'Cancel',exact:true}).click();
         await move('Rust', 'Programming');
-        if (await page.locator('a[href="/c/rust"]').count()) throw new Error('Filed classroom remains at root.');
-        await page.getByRole('link').filter({hasText:'Programming'}).click();
+        if (!await page.getByRole('main').locator('a[href="/c/rust"]').count()) throw new Error('Today lost a filed classroom.');
+        await page.getByRole('main').getByRole('link').filter({hasText:'Programming'}).click();
         await page.getByRole('heading', {name:'Programming',exact:true}).waitFor();
         const programmingUrl = page.url();
         await page.reload();
-        await page.locator('a[href="/c/rust"]').waitFor();
+        await page.getByRole('main').locator('a[href="/c/rust"]').waitFor();
         await page.getByRole('button', {name:'Rename folder',exact:true}).click();
         await dialog.getByLabel('Folder name', {exact:true}).fill('Languages');
         await dialog.getByRole('button', {name:'Save name',exact:true}).click();
         await page.getByRole('heading', {name:'Languages',exact:true}).waitFor();
         if (page.url() !== programmingUrl) throw new Error('Rename changed folder identity.');
-        await page.locator('a[href="/c/rust"]').click();
+        await page.getByRole('main').locator('a[href="/c/rust"]').click();
         await page.locator('a[href="/c/rust/001-ownership"]').waitFor();
         await page.goto(programmingUrl);
         await page.route('**/api/folders', route => route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:'Folder storage unavailable for verification.'})}), {times:1});
+        await page.getByRole('main').getByLabel('Classroom actions for Rust',{exact:true}).click();
         await page.getByRole('button', {name:'Move Rust to folder',exact:true}).click();
         await dialog.getByLabel('Folder', {exact:true}).selectOption({label:'Science'});
         await dialog.getByRole('button', {name:'Move classroom',exact:true}).click();
@@ -73,31 +75,31 @@ export async function verifyFoldersBrowser(artifacts: string | null): Promise<vo
         if (!await dialog.isVisible()) throw new Error('Failed move closed the dialog.');
         await dialog.getByRole('button', {name:'Cancel',exact:true}).click();
         await page.reload();
-        await page.locator('a[href="/c/rust"]').waitFor();
+        await page.getByRole('main').locator('a[href="/c/rust"]').waitFor();
         await move('Rust', 'Science');
-        if (await page.locator('a[href="/c/rust"]').count()) throw new Error('Move kept old membership.');
-        await page.getByRole('link', {name:'Classrooms',exact:true}).click();
-        await page.getByRole('link').filter({hasText:'Science'}).click();
-        await page.locator('a[href="/c/rust"]').waitFor();
+        if (await page.getByRole('main').locator('a[href="/c/rust"]').count()) throw new Error('Move kept old membership.');
+        await page.getByRole('link', {name:'Studens',exact:true}).click();
+        await page.getByRole('main').getByRole('link').filter({hasText:'Science'}).click();
+        await page.getByRole('main').locator('a[href="/c/rust"]').waitFor();
         await move('Rust', 'Unfiled');
-        if (await page.locator('a[href="/c/rust"]').count()) throw new Error('Unfiled move kept membership.');
-        await page.getByRole('link', {name:'Classrooms',exact:true}).click();
-        await page.locator('a[href="/c/rust"]').waitFor();
+        if (await page.getByRole('main').locator('a[href="/c/rust"]').count()) throw new Error('Unfiled move kept membership.');
+        await page.getByRole('link', {name:'Studens',exact:true}).click();
+        await page.getByRole('main').locator('a[href="/c/rust"]').waitFor();
         await move('Rust', 'Science');
         await page.setViewportSize({width:390,height:844});
         await page.evaluate(() => document.documentElement.setAttribute('data-theme','dark'));
         ${artifacts ? `await page.screenshot({path:${JSON.stringify(path.join(artifacts, "folders-mobile-dark.png"))},fullPage:true});` : ""}
         if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)) throw new Error('Mobile folders overflow.');
-        await page.getByRole('link').filter({hasText:'Science'}).click();
+        await page.getByRole('main').getByRole('link').filter({hasText:'Science'}).click();
         await page.getByRole('button', {name:'Delete folder',exact:true}).click();
         await dialog.getByRole('button', {name:'Cancel',exact:true}).click();
-        await page.locator('a[href="/c/rust"]').waitFor();
+        await page.getByRole('main').locator('a[href="/c/rust"]').waitFor();
         await page.getByRole('button', {name:'Delete folder',exact:true}).click();
         await dialog.getByRole('button', {name:'Delete folder',exact:true}).click();
-        await page.getByRole('heading', {name:'Classrooms',exact:true}).waitFor();
+        await page.getByRole('heading', {name:'Today',exact:true}).waitFor();
         await page.reload();
-        await page.locator('a[href="/c/rust"]').waitFor();
-        if (await page.getByRole('link').filter({hasText:'Science'}).count()) throw new Error('Deleted folder returned.');
+        await page.getByRole('main').locator('a[href="/c/rust"]').waitFor();
+        if (await page.getByRole('main').getByRole('link').filter({hasText:'Science'}).count()) throw new Error('Deleted folder returned.');
         await page.setViewportSize({width:1280,height:800});
         await page.evaluate(() => document.documentElement.setAttribute('data-theme','light'));
         ${artifacts ? `await page.screenshot({path:${JSON.stringify(path.join(artifacts, "folders-desktop-light.png"))},fullPage:true});` : ""}
@@ -116,7 +118,7 @@ export async function verifyFoldersBrowser(artifacts: string | null): Promise<vo
         const response = await page.goto(${JSON.stringify(base)});
         if (response.status() !== 500) throw new Error('Corrupt folder state did not fail.');
         await page.getByRole('heading', {name:'Cannot load classroom folders',exact:true}).waitFor();
-        await page.getByRole('alert').filter({hasText:'Cannot read JSON state'}).waitFor();
+        await page.getByRole('main').getByRole('alert').filter({hasText:'Cannot read JSON state'}).waitFor();
         ${artifacts ? `await page.screenshot({path:${JSON.stringify(path.join(artifacts, "folder-load-error.png"))},fullPage:true});` : ""}
         return {status:response.status()};
       }`,
@@ -129,8 +131,8 @@ export async function verifyFoldersBrowser(artifacts: string | null): Promise<vo
       fixture.root,
       `async page => {
       await page.getByRole('link', {name:'Retry loading',exact:true}).click();
-      await page.getByRole('heading', {name:'Classrooms',exact:true}).waitFor();
-      await page.locator('a[href="/c/rust"]').waitFor();
+      await page.getByRole('heading', {name:'Today',exact:true}).waitFor();
+      await page.getByRole('main').locator('a[href="/c/rust"]').waitFor();
       return {recovered:true};
     }`,
     );

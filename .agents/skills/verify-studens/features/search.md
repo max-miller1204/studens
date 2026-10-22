@@ -12,7 +12,7 @@ Find public lesson passages, question threads, glossary terms, and learning reco
 
 ## How to get to it (user POV)
 
-1. Open Classrooms and select Search across classrooms.
+1. Open Today and select the top-bar Search classrooms link (or Search in the sidebar).
 2. Enter a word or phrase and select Search.
 3. Select a result to read its passage, card, term, or learning record.
 4. Use Back to return to the saved query.

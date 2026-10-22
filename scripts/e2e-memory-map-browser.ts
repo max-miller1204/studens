@@ -261,7 +261,7 @@ export async function verifyMemoryMapBrowser(artifacts: string | null): Promise<
       fs.writeFileSync(file, JSON.stringify(corrupt));
       const errorBefore = hashes(f.root);
       await code(
-        `const response=await page.goto(${JSON.stringify(base + "/c/rust")});if(response.status()!==500)throw Error('Malformed event did not stop map');await page.getByRole('link',{name:'Retry loading review state',exact:true}).waitFor();await page.getByText('Invalid review event timing or credit',{exact:false}).waitFor();await page.screenshot({path:${JSON.stringify(path.join(dir, "error.png"))},fullPage:true});return true;`,
+        `const response=await page.goto(${JSON.stringify(base + "/c/rust")});if(response.status()!==500)throw Error('Malformed event did not stop map');await page.getByRole('link',{name:'Retry loading review state',exact:true}).waitFor();await page.getByRole('main').getByText('Invalid review event timing or credit',{exact:false}).waitFor();await page.screenshot({path:${JSON.stringify(path.join(dir, "error.png"))},fullPage:true});return true;`,
       );
       if (JSON.stringify(errorBefore) !== JSON.stringify(hashes(f.root)))
         throw Error("Error read rewrote state.");
