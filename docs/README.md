@@ -14,6 +14,7 @@ Start with [installation and your first lesson](../README.md).
 - [Development](DEVELOPMENT.md): setup, verification, and mutation testing.
 - [Architecture](ARCHITECTURE.md): host lifecycles, durable requests, and private files.
 - [Tools](TOOLS.md): authoring and service controls.
+- [Browser components](COMPONENTS.md): shared controls, markup, and motion primitives.
 
 ## Teaching and authoring
 
