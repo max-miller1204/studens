@@ -105,7 +105,7 @@ export function createHighlights({ config, contentRoot, drafts, cards, learnerMa
 
   function buildComposer() {
     composer = document.createElement("div");
-    composer.className = "cl-card-panel";
+    composer.className = "cl-card-panel cl-card-box";
     composer.hidden = true;
     composer.innerHTML = `
     <div class="cl-card-head">
@@ -116,7 +116,7 @@ export function createHighlights({ config, contentRoot, drafts, cards, learnerMa
     </div>
     <div class="cl-card-content">
       <form class="cl-card-form" data-cl-ask-form>
-        <textarea placeholder="What would you like to know about this?" data-cl-question required></textarea>
+        <textarea class="cl-input" placeholder="What would you like to know about this?" data-cl-question required></textarea>
         <div class="cl-card-form-actions">
           <span class="cl-hint">⌘/Ctrl + Enter to send</span>
           <button type="submit" class="cl-button">Ask your teacher</button>

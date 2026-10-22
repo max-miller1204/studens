@@ -26,7 +26,7 @@ export async function verifyFadedPublication(artifacts: string | null): Promise<
       new URL("../assets/templates/faded.html", import.meta.url),
       "utf8",
     );
-    const widget = template.slice(template.indexOf('<section class="cl-faded"'));
+    const widget = template.slice(template.indexOf('<section class="cl-faded cl-card-box"'));
     const source = nextLessonDocument(f.root);
     source.lesson_html = source.lesson_html.replace("</template>", `${widget}</template>`);
     const typed = lessonOutput(source);

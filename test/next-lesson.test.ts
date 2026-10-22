@@ -700,3 +700,24 @@ it.each([
     }
   },
 );
+
+it("requires v2 for fresh publication while retaining unmarked saved-plan recovery", async () => {
+  const request = startLessonRequest("rust", randomUUID(), "Borrowing", "claude", "service");
+  const document = nextLessonDocument(fixture.root);
+  document.lesson_html = document.lesson_html.replace(' data-cl-ui="2"', "");
+  expect(() => saveLessonDocument(request, document)).toThrow(/New lessons need/);
+  expect(lessonRequests("rust")[0].document).toBeUndefined();
+  // Historical validated plans must finish with their original exact bytes.
+  const { createHash } = await import("node:crypto");
+  updateLessonRequest(request, {
+    document,
+    pageCheck: {
+      hash: createHash("sha256").update(JSON.stringify(document)).digest("hex"),
+      report: nextLessonReceipt(request, document),
+    },
+  });
+  await completeLessonRequest(request);
+  expect(
+    fs.readFileSync(path.join(fixture.root, "rust", request.lesson, "lesson.html"), "utf8"),
+  ).toBe(document.lesson_html);
+});

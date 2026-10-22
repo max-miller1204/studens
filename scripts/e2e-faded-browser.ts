@@ -34,7 +34,7 @@ export async function verifyFadedBrowser(artifacts: string | null): Promise<void
     new URL("../assets/templates/faded.html", import.meta.url),
     "utf8",
   );
-  const widget = template.slice(template.indexOf('<section class="cl-faded"'));
+  const widget = template.slice(template.indexOf('<section class="cl-faded cl-card-box"'));
   const body = `<header><h1>Keep an equation balanced</h1><p class="cl-lede">Learn to undo operations while preserving equality.</p></header><section><h2>Equal changes preserve equality</h2><p>Think of both sides as balanced pans. Undo an operation on both sides, then check the result in the original equation.</p></section>${widget}<footer><p>Practice stays on this page. Your graded check uses a separate problem.</p><p><a href="./">Back to the classroom</a></p></footer>`;
   const shell = (content: string) =>
     `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Keep an equation balanced</title></head><body><main class="cl-lesson-shell" data-cl-content>${content}</main></body></html>`;

@@ -1,3 +1,4 @@
+import { validateLessonMarkup } from "./lesson-markup.ts";
 /** Explicit authoring plans are validated and saved before publication writes. */
 import * as fs from "node:fs";
 import * as os from "node:os";
@@ -161,6 +162,7 @@ export function validateLessonDocument(document: LessonDocument): void {
     );
   // Use the same inert parser as served pages before saving a publication plan.
   // A hidden malformed section must not survive until the learner opens its gate.
+  validateLessonMarkup(document.lesson_html);
   searchPassages(document.lesson_html);
   const initial = stageLesson(document.lesson_html, new Set());
   searchPassages(initial.html);
@@ -195,6 +197,7 @@ export function saveLessonDocument(
 ): LessonRequest {
   validateLessonDocument(document);
   const existing = lessonRequests(request.classroom).find((r) => r.id === request.id)!;
+  if (!existing.document) validateLessonMarkup(document.lesson_html, true);
   if (existing.document && JSON.stringify(existing.document) !== JSON.stringify(document))
     throw new Error("A validated lesson plan is already saved. Retry publication of that plan.");
   return updateLessonRequest(request, { document });

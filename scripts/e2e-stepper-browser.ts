@@ -33,15 +33,15 @@ export async function verifyStepperBrowser(artifacts: string | null): Promise<vo
     new URL("../assets/templates/stepper.html", import.meta.url),
     "utf8",
   );
-  const widgets = template.slice(template.indexOf('<section class="cl-stepper"'));
+  const widgets = template.slice(template.indexOf('<section class="cl-stepper cl-card-box"'));
   const shell = (body: string) =>
     lessonHtml("Follow a changing system", body).replace(
       "<main data-cl-content>",
       '<main class="cl-lesson-shell" data-cl-content>',
     );
   const pipeline = widgets.slice(
-    widgets.indexOf('<section class="cl-stepper" data-stepper-id="packet"'),
-    widgets.indexOf('<section class="cl-stepper" data-stepper-id="prefix"'),
+    widgets.indexOf('<section class="cl-stepper cl-card-box" data-stepper-id="packet"'),
+    widgets.indexOf('<section class="cl-stepper cl-card-box" data-stepper-id="prefix"'),
   );
   const intro =
     "<header><h1>Follow a changing system</h1><p>Inspect each transition and explain what changed.</p></header>";

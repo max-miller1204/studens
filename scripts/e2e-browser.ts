@@ -61,7 +61,7 @@ const contract = fs
   .slice(1)
   .join("-->");
 const allTypes = contract
-  .slice(contract.indexOf('<form class="cl-quiz"'), contract.indexOf("</form>") + 7)
+  .slice(contract.indexOf('<form class="cl-quiz cl-card-box"'), contract.indexOf("</form>") + 7)
   // Preserve the legacy all-types fixture; code has a separate validated criterion assessment.
   .replace(/<li\s+class="cl-q"\s+data-question-id="q11"[\s\S]*?<\/li>/g, "")
   .replace('data-quiz-id="check-1"', 'data-quiz-id="all-types"');

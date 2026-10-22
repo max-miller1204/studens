@@ -52,8 +52,18 @@ description: Teach a topic or create challenging quizzes and tests in the classr
     in feedback. It cannot rewrite that teaching.
     Treat pretest errors as diagnostic. Do not run a retrieval check after them.
     Follow the authoring steps they return. Read the current quiz contract each time.
+    Author contract v2: retain data-cl-ui="2" on the main.cl-lesson-shell
+    data-cl-content root. Keep domain hooks and add the shared component classes
+    specified in quiz.html (cl-card-box, cl-input, cl-check, cl-disclosure and the
+    cl-button variants). Do not copy runtime-generated controls. Existing saved
+    unmarked lessons are legacy; never silently rewrite them or submitted identities.
     Check each lesson in a headless browser before giving the learner its link.
     Follow the scaffold instructions for the headless config and test session.
+    Finish all file edits before running the packaged page checker in a separate
+    shell tool call. If a check fails, repair the reported cause, then explicitly
+    rerun that page's checker in another standalone call, even if a combined edit
+    command already printed a successful result. Retain the complete JSON receipt
+    for the final HTML, metadata, key and plan before sharing the page.
     Do not open a visible browser window. Report a headless check failure.
     State when controls were not checked.
     The lesson template is a shell. Design the lesson from its objective and the

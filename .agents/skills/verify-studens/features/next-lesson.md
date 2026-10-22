@@ -42,6 +42,19 @@ publication files: HTML, metadata, private key and teaching plan. A pending olde
 HTML-only receipt is rechecked on explicit saved-plan retry, without another model
 turn; compare its restored hashes with the published bytes.
 
+Fresh service publication requires a v2 lesson root (`data-cl-ui="2"`) and checks
+its component classes and required hooks, including inert gated teaching. The
+packaged checker validates explicit v2 promises; unmarked saved documents and
+saved publication plans retain their original bytes. `test/lesson-markup.test.ts`
+and the next-lesson contracts cover missing/unsupported markers, missing hooks,
+and legacy recovery. The authoring targets also check every newly authored page
+against v2; compare their quality reports with main over multiple runs as required
+by the shared skill. Quality findings remain separate from mechanical verdicts.
+Inspect `<host>-receipts.json` against the four final input hashes and the native
+transcript. After an authored-page repair, the checker must run in a separate
+standalone shell call; a successful result bundled with file edits is insufficient.
+Retain the failed run when explicitly retrying after an instruction correction.
+
 The real host targets in the shared skill now start a lesson from the classroom
 before the original reading/quiz/panel paths. They request an official Rust source,
 check saved output and a page-check receipt, open and reload the page, and verify

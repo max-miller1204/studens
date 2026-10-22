@@ -10,7 +10,12 @@ import { lessonHtml } from "./helpers.ts";
 export function nextLessonDocument(root: string): LessonDocument {
   const dir = path.join(root, "rust/001-ownership");
   const original = fs.readFileSync(path.join(dir, "lesson.html"), "utf8");
-  const quiz = original.slice(original.indexOf("<form"), original.indexOf("</form>") + 7);
+  const quiz = original
+    .slice(original.indexOf("<form"), original.indexOf("</form>") + 7)
+    .replace('class="cl-quiz"', 'class="cl-quiz cl-card-box"')
+    .replaceAll('<input type="text">', '<input class="cl-input" type="text">')
+    .replaceAll("<textarea>", '<textarea class="cl-input">')
+    .replaceAll("<ol>", '<ol class="cl-questions">');
   const rubric = JSON.parse(fs.readFileSync(path.join(dir, "quiz/key.json"), "utf8"));
   rubric["pretest-1"] = {
     p1: {
@@ -45,7 +50,10 @@ export function nextLessonDocument(root: string): LessonDocument {
     summary: "Track the owner after a move.",
     lesson_html: lessonHtml(
       "Move and release",
-      `<form class="cl-quiz" data-quiz-id="pretest-1" data-kind="pretest"><ol><li class="cl-q" data-question-id="p1" data-type="short"><p class="cl-q-prompt">Predict who releases a value after it moves to a new owner.</p><textarea></textarea></li></ol></form><template data-cl-after-pretest="pretest-1"><section id="teaching-owner"><h2>Track the owner</h2><p>A move transfers ownership. The new owner releases the value when its scope ends.</p><details><summary>Trace a move</summary><p>The first scope loses ownership when the value moves.</p></details></section>${quiz}</template>`,
+      `<form class="cl-quiz cl-card-box" data-quiz-id="pretest-1" data-kind="pretest"><ol class="cl-questions"><li class="cl-q" data-question-id="p1" data-type="short"><p class="cl-q-prompt">Predict who releases a value after it moves to a new owner.</p><textarea class="cl-input"></textarea></li></ol></form><template data-cl-after-pretest="pretest-1"><section id="teaching-owner"><h2>Track the owner</h2><p>A move transfers ownership. The new owner releases the value when its scope ends.</p><details class="cl-disclosure"><summary>Trace a move</summary><p>The first scope loses ownership when the value moves.</p></details></section>${quiz}</template>`,
+    ).replace(
+      "<main data-cl-content>",
+      '<main class="cl-lesson-shell" data-cl-content data-cl-ui="2">',
     ),
     rubric_json: JSON.stringify(rubric),
     teaching_plan_json: JSON.stringify(plan),

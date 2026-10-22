@@ -1,3 +1,5 @@
+import { lessonMarkupElements, lessonMarkupErrors } from "./lesson-markup.mjs";
+import { showErrors } from "./lesson-dom.mjs";
 /** The lesson entry point: compose feature modules and dispatch saved state and SSE. */
 import { initTeacherActivity } from "./teacher-activity.mjs";
 import { draftId, draftKind } from "./draft.mjs";
@@ -46,6 +48,14 @@ let review = null;
 
 function init() {
   document.body.classList.add("cl-lesson-page");
+
+  const markupErrors = lessonMarkupErrors(lessonMarkupElements(document.documentElement));
+  if (markupErrors.length) {
+    showErrors(contentRoot, "This lesson has markup errors.", markupErrors);
+    for (const control of contentRoot.querySelectorAll("input, textarea, select, button"))
+      control.disabled = true;
+    return;
+  }
 
   buildHeader();
   buildLessonLinks();

@@ -24,7 +24,7 @@ export async function verifyClosedBrowser(artifacts: string | null): Promise<voi
   );
   const quiz = contract
     .slice(
-      contract.indexOf('<form class="cl-quiz" data-quiz-id="check-1" data-title='),
+      contract.indexOf('<form class="cl-quiz cl-card-box" data-quiz-id="check-1" data-title='),
       contract.indexOf("</form>") + 7,
     )
     .replace(/\s*<li\s+class="cl-q"\s+data-question-id="q(?:4|5|11)"[\s\S]*?<\/li>/g, "")

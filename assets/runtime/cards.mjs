@@ -61,7 +61,7 @@ export function createCards({ config, contentRoot, drafts }) {
 
   function createPanel(annotationId, mark) {
     const panel = document.createElement("div");
-    panel.className = "cl-card-panel cl-card-inline";
+    panel.className = "cl-card-panel cl-card-inline cl-card-box";
     panel.dataset.annotationId = annotationId;
     panel.id = `cl-question-${annotationId}`;
     panel.hidden = true;
@@ -70,7 +70,7 @@ export function createCards({ config, contentRoot, drafts }) {
       <p class="cl-card-quote" data-cl-quote></p>
       <div class="cl-card-actions">
         <button type="button" class="cl-icon-button" data-cl-minimise aria-label="Minimise">–</button>
-        <button type="button" class="cl-text-button cl-text-button-danger" data-cl-delete>Delete</button>
+        <button type="button" class="cl-button cl-button-danger cl-button-sm" data-cl-delete>Delete</button>
       </div>
     </div>
     <div class="cl-card-content">
@@ -78,7 +78,7 @@ export function createCards({ config, contentRoot, drafts }) {
     </div>
     <!-- Outside cl-card-content on purpose: the thread scrolls, the composer stays put. -->
     <form class="cl-card-form cl-card-followup" data-cl-followup-form hidden>
-      <textarea rows="2" placeholder="Ask a follow-up…" data-cl-followup required></textarea>
+      <textarea class="cl-input" rows="2" placeholder="Ask a follow-up…" data-cl-followup required></textarea>
       <div class="cl-card-form-actions">
         <span class="cl-hint">⌘/Ctrl + Enter to send</span>
         <button type="submit" class="cl-button">Ask</button>

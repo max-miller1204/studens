@@ -89,7 +89,7 @@ function element(tag, className, content) {
   return node;
 }
 function button(label, action) {
-  const node = element("button", "cl-button cl-button-quiet", label);
+  const node = element("button", "cl-button cl-button-secondary", label);
   node.type = "button";
   node.addEventListener("click", action);
   return node;
@@ -173,7 +173,7 @@ function mount(widget, config) {
   const view = element("div", "cl-stepper-view");
   if (config.mode === "prefix-sum") {
     const label = element("label", "", "Values (1–12 integers, -100 to 100)");
-    const input = element("input");
+    const input = element("input", "cl-input");
     input.type = "text";
     input.value = config.values.join(", ");
     label.append(input);

@@ -28,6 +28,22 @@ The learner reads a lesson and asks about text without leaving the page.
 
 Run `npm run verify -- browser --artifacts /tmp/studens-reading`.
 
+For authored template/component changes, run
+`node scripts/e2e-lesson-markup.ts /tmp/studens-lesson-markup` after the shared
+doctor check. It opens the lesson, assessment, review and reference shells plus
+the canonical quiz/practice/stepper/faded fragments through public routes at
+1280×900 and 390×900 in light/dark. The intentionally unfinished shell questions
+receive fixture response controls. Inspect the matched full-page and focused
+captures, `result.json`, and `missing-hook.json`. Local practice feedback and a
+computed Next step must work without overflow or contract/page errors. Mouse-select
+prose, Ask, type a card follow-up, and delete through its confirmation; the answer
+is a fixture teacher response. A missing v2 prompt must disable the lesson with its
+specific hook error and no POST; correcting the source and explicitly reloading
+must restore a fresh quiz. For baseline captures, run the same script with `before`
+on the selected base checkout; that mode captures its existing contract and omits
+the v2-specific error probe. Neither mode proves model behavior or migrates saved
+lessons.
+
 The suite selects text with the mouse. It uses `.cl-ask-pill`, `[data-cl-question]`, and `[data-cl-followup]`. It checks saved annotations, draft restoration, and card placement after the quiz question. Asking about an option must not select it. Sending a follow-up must not submit the quiz.
 
 The `question-errors/` fixture rejects the real ask and follow-up POSTs through the

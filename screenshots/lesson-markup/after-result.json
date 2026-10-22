@@ -1,0 +1,205 @@
+{
+  "errors": [],
+  "cases": [
+    {
+      "name": "lesson",
+      "width": 1280,
+      "theme": "light",
+      "contract": [],
+      "dimensions": {
+        "width": 1280,
+        "scroll": 1280
+      }
+    },
+    {
+      "name": "assessment",
+      "width": 1280,
+      "theme": "light",
+      "contract": [],
+      "dimensions": {
+        "width": 1280,
+        "scroll": 1280
+      }
+    },
+    {
+      "name": "review",
+      "width": 1280,
+      "theme": "light",
+      "contract": [],
+      "dimensions": {
+        "width": 1280,
+        "scroll": 1280
+      }
+    },
+    {
+      "name": "reference",
+      "width": 1280,
+      "theme": "light",
+      "contract": [],
+      "dimensions": {
+        "width": 1280,
+        "scroll": 1280
+      }
+    },
+    {
+      "name": "controls",
+      "width": 1280,
+      "theme": "light",
+      "contract": [],
+      "dimensions": {
+        "width": 1280,
+        "scroll": 1280
+      }
+    },
+    {
+      "name": "lesson",
+      "width": 1280,
+      "theme": "dark",
+      "contract": [],
+      "dimensions": {
+        "width": 1280,
+        "scroll": 1280
+      }
+    },
+    {
+      "name": "assessment",
+      "width": 1280,
+      "theme": "dark",
+      "contract": [],
+      "dimensions": {
+        "width": 1280,
+        "scroll": 1280
+      }
+    },
+    {
+      "name": "review",
+      "width": 1280,
+      "theme": "dark",
+      "contract": [],
+      "dimensions": {
+        "width": 1280,
+        "scroll": 1280
+      }
+    },
+    {
+      "name": "reference",
+      "width": 1280,
+      "theme": "dark",
+      "contract": [],
+      "dimensions": {
+        "width": 1280,
+        "scroll": 1280
+      }
+    },
+    {
+      "name": "controls",
+      "width": 1280,
+      "theme": "dark",
+      "contract": [],
+      "dimensions": {
+        "width": 1280,
+        "scroll": 1280
+      }
+    },
+    {
+      "name": "lesson",
+      "width": 390,
+      "theme": "light",
+      "contract": [],
+      "dimensions": {
+        "width": 390,
+        "scroll": 390
+      }
+    },
+    {
+      "name": "assessment",
+      "width": 390,
+      "theme": "light",
+      "contract": [],
+      "dimensions": {
+        "width": 390,
+        "scroll": 390
+      }
+    },
+    {
+      "name": "review",
+      "width": 390,
+      "theme": "light",
+      "contract": [],
+      "dimensions": {
+        "width": 390,
+        "scroll": 390
+      }
+    },
+    {
+      "name": "reference",
+      "width": 390,
+      "theme": "light",
+      "contract": [],
+      "dimensions": {
+        "width": 390,
+        "scroll": 390
+      }
+    },
+    {
+      "name": "controls",
+      "width": 390,
+      "theme": "light",
+      "contract": [],
+      "dimensions": {
+        "width": 390,
+        "scroll": 390
+      }
+    },
+    {
+      "name": "lesson",
+      "width": 390,
+      "theme": "dark",
+      "contract": [],
+      "dimensions": {
+        "width": 390,
+        "scroll": 390
+      }
+    },
+    {
+      "name": "assessment",
+      "width": 390,
+      "theme": "dark",
+      "contract": [],
+      "dimensions": {
+        "width": 390,
+        "scroll": 390
+      }
+    },
+    {
+      "name": "review",
+      "width": 390,
+      "theme": "dark",
+      "contract": [],
+      "dimensions": {
+        "width": 390,
+        "scroll": 390
+      }
+    },
+    {
+      "name": "reference",
+      "width": 390,
+      "theme": "dark",
+      "contract": [],
+      "dimensions": {
+        "width": 390,
+        "scroll": 390
+      }
+    },
+    {
+      "name": "controls",
+      "width": 390,
+      "theme": "dark",
+      "contract": [],
+      "dimensions": {
+        "width": 390,
+        "scroll": 390
+      }
+    }
+  ]
+}

@@ -1,3 +1,4 @@
+import { validateLessonMarkup } from "../src/lesson-markup.ts";
 /**
  * e2e-authoring.ts: evaluate how a real agent writes lessons from the scaffold.
  *
@@ -184,6 +185,11 @@ const AUTHORING_PROMPT = [
   // Reason: a real session knows its own browser tool. This run has only a shell
   // command, so name it. This describes the environment and gives no authoring hint.
   "Check each lesson page and its local controls in headless mode. Use the packaged config named in the scaffold instructions. Do not use --headed or show a visible window. Your browser tool in this run is the playwright-cli shell command. Run playwright-cli --help to see its commands. Use a unique named browser session. Close only the named sessions you open. Never run close-all or kill-all. Other checks can run at the same time.",
+  ...(harness === "codex"
+    ? [
+        "Before finishing, reconcile every requested page with its final packaged checker receipt. After any repair, run that page's checker as a separate standalone shell tool call after all edits; a receipt printed by a combined edit/check command does not complete this requirement. Keep the complete JSON output, bound to the final four input files.",
+      ]
+    : []),
   `When all ${OBJECTIVES.length} requested pages are written, end with one line per page that states why you chose its activities.`,
 ].join("\n");
 
@@ -665,6 +671,11 @@ async function main(): Promise<void> {
         path.join(root, CLASSROOM, report.lesson, "lesson.html"),
         "utf8",
       );
+      try {
+        validateLessonMarkup(html, true);
+      } catch (error) {
+        report.problems.push(String(error));
+      }
       const staged = stageLesson(html, new Set());
       if (!codeMode && i < 2 && staged.pendingPretests.length === 0)
         report.problems.push("New teaching has no server-gated pretest.");

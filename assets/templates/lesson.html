@@ -73,7 +73,7 @@
       Write < as &lt; inside math. Text in pre, code, or .cl-no-math stays literal.
     * Local interactions: plain HTML, CSS, and an inline script can show a concept
       (a stepper, a toggle, a <details> reveal). Use <button type="button"
-      class="cl-button">, or add cl-button-quiet for a secondary control. Make each
+      class="cl-button">, or add cl-button-secondary for a secondary control. Make each
       control work with the keyboard, label it, and show its result visibly. Check it
       in the browser. Do not put local controls inside a form.cl-quiz.
 
@@ -99,7 +99,7 @@
       KEEP: main.cl-lesson-shell with data-cl-content. The learner can highlight
       any text inside it to ask a question. Put all content and quizzes inside it.
     -->
-    <main class="cl-lesson-shell" data-cl-content>
+    <main class="cl-lesson-shell" data-cl-content data-cl-ui="2">
       <!-- KEEP: the title and the one-line summary. -->
       <header>
         <h1>{{LESSON_TITLE}}</h1>
@@ -112,7 +112,7 @@
            faded completion, then independent work. Choose support from evidence. -->
       <!-- KEEP for a new lesson. Ask about central ideas in the upcoming lesson. Two or three is a practical default. -->
       <form
-        class="cl-quiz"
+        class="cl-quiz cl-card-box"
         data-evidence="report"
         data-confidence="optional"
         data-quiz-id="pretest-1"
@@ -157,7 +157,7 @@
         write the question. Place quizzes where they serve the lesson. Keep the pretest outside its gate. Put post-teaching checks inside the gate.
       -->
         <form
-          class="cl-quiz"
+          class="cl-quiz cl-card-box"
           data-evidence="report"
           data-confidence="optional"
           data-quiz-id="check-1"

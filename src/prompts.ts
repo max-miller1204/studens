@@ -134,6 +134,7 @@ export function authoringSteps(
     service
       ? "1. Use the complete Quiz contract, Lesson shell, TEACHING.md, TEACHING-PLAN.md and CODE-EXERCISES.md supplied inline in this request. They are reference contracts, not paths to fetch."
       : `1. Read the current quiz contract: ${contract}. Read it for each ${kind}. It can change between sessions.`,
+    'Author lesson UI contract v2: keep exactly one <main class="cl-lesson-shell" data-cl-content data-cl-ui="2">. Preserve all quiz identity and behavior hooks. Add cl-card-box to quiz/practice forms and stepper/faded sections; use cl-input on text fields, textareas and selects, cl-check on radios/checkboxes, and cl-disclosure on details. Forms contain a direct ol.cl-questions with li.cl-q and .cl-q-prompt. Use cl-button with cl-button-secondary, cl-button-ghost or cl-button-danger as appropriate; the runtime owns generated controls. The complete v2 rules are in the Quiz contract.',
     ...middle,
     ...(kind === "lesson"
       ? [
