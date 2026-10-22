@@ -108,6 +108,23 @@ URLs must return 404. The external-fetch probe must fail. Inspect `runtime.json`
 and all 64 screenshots. Each saved accent must survive navigation, theme toggles, and reload. The drive removes its temporary font probes, closes its
 browser and server, and removes its fixture classroom. It does not run a model.
 
+For shared component styles or motion, run
+`node scripts/e2e-components.ts /tmp/studens-components` after the shared doctor
+check. It opens a disposable reference page through `/r/rust/components.html`.
+The 32-case matrix uses Settings to save both themes and all four accents, then
+navigates to the same controls in desktop and touch viewports with both motion
+preferences. It opens/closes explanations, toggles a disclosure and segmented
+selection, types, checks a box, swaps a named icon with a status label, and activates
+a specific inline error's Retry. It checks viewport bounds, persisted appearance,
+static rows/tabs/typing, reduced-motion properties, zero POSTs, and unchanged durable
+classroom file hashes. The final recording slows enter/exit, measured accordion,
+icon swap, and press to 10% playback; captures and keyframes prove actual height
+motion and opacity-only reduced-motion state changes. Keyboard collapse/reopen
+retains focus and keeps the closed panel inert. Inspect `result.json`, matched
+screenshots, `motion-*.png`, and `motion.webm`. The inline error is authored fixture
+scaffolding; the `question-errors/` drive above proves real server rejection and
+explicit resend. This reference does not exercise a teacher or redesign pages.
+
 The `lesson-sources/` drive opens the canonical `.cl-lesson-shell` with Pi, Claude,
 and Codex owner fixtures. Use the **Builds on** link to open the prerequisite lesson.
 Focus a `.cl-term`, press Enter, and require the source link to stay hidden until

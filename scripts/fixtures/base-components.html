@@ -1,0 +1,227 @@
+<section style="font-family: var(--cl-sans); max-width: 58rem; margin: 2rem auto; padding: 0 1rem">
+  <h1>Shared controls</h1>
+  <p>Scratch reference for the shared component contract.</p>
+  <div
+    style="
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+      gap: 1.5rem;
+    "
+  >
+    <section class="cl-card-box">
+      <h2>Actions</h2>
+      <p style="display: flex; flex-wrap: wrap; gap: 0.5rem">
+        <button class="cl-button" id="open-panel">Open explanation</button>
+        <button class="cl-button cl-button-secondary">Secondary</button>
+        <button class="cl-button cl-button-ghost">Ghost</button>
+        <button class="cl-button cl-button-danger">Delete</button>
+        <button class="cl-button" disabled>Unavailable</button>
+      </p>
+      <p style="display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem">
+        <button class="cl-button cl-button-sm">Small</button
+        ><button class="cl-button cl-button-lg">Large</button>
+        <button class="cl-icon-button" aria-label="Save explanation" id="copy">
+          <span class="cl-icon-swap" aria-hidden="true"
+            ><span data-active="true">□</span><span data-active="false">✓</span></span
+          ></button
+        ><span id="copy-status" role="status">Ready to save</span>
+      </p>
+      <p style="display: flex; flex-wrap: wrap; gap: 0.4rem">
+        <span class="cl-chip">Not started</span
+        ><span class="cl-chip cl-chip-accent">In progress</span
+        ><span class="cl-chip cl-chip-success">Complete</span
+        ><span class="cl-chip cl-chip-warn">Due soon</span
+        ><span class="cl-chip cl-chip-danger">Failed</span>
+      </p>
+      <div id="explanation" class="cl-motion-enter" hidden>
+        <p>Explanation opened.</p>
+        <button class="cl-button cl-button-secondary" id="close-panel">Close explanation</button>
+      </div>
+      <button
+        type="button"
+        class="cl-disclosure-row"
+        aria-expanded="false"
+        aria-controls="due-details"
+      >
+        Why is this due?
+      </button>
+      <div class="cl-accordion" id="due-details" data-open="false" inert>
+        <div class="cl-accordion-content">
+          <p>Practice is due after three days. Expanded details stay in the page.</p>
+        </div>
+      </div>
+      <a class="cl-list-row" href="#forms"
+        >Practice ownership <span class="cl-chip cl-chip-accent">Next</span></a
+      >
+    </section>
+    <section class="cl-card-box" id="forms">
+      <h2>Inputs</h2>
+      <div class="cl-segmented" role="group" aria-label="View">
+        <button type="button" aria-pressed="true">Overview</button
+        ><button type="button" aria-pressed="false">Details</button>
+      </div>
+      <p>
+        <label>Topic<input class="cl-input" placeholder="Ownership" /></label>
+      </p>
+      <p>
+        <label
+          >Note<textarea class="cl-input" rows="2" placeholder="Explain the rule"></textarea>
+        </label>
+      </p>
+      <p>
+        <label
+          >Pace<select class="cl-input">
+            <option>Steady</option>
+            <option>Quick</option>
+          </select></label
+        >
+      </p>
+      <p>
+        <label><input class="cl-check" type="checkbox" /> Include examples</label>
+      </p>
+      <p>
+        <label><input class="cl-check" type="radio" name="depth" checked /> Standard</label>
+        <label><input class="cl-check" type="radio" name="depth" /> Deep</label>
+      </p>
+      <p>
+        <label>Unavailable<input class="cl-input" disabled value="Saved by teacher" /></label>
+      </p>
+      <p>
+        <label
+          >Lesson number<input
+            class="cl-input"
+            aria-invalid="true"
+            aria-describedby="number-error"
+            value="zero" /></label
+        ><span id="number-error" class="cl-status-line" data-tone="danger"
+          >Enter a positive lesson number.</span
+        >
+      </p>
+    </section>
+    <section class="cl-card-box">
+      <h2>Progress</h2>
+      <p>3 of 5 complete</p>
+      <div
+        class="cl-meter"
+        role="meter"
+        aria-label="Completed"
+        aria-valuemin="0"
+        aria-valuemax="5"
+        aria-valuenow="3"
+      >
+        <span style="width: 60%"></span>
+      </div>
+      <ol class="cl-mini-bars" aria-label="Reviews due">
+        <li>
+          <span>2</span>
+          <div><i style="height: 40%"></i></div>
+          <span>Mon</span>
+        </li>
+        <li>
+          <span>5</span>
+          <div><i style="height: 100%"></i></div>
+          <span>Tue</span>
+        </li>
+        <li>
+          <span>0</span>
+          <div><i style="height: 0%"></i></div>
+          <span>Wed</span>
+        </li>
+      </ol>
+      <details class="cl-disclosure">
+        <summary>View data table</summary>
+        <div>
+          <table>
+            <caption>
+              Reviews due
+            </caption>
+            <thead>
+              <tr>
+                <th>Day</th>
+                <th>Count</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Mon</td>
+                <td>2</td>
+              </tr>
+              <tr>
+                <td>Tue</td>
+                <td>5</td>
+              </tr>
+              <tr>
+                <td>Wed</td>
+                <td>0</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+      <div class="cl-empty">
+        <p class="cl-empty-title">No saved notes</p>
+        <p class="cl-empty-body">Add a note to a passage to find it here.</p>
+      </div>
+    </section>
+    <section class="cl-card-box">
+      <h2>Status</h2>
+      <div class="cl-inline-error" role="alert">
+        <p>Could not load notes: classroom is unavailable.</p>
+        <button class="cl-button cl-button-secondary" id="retry">Retry</button>
+      </div>
+      <p class="cl-status-line" role="status" id="retry-status">Waiting for your retry.</p>
+      <div aria-busy="true" aria-label="Loading explanation">
+        <p class="cl-status-line">Loading explanation…</p>
+        <div
+          class="cl-skeleton"
+          aria-hidden="true"
+          style="height: 1rem; margin-block: 0.5rem"
+        ></div>
+        <div class="cl-skeleton" aria-hidden="true" style="height: 1rem; width: 65%"></div>
+      </div>
+    </section>
+  </div>
+</section>
+<script>
+  const disclosure = document.querySelector(".cl-disclosure-row");
+  const panel = document.querySelector("#due-details");
+  const sizeDisclosure = () =>
+    panel.style.setProperty(
+      "--cl-accordion-height",
+      panel.firstElementChild.getBoundingClientRect().height + "px",
+    );
+  new ResizeObserver(sizeDisclosure).observe(panel.firstElementChild);
+  disclosure.onclick = () => {
+    sizeDisclosure();
+    const expanded = disclosure.getAttribute("aria-expanded") !== "true";
+    disclosure.setAttribute("aria-expanded", String(expanded));
+    panel.dataset.open = String(expanded);
+    panel.inert = !expanded;
+  };
+  document.querySelector("#open-panel").onclick = () => {
+    document.querySelector("#explanation").hidden = false;
+  };
+  document.querySelector("#close-panel").onclick = () => {
+    document.querySelector("#explanation").hidden = true;
+  };
+  document.querySelector("#copy").onclick = () => {
+    document.querySelectorAll(".cl-icon-swap > span").forEach((el) => {
+      el.dataset.active = String(el.dataset.active !== "true");
+    });
+    document.querySelector("#copy-status").textContent =
+      document.querySelector(".cl-icon-swap > span").dataset.active === "true"
+        ? "Ready to save"
+        : "Saved";
+  };
+  document.querySelectorAll(".cl-segmented button").forEach((button) => {
+    button.onclick = () => {
+      document
+        .querySelectorAll(".cl-segmented button")
+        .forEach((el) => el.setAttribute("aria-pressed", String(el === button)));
+    };
+  });
+  document.querySelector("#retry").onclick = () => {
+    document.querySelector("#retry-status").textContent =
+      "Retry requested. Classroom is still unavailable.";
+  };
+</script>
