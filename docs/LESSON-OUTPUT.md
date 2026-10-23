@@ -32,7 +32,7 @@ The host validates both hidden source and released content, then checks the page
 {
   "title": "Comparing drying conditions",
   "summary": "Predict how air conditions affect evaporation.",
-  "lesson_html": "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><title>Comparing drying conditions</title></head><body><main class=\"cl-lesson-shell\" data-cl-content><header><h1>Comparing drying conditions</h1><p>Predict which conditions speed evaporation.</p></header><form class=\"cl-quiz\" data-quiz-id=\"before\" data-kind=\"pretest\"><ol><li class=\"cl-q\" data-question-id=\"predict\" data-type=\"short\"><p class=\"cl-q-prompt\">Two identical damp towels hang at the same temperature. One is in still air and one in moving air. Predict which dries sooner and explain why.</p><textarea></textarea></li></ol></form><template data-cl-after-pretest=\"before\"><section id=\"teaching-drying\"><h2>Air near a wet surface</h2><p>Water evaporates from a wet surface. Moving air replaces humid air near that surface with drier air, allowing faster net evaporation when other conditions stay the same. A fan can therefore speed drying without heating the water.</p></section><form class=\"cl-quiz\" data-quiz-id=\"after\" data-kind=\"check\"><ol><li class=\"cl-q\" data-question-id=\"compare\" data-type=\"short\"><p class=\"cl-q-prompt\">Two equal wet cloths are equally warm and receive the same airflow. Air around A is nearly saturated with water; air around B is much drier. Which loses water faster, and why?</p><textarea></textarea></li></ol></form></template><footer><p>Highlight a sentence to ask your teacher.</p><a href=\"./\">Back to classroom</a></footer></main></body></html>",
+  "lesson_html": "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><title>Comparing drying conditions</title></head><body><main class=\"cl-lesson-shell\" data-cl-content data-cl-ui=\"2\"><header><h1>Comparing drying conditions</h1><p>Predict which conditions speed evaporation.</p></header><form class=\"cl-quiz cl-card-box\" data-quiz-id=\"before\" data-kind=\"pretest\"><ol class=\"cl-questions\"><li class=\"cl-q\" data-question-id=\"predict\" data-type=\"short\"><p class=\"cl-q-prompt\">Two identical damp towels hang at the same temperature. One is in still air and one in moving air. Predict which dries sooner and explain why.</p><textarea class=\"cl-input\"></textarea></li></ol></form><template data-cl-after-pretest=\"before\"><section id=\"teaching-drying\"><h2>Air near a wet surface</h2><p>Water evaporates from a wet surface. Moving air replaces humid air near that surface with drier air, allowing faster net evaporation when other conditions stay the same. A fan can therefore speed drying without heating the water.</p></section><form class=\"cl-quiz cl-card-box\" data-quiz-id=\"after\" data-kind=\"check\"><ol class=\"cl-questions\"><li class=\"cl-q\" data-question-id=\"compare\" data-type=\"short\"><p class=\"cl-q-prompt\">Two equal wet cloths are equally warm and receive the same airflow. Air around A is nearly saturated with water; air around B is much drier. Which loses water faster, and why?</p><textarea class=\"cl-input\"></textarea></li></ol></form></template><footer><p>Highlight a sentence to ask your teacher.</p><a href=\"./\">Back to classroom</a></footer></main></body></html>",
   "message": "The lesson is ready.",
   "objectives": [
     {
@@ -115,7 +115,7 @@ The host validates both hidden source and released content, then checks the page
       "quiz": "after",
       "question": "compare",
       "id": "v1",
-      "html": "<li class=\"cl-q\" data-question-id=\"v1\" data-type=\"short\"><p class=\"cl-q-prompt\">Two identical wet pads sit at the same temperature. A fan blows dry air past X; Y is in still air. Predict the faster drying pad and explain.</p><textarea></textarea></li>",
+      "html": "<li class=\"cl-q\" data-question-id=\"v1\" data-type=\"short\"><p class=\"cl-q-prompt\">Two identical wet pads sit at the same temperature. A fan blows dry air past X; Y is in still air. Predict the faster drying pad and explain.</p><textarea class=\"cl-input\"></textarea></li>",
       "rubric": {
         "criteria": [
           {
@@ -141,7 +141,7 @@ The host validates both hidden source and released content, then checks the page
       "quiz": "after",
       "question": "compare",
       "id": "v2",
-      "html": "<li class=\"cl-q\" data-question-id=\"v2\" data-type=\"short\"><p class=\"cl-q-prompt\">Two wet sheets receive equal airflow at equal temperature. One is in a humid room, the other in a dry room. Predict the faster drying sheet and explain.</p><textarea></textarea></li>",
+      "html": "<li class=\"cl-q\" data-question-id=\"v2\" data-type=\"short\"><p class=\"cl-q-prompt\">Two wet sheets receive equal airflow at equal temperature. One is in a humid room, the other in a dry room. Predict the faster drying sheet and explain.</p><textarea class=\"cl-input\"></textarea></li>",
       "rubric": {
         "criteria": [
           {

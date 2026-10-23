@@ -204,7 +204,7 @@ export function createQuizzes({ config, drafts, placeTeacherPanel }) {
       footer.appendChild(submit);
 
       const status = document.createElement("span");
-      status.className = "cl-quiz-status";
+      status.className = "cl-quiz-status cl-status-line";
       status.dataset.clQuizStatus = "";
       status.setAttribute("role", "status");
       footer.appendChild(status);
@@ -258,6 +258,7 @@ export function createQuizzes({ config, drafts, placeTeacherPanel }) {
       label.className = "cl-answer-report";
       label.append(document.createTextNode(title + " "));
       const select = document.createElement("select");
+      select.className = "cl-input";
       select.dataset[name] = "";
       for (const [value, text] of options) {
         const option = document.createElement("option");
@@ -347,7 +348,7 @@ export function createQuizzes({ config, drafts, placeTeacherPanel }) {
     const rights = [...question.querySelectorAll(".cl-match-right > li")];
     for (const left of question.querySelectorAll(".cl-match-left > li")) {
       const select = document.createElement("select");
-      select.className = "cl-match-select";
+      select.className = "cl-match-select cl-input";
       select.dataset.matchFor = left.dataset.item;
       select.setAttribute("aria-label", `Match for ${textOf(left)}`);
       const blank = document.createElement("option");

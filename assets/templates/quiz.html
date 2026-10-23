@@ -7,7 +7,7 @@
   sessions, so do not rely on an earlier copy.
 
   Use this for quizzes, tests, pretests, reviews, and checks on learning. They are the
-  same markup contract. Honor the request: a quiz-only page has no teaching. Put a <form class="cl-quiz"> anywhere in a lesson.
+  same markup contract. Honor the request: a quiz-only page has no teaching. Put a <form class="cl-quiz cl-card-box"> anywhere in a lesson.
   The runtime checks it, adds the controls each question type needs, adds the submit
   button and status line, locks the form on submit, writes the answers to the lesson's
   quiz/ directory, grades closed answers in code, sends judgment answers to the teacher, and shows the grade inline. After a
@@ -19,9 +19,33 @@
   The runtime fails loudly. A quiz that breaks a rule below shows the errors on the
   page and in the browser console, and it cannot be submitted.
 
+  ── Lesson UI contract v2 ─────────────────────────────────────────────────────────
+
+    * New lesson, assessment, review and reference documents use exactly one
+      <main class="cl-lesson-shell" data-cl-content data-cl-ui="2"> root.
+      Put every assessment and local teaching widget inside it, including gates.
+    * Keep domain hooks (.cl-quiz, .cl-questions, .cl-q, .cl-q-prompt,
+      .cl-q-stimulus and each type's controls). These carry identity and behavior.
+      Component classes supplement them; do not replace or rename domain hooks.
+    * Quiz/practice forms and stepper/faded sections add cl-card-box. Quiz/practice
+      forms contain a direct ol.cl-questions, with li.cl-q and .cl-q-prompt.
+    * Text inputs, textareas and selects use cl-input; native radio/checkbox inputs
+      use cl-check. Label each control. Details use cl-disclosure.
+    * Use cl-button for primary actions, cl-button cl-button-secondary for secondary
+      actions, cl-button cl-button-ghost for quiet actions, and cl-button
+      cl-button-danger for destructive actions. Named icon buttons use cl-icon-button.
+      Status updates use cl-status-line with role="status". See docs/COMPONENTS.md.
+    * The runtime owns generated controls and gives them these same classes.
+      Do not copy runtime UI into authored markup.
+    * An explicit unsupported marker or missing v2 hook is an error, never a request
+      to repair the document. Fix the authoring source and explicitly reload/retry.
+      Unmarked saved lessons retain their existing hooks for now. They are not v2,
+      are not silently rewritten, and must be explicitly migrated in separate work
+      before legacy support is removed. Never change submitted question identities.
+
   ── The form ──────────────────────────────────────────────────────────────────────
 
-    * class="cl-quiz" and a data-quiz-id that is unique in the lesson. Ids use
+    * class="cl-quiz cl-card-box" and a data-quiz-id that is unique in the lesson. Ids use
       letters, digits, "_", ".", and "-".
     * data-title is the heading. Optional.
     * data-kind is optional:
@@ -174,7 +198,7 @@
     without saved definitions; do not invent a historical breakdown.
 -->
 
-<form class="cl-quiz" data-quiz-id="check-1" data-title="Check on learning">
+<form class="cl-quiz cl-card-box" data-quiz-id="check-1" data-title="Check on learning">
   <ol class="cl-questions">
     <!--
       choice: exactly one correct option. Two or more radios. Each radio needs a
@@ -185,13 +209,22 @@
       <p class="cl-q-prompt">Which of these describes a borrow that outlives its owner?</p>
       <ul class="cl-options">
         <li>
-          <label><input type="radio" name="q1" value="a" /> A dangling reference error</label>
+          <label
+            ><input class="cl-check" type="radio" name="q1" value="a" /> A dangling reference
+            error</label
+          >
         </li>
         <li>
-          <label><input type="radio" name="q1" value="b" /> A double free condition</label>
+          <label
+            ><input class="cl-check" type="radio" name="q1" value="b" /> A double free
+            condition</label
+          >
         </li>
         <li>
-          <label><input type="radio" name="q1" value="c" /> A mutable aliasing conflict</label>
+          <label
+            ><input class="cl-check" type="radio" name="q1" value="c" /> A mutable aliasing
+            conflict</label
+          >
         </li>
       </ul>
     </li>
@@ -204,13 +237,22 @@
       <p class="cl-q-prompt">Select every statement that holds for an immutable borrow.</p>
       <ul class="cl-options">
         <li>
-          <label><input type="checkbox" name="q2" value="a" /> Many may exist at once</label>
+          <label
+            ><input class="cl-check" type="checkbox" name="q2" value="a" /> Many may exist at
+            once</label
+          >
         </li>
         <li>
-          <label><input type="checkbox" name="q2" value="b" /> It blocks mutable borrows</label>
+          <label
+            ><input class="cl-check" type="checkbox" name="q2" value="b" /> It blocks mutable
+            borrows</label
+          >
         </li>
         <li>
-          <label><input type="checkbox" name="q2" value="c" /> It transfers ownership away</label>
+          <label
+            ><input class="cl-check" type="checkbox" name="q2" value="c" /> It transfers ownership
+            away</label
+          >
         </li>
       </ul>
     </li>
@@ -218,7 +260,7 @@
     <!-- term: a word or a short phrase. Exactly one input type="text". -->
     <li class="cl-q" data-question-id="q3" data-type="term">
       <p class="cl-q-prompt">What is the name for the region of code where a borrow is valid?</p>
-      <input type="text" name="q3" />
+      <input class="cl-input" type="text" name="q3" />
     </li>
 
     <!-- short: an explanation. Exactly one textarea. Ask for reasoning. -->
@@ -226,7 +268,7 @@
       <p class="cl-q-prompt">
         In your own words, why does the compiler reject two mutable borrows?
       </p>
-      <textarea name="q4" rows="3"></textarea>
+      <textarea class="cl-input" name="q4" rows="3"></textarea>
     </li>
 
     <!--
@@ -240,7 +282,7 @@ let b = a;
 println!("{:?}", a);</code></pre>
       </div>
       <p class="cl-q-prompt">What happens when this compiles, and why?</p>
-      <textarea name="q5" rows="3"></textarea>
+      <textarea class="cl-input" name="q5" rows="3"></textarea>
     </li>
 
     <!--
@@ -251,8 +293,8 @@ println!("{:?}", a);</code></pre>
     <li class="cl-q" data-question-id="q6" data-type="numeric">
       <p class="cl-q-prompt">How many bytes does a u32 use?</p>
       <div class="cl-numeric">
-        <input type="text" class="cl-number" name="q6" />
-        <input type="text" class="cl-unit" name="q6-unit" placeholder="unit" />
+        <input type="text" class="cl-input cl-number" name="q6" />
+        <input type="text" class="cl-input cl-unit" name="q6-unit" placeholder="unit" />
       </div>
     </li>
 
@@ -264,8 +306,8 @@ println!("{:?}", a);</code></pre>
     <li class="cl-q" data-question-id="q7" data-type="cloze">
       <p class="cl-q-prompt">Fill in the blanks.</p>
       <p class="cl-cloze">
-        A value has exactly one <input type="text" data-blank="b1" />. When it goes out of
-        <input type="text" data-blank="b2" />, the value is dropped.
+        A value has exactly one <input class="cl-input" type="text" data-blank="b1" />. When it goes
+        out of <input class="cl-input" type="text" data-blank="b2" />, the value is dropped.
       </p>
     </li>
 
@@ -355,7 +397,7 @@ println!("{:?}", a);</code></pre>
       </p>
       <label
         >JavaScript source
-        <textarea class="cl-code-source" rows="8" spellcheck="false">
+        <textarea class="cl-input cl-code-source" rows="8" spellcheck="false">
 function total(values) {
   // Write your implementation here.
 }</textarea>
@@ -373,11 +415,16 @@ function total(values) {
   The teacher clarifies or stresses ideas in feedback. The gate releases prewritten
   teaching. It does not rewrite the lesson.
 -->
-<form class="cl-quiz" data-quiz-id="pretest" data-kind="pretest" data-title="Before you start">
+<form
+  class="cl-quiz cl-card-box"
+  data-quiz-id="pretest"
+  data-kind="pretest"
+  data-title="Before you start"
+>
   <ol class="cl-questions">
     <li class="cl-q" data-question-id="p1" data-type="short">
       <p class="cl-q-prompt">What do you think happens to a value when its variable goes away?</p>
-      <textarea name="p1" rows="2"></textarea>
+      <textarea class="cl-input" name="p1" rows="2"></textarea>
     </li>
   </ol>
 </form>
@@ -391,7 +438,7 @@ function total(values) {
   <p class="cl-reflect-prompt">
     Explain, as if to a friend, why Rust drops a value at the end of its scope.
   </p>
-  <textarea rows="4"></textarea>
+  <textarea class="cl-input" rows="4"></textarea>
 </form>
 
 <!--

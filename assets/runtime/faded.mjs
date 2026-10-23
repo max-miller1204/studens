@@ -72,7 +72,7 @@ function element(tag, className, textValue) {
   return node;
 }
 function button(label, action) {
-  const node = element("button", "cl-button cl-button-quiet", label);
+  const node = element("button", "cl-button cl-button-secondary", label);
   node.type = "button";
   node.addEventListener("click", action);
   return node;
@@ -178,7 +178,7 @@ function mount(widget, config) {
         exposed.add(round);
       } else {
         const label = element("label", "cl-faded-label", content.prompt);
-        const input = element("textarea");
+        const input = element("textarea", "cl-input");
         input.rows = content.response.type === "compare" ? 3 : 2;
         input.autocomplete = "off";
         input.spellcheck = content.response.type === "compare";
@@ -195,7 +195,7 @@ function mount(widget, config) {
         let unit = null;
         if (content.response.type === "numeric" && content.response.expected.unit) {
           const unitLabel = element("label", "cl-faded-label", "Unit");
-          unit = element("input");
+          unit = element("input", "cl-input");
           unit.type = "text";
           unit.autocomplete = "off";
           unitLabel.append(unit);
@@ -252,7 +252,7 @@ function mount(widget, config) {
         "cl-faded-label",
         "Explain the method: choose a principle question above and answer it in your own words.",
       );
-      const input = element("textarea");
+      const input = element("textarea", "cl-input");
       input.rows = 3;
       input.autocomplete = "off";
       label.append(input);
@@ -319,7 +319,7 @@ function mount(widget, config) {
         round++;
         render(true);
       });
-      next.classList.remove("cl-button-quiet");
+      next.classList.remove("cl-button-secondary");
       next.disabled = true;
       controls.append(next);
     } else {

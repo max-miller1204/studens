@@ -26,7 +26,7 @@ export async function verifyStepperPublication(artifacts: string | null): Promis
       new URL("../assets/templates/stepper.html", import.meta.url),
       "utf8",
     );
-    const widget = template.slice(template.indexOf('<section class="cl-stepper"'));
+    const widget = template.slice(template.indexOf('<section class="cl-stepper cl-card-box"'));
     const source = nextLessonDocument(f.root);
     source.lesson_html = source.lesson_html.replace("</template>", `${widget}</template>`);
     const typed = lessonOutput(source);

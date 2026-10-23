@@ -1,0 +1,13 @@
+{
+  "rejected": {
+    "errors": ["This lesson has markup errors.V2 question q1 needs .cl-q-prompt."],
+    "writes": []
+  },
+  "repaired": {
+    "state": "fresh",
+    "slider": {
+      "before": "50",
+      "after": "51"
+    }
+  }
+}

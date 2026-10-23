@@ -11,7 +11,7 @@ const template = fs.readFileSync(
   new URL("../assets/templates/stepper.html", import.meta.url),
   "utf8",
 );
-const widgets = template.slice(template.indexOf('<section class="cl-stepper"'));
+const widgets = template.slice(template.indexOf('<section class="cl-stepper cl-card-box"'));
 const configs = [...widgets.matchAll(/<script[^>]*data-cl-stepper[^>]*>([\s\S]*?)<\/script>/g)].map(
   (m) => JSON.parse(m[1]),
 );

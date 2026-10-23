@@ -20,7 +20,7 @@ const template = fs.readFileSync(
   new URL("../assets/templates/faded.html", import.meta.url),
   "utf8",
 );
-const widget = template.slice(template.indexOf('<section class="cl-faded"'));
+const widget = template.slice(template.indexOf('<section class="cl-faded cl-card-box"'));
 
 it("preserves public practice through strict service/Pi serialization and private assessment validation", () => {
   const f = makeFixture();

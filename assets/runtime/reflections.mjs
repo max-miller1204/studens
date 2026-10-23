@@ -29,7 +29,7 @@ export function createReflections({ config, drafts }) {
       save.className = "cl-button";
       save.textContent = "Save";
       const status = document.createElement("span");
-      status.className = "cl-quiz-status";
+      status.className = "cl-quiz-status cl-status-line";
       status.dataset.clQuizStatus = "";
       footer.append(save, status);
       form.appendChild(footer);

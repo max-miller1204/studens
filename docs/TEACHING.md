@@ -114,6 +114,16 @@ only the question types is not a new design.
 
 Follow these steps for each lesson:
 
+New authored lesson, assessment, review and reference documents use UI contract v2:
+`<main class="cl-lesson-shell" data-cl-content data-cl-ui="2">`. Preserve quiz
+identity and behavioral hooks; add the shared [component classes](COMPONENTS.md)
+as specified by the canonical quiz contract. Quiz/practice forms and stepper/faded
+sections use `cl-card-box`; fields use `cl-input`, radios/checkboxes `cl-check`,
+and native details `cl-disclosure`. The runtime owns generated controls. Unsupported
+markers and missing promised hooks are errors. Unmarked saved documents retain
+legacy behavior without being rewritten; explicit migration is separate work.
+Never change submitted question identities.
+
 1. Read the current quiz contract in `assets/templates/quiz.html`. Read it before each
    lesson or review. It can change between sessions, so do not rely on memory.
 2. State one learning objective: what the learner can do at the end.

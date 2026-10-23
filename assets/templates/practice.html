@@ -21,14 +21,18 @@
   Check answer shows feedback immediately, without HTTP writes or teacher work.
   Inputs remain editable; changing an answer clears feedback for an explicit retry.
 -->
-<form class="cl-practice" data-practice-id="practice-move" data-title="Try the idea">
+<form class="cl-practice cl-card-box" data-practice-id="practice-move" data-title="Try the idea">
   <ol class="cl-questions">
     <li class="cl-q" data-question-id="owner" data-type="choice">
       <p class="cl-q-prompt">A value moves from parcel to delivery. Which owns it now?</p>
       <div class="cl-options">
-        <label><input type="radio" name="practice-owner" value="parcel" />The parcel binding</label>
         <label
-          ><input type="radio" name="practice-owner" value="delivery" />The delivery binding</label
+          ><input class="cl-check" type="radio" name="practice-owner" value="parcel" />The parcel
+          binding</label
+        >
+        <label
+          ><input class="cl-check" type="radio" name="practice-owner" value="delivery" />The
+          delivery binding</label
         >
       </div>
     </li>

@@ -1,0 +1,330 @@
+{
+  "base": "78f2bc96dd5762affafe1d1c846a9a28ee94fb72",
+  "protocol": "Two preplanned independent generations per host per side. Quality is evidence, not a gate; preserve every mechanical failure. No favorable-score rerolls.",
+  "humanLearningEvidence": false,
+  "runs": [
+    {
+      "source": "main",
+      "host": "claude",
+      "run": 1,
+      "mechanicalVerdict": "FAIL",
+      "failure": "Learner drive failed: the authored document lacked main[data-cl-content], so the harness read null.children.",
+      "qualityPassed": 8,
+      "qualityEvaluated": 22,
+      "lessons": [
+        {
+          "lesson": "002-predict-fork-process-count",
+          "passed": 4,
+          "evaluated": 8,
+          "failedCriteria": [
+            "correctness",
+            "supportProgression",
+            "answerCues",
+            "rubricEquivalence"
+          ],
+          "evaluatorError": null,
+          "mechanicalProblems": []
+        },
+        {
+          "lesson": "003-pipe-close-fds-eof",
+          "passed": 3,
+          "evaluated": 8,
+          "failedCriteria": [
+            "correctness",
+            "alignment",
+            "supportProgression",
+            "answerCues",
+            "rubricEquivalence"
+          ],
+          "evaluatorError": null,
+          "mechanicalProblems": []
+        },
+        {
+          "lesson": "004-lost-update-threads",
+          "passed": 1,
+          "evaluated": 6,
+          "failedCriteria": [
+            "correctness",
+            "alignment",
+            "retrievalTransfer",
+            "answerCues",
+            "representations"
+          ],
+          "evaluatorError": null,
+          "mechanicalProblems": []
+        }
+      ],
+      "artifacts": "/tmp/studens-142-main-claude-1"
+    },
+    {
+      "source": "main",
+      "host": "claude",
+      "run": 2,
+      "mechanicalVerdict": "PASS",
+      "failure": null,
+      "qualityPassed": 5,
+      "qualityEvaluated": 14,
+      "lessons": [
+        {
+          "lesson": "002-fork-count-prediction",
+          "passed": 5,
+          "evaluated": 8,
+          "failedCriteria": ["correctness", "supportProgression", "answerCues"],
+          "evaluatorError": null,
+          "mechanicalProblems": []
+        },
+        {
+          "lesson": "003-pipe-eof-close",
+          "passed": 0,
+          "evaluated": 0,
+          "failedCriteria": [],
+          "evaluatorError": "Claude teacher exited with 1: ",
+          "mechanicalProblems": []
+        },
+        {
+          "lesson": "004-shared-counter-race-quiz",
+          "passed": 0,
+          "evaluated": 6,
+          "failedCriteria": [
+            "correctness",
+            "alignment",
+            "retrievalTransfer",
+            "answerCues",
+            "rubricEquivalence",
+            "representations"
+          ],
+          "evaluatorError": null,
+          "mechanicalProblems": []
+        }
+      ],
+      "artifacts": "/tmp/studens-142-main-claude-2"
+    },
+    {
+      "source": "main",
+      "host": "codex",
+      "run": 1,
+      "mechanicalVerdict": "PASS",
+      "failure": null,
+      "qualityPassed": 11,
+      "qualityEvaluated": 14,
+      "lessons": [
+        {
+          "lesson": "002-fork-counts",
+          "passed": 0,
+          "evaluated": 0,
+          "failedCriteria": [],
+          "evaluatorError": "Content judgment correctness quotes no supplied source.",
+          "mechanicalProblems": []
+        },
+        {
+          "lesson": "003-pipe-eof",
+          "passed": 5,
+          "evaluated": 8,
+          "failedCriteria": ["correctness", "answerCues", "rubricEquivalence"],
+          "evaluatorError": null,
+          "mechanicalProblems": []
+        },
+        {
+          "lesson": "004-racy-counter",
+          "passed": 6,
+          "evaluated": 6,
+          "failedCriteria": [],
+          "evaluatorError": null,
+          "mechanicalProblems": []
+        }
+      ],
+      "artifacts": "/tmp/studens-142-main-codex-1"
+    },
+    {
+      "source": "main",
+      "host": "codex",
+      "run": 2,
+      "mechanicalVerdict": "PASS",
+      "failure": null,
+      "qualityPassed": 5,
+      "qualityEvaluated": 12,
+      "lessons": [
+        {
+          "lesson": "002-fork-counts",
+          "passed": 0,
+          "evaluated": 0,
+          "failedCriteria": [],
+          "evaluatorError": "Content judgment prequestion quotes no supplied source.",
+          "mechanicalProblems": []
+        },
+        {
+          "lesson": "003-pipe-eof",
+          "passed": 3,
+          "evaluated": 7,
+          "failedCriteria": ["correctness", "alignment", "answerCues", "rubricEquivalence"],
+          "evaluatorError": null,
+          "mechanicalProblems": []
+        },
+        {
+          "lesson": "004-lost-update",
+          "passed": 2,
+          "evaluated": 5,
+          "failedCriteria": ["correctness", "answerCues", "rubricEquivalence"],
+          "evaluatorError": null,
+          "mechanicalProblems": []
+        }
+      ],
+      "artifacts": "/tmp/studens-142-main-codex-2"
+    },
+    {
+      "source": "v2",
+      "host": "claude",
+      "run": 1,
+      "mechanicalVerdict": "PASS",
+      "failure": null,
+      "qualityPassed": 6,
+      "qualityEvaluated": 14,
+      "lessons": [
+        {
+          "lesson": "002-fork-process-count",
+          "passed": 4,
+          "evaluated": 8,
+          "failedCriteria": [
+            "correctness",
+            "retrievalTransfer",
+            "supportProgression",
+            "answerCues"
+          ],
+          "evaluatorError": null,
+          "mechanicalProblems": []
+        },
+        {
+          "lesson": "003-pipe-eof-close",
+          "passed": 0,
+          "evaluated": 0,
+          "failedCriteria": [],
+          "evaluatorError": "Content judgment prequestion quotes no supplied source.",
+          "mechanicalProblems": []
+        },
+        {
+          "lesson": "004-lost-update-quiz",
+          "passed": 2,
+          "evaluated": 6,
+          "failedCriteria": ["correctness", "alignment", "answerCues", "rubricEquivalence"],
+          "evaluatorError": null,
+          "mechanicalProblems": []
+        }
+      ],
+      "artifacts": "/tmp/studens-142-v2-claude-1"
+    },
+    {
+      "source": "v2",
+      "host": "claude",
+      "run": 2,
+      "mechanicalVerdict": "PASS",
+      "failure": null,
+      "qualityPassed": 11,
+      "qualityEvaluated": 16,
+      "lessons": [
+        {
+          "lesson": "002-fork-process-count",
+          "passed": 6,
+          "evaluated": 8,
+          "failedCriteria": ["supportProgression", "answerCues"],
+          "evaluatorError": null,
+          "mechanicalProblems": []
+        },
+        {
+          "lesson": "003-pipe-close-eof",
+          "passed": 5,
+          "evaluated": 8,
+          "failedCriteria": ["supportProgression", "answerCues", "rubricEquivalence"],
+          "evaluatorError": null,
+          "mechanicalProblems": []
+        },
+        {
+          "lesson": "004-shared-counter-lost-update-quiz",
+          "passed": 0,
+          "evaluated": 0,
+          "failedCriteria": [],
+          "evaluatorError": "Content judgment needs a unique criterion, verdict, excerpt, and reason.",
+          "mechanicalProblems": []
+        }
+      ],
+      "artifacts": "/tmp/studens-142-v2-claude-2"
+    },
+    {
+      "source": "v2",
+      "host": "codex",
+      "run": 1,
+      "mechanicalVerdict": "FAIL",
+      "failure": "Missing accepted packaged page-check receipt for 003-pipe-end-of-file: the author combined edits and the checker in multiline commands. The conservative receipt parser rejected them; it was not weakened.",
+      "qualityPassed": 5,
+      "qualityEvaluated": 6,
+      "lessons": [
+        {
+          "lesson": "002-fork-counting",
+          "passed": 0,
+          "evaluated": 0,
+          "failedCriteria": [],
+          "evaluatorError": "Content judgment prequestion quotes no supplied source.",
+          "mechanicalProblems": []
+        },
+        {
+          "lesson": "003-pipe-end-of-file",
+          "passed": 0,
+          "evaluated": 0,
+          "failedCriteria": [],
+          "evaluatorError": "Content judgment alignment quotes no supplied source.",
+          "mechanicalProblems": []
+        },
+        {
+          "lesson": "004-lost-counter-update",
+          "passed": 5,
+          "evaluated": 6,
+          "failedCriteria": ["retrievalTransfer"],
+          "evaluatorError": null,
+          "mechanicalProblems": []
+        }
+      ],
+      "artifacts": "/tmp/studens-142-v2-codex-1"
+    },
+    {
+      "source": "v2",
+      "host": "codex",
+      "run": 2,
+      "mechanicalVerdict": "PASS",
+      "failure": null,
+      "qualityPassed": 2,
+      "qualityEvaluated": 7,
+      "lessons": [
+        {
+          "lesson": "002-fork-counts",
+          "passed": 0,
+          "evaluated": 0,
+          "failedCriteria": [],
+          "evaluatorError": "Content judgment correctness quotes no supplied source.",
+          "mechanicalProblems": []
+        },
+        {
+          "lesson": "003-pipe-eof",
+          "passed": 2,
+          "evaluated": 7,
+          "failedCriteria": [
+            "correctness",
+            "alignment",
+            "retrievalTransfer",
+            "answerCues",
+            "rubricEquivalence"
+          ],
+          "evaluatorError": null,
+          "mechanicalProblems": []
+        },
+        {
+          "lesson": "004-race-counter",
+          "passed": 0,
+          "evaluated": 0,
+          "failedCriteria": [],
+          "evaluatorError": "Content judgment correctness quotes no supplied source.",
+          "mechanicalProblems": []
+        }
+      ],
+      "artifacts": "/tmp/studens-142-v2-codex-2"
+    }
+  ]
+}

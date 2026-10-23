@@ -1,3 +1,4 @@
+import { validateLessonMarkup } from "../src/lesson-markup.ts";
 /** Read-only authoring preflight. Private input bytes never enter the HTTP preview. */
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -97,6 +98,7 @@ export function preflightLessonInputs(
 ): void {
   const meta = inputs.metadata ? jsonObject(inputs.metadata, "lesson.json") : null;
   validateLessonContractVersions(meta as LessonMeta | null, classroom, lesson);
+  validateLessonMarkup(inputs.html.text);
   validateCodeQuestions(inputs.html.text, meta);
   teachingSources(inputs.html.text);
   const key = inputs.key ? jsonObject(inputs.key, "quiz/key.json") : null;

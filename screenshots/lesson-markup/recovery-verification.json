@@ -1,0 +1,212 @@
+{
+  "kind": "directed recovery verification; not a replacement quality comparison",
+  "originalFailedRun": "/tmp/studens-142-v2-codex-1",
+  "originalVerdict": "FAIL",
+  "cause": "Successful checker item_48 was bundled with multiline Python edits; no standalone final pipe receipt. Earlier authored gated script error was repaired by the author.",
+  "classification": "agent instruction failure; expected conservative harness rejection",
+  "correction": "Teach skill post-repair standalone instructions; Codex final-receipt reconciliation reminder. Receipt parser and expectations unchanged.",
+  "humanLearningEvidence": false,
+  "authoring": [
+    {
+      "host": "claude",
+      "mechanicalVerdict": "PASS",
+      "artifacts": "/tmp/studens-142-recovery-authoring-claude",
+      "model": {
+        "model": "claude-haiku-5-5",
+        "effort": "low"
+      },
+      "receipts": [
+        {
+          "lesson": "002-fork-count-tree",
+          "preflight": {
+            "version": 1,
+            "htmlFile": "lesson.html",
+            "inputHashes": {
+              "lesson.html": "ab3315878eaf71bf65cd542d8615cf087bf6dc9fc2d1ce8dc250c89908a6b829",
+              "lesson.json": "e4bbe59d574f9500b8491b78c1fd812fc2463090e9d0c70118a1108b7048d56e",
+              "quiz/key.json": "346293f667ed509b2e50e2c6311c9c3d28990fca5b0f9e13f34ec49a4d389a96",
+              "quiz/plan.json": "7b35f5b3586764fc4f5df2e698848bab871c4ce8b18e4d3e94d8dc7e14cfaf71"
+            }
+          }
+        },
+        {
+          "lesson": "003-pipe-eof-close",
+          "preflight": {
+            "version": 1,
+            "htmlFile": "lesson.html",
+            "inputHashes": {
+              "lesson.html": "a1db1b9ec717ba88f0f9035f33f193a324d6793bb4a0f044c9e7380f6b253aaf",
+              "lesson.json": "e3aec77d831ca33f464a2a07c4ba49db884f76c44fda71f3b22ec8cf9df5dca7",
+              "quiz/key.json": "1857a55c38360322a156a7b92eb28e65134089216ca8c56922159bf8a9e723b0",
+              "quiz/plan.json": "c8c765cdbd78b846a6b073cc4c22347e6e916327256185351bd84424664f7bf2"
+            }
+          }
+        },
+        {
+          "lesson": "004-shared-counter-race-quiz",
+          "preflight": {
+            "version": 1,
+            "htmlFile": "lesson.html",
+            "inputHashes": {
+              "lesson.html": "1e14806d73e4374fa4837312b56fb2f0c18a3d9a0840b82c4ffca94e3a976053",
+              "lesson.json": "1b60646f2d442929d2ee9560e987243496f518f52df4e3a328ce114ae3794b77",
+              "quiz/key.json": "5162a70e8a2673a5f4bf70a22785cc013d84f48c10ce501001465f2b4dc53bf2",
+              "quiz/plan.json": "c7ca074c926f586c1fcf94e5c4d19b6ccce7f263b2c14df7a3f7fdcc7660b0fd"
+            }
+          }
+        }
+      ],
+      "quality": {
+        "setsVerdict": false,
+        "criteriaPassed": 13,
+        "criteriaJudged": 22,
+        "lessonsWithoutReview": []
+      },
+      "qualityFindings": [
+        {
+          "lesson": "002-fork-count-tree",
+          "error": null,
+          "findings": [
+            "retrievalTransfer: q2 and its two variants change only the loop bound (n=4, 5, 6). The task is the same pattern with new numbers, which the criterion says is not transfer. q1 v1 changes == to != on the guard example taught just before, which is nearly a copy. Only q1 v2, the loop with break, needs new reasoning about how a child exits the loop. Most of the assessment family tests recall, not fresh application.",
+            "supportProgression: The teaching gives a worked stepper trace and a worked guard example, and it ends with a self-explanation prompt. That covers the worked-example and principle steps. There is no faded-completion step between that teaching and the check, and the plan marks every question as support independent. The check goes straight to independent answers for a suitable new procedure.",
+            "answerCues: The teaching states the general formula 2^n for unconditional forks right before check q2. q2 asks for the count after a loop with n=4 and why it has that form. The formula gives the answer directly, and the teaching also answers the 'why' part. The cue is strong, not just general background."
+          ]
+        },
+        {
+          "lesson": "003-pipe-eof-close",
+          "error": null,
+          "findings": [
+            "retrievalTransfer: q3 original uses the same stimulus as the teaching stepper's 'After fork()' step, whose state reads 'Write ends open: 2', so it is recall of a worked answer, not fresh application. q2 v2 (three processes) and q1 v2 (reordered wait and read) are real transfer, but the original items are not independent, so the set fails.",
+            "supportProgression: The objective is a procedure, so a faded stage is expected. The plan sets support to independent for every question, and no faded-completion item exists between the worked stepper and the check. The explain-eof reflection form is not linked to any question in the plan, so the self-explanation step is not tied to the sequence.",
+            "answerCues: The teaching shows the same program as check-1 q1, with the closes in the correct order, and explicitly says the wait-first ordering would block the child. That gives away the q1 answer. The stepper's 'After fork()' state gives the q3 answer, and the teaching sentence 'is any copy of the write end still open?' cues the q2 write-end-only answer over the read-end distractors.",
+            "rubricEquivalence: Every rubric uses partial 'None.' with a single criterion, so no partial credit is allocated to reasoning components, even for multi-select q2 where selecting one of two required options earns zero. Valid alternatives are also not credited: for q1 a student who picks the missing final close (s6) as the cause is not credited under the exact grading, and only s5 is accepted."
+          ]
+        },
+        {
+          "lesson": "004-shared-counter-race-quiz",
+          "error": null,
+          "findings": [
+            "retrievalTransfer: Q1 and Q2 spell out the step order and ask only for a final value or a selection, so they require no independent recall of the mechanism. Their variants change thread counts or option order on the same template. Q2 v2 keeps the stimulus and changes only the option set and target value, which the rubric treats as insufficient. Only Q3 v1 (withdraw) requires fresh application.",
+            "answerCues: Q1 lists the order A-read, B-read, A-write, B-write (both read 0, then both write), which is identical to Q2 option b, so solving Q1 answers one Q2 option. Q3 asks the student to 'say what would make each increment indivisible,' which names the answer concept. Q2 v2 defines its target as 'so that no update is lost.'"
+          ]
+        }
+      ],
+      "backgroundRefills": [
+        {
+          "id": "refill:3c8dbcb428fa3ccad26a527a5d36a50b",
+          "lesson": "004-shared-counter-race-quiz",
+          "status": "done"
+        },
+        {
+          "id": "refill:c63c6001432a8a3609aa972048ac51f2",
+          "lesson": "003-pipe-eof-close",
+          "status": "running"
+        },
+        {
+          "id": "refill:a8961b93550b55b92f4b3d8b2910ec85",
+          "lesson": "002-fork-count-tree",
+          "status": "queued"
+        }
+      ]
+    },
+    {
+      "host": "codex",
+      "mechanicalVerdict": "PASS",
+      "artifacts": "/tmp/studens-142-recovery-authoring-codex",
+      "model": {
+        "model": "gpt-6-luna",
+        "effort": "low"
+      },
+      "receipts": [
+        {
+          "lesson": "002-fork-counts",
+          "preflight": {
+            "version": 1,
+            "htmlFile": "lesson.html",
+            "inputHashes": {
+              "lesson.html": "0b03ad1442e72a5ab966d0f703216ae7b71728a1b84cbba1c4a128d37f57d7fa",
+              "lesson.json": "e0af9c45bb2e5e179825010fc5c84e7a317b553ac3fc927c89a2e3e70fc7df4a",
+              "quiz/key.json": "e0783dc20a38867c2b197d3c3c150fbd8f4277461c0e83608e0fb6a89a63181c",
+              "quiz/plan.json": "b8624c0e6dffe3b057d3f1d4d9ea82640d9168a0232f488485c3715b7eeaab17"
+            }
+          }
+        },
+        {
+          "lesson": "003-pipe-eof",
+          "preflight": {
+            "version": 1,
+            "htmlFile": "lesson.html",
+            "inputHashes": {
+              "lesson.html": "117a3d7dea428524dab5022fc08a955d42a266968fbd742534c46eb72623dd98",
+              "lesson.json": "b20608ae6abfa80287eb95381406b7354a0d50fe34d6f1c25b95a656dad325f1",
+              "quiz/key.json": "f70a1db17059eb5a00ec353af3f233479f2babda073e956690d5cd30175700da",
+              "quiz/plan.json": "710257f6f69a42bdc5e7ea8d6b2ebd2c547d03966d2ecc48a979ae496ba549eb"
+            }
+          }
+        },
+        {
+          "lesson": "004-thread-counter-race",
+          "preflight": {
+            "version": 1,
+            "htmlFile": "lesson.html",
+            "inputHashes": {
+              "lesson.html": "fb3a8bc08022b7d3555a46abd81dff80219f1a0778ec09b71b61ae56922cfe81",
+              "lesson.json": "dc9496c4d94046d2ed35f116bc07d6db840d74f15e27ff8a5bfa00a6ff168fbf",
+              "quiz/key.json": "c31f43f331d3e1537100d27d455d10b1f77a408525e1e95dd3d5f7fa6fbccbd8",
+              "quiz/plan.json": "7983fb5b2ebbd74b3d2fdeb5111e5f03039970806327e93185629a179337c5a2"
+            }
+          }
+        }
+      ],
+      "quality": {
+        "setsVerdict": false,
+        "criteriaPassed": 0,
+        "criteriaJudged": 0,
+        "lessonsWithoutReview": ["002-fork-counts", "003-pipe-eof", "004-thread-counter-race"]
+      },
+      "qualityFindings": [
+        {
+          "lesson": "002-fork-counts",
+          "error": "Content judgment prequestion quotes no supplied source.",
+          "findings": []
+        },
+        {
+          "lesson": "003-pipe-eof",
+          "error": "Content judgment alignment quotes no supplied source.",
+          "findings": []
+        },
+        {
+          "lesson": "004-thread-counter-race",
+          "error": "Content judgment correctness quotes no supplied source.",
+          "findings": []
+        }
+      ],
+      "backgroundRefills": [
+        {
+          "id": "refill:cb55bfb944ac999fe0353e5fc4e0e821",
+          "lesson": "004-thread-counter-race",
+          "status": "done"
+        },
+        {
+          "id": "refill:c3386337c7e1b6cec876ec8cab4aeac5",
+          "lesson": "002-fork-counts",
+          "status": "done"
+        },
+        {
+          "id": "refill:113d05c5573497e9cf6274699ddf4cda",
+          "lesson": "003-pipe-eof",
+          "status": "running"
+        }
+      ]
+    }
+  ],
+  "finalVerification": {
+    "command": "npm run verify -- --artifacts /tmp/studens-142-recovery-final",
+    "verdict": "PASS",
+    "tests": 1413,
+    "testFiles": 101,
+    "browser": "PASS: complete suite",
+    "artifacts": "/tmp/studens-142-recovery-final",
+    "sourceLimit": "Implementation and harness bytes match launch snapshot. Recipe/evidence documentation was completed afterward and checked with Prettier."
+  }
+}
