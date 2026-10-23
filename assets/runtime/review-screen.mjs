@@ -1,6 +1,7 @@
 /** One durable quiz per card; grades and teacher replies keep their existing contracts. */
 import { wireRetirement } from "./review-controls.mjs";
 import { addDailyReviewLink } from "./daily-review.mjs";
+import { reviewProgress, reviewState } from "./review-presentation.mjs";
 
 export function createReviewScreen({ config, contentRoot, placeTeacherPanel, flagQuestion }) {
   if (!config.reviewScreen) return null;
@@ -8,10 +9,9 @@ export function createReviewScreen({ config, contentRoot, placeTeacherPanel, fla
   const forms = [...contentRoot.querySelectorAll("form.cl-quiz")];
   let active = null;
   let failed = false;
-  const progress = document.createElement("p");
-  progress.className = "cl-review-progress";
-  progress.setAttribute("role", "status");
-  progress.textContent = "Loading review…";
+  const progress = reviewProgress("Answered review cards");
+  progress.update(0, forms.length, "Loading review…");
+  const state = reviewState();
   const navigation = document.createElement("nav");
   navigation.className = "cl-review-navigation";
   navigation.setAttribute("aria-label", "Review questions");
@@ -40,7 +40,29 @@ export function createReviewScreen({ config, contentRoot, placeTeacherPanel, fla
   next.disabled = true;
   navigation.append(previous, next, retry, history);
   addDailyReviewLink(navigation);
-  forms[0].before(progress);
+  if (!forms.length) {
+    contentRoot.append(state.root);
+    state.show(
+      "empty",
+      "No review cards",
+      "This review has no cards. Return to review history to choose a saved review.",
+    );
+    navigation.replaceChildren(retry, history);
+    contentRoot.append(navigation);
+    return {
+      restore() {},
+      refresh() {},
+      loadFailed(error) {
+        failed = true;
+        state.show("error", "Could not load review", error.message);
+        retry.hidden = false;
+      },
+      get failed() {
+        return failed;
+      },
+    };
+  }
+  forms[0].before(progress.root, state.root);
   forms.at(-1).after(navigation);
   const actions = document.createElement("section");
   actions.className = "cl-review-actions";
@@ -150,13 +172,25 @@ export function createReviewScreen({ config, contentRoot, placeTeacherPanel, fla
     show(allowed ? requested : (firstUnfinished ?? forms.at(-1)));
   }
   function refresh() {
-    if (!active) return;
+    if (!active || failed) return;
     flag.disabled = false;
     const index = forms.indexOf(active);
     const complete = forms.every((form) => form.dataset.state === "graded");
-    progress.textContent = complete
-      ? `Review complete · ${forms.length} of ${forms.length} answered`
-      : `Question ${index + 1} of ${forms.length} · ${forms.filter((form) => form.dataset.state === "graded").length} answered`;
+    const answered = forms.filter((form) => form.dataset.state === "graded").length;
+    progress.update(
+      answered,
+      forms.length,
+      complete
+        ? `Review complete · ${forms.length} of ${forms.length} answered`
+        : `Question ${index + 1} of ${forms.length} · ${answered} answered`,
+    );
+    if (complete)
+      state.show(
+        "complete",
+        "Review complete",
+        "Your answers are saved. Read feedback on each card or return to review history.",
+      );
+    else state.clear();
     previous.hidden = index === 0;
     next.hidden = index === forms.length - 1;
     next.disabled = active.dataset.state !== "graded";
@@ -169,8 +203,7 @@ export function createReviewScreen({ config, contentRoot, placeTeacherPanel, fla
   }
   function loadFailed(error) {
     failed = true;
-    progress.textContent = `Could not load review: ${error.message}`;
-    progress.setAttribute("role", "alert");
+    state.show("error", "Could not load review", error.message);
     retry.hidden = false;
     next.disabled = true;
     flag.disabled = true;

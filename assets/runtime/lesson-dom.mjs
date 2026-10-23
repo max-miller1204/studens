@@ -11,7 +11,7 @@ const QUIZ_RUNTIME_UI =
   ".cl-stepper-runtime, .cl-faded-runtime, .cl-code-runner, .cl-expected, [data-cl-grade], .cl-practice-feedback, .cl-q-verdict, .cl-quiz-footer, .cl-answer-report, .cl-order-controls";
 
 /** Our own UI, never lesson text: a highlight must not anchor into it. */
-export const RUNTIME_UI = `script, style, noscript, .cl-header, .cl-sidebar, .cl-skip, .cl-nav-backdrop, .cl-lesson-links, .cl-source-notice, .cl-learner-marks, .cl-selection-actions, .cl-card-panel, .cl-ask-pill, .cl-badge-marker, .cl-term-pop, .cl-contract-error, .cl-diagram, .cl-math, .cl-teacher, .cl-teacher-notice, ${QUIZ_RUNTIME_UI}`;
+export const RUNTIME_UI = `script, style, noscript, .cl-header, .cl-sidebar, .cl-skip, .cl-nav-backdrop, .cl-lesson-links, .cl-source-notice, .cl-review-progress, [data-review-state], .cl-learner-marks, .cl-selection-actions, .cl-card-panel, .cl-ask-pill, .cl-badge-marker, .cl-term-pop, .cl-contract-error, .cl-diagram, .cl-math, .cl-teacher, .cl-teacher-notice, ${QUIZ_RUNTIME_UI}`;
 
 // ── Plain-text index over the DOM ─────────────────────────────────────────────
 

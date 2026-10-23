@@ -129,9 +129,14 @@ function alignTeachingSource() {
   if (!target) {
     const notice = document.createElement("p");
     notice.dataset.clSourceNotice = "";
-    notice.className = "cl-search-notice cl-source-notice";
+    notice.className = config.reviewScreen
+      ? "cl-inline-error cl-source-notice"
+      : "cl-search-notice cl-source-notice";
+    if (config.reviewScreen) notice.dataset.reviewState = "stale";
     notice.setAttribute("role", "status");
-    notice.textContent = "This section is no longer available. The lesson may have been edited. ";
+    notice.textContent = config.reviewScreen
+      ? "This selected review card is no longer available. Choose a saved card or retry loading. "
+      : "This section is no longer available. The lesson may have been edited. ";
     const retry = document.createElement("a");
     retry.href = location.pathname + location.search + location.hash;
     retry.textContent = "Retry loading source section";

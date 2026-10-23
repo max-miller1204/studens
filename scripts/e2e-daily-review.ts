@@ -201,6 +201,17 @@ export async function verifyDailyReview(artifacts: string | null): Promise<void>
       evidence
         ? `await page.evaluate(()=>window.scrollTo(0,0));await page.screenshot({path:${JSON.stringify(path.join(evidence, `${name}.png`))},fullPage:true});`
         : "";
+    const stateShots = (name: string) =>
+      [1280, 390]
+        .map(
+          (width) => `
+      await page.setViewportSize({width:${width},height:844});
+      await page.evaluate(() => Promise.all(document.getAnimations().map(animation => animation.finished.catch(() => {}))));
+      if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth)) throw Error('Review state overflows viewport');
+      ${shot(`${name}-${width}`)}
+    `,
+        )
+        .join("\n");
     const save = (name: string, value: unknown) => {
       if (evidence) fs.writeFileSync(path.join(evidence, name), JSON.stringify(value, null, 2));
     };
@@ -213,11 +224,14 @@ export async function verifyDailyReview(artifacts: string | null): Promise<void>
         await page.getByRole('heading',{name:'4 due across classrooms',exact:true}).waitFor();
         await page.getByRole('button',{name:'Start daily review',exact:true}).waitFor({state:'visible'});
         ${shot("landing-desktop")}
-        await page.setViewportSize({width:375,height:812});${shot("landing-mobile")}
+        await page.setViewportSize({width:390,height:844});${shot("landing-mobile")}
         if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth)) throw new Error('Landing overflows mobile.');
         await page.getByRole('button',{name:'Start daily review',exact:true}).click();
         await page.getByRole('heading',{name:'Daily review',exact:true}).waitFor();
         await page.getByRole('button',{name:'Continue Biology review',exact:true}).waitFor();
+        const meter = page.getByRole('progressbar',{name:'Completed classrooms'});
+        await meter.waitFor();
+        if(await meter.getAttribute('aria-valuenow') !== '0' || await meter.getAttribute('aria-valuemax') !== '2') throw Error('Initial classroom progress is incorrect');
         if(await page.locator('.cl-daily-group').count()!==2) throw new Error('Groups not separated.');
         ${shot("groups-mobile")}
         await page.setViewportSize({width:1440,height:900});${shot("groups-desktop")}
@@ -258,7 +272,7 @@ export async function verifyDailyReview(artifacts: string | null): Promise<void>
         await page.reload();
         await page.getByText('Question 2 of 2 · 1 answered',{exact:true}).waitFor();
         if(!await page.locator('form.cl-quiz:visible input[value="old"]').isChecked()) throw new Error('Draft lost on reload.');
-        await page.setViewportSize({width:375,height:812});${shot("card-mobile")}
+        await page.setViewportSize({width:390,height:844});${shot("card-mobile")}
         await page.locator('form.cl-quiz:visible button[type="submit"]').click();
         await page.getByText('Review complete · 2 of 2 answered',{exact:true}).waitFor();
         await page.getByText('What does the cell membrane control?',{exact:true}).waitFor();
@@ -272,7 +286,7 @@ export async function verifyDailyReview(artifacts: string | null): Promise<void>
         if(staleLanding.status()!==202 || staleResult.daily.groups[1].status!=='planned') throw new Error('Delayed landing start published the next classroom.');
         await page.getByRole('button',{name:'Start Rust review',exact:true}).click();
         await page.getByRole('alert').filter({hasText:'publication conflicts with lesson.html'}).waitFor();
-        await page.getByRole('button',{name:'Retry Rust review',exact:true}).waitFor();${shot("partial-failure")}
+        await page.getByRole('button',{name:'Retry Rust review',exact:true}).waitFor();${stateShots("partial-failure")}
         await page.reload();await page.getByRole('button',{name:'Retry Rust review',exact:true}).waitFor();
       `);
       const staleStart = await fetch(`${base}/api/daily-review`, {
@@ -315,7 +329,8 @@ export async function verifyDailyReview(artifacts: string | null): Promise<void>
         await page.getByRole('link',{name:'Continue daily review',exact:true}).click();
         await page.getByText('Daily review complete. Each classroom keeps its review history.',{exact:true}).waitFor();
         await page.reload();await page.getByText('Daily review complete. Each classroom keeps its review history.',{exact:true}).waitFor();
-        ${shot("complete-mobile")}
+        if(await page.getByRole('progressbar',{name:'Completed classrooms'}).getAttribute('aria-valuenow') !== '2') throw Error('Completed classroom progress is incorrect');
+        ${stateShots("complete")}
         await page.getByRole('link',{name:'Biology review history',exact:true}).click();
         await page.getByText('2/2 answered',{exact:true}).waitFor();${shot("classroom-history")}
         await page.goto(${JSON.stringify(`${base}/reviews/daily`)});
@@ -324,7 +339,7 @@ export async function verifyDailyReview(artifacts: string | null): Promise<void>
         await page.goto(${JSON.stringify(base)});
         await page.getByRole('heading',{name:'0 due across classrooms',exact:true}).waitFor();
         if(!await page.getByRole('button',{name:'Start daily review',exact:true}).isDisabled()) throw new Error('Empty due start enabled.');
-        ${shot("empty-due-mobile")}
+        ${stateShots("empty-due")}
       `);
       if (publications !== beforeRetry + 1 || turns !== 2)
         throw new Error("Group progress duplicated publication or teacher turns.");
@@ -370,7 +385,7 @@ export async function verifyDailyReview(artifacts: string | null): Promise<void>
       const state = fs.readFileSync(path.join(fixture.root, ".daily-reviews.json"), "utf8");
       fixture.write(".daily-reviews.json", "{invalid");
       await code(
-        `await page.reload();await page.getByRole('button',{name:'Retry daily review state',exact:true}).waitFor();${shot("state-failed")}`,
+        `await page.reload();await page.getByRole('button',{name:'Retry daily review state',exact:true}).waitFor();${stateShots("state-failed")}`,
       );
       fixture.write(".daily-reviews.json", state);
       await code(

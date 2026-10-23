@@ -167,6 +167,24 @@ export async function verifyReviewCards(artifacts: string | null): Promise<void>
       evidence
         ? `await page.evaluate(() => window.scrollTo(0, 0)); await page.screenshot({path:${JSON.stringify(path.join(evidence, `${name}.png`))},fullPage:true});`
         : "";
+    const stateShots = (name: string) =>
+      [1280, 390]
+        .map(
+          (width) => `
+      await page.setViewportSize({width:${width},height:844});
+      await page.evaluate(() => Promise.all(document.getAnimations().map(animation => animation.finished.catch(() => {}))));
+      await page.evaluate(async () => {
+        const {buildTextIndex} = await import('/static/lesson-dom.mjs');
+        if(buildTextIndex(document.body).segments.some(({node}) => node.parentElement.closest('.cl-review-progress, [data-review-state]')))
+          throw Error('Mutable review chrome entered the passage index');
+        if(document.querySelector('.cl-review-progress .cl-term, [data-review-state] .cl-term'))
+          throw Error('Glossary decorated review chrome');
+      });
+      if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth)) throw Error('Review state overflows viewport');
+      ${shot(`${name}-${width}`)}
+    `,
+        )
+        .join("\n");
     let opened = false;
     try {
       const base = await server.start(0);
@@ -177,8 +195,12 @@ export async function verifyReviewCards(artifacts: string | null): Promise<void>
         await page.waitForFunction(() => document.querySelector('[data-review-active="true"]')?.dataset.state === 'fresh');
         if (await page.locator('form.cl-quiz:visible').count() !== 1) throw new Error('Multiple cards visible.');
         await page.getByText('Question 1 of 2 · 0 answered', {exact:true}).waitFor();
+        const meter = page.getByRole('progressbar',{name:'Answered review cards'});
+        await meter.waitFor();
+        if(await meter.getAttribute('aria-valuenow') !== '0' || await meter.getAttribute('aria-valuemax') !== '2') throw Error('Initial card progress is incorrect');
         if (!await page.getByRole('button', {name:'Next question',exact:true}).isDisabled()) throw new Error('Next is enabled before grading.');
-        ${shot("first-card")}
+        if(await page.getByRole('button',{name:'Retry review state',exact:true}).isVisible()) throw Error('Retry shown without an error');
+        ${stateShots("first-card")}
       `);
       const review = currentReview("rust")!;
       await checkFragment("first-entry", "review");
@@ -196,7 +218,7 @@ export async function verifyReviewCards(artifacts: string | null): Promise<void>
           await page.reload();
           await page.getByRole('alert').filter({hasText:'Cannot read JSON state'}).waitFor();
           await page.getByRole('button', {name:'Retry review state',exact:true}).waitFor();
-          ${shot("state-load-failed")}
+          ${stateShots("state-load-failed")}
         `);
         fs.unlinkSync(draftFile);
         await code(`
@@ -250,7 +272,7 @@ export async function verifyReviewCards(artifacts: string | null): Promise<void>
         await page.reload();
         await page.getByText('Question 2 of 2 · 1 answered', {exact:true}).waitFor();
         if (!await page.locator('form.cl-quiz:visible input[value="old"]').isChecked()) throw new Error('Second card draft was lost.');
-        await page.setViewportSize({width:375,height:812});
+        await page.setViewportSize({width:390,height:844});
         if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)) throw new Error('Cards overflow mobile.');
         ${shot("mobile-card")}
       `);
@@ -315,6 +337,10 @@ export async function verifyReviewCards(artifacts: string | null): Promise<void>
         `await page.goto(${JSON.stringify(reviewUrl + "#review")}); await page.reload();`,
         "review",
       );
+      await code(`
+        if(await page.getByRole('progressbar',{name:'Answered review cards'}).getAttribute('aria-valuenow') !== '2') throw Error('Completed card progress is incorrect');
+        ${stateShots("complete")}
+      `);
       for (const theme of ["light", "dark"]) {
         await readOnly(
           `completed-mobile-${theme}`,
@@ -331,7 +357,8 @@ export async function verifyReviewCards(artifacts: string | null): Promise<void>
         "unknown-card",
         `
         await page.evaluate(() => {location.hash='review-999';});
-        await page.locator('[data-cl-source-notice]').waitFor();
+        await page.locator('[data-cl-source-notice][data-review-state=stale]').waitFor();
+        ${stateShots("stale-selection")}
         if (!await page.locator('[data-cl-source-notice]').evaluate(e=>e===document.activeElement)) throw Error('Missing source lost focus');
         await page.getByRole('link',{name:'Retry loading source section',exact:true}).waitFor();
         await page.evaluate(() => {location.hash='review';});

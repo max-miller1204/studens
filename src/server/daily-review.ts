@@ -166,7 +166,7 @@ export function handleDailyPage(res: http.ServerResponse, rest: string[]): void 
         shell({
           title: "Daily review history",
           breadcrumb: '<a class="cl-crumb" href="/">Classrooms</a>',
-          body: `<div class="cl-hero"><h1>Daily review history</h1></div>${history.length ? `<ol class="cl-daily-groups">${history.map((r) => `<li class="cl-daily-group"><a href="${r.url}">${escapeHtml(new Date(r.at).toLocaleDateString("en-US", { timeZone: "UTC" }))}</a><p>${r.groups.length} classrooms · ${r.groups.filter((g) => g.complete).length} complete</p></li>`).join("")}</ol>` : "<p>No daily reviews yet. Start when questions are due.</p>"}`,
+          body: `<div class="cl-hero"><h1>Daily review history</h1></div>${history.length ? `<ol class="cl-daily-groups">${history.map((r) => `<li class="cl-daily-group cl-card-box"><a href="${r.url}">${escapeHtml(new Date(r.at).toLocaleDateString("en-US", { timeZone: "UTC" }))}</a><p>${r.groups.length} classrooms · ${r.groups.filter((g) => g.complete).length} complete</p></li>`).join("")}</ol>` : "<p>No daily reviews yet. Start when questions are due.</p>"}`,
         }),
       );
     } catch (error) {
