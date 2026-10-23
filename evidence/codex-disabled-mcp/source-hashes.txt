@@ -1,0 +1,4 @@
+43b18993c4b8cb8d8165a94ec84c84664f760c06ec150781e0b2f725c3e0d766  src/teacher.ts
+8a0d7adc715a95057cadb5c6c5697e41c3294fab8c318ff8d6863e88912b08a5  test/teacher-models.test.ts
+97bdb726117bf9dc53184cd2bcfe3a13028fcf93bdd03893f3afe31596e1b2fc  docs/ARCHITECTURE.md
+e7be9cfd4217a4701b2be6f0eb6054d0bcab4e2967c82c5fbc71312883b65909  .agents/skills/verify-studens/features/teacher.md

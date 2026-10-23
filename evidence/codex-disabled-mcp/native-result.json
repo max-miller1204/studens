@@ -1,0 +1,8 @@
+{
+  "version": "0.164.0",
+  "startAndResume": "disabled inventories accepted; no catalog turn/start",
+  "rolloutPrefixPreserved": true,
+  "realStructuredTurn": {
+    "ok": true
+  }
+}

@@ -1,0 +1,40 @@
+[
+  {
+    "data": [
+      {
+        "name": "disabled_one",
+        "runtimeStatus": "disabled",
+        "pluginId": null,
+        "httpOrigin": null,
+        "serverInfo": null,
+        "serverCapabilities": null,
+        "toolListMeta": null,
+        "tools": {},
+        "toolsError": null,
+        "resources": [],
+        "resourceTemplates": [],
+        "authStatus": "unsupported"
+      }
+    ],
+    "nextCursor": "1"
+  },
+  {
+    "data": [
+      {
+        "name": "disabled_two",
+        "runtimeStatus": "disabled",
+        "pluginId": null,
+        "httpOrigin": null,
+        "serverInfo": null,
+        "serverCapabilities": null,
+        "toolListMeta": null,
+        "tools": {},
+        "toolsError": null,
+        "resources": [],
+        "resourceTemplates": [],
+        "authStatus": "unsupported"
+      }
+    ],
+    "nextCursor": null
+  }
+]

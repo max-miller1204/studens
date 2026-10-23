@@ -1,0 +1,20 @@
+{
+  "method": "Real Codex 0.164.0 with only inventory response mutated at stdio boundary",
+  "results": [
+    {
+      "state": "connected",
+      "error": "Codex dedicated teacher still exposes MCP servers or an unverified state: disabled (connected). No model turn was started.",
+      "turnStartCount": 0
+    },
+    {
+      "state": "null",
+      "error": "Codex dedicated teacher still exposes MCP servers or an unverified state: disabled (unknown). No model turn was started.",
+      "turnStartCount": 0
+    },
+    {
+      "state": "tools",
+      "error": "Codex dedicated teacher still exposes MCP servers or an unverified state: disabled (disabled). No model turn was started.",
+      "turnStartCount": 0
+    }
+  ]
+}

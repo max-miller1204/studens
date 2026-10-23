@@ -1,0 +1,17 @@
+{
+  "target": "codex",
+  "verdict": "PASS",
+  "revision": "6f622b99bdce496328af8a2594542dd09c90a017",
+  "changes": "M .agents/skills/verify-studens/features/teacher.md\n M docs/ARCHITECTURE.md\n M src/teacher.ts\n M test/teacher-models.test.ts",
+  "results": [
+    {
+      "command": [
+        "/home/maxmiller/.local/share/mise/installs/node/24.22.0/bin/node",
+        "scripts/e2e.ts",
+        "codex",
+        "/tmp/studens-codex-disabled-evidence/codex-host/codex"
+      ],
+      "exitCode": 0
+    }
+  ]
+}

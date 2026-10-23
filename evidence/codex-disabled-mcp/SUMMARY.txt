@@ -1,0 +1,16 @@
+Change mode: Codex-only disabled MCP startup guard.
+Product commit: 73ae6b8cc1e27e8cbf4f1271fc4b360ae0c2977a
+Base: 6f622b99bdce496328af8a2594542dd09c90a017 (v0.12.0)
+
+PASS npm ci (0 vulnerabilities).
+PASS npm run verify: version check, formatting, types, 103 files / 1463 tests, complete isolated browser suite.
+PASS npm run verify -- codex: actual Codex 0.164.0 / gpt-6-luna / low; dedicated service, authoring, passage replies, grading, teacher panel, historical resume, daily review, refills and disputes.
+PASS 60 teacher-model transport contracts. The two disabled-server acceptance cases failed before the fix and pass afterward.
+PASS native.mjs: fresh thread and copied persisted session, two configured disabled MCP servers, pagination limit 1, empty tools/resources/templates and null capabilities. No turn/start in either catalog check. Separate real runStructured inference returned {ok:true}. Original rollout unchanged, copied rollout prefix preserved.
+PASS unsafe.mjs: actual Codex app-server, with only inventory responses changed at the stdio boundary to connected, null status, or contradictory tools. All three rejected, each with zero turn/start requests. These controlled responses do not prove an active third-party MCP server implementation.
+
+Screenshot: actual Codex host drive resuming a historical review, unchanged UI, 1280x720. The native JSON inventories are the specific proof for this guard; the screenshot is broader runtime regression evidence.
+Real Pi and Claude host/model drives were not run: the changed guard is in runCodex. Their controlled browser fixtures and CLI transport contracts ran through the default suite. No plugin manifest changes; claude plugin validate was not required.
+
+Runtime checks ran against uncommitted source bytes at the base revision. source-hashes.txt binds the final four files to the product commit. The documentation wording was updated during the runs and separately checked with Prettier; code and test bytes match the runner's source snapshot.
+Temporary homes/processes were owned and cleaned. Raw classroom/session state and auth were not uploaded. Initial failed harness attempts remain locally in /tmp/studens-codex-disabled-evidence; only successful native inventories and corrected probe logs are published here.

@@ -1,0 +1,5 @@
+{"id":1,"method":"initialize","params":{"clientInfo":{"name":"studens_teacher","version":"0.11.0"}}}
+{"method":"initialized","params":{}}
+{"id":2,"method":"config/read","params":{"includeLayers":false,"cwd":"/tmp/studens-unsafe-native-yBwW93"}}
+{"id":3,"method":"thread/start","params":{"model":"gpt-6-luna","cwd":"/tmp/studens-unsafe-native-yBwW93","approvalPolicy":"never","sandbox":"read-only","config":{"mcp_servers":{"disabled":{"enabled":false}},"features":{"apps":false,"plugins":false,"remote_plugin":false,"skill_mcp_dependency_install":false,"shell_tool":false,"unified_exec":false,"multi_agent":false,"browser_use":false,"in_app_browser":false,"computer_use":false,"image_generation":false,"view_image":false},"web_search":"disabled"}}}
+{"id":4,"method":"mcpServerStatus/list","params":{"threadId":"01a16a6e-54e1-74d2-bf87-1d4659884256","detail":"full","cursor":null}}

@@ -1,0 +1,29 @@
+
+ RUN  v4.1.12 /home/maxmiller/.t3/worktrees/studens/t3-a5a0d94c
+
+ ❯ test/teacher-models.test.ts (60 tests | 2 failed) 2480ms
+   × accepts explicitly disabled MCP servers across pages on start/resume (undefined) 30ms
+   × accepts explicitly disabled MCP servers across pages on start/resume (saved-thread) 26ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/teacher-models.test.ts > accepts explicitly disabled MCP servers across pages on start/resume (undefined)
+ FAIL  test/teacher-models.test.ts > accepts explicitly disabled MCP servers across pages on start/resume (saved-thread)
+Error: Codex dedicated teacher still exposes MCP servers: configured. No model turn was started.
+ ❯ runCodex src/teacher.ts:583:15
+    581|         throw new Error("Codex returned an invalid dedicated-teacher M…
+    582|       if (page.data.length)
+    583|         throw new Error(
+       |               ^
+    584|           `Codex dedicated teacher still exposes MCP servers: ${page.d…
+    585|         );
+ ❯ test/teacher-models.test.ts:444:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 58 passed (60)
+   Start at  16:20:13
+   Duration  3.16s (transform 418ms, setup 0ms, import 582ms, tests 2.48s, environment 0ms)
+
