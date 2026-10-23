@@ -13,7 +13,7 @@ import { uiFontHead } from "./ui-assets.ts";
 
 import { escapeHtml, renderMarkdown } from "./markdown.ts";
 import { lessonUrl } from "./paths.ts";
-import { memoryMapItems, memoryMapSection } from "./memory-map.ts";
+import { memoryMapItems, memoryMapSection, memoryTime } from "./memory-map.ts";
 import { missionSummary, renderMission } from "./mission-map.ts";
 import {
   DEFAULT_REVIEW_SIZE,
@@ -206,17 +206,21 @@ ${lessons.map((lesson, i) => lessonRow(lesson, i, data.progress.dueByLesson[less
   <h1><span class="cl-hero-emoji" aria-hidden="true">${escapeHtml(classroom.emoji)}</span>${escapeHtml(classroom.title)}</h1>
   ${classroom.mission ? `<p class="cl-lede">${escapeHtml(missionWhy(classroom.mission) ?? "")}</p>` : ""}
 </div>
+${upNext(data)}
+<div class="cl-classroom-columns">
+<section class="cl-section" aria-label="Lessons"><h2 class="cl-section-title">Lessons</h2>${lessonList}</section>
+${memoryMapSection(classroom.name, data.progress.items ?? [], data.progress.now)}
+</div>
 ${progressSection(data)}
 <p><a href="/c/${encodeURIComponent(classroom.name)}/course-map">Course map</a> · <a href="/c/${encodeURIComponent(classroom.name)}/reviews">Review history</a> · <a href="/c/${encodeURIComponent(classroom.name)}/settings">Settings</a> · <a href="#cl-export">Export</a></p>
 <section class="cl-section">
-  <h2 class="cl-section-title">Lessons</h2>
+  <h2 class="cl-section-title">Next lesson</h2>
   <div id="cl-next-lesson" class="cl-next-lesson" data-cl-next-lesson="${escapeHtml(classroom.name)}">
     <label for="cl-next-topic">What would you like to learn next? <span>(optional)</span></label>
     <textarea id="cl-next-topic" rows="2" maxlength="2000" placeholder="Let your teacher choose, or suggest a topic"></textarea>
     <div class="cl-next-actions"><button type="button" class="cl-button" data-cl-next-start disabled>Next lesson</button><a data-cl-next-open hidden>Open lesson</a></div>
     <p class="cl-progress-note" data-cl-next-status role="status" aria-live="polite">Checking lesson status…</p>
   </div>
-  ${lessonList}
 </section>
 ${sidePanel(data)}
 <section id="cl-export" class="cl-section" aria-label="Export classroom">
@@ -239,6 +243,20 @@ ${sidePanel(data)}
     breadcrumb: `<a class="cl-crumb" href="/">Classrooms</a><span class="cl-crumb-sep" aria-hidden="true">/</span><span class="cl-crumb cl-crumb-current">${escapeHtml(classroom.title)}</span>`,
     body,
   });
+}
+
+/** Resume only saved work; browser reading history refines this without inventing completion. */
+function upNext(data: ClassroomPageData): string {
+  const pending = data.lessons.find((l) => l.kind === "lesson" && l.hasUngradedSubmission);
+  const due = data.progress.review.due;
+  const action = pending ? "resume" : due > 0 ? "review" : "next";
+  return `<section class="cl-up-next cl-card-box" aria-label="Up next" data-cl-up-next data-classroom="${escapeHtml(data.classroom.name)}" data-action="${action}">
+<h2 class="cl-section-title">Up next</h2>
+<p data-cl-up-description>${pending ? escapeHtml(pending.title) : due > 0 ? `${due} items due for review` : "Continue with the next idea in your classroom."}</p>
+<div class="cl-up-actions"><a class="cl-button" data-cl-up-resume ${pending ? `href="${lessonUrl(data.classroom.name, pending.name)}"` : "hidden"}>Resume lesson</a><button class="cl-button" type="button" data-cl-up-start ${pending ? "hidden" : "disabled"}>${due > 0 ? "Review due items" : "Start next lesson"}</button>
+<a href="#cl-review" ${data.progress.review.total ? "" : "hidden"}>Review options</a><a href="#cl-next-lesson">Choose next topic</a></div>
+<div data-cl-up-status></div>
+</section>`;
 }
 
 /** Review sessions have their own navigation, including unchanged legacy links. */
@@ -278,8 +296,11 @@ function progressSection(data: ClassroomPageData): string {
 
   return `<section class="cl-section cl-progress" aria-label="Memory map">
   <h2 class="cl-section-title">Memory map</h2>
-  ${memoryMapSection(data.classroom.name, data.progress.items ?? [], now)}
-  ${work ? `<p class="cl-progress-note" data-review-workload>${work.eligible} due slots available in this classroom today · ${work.used} reserved or used across all classrooms of today's ${work.allowance}-item allowance (daily cap ${work.cap}, all classrooms, UTC). ${work.deferred} due items deferred to later workload windows; they remain due. Next workload window: ${escapeHtml(new Date(work.nextWindowAt).toISOString())}. Prepared questions are required. Continue unfinished saved reviews. This limit changes workload, never grades or memory evidence.</p>` : ""}
+  <p class="cl-memory-intro">What your saved answers show, and what to revisit next. Teaching coverage and <a href="/c/${encodeURIComponent(data.classroom.name)}/course-map">upcoming objectives</a> live in the course map.</p>
+  <details class="cl-scheduling"><summary>How review is scheduled</summary>
+  <p class="cl-progress-note">Strength describes evidence, not mastery. Immediate answers, help, notes and high scores alone do not show lasting recall.</p>
+  ${work ? `<p class="cl-progress-note" data-review-workload>${work.eligible} due slots available in this classroom today · ${work.used} reserved or used across all classrooms of today's ${work.allowance}-item allowance (daily cap ${work.cap}, all classrooms, UTC). ${work.deferred} due items deferred to later workload windows; they remain due. Next workload window: ${memoryTime(work.nextWindowAt, now)}. Prepared questions are required. Continue unfinished saved reviews. This limit changes workload, never grades or memory evidence.</p>` : ""}
+  <p class="cl-progress-note">Early review never extends the scheduled interval. Immediate or assisted answers do not establish retention. Paused and retired items are excluded. Deferred work stays due. Prepared questions are required. Today’s forecast includes items due later today. Later dates show newly due items once, not a plan of completed reviews. Future completions and allocations across classrooms are unknown.</p></details>
   ${(data.progress.reteach ?? []).map((item) => `<p class="cl-progress-note">Review paused after repeated misses: ${escapeHtml(item.prompt)} <a href="/c/${escapeHtml(data.classroom.name)}/${escapeHtml(item.lesson)}#cl-reteach">Open short re-teach</a></p>`).join("")}
   ${
     review.total > 0
@@ -308,7 +329,6 @@ function progressSection(data: ClassroomPageData): string {
       .join("")}</select></label>
     <label><input type="checkbox" data-cl-review-early> Review early anyway</label>
     </div>
-    <p class="cl-progress-note">Early review never extends the scheduled interval. Immediate or assisted answers do not establish retention.</p>
     <button type="button" class="cl-button" data-cl-review-start disabled>Start review</button>
     <p class="cl-progress-note" data-cl-review-status role="status" aria-live="polite">Checking review status…</p>
     <a data-cl-review-open hidden>Open review</a>
@@ -338,6 +358,11 @@ function lessonRow(lesson: Lesson, index: number, due: number): string {
       `<span class="cl-badge cl-badge-score" title="Quiz score">${Math.round(lesson.latestScore)}%</span>`,
     );
   }
+  if (lesson.latestScore === null || lesson.hasUngradedSubmission) {
+    badges.push(
+      `<span class="cl-badge" data-cl-lesson-status>${lesson.hasUngradedSubmission || lesson.annotationCount > 0 ? "In progress" : "Not started"}</span>`,
+    );
+  }
   if (lesson.hasUngradedSubmission) {
     badges.push(`<span class="cl-badge cl-badge-pending" title="Awaiting grading">grading…</span>`);
   }
@@ -347,7 +372,7 @@ function lessonRow(lesson: Lesson, index: number, due: number): string {
     );
   }
 
-  return `<li class="cl-lesson">
+  return `<li class="cl-lesson" data-cl-lesson-url="${href}" data-in-progress="${lesson.hasUngradedSubmission || lesson.annotationCount > 0}" data-complete="${lesson.latestScore !== null && !lesson.hasUngradedSubmission}">
   <a class="cl-lesson-link" href="${href}">
     <span class="cl-lesson-index">${String(lesson.order ?? index + 1).padStart(2, "0")}</span>
     <span class="cl-lesson-body">

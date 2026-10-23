@@ -289,6 +289,34 @@ export function initNavigation(config = null, contentRoot = null) {
           }
         });
       }
+      const upNext = document.querySelector("[data-cl-up-next]");
+      if (upNext) {
+        const rows = [...document.querySelectorAll("[data-cl-lesson-url]")];
+        const history = read();
+        for (const row of rows) {
+          if (row.dataset.complete === "true") continue;
+          if (history.some((h) => h.url === row.dataset.clLessonUrl)) {
+            row.dataset.inProgress = "true";
+            row.querySelector("[data-cl-lesson-status]").textContent = "In progress";
+          }
+        }
+        const recent = history.find((h) =>
+          rows.some((r) => r.dataset.clLessonUrl === h.url && r.dataset.complete !== "true"),
+        );
+        const row =
+          rows.find((r) => r.dataset.clLessonUrl === recent?.url) ||
+          rows.find((r) => r.dataset.inProgress === "true" && r.dataset.complete !== "true");
+        if (row) {
+          upNext.dataset.action = "resume";
+          const resume = upNext.querySelector("[data-cl-up-resume]");
+          resume.hidden = false;
+          resume.href =
+            row.dataset.clLessonUrl + (recent?.point ? `#${encodeURIComponent(recent.point)}` : "");
+          upNext.querySelector("[data-cl-up-start]").hidden = true;
+          upNext.querySelector("[data-cl-up-description]").textContent =
+            row.querySelector(".cl-lesson-title").textContent;
+        }
+      }
       const control = document.querySelector("[data-cl-continue]");
       if (!control) return;
       const recent = read()
