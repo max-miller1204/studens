@@ -23,7 +23,8 @@ their original host and recovery behavior.
 - Skip legacy questions without pools with a specific message.
 - Preserve selections after reload and publication retry.
 - Return to draft answers in an unfinished review, including from another host.
-- Answer one card at a time, with immediate closed grading and explicit next/previous navigation.
+- Answer one shared quiz card at a time, with immediate closed grading and explicit next/previous navigation.
+- Read answered-card and completed-classroom counts with accessible progress meters. Empty, complete, partial-publication failure, and stale-card states use shared state panels; errors require explicit retry.
 - Keep review history outside Lessons, including legacy numbered review links.
 - Grade each card once and update its original objective schedule.
 - Continue corrective teacher questions and replies beside the current card.
@@ -147,8 +148,19 @@ independent host processes and explicit lock contention. For this focused browse
 path, the exercised command is
 `node --input-type=module -e 'import {verifyReviewWorkload} from "./scripts/e2e-review-workload.ts";await verifyReviewWorkload("/tmp/studens-workload")'`.
 
+The card and daily fixtures capture the active, complete, partial-publication error,
+empty-due, invalid-state, and stale-card views at 1280px and 390×844 as applicable.
+They keep mutable review chrome out of passage anchors and glossary terms,
+check progress meter values against saved completion, and hide unavailable
+navigation/retry controls. Captures wait for viewport transitions to finish so the
+mobile drawer does not obscure the review. Inspect `first-card-*`, `complete-*`,
+`stale-selection-*`, `state-load-failed-*`, `partial-failure-*`, `empty-due-*`, and
+`state-failed-*` captures in the corresponding card/daily host directories.
+Run the focused daily flow with
+`node --input-type=module -e 'import {verifyDailyReview} from "./scripts/e2e-daily-review.ts";await verifyDailyReview("/tmp/studens-daily-review")'`.
+
 The card fixtures additionally check two-card order, immediate correct feedback
-without a model turn, a miss followed by a same-screen corrective exchange, 375px
+without a model turn, a miss followed by a same-screen corrective exchange, 390px
 layout, second-card drafts, completion counts, duplicate submission rejection,
 private history routes, legacy links, and startup without duplicate grades or
 corrections. The service fixture fails a correction and checks explicit retry after

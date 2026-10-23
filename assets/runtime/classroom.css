@@ -2298,15 +2298,21 @@ figure:has(> .cl-diagram) figcaption {
 .cl-review-page .cl-q::before {
   display: none;
 }
-.cl-review-page .cl-q input[type="text"],
-.cl-review-page .cl-q textarea,
-.cl-review-page .cl-q select {
-  max-width: 100%;
-  min-height: 2.75rem;
-  font-size: 1rem;
-}
 .cl-review-progress {
+  margin-block: 1rem;
+  font: 400 0.875rem/1.5 var(--cl-sans);
   font-variant-numeric: tabular-nums;
+}
+.cl-review-progress p {
+  margin: 0;
+}
+.cl-review-progress .cl-meter {
+  margin-top: 0.5rem;
+}
+[data-review-state][hidden],
+.cl-review-page .cl-button[hidden],
+[data-cl-daily] .cl-button[hidden] {
+  display: none;
 }
 .cl-review-navigation {
   display: flex;
@@ -2512,9 +2518,7 @@ figure:has(> .cl-diagram) figcaption {
 }
 .cl-daily-group {
   margin: 0 0 1rem;
-  padding: 1.25rem;
-  border: 1px solid var(--cl-border);
-  border-radius: 12px;
+  overflow-wrap: anywhere;
 }
 .cl-daily-group p {
   margin: 0.5rem 0;

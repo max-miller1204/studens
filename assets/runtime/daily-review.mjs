@@ -1,9 +1,15 @@
+import { reviewProgress, reviewState } from "./review-presentation.mjs";
+
 /** Group navigation only; each classroom keeps its quiz, grades and teacher panel. */
 export function initDailyReview(control) {
   const id = control.dataset.clDaily;
   const button = control.querySelector("[data-daily-action]");
   const status = control.querySelector("[data-daily-status]");
   const list = control.querySelector("[data-daily-groups]");
+  const progress = reviewProgress("Completed classrooms");
+  const state = reviewState();
+  status.after(progress.root, state.root);
+  progress.root.hidden = true;
   const key = "studens-daily-review-request";
   let daily;
   let action = "check";
@@ -31,6 +37,7 @@ export function initDailyReview(control) {
   function render(result) {
     daily = result.daily;
     clearTimeout(timer);
+    state.clear();
     const due = Object.values(result.due).reduce((sum, n) => sum + n, 0);
     if (!id) {
       const work = result.workload;
@@ -49,13 +56,38 @@ export function initDailyReview(control) {
             ? "Today's shared allowance is used. Due work stays listed."
             : "Review due ideas in separate classroom groups."
           : "Nothing is due. Return after your next review becomes due.";
+      if (!daily && due === 0)
+        state.show("empty", "All caught up", "Nothing is due. Your next review will appear here.");
       if (navigate && daily) location.assign(daily.url);
       return;
     }
+    if (!daily)
+      throw new Error(
+        "This saved daily review no longer exists. Return to Today to choose a current review.",
+      );
+    const completed = daily.groups.filter((group) => group.complete).length;
+    progress.root.hidden = false;
+    progress.update(
+      completed,
+      daily.groups.length,
+      `${completed} of ${daily.groups.length} classrooms complete`,
+    );
+    if (daily.complete)
+      state.show(
+        "complete",
+        "Daily review complete",
+        "Each classroom keeps its answers, feedback, and review history.",
+      );
+    else if (daily.groups.some((group) => group.error || group.status === "failed"))
+      state.show(
+        "partial-failure",
+        "Daily review paused",
+        "Saved progress is preserved. Resolve the classroom error below, then explicitly retry.",
+      );
     list.replaceChildren();
     for (const [index, group] of daily.groups.entries()) {
       const item = document.createElement("li");
-      item.className = "cl-daily-group";
+      item.className = "cl-daily-group cl-card-box";
       const name = document.createElement(group.available ? "a" : "strong");
       name.textContent = group.title;
       if (group.available) name.href = group.url;
@@ -69,6 +101,7 @@ export function initDailyReview(control) {
       item.append(name, note, history);
       if (group.error) {
         const error = document.createElement("p");
+        error.className = "cl-inline-error";
         error.setAttribute("role", "alert");
         error.textContent = `${group.title}: ${group.error}`;
         item.append(error);
@@ -105,7 +138,12 @@ export function initDailyReview(control) {
     button.hidden = false;
     button.disabled = false;
     button.textContent = "Retry daily review state";
-    status.textContent = error.message;
+    status.textContent = "";
+    state.show(
+      id ? "stale" : "error",
+      id ? "Cannot load saved daily review" : "Cannot load daily review",
+      error.message,
+    );
   }
   async function check() {
     try {
