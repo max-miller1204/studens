@@ -114,7 +114,7 @@ export function initFaded(root) {
 }
 
 function mount(widget, config) {
-  const host = element("div", "cl-faded-runtime");
+  const host = element("div", "cl-faded-runtime cl-card-box");
   widget.append(host);
   const count = config.steps.length;
   let round = 0;

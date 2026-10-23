@@ -36,8 +36,11 @@ the canonical quiz/practice/stepper/faded fragments through public routes at
 receive fixture response controls. Inspect the matched full-page and focused
 captures, `result.json`, and `missing-hook.json`. Local practice feedback and a
 computed Next step must work without overflow or contract/page errors. Mouse-select
-prose, Ask, type a card follow-up, and delete through its confirmation; the answer
-is a fixture teacher response. A missing v2 prompt must disable the lesson with its
+prose, save/revisit/delete a highlight and a bookmark, Ask, send a card follow-up, reload both
+answers, and delete through its confirmation. Composers and replies must sit beside
+the passage at 1280px and inline at 390px, within viewport bounds. Captures wait
+for finite arrival transitions to finish. Answers are fixture teacher responses.
+A missing v2 prompt must disable the lesson with its
 specific hook error and no POST; correcting the source and explicitly reloading
 must restore a fresh quiz. For baseline captures, run the same script with `before`
 on the selected base checkout; that mode captures its existing contract and omits
@@ -164,7 +167,12 @@ not evidence of native model adoption or human learning.
 
 ## Gotchas
 
-The browser suite uses fixture teachers. Use the real host targets for model answers. Quiz help before grading must clarify the question without solving it. Saved cards sit in document flow. A reload must preserve their location.
+The browser suite uses fixture teachers. Use the real host targets for model
+answers. Quiz help before grading must clarify the question without solving it.
+Saved cards stay after their passage in DOM order. At 1100px and above, lesson
+shells reserve a right column for passage composers and cards; panels without
+enough side space stay inline. Narrow screens show them inline after the passage.
+Reload must preserve the passage location and conversation.
 
 Source destinations measure the actual sticky header, position and focus the teaching
 section below it, and retain the anchor after reload. A previously shown link whose

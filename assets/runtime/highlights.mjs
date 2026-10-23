@@ -12,7 +12,9 @@ import {
   drawQuoteMath,
   showDraftError,
   RUNTIME_UI,
+  placeCardInFlow,
 } from "./lesson-dom.mjs";
+import { anchorPanel, releasePanel } from "./ask-layout.mjs";
 import { draftStatus } from "./drafts.mjs";
 
 export function createHighlights({ config, contentRoot, drafts, cards, learnerMarks }) {
@@ -57,6 +59,8 @@ export function createHighlights({ config, contentRoot, drafts, cards, learnerMa
       });
       selectionActions.appendChild(button);
     }
+    for (const button of selectionActions.querySelectorAll("button"))
+      button.classList.add("cl-button", "cl-button-quiet", "cl-button-sm");
     selectionActions.title = "Selected passage actions (Alt+M to focus)";
     document.body.appendChild(selectionActions);
   }
@@ -105,7 +109,7 @@ export function createHighlights({ config, contentRoot, drafts, cards, learnerMa
 
   function buildComposer() {
     composer = document.createElement("div");
-    composer.className = "cl-card-panel cl-card-box";
+    composer.className = "cl-card-panel cl-card-composer cl-card-box cl-motion-enter";
     composer.hidden = true;
     composer.innerHTML = `
     <div class="cl-card-head">
@@ -166,18 +170,23 @@ export function createHighlights({ config, contentRoot, drafts, cards, learnerMa
 
   /** Show the composer at `pendingRange`, holding `text`. */
   function showComposer(text) {
-    const rect = pendingRange.getBoundingClientRect();
     const composerQuote = composer.querySelector("[data-cl-quote]");
     composerQuote.textContent = quoteOf(pendingRange, null);
     drawQuoteMath(composerQuote);
     composer.querySelector("[data-cl-question]").value = text;
     composerAnchor = selectorFor(pendingRange);
     composer.hidden = false;
-    position(composer, rect.left, rect.bottom + 10);
+    const node = pendingRange.startContainer;
+    const anchor = node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement;
+    placeCardInFlow(composer, anchor, contentRoot);
+    anchorPanel(composer, anchor);
   }
 
   function closeComposer() {
-    if (composer) composer.hidden = true;
+    if (composer) {
+      composer.hidden = true;
+      releasePanel(composer);
+    }
     pendingRange = null;
     composerAnchor = null;
   }
@@ -208,8 +217,8 @@ export function createHighlights({ config, contentRoot, drafts, cards, learnerMa
   /**
    * Put a marker at the highlight of the saved question draft.
    *
-   * The draft comes back closed, like a minimised card. An open composer floats, so it
-   * would cover the lesson the learner came back to read. A click on the marker opens it.
+   * The draft comes back closed, like a minimised card. A click on its marker
+   * resumes the unsent question beside the passage.
    */
   function restoreAskDraft() {
     if (!askDraft) return;
