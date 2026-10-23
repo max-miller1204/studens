@@ -289,7 +289,9 @@ Every static route uses the guards in `paths.ts`, including symlink checks.
 Never serve `quiz/`, private plans, teacher state, or recovery files. Media routes
 are deliberately narrow. Invalid stored state must throw a specific error.
 
-Cards live in document flow after their highlighted block, outside quiz controls.
+Cards remain after their highlighted block in DOM order, outside quiz controls.
+On wide lesson shells, passage panels dock in the reserved right column; below
+1100px they remain inline. Panels without sufficient side space also stay inline.
 Ignore nested card events when collecting or locking quiz answers. Exclude mutable
 quiz runtime UI from text indexing. Preserve question IDs after submission.
 The lesson runtime adds the header before wiring the theme toggle; the inline theme

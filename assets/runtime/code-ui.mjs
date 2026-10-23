@@ -20,7 +20,7 @@ export function enhanceCode(question) {
   if (!editor.hasAttribute("aria-label")) editor.setAttribute("aria-label", "JavaScript source");
   editor.maxLength = CODE_SOURCE_LIMIT;
   const panel = document.createElement("div");
-  panel.className = "cl-code-runner cl-no-highlight";
+  panel.className = "cl-code-runner cl-no-highlight cl-card-box";
   const note = document.createElement("p");
   note.className = "cl-quiz-status";
   note.textContent =

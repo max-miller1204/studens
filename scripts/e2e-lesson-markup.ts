@@ -63,7 +63,12 @@ try {
         50,
       );
     },
-    onFollowUp() {},
+    onFollowUp(annotation) {
+      setTimeout(
+        () => applyAnswer(annotation.id, "The value is released at that earlier scope boundary."),
+        50,
+      );
+    },
     onQuizSubmit() {
       throw new Error("The markup capture must not submit an assessment.");
     },
@@ -110,7 +115,7 @@ try {
   );
   fs.writeFileSync(path.join(out, "result.json"), JSON.stringify(result, null, 2));
   assert.deepEqual((result as { errors: string[] }).errors, []);
-  await playwrightCode(
+  const conversations = await playwrightCode(
     session,
     out,
     `async page => {
@@ -120,22 +125,43 @@ try {
       await page.goto(${JSON.stringify(base)}+'/c/rust/settings');
       await page.getByLabel('Theme',{exact:true}).selectOption(theme);
       await page.goto(${JSON.stringify(base)}+'/c/rust/005-passage');
+      for(const action of ['Highlight','Bookmark']) {
+      await highlightText(page,'#passage','Ownership moves once.');
+      await page.getByRole('button',{name:action,exact:true}).click();
+      await page.waitForFunction(()=>document.querySelectorAll('[data-mark-id]').length===1);
+      if(!await page.locator('.cl-learner-marks').evaluate(e=>e.open))await page.locator('.cl-learner-marks summary').click();
+      await page.getByRole('button',{name:'Revisit passage',exact:true}).click();
+      await page.getByRole('button',{name:'Delete mark',exact:true}).click();
+      await page.locator('[data-mark-id]').waitFor({state:'detached'});
+      await page.locator('.cl-learner-marks summary').click();
+      }
       await highlightText(page,'#passage','Ownership moves once.');
       await page.locator('.cl-ask-pill').click();
       await page.locator('[data-cl-question]').fill('Who releases it after the move?');
+      await page.waitForFunction(()=>{const p=document.querySelector('[data-cl-ask-form]').closest('.cl-card-panel'),r=p.getBoundingClientRect(),a=document.querySelector('#passage').getBoundingClientRect();return innerWidth>=1100?r.left>=a.right:r.top>=a.bottom});
+      if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth))throw Error('Ask overflow');
+      await page.evaluate(()=>Promise.all(document.getAnimations().filter(a=>a.effect?.getTiming().iterations!==Infinity).map(a=>a.finished.catch(()=>{}))));
       await page.screenshot({path:${JSON.stringify(out)}+'/ask-'+width+'-'+theme+'.png',fullPage:true});
       await page.getByRole('button',{name:'Ask your teacher',exact:true}).click();
       await page.locator('.cl-card-inline:not([hidden]) .cl-card-answer').last().getByText('The new owner releases the value when its scope ends.',{exact:true}).waitFor();
       await page.locator('.cl-card-inline:not([hidden]) [data-cl-followup]').last().fill('What if the scope ends sooner?');
+      await page.locator('.cl-card-inline:not([hidden]) [data-cl-followup-form]').last().getByRole('button',{name:'Ask',exact:true}).click();
+      await page.getByText('The value is released at that earlier scope boundary.',{exact:true}).waitFor();
+      await page.reload();
+      await page.getByText('The value is released at that earlier scope boundary.',{exact:true}).waitFor();
+      await page.waitForFunction(()=>{const p=document.querySelector('.cl-card-inline:not([hidden])'),r=p.getBoundingClientRect(),a=document.querySelector('#passage').getBoundingClientRect();return innerWidth>=1100?r.left>=a.right:r.top>=a.bottom});
+      if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth))throw Error('Answer overflow');
+      await page.evaluate(()=>Promise.all(document.getAnimations().filter(a=>a.effect?.getTiming().iterations!==Infinity).map(a=>a.finished.catch(()=>{}))));
       await page.screenshot({path:${JSON.stringify(out)}+'/card-'+width+'-'+theme+'.png',fullPage:true});
       // Keep each matched state to one saved question; delete through its public control.
       await page.locator('.cl-card-inline:not([hidden]) [data-cl-delete]').last().click();
       await page.getByRole('button',{name:'Delete question',exact:true}).last().click();
       await page.locator('.cl-card-inline').waitFor({state:'detached'});
     }
-    return {states:8};
+    return {states:8, highlightRevisitDelete:true, bookmarkRevisitDelete:true, followUpSentAndReloaded:true, dockAndInlineBounds:true};
   }`,
   );
+  fs.writeFileSync(path.join(out, "conversations.json"), JSON.stringify(conversations, null, 2));
   if (mode === "after") {
     const valid = complete(read("assessment"));
     fixture.write("rust/004-invalid/lesson.html", valid.replace("cl-q-prompt", "missing-prompt"));
