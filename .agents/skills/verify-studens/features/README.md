@@ -9,6 +9,7 @@ Start with the shared [launch and doctor instructions](../SKILL.md). Each browse
 | Read and ask         | [reading.md](reading.md)           | Lesson/quiz text, Saved marks, typed card answers/follow-ups/reload/recovery, glossary, diagrams, math, theme                                |
 | Step through states  | [step-through.md](step-through.md) | Lesson traces, computed input, local controls, diagrams/math, gates, offline, both themes                                                    |
 | Answer quizzes       | [quizzes.md](quizzes.md)           | Quiz, runnable JavaScript and practice controls, pretest gate, disputes/history, reload, second tab                                          |
+| Lesson UI migration  | [migration.md](migration.md)       | Explicit agent CLI discovery/apply/retry, disposable checks, original preservation and private grading recovery                              |
 | Next lesson          | [next-lesson.md](next-lesson.md)   | Classroom page, optional topic, durable authoring, publication retry                                                                         |
 | Start a review       | [review.md](review.md)             | Classroom Up next, daily landing/groups/history, card fragments/reload, memory map/forecast/why, review controls, reports, publication retry |
 | Classroom settings   | [settings.md](settings.md)         | Classroom Settings, preferences, port, tailnet links, requested and answering model                                                          |
