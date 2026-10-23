@@ -11,15 +11,49 @@ export function initTeacherActivity(classroom) {
   const region = document.createElement("section");
   region.className = "cl-teacher-activity";
   region.setAttribute("aria-label", "Teacher activity");
-  const status = document.createElement("p");
+  const details = document.createElement("details");
+  const summary = document.createElement("summary");
+  const status = document.createElement("span");
   status.setAttribute("role", "status");
   const contents = document.createElement("div");
-  const error = document.createElement("p");
+  const panel = document.createElement("div");
+  panel.className = "cl-activity-panel";
+  const heading = document.createElement("div");
+  heading.className = "cl-activity-heading";
+  const title = document.createElement("strong");
+  title.textContent = "Teacher activity";
+  const close = document.createElement("button");
+  close.type = "button";
+  close.className = "cl-button cl-button-quiet";
+  close.textContent = "Close";
+  close.setAttribute("aria-label", "Close teacher activity");
+  const dismiss = () => {
+    details.open = false;
+    summary.focus();
+  };
+  close.onclick = dismiss;
+  heading.append(title, close);
+  const identityLine = document.createElement("p");
+  identityLine.className = "cl-activity-identity";
+  const error = document.createElement("div");
+  error.className = "cl-inline-error";
   error.setAttribute("role", "alert");
   error.hidden = true;
-  region.append(status, contents, error);
+  summary.append(status);
+  panel.append(heading, identityLine, contents, error);
+  details.append(summary, panel);
+  region.append(details);
+  region.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && details.open) {
+      event.preventDefault();
+      dismiss();
+    }
+  });
+  document.addEventListener("click", (event) => {
+    if (!region.contains(event.target)) details.open = false;
+  });
   const header = document.querySelector(".cl-header");
-  if (header) header.append(region);
+  if (header) header.insertBefore(region, header.querySelector(".cl-header-search"));
   else document.body.prepend(region);
   let stopped = false;
   let pending = false;
@@ -35,14 +69,18 @@ export function initTeacherActivity(classroom) {
     generation++;
     stream?.close();
     region.dataset.state = "unavailable";
-    status.textContent = "Teacher activity unavailable";
+    status.textContent = "Teacher · Unavailable";
+    summary.setAttribute("aria-label", "Teacher activity: Unavailable");
+    details.open = true;
     contents.replaceChildren();
     error.hidden = false;
-    error.textContent = message + " ";
+    const messageText = document.createElement("p");
+    messageText.textContent = message;
+    error.replaceChildren(messageText);
     const retry = document.createElement("button");
     retry.type = "button";
     retry.textContent = "Retry activity status";
-    retry.className = "cl-button";
+    retry.className = "cl-button cl-button-quiet";
     retry.onclick = () => {
       connect();
       refresh();
@@ -86,7 +124,6 @@ export function initTeacherActivity(classroom) {
       throw new Error("Invalid teacher activity response.");
     const serialized = JSON.stringify(data);
     if (last === serialized) return;
-    const wasOpen = contents.querySelector("details")?.open;
     last = serialized;
     error.hidden = true;
     contents.replaceChildren();
@@ -107,19 +144,24 @@ export function initTeacherActivity(classroom) {
     const identity = teacher
       ? `${teacher.backend} teacher${teacher.model ? ` (${teacher.model})` : ""}`
       : "Teacher";
-    status.textContent = teacher?.switching
+    identityLine.textContent = teacher?.switching
       ? `Switching teacher to ${teacher.switching}. Waiting for active work and readiness.`
+      : identity;
+    const state = rows[0]?.status ?? "idle";
+    status.textContent = teacher?.switching
+      ? "Teacher · Switching"
       : rows.length
-        ? label(rows[0]) +
-          (queued && rows[0].status !== "queued" ? ` · ${queued} queued` : "") +
-          (failures && rows[0].status !== "failed" ? ` · ${failures} failed` : "")
-        : `${identity}: no pending requests`;
-    region.dataset.state = rows[0]?.status ?? "idle";
-    if (!rows.length) return;
-    const details = document.createElement("details");
-    details.open = failures > 0 || wasOpen === true;
-    const summary = document.createElement("summary");
-    summary.textContent = `View teacher activity (${rows.length})`;
+        ? `${state === "failed" ? "Failed" : state === "queued" ? "Queued" : "Working"}${queued && state !== "queued" ? ` · ${queued} queued` : ""}${failures && state !== "failed" ? ` · ${failures} failed` : ""}`
+        : "Teacher · Idle";
+    summary.setAttribute("aria-label", `Teacher activity: ${status.textContent}`);
+    region.dataset.state = state;
+    if (!rows.length) {
+      const empty = document.createElement("p");
+      empty.textContent = "No pending requests";
+      contents.append(empty);
+      return;
+    }
+    if (failures) details.open = true;
     const list = document.createElement("ul");
     for (const row of rows) {
       const item = document.createElement("li");
@@ -130,12 +172,15 @@ export function initTeacherActivity(classroom) {
       if (row.status === "failed") {
         const reason = document.createElement("p");
         reason.textContent = row.error;
-        item.append(reason);
+        const failureBox = document.createElement("div");
+        failureBox.className = "cl-inline-error";
+        failureBox.append(reason);
+        item.append(failureBox);
         if (row.retry) {
           const retry = document.createElement("button");
           retry.type = "button";
-          retry.className = "cl-button";
-          retry.textContent = "Retry activity";
+          retry.className = "cl-button cl-button-quiet";
+          retry.textContent = "Retry";
           retry.setAttribute("aria-label", `Retry activity: ${work(row)} — ${row.item}`);
           retry.onclick = async () => {
             if (busy) return;
@@ -157,20 +202,18 @@ export function initTeacherActivity(classroom) {
               );
               await refresh();
             } catch (failure) {
-              error.textContent = failure.message;
-              error.hidden = false;
+              reason.textContent = failure.message;
               retry.disabled = false;
             } finally {
               busy = false;
             }
           };
-          item.append(retry);
+          failureBox.append(retry);
         }
       }
       list.append(item);
     }
-    details.append(summary, list);
-    contents.append(details);
+    contents.append(list);
   }
   async function refresh() {
     if (stopped || connectionLost) return;
