@@ -3898,3 +3898,170 @@ time[data-exact-time]:focus::after {
 .cl-up-actions > [hidden] {
   display: none;
 }
+
+/* Workspace pages share the app shell and base surfaces without changing review cards. */
+.cl-workspace-page .cl-main {
+  max-width: 58rem;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+.cl-workspace-page .cl-hero h1 {
+  font-size: clamp(1.65rem, 4vw, 2rem);
+  letter-spacing: -0.025em;
+}
+.cl-workspace-page .cl-lede {
+  max-width: 42rem;
+  font-size: 0.9375rem;
+}
+.cl-workspace-page .cl-settings {
+  max-width: 44rem;
+}
+.cl-workspace-page .cl-settings-section {
+  margin-bottom: 1.25rem;
+  padding: clamp(1rem, 3vw, 1.5rem);
+}
+.cl-workspace-page .cl-settings-section h2 {
+  font-size: 1.125rem;
+  letter-spacing: -0.015em;
+}
+.cl-workspace-page .cl-settings-section > p:not([role="alert"]) {
+  color: var(--cl-text-muted);
+}
+.cl-workspace-page .cl-settings label {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+.cl-workspace-page .cl-settings input:not([type="checkbox"]),
+.cl-workspace-page .cl-settings select,
+.cl-workspace-page .cl-search-form input {
+  min-height: 2.75rem;
+  border-radius: var(--cl-radius-sm);
+  background: var(--cl-surface);
+  font: 400 0.9375rem/1.5 var(--cl-sans);
+}
+.cl-appearance-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-block: 1rem;
+}
+.cl-workspace-page #cl-accent-choice {
+  border-inline-start: 0.35rem solid var(--cl-accent);
+  background: var(--cl-accent-soft);
+}
+.cl-workspace-page .cl-doc {
+  max-width: 42rem;
+  margin-inline: auto;
+  padding: clamp(1.25rem, 4vw, 2.5rem);
+  font: 400 1.0625rem/1.75 var(--cl-serif);
+  overflow-wrap: anywhere;
+}
+.cl-workspace-page .cl-doc :is(h1, h2, h3) {
+  font-family: var(--cl-sans);
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+}
+.cl-workspace-page .cl-doc h1 {
+  font-size: clamp(1.65rem, 4vw, 2rem);
+}
+.cl-workspace-list {
+  padding: 0;
+  overflow: hidden;
+}
+.cl-workspace-list .cl-lesson-link {
+  padding: 1rem 1.25rem;
+}
+.cl-workspace-list .cl-lesson:last-child {
+  border-bottom: 0;
+}
+.cl-workspace-page .cl-map-mission,
+.cl-workspace-page .cl-map-lesson {
+  border-color: transparent;
+  background: var(--cl-surface);
+}
+.cl-workspace-page .cl-map-nav {
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  padding-block: 0.75rem;
+  border-block: 1px solid var(--cl-border);
+}
+.cl-workspace-page .cl-map-nav a {
+  padding: 0.4rem 0.65rem;
+  border-radius: var(--cl-radius-sm);
+  background: var(--cl-surface);
+  font: 500 0.875rem/1.5 var(--cl-sans);
+  text-decoration: none;
+}
+.cl-workspace-page .cl-search-form {
+  padding: 1rem;
+  border-radius: var(--cl-radius);
+  background: var(--cl-surface);
+  box-shadow: var(--cl-shadow);
+}
+.cl-workspace-page .cl-search-results {
+  list-style: none;
+  padding: 0;
+}
+.cl-search-results .cl-search-result {
+  display: block;
+  padding: 1rem 1.25rem;
+  font-weight: 400;
+}
+.cl-search-result:last-child {
+  border-bottom: 0;
+}
+.cl-search-result h2 {
+  font: 600 1rem/1.5 var(--cl-sans);
+}
+.cl-search-result h2 a {
+  text-decoration: none;
+}
+@media (hover: hover) {
+  .cl-search-result h2 a:hover {
+    text-decoration: underline;
+  }
+}
+.cl-search-result p {
+  margin-block: 0.5rem 0;
+}
+.cl-search-result .cl-search-source {
+  color: var(--cl-text-muted);
+  opacity: 1;
+  font: 400 0.75rem/1.5 var(--cl-sans);
+  margin: 0;
+}
+.cl-search-results .cl-search-result mark {
+  padding-inline: 0.1em;
+  border-radius: 2px;
+  box-decoration-break: clone;
+  background: var(--cl-accent-soft);
+  color: var(--cl-accent);
+  font-weight: 600;
+}
+.cl-export-panel {
+  padding: clamp(1rem, 3vw, 1.5rem);
+  scroll-margin-top: 7rem;
+}
+.cl-export-panel > p {
+  color: var(--cl-text-muted);
+  font-size: 0.9375rem;
+}
+.cl-export-panel input[type="checkbox"] {
+  flex-shrink: 0;
+  accent-color: var(--cl-accent);
+}
+@media (max-width: 480px) {
+  .cl-appearance-options {
+    grid-template-columns: 1fr;
+  }
+  .cl-export-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+@media (forced-colors: active) {
+  .cl-workspace-page .cl-map-mission,
+  .cl-workspace-page .cl-map-lesson {
+    border-color: ButtonText;
+  }
+}

@@ -223,7 +223,7 @@ ${progressSection(data)}
   </div>
 </section>
 ${sidePanel(data)}
-<section id="cl-export" class="cl-section" aria-label="Export classroom">
+<section id="cl-export" class="cl-section cl-card-box cl-export-panel" aria-label="Export classroom">
 <h2 class="cl-section-title">Export classroom</h2>
 <p>Take saved public documents, learning records, notes, released lessons and question threads with you. Private teaching files and unreleased content stay private. Interactive controls are omitted.</p>
 <form method="get" action="/api/export" target="_blank" class="cl-export-form">
@@ -232,8 +232,8 @@ ${sidePanel(data)}
 <p class="cl-progress-note">Off by default. Includes only expected answers available under the original grading and corrective rules.</p>
 <div class="cl-export-actions">
 <button class="cl-button" name="format" value="anki">Download Anki deck</button>
-<button class="cl-button" name="format" value="markdown">Download Markdown</button>
-<button class="cl-button" name="format" value="print">Open printable classroom</button>
+<button class="cl-button cl-button-secondary" name="format" value="markdown">Download Markdown</button>
+<button class="cl-button cl-button-secondary" name="format" value="print">Open printable classroom</button>
 </div>
 </form>
 </section>`;
@@ -266,10 +266,11 @@ export function reviewHistoryPage(
 ): string {
   return shell({
     title: `Review history — ${classroom.title}`,
+    bodyClass: "cl-shell cl-workspace-page",
     breadcrumb: `<a class="cl-crumb" href="/c/${encodeURIComponent(classroom.name)}">${escapeHtml(classroom.title)}</a><span class="cl-crumb-sep" aria-hidden="true">/</span><span class="cl-crumb cl-crumb-current">Review history</span>`,
-    body: `<h1>Review history</h1>${
+    body: `<div class="cl-hero"><h1>Review history</h1><p class="cl-lede">Your saved reviews, newest first.</p></div>${
       reviews.length
-        ? `<ol class="cl-lessons">${reviews
+        ? `<ol class="cl-lessons cl-card-box cl-workspace-list">${reviews
             .slice()
             .sort((a, b) => b.createdAt - a.createdAt)
             .map(
@@ -518,12 +519,13 @@ export function learningRecordsPage(
           "No learning records yet",
           "Your teacher writes one each time you demonstrate you have really learned something.",
         )
-      : `<ol class="cl-lessons cl-records">
+      : `<ol class="cl-lessons cl-records cl-card-box cl-workspace-list">
 ${summaries.map((record, i) => recordRow(name, record, summaries.length - i)).join("\n")}
 </ol>`;
 
   return shell({
     title: `Learning records — ${classroom.title}`,
+    bodyClass: "cl-shell cl-workspace-page",
     breadcrumb: `${classroomCrumbs(classroom)}<span class="cl-crumb-sep" aria-hidden="true">/</span><span class="cl-crumb cl-crumb-current">Learning records</span>`,
     body: `<div class="cl-hero">
   <h1>Learning records</h1>
@@ -570,8 +572,9 @@ export function documentPage(
     : "";
   return shell({
     title: `${prettyFileName(fileName)} — ${classroom.title}`,
+    bodyClass: "cl-shell cl-workspace-page",
     breadcrumb: `${classroomCrumbs(classroom)}${parentCrumb}${sep}<span class="cl-crumb cl-crumb-current">${escapeHtml(prettyFileName(fileName))}</span>`,
-    body: `<article class="cl-doc">\n${fileName === "MISSION.md" ? renderMission(markdown) : parent?.href === `/doc/${encodeURIComponent(classroom.name)}/learning-records` ? searchPassages(renderMarkdown(markdown)).html : renderMarkdown(markdown)}\n</article>`,
+    body: `<article class="cl-doc cl-card-box">\n${fileName === "MISSION.md" ? renderMission(markdown) : parent?.href === `/doc/${encodeURIComponent(classroom.name)}/learning-records` ? searchPassages(renderMarkdown(markdown)).html : renderMarkdown(markdown)}\n</article>`,
   });
 }
 
@@ -605,20 +608,21 @@ export function notFoundPage(message: string): string {
 export function settingsPage(classroom: Classroom): string {
   return shell({
     title: `Settings — ${classroom.title}`,
+    bodyClass: "cl-shell cl-workspace-page",
     breadcrumb: `<a class="cl-crumb" href="/">Classrooms</a><span class="cl-crumb-sep" aria-hidden="true">/</span><a class="cl-crumb" href="/c/${encodeURIComponent(classroom.name)}">${escapeHtml(classroom.title)}</a><span class="cl-crumb-sep" aria-hidden="true">/</span><span class="cl-crumb cl-crumb-current">Settings</span>`,
     body: `
 <div class="cl-settings" data-cl-settings="${escapeHtml(classroom.name)}">
   <div class="cl-hero"><h1>Settings</h1><p class="cl-lede">Make ${escapeHtml(classroom.title)} work for you.</p></div>
-  <section class="cl-settings-section" aria-labelledby="appearance-heading" data-cl-appearance>
+  <section class="cl-settings-section cl-card-box" aria-labelledby="appearance-heading" data-cl-appearance>
     <h2 id="appearance-heading">Appearance</h2>
     <p>Theme and accent apply to all classrooms in this browser on this device.</p>
-    <div><label for="cl-theme-choice">Theme</label><select id="cl-theme-choice" data-cl-theme-choice><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></div>
-    <div><label for="cl-accent-choice">Accent</label><select id="cl-accent-choice" data-cl-accent-choice><option value="indigo">Indigo</option><option value="copper">Copper</option><option value="green">Green</option><option value="neutral">Neutral</option></select></div>
+    <div class="cl-appearance-options"><div><label for="cl-theme-choice">Theme</label><select id="cl-theme-choice" data-cl-theme-choice><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></div>
+    <div><label for="cl-accent-choice">Accent</label><select id="cl-accent-choice" data-cl-accent-choice><option value="indigo">Indigo</option><option value="copper">Copper</option><option value="green">Green</option><option value="neutral">Neutral</option></select></div></div>
     <p role="status" data-cl-appearance-status></p>
   </section>
   <p role="alert" data-settings-error hidden></p><button class="cl-button cl-button-quiet" data-settings-load hidden>Reload settings</button>
   <div data-settings-content hidden>
-    <section class="cl-settings-section" aria-labelledby="preferences-heading">
+    <section class="cl-settings-section cl-card-box" aria-labelledby="preferences-heading">
       <h2 id="preferences-heading">How you like to learn</h2>
       <p>These preferences guide every lesson in this classroom. Leave a field blank to let your teacher adapt.</p>
       <form data-settings-form="preferences">
@@ -631,7 +635,7 @@ export function settingsPage(classroom: Classroom): string {
         <button class="cl-button" type="submit">Save preferences</button><p role="status" data-save-status></p>
       </form>
     </section>
-    <section class="cl-settings-section" aria-labelledby="teacher-heading">
+    <section class="cl-settings-section cl-card-box" aria-labelledby="teacher-heading">
       <h2 id="teacher-heading">Your teacher</h2><p data-teacher-owner></p><p role="alert" data-teacher-status-error hidden></p>
       <p data-teacher-active></p><p data-teacher-request></p><p data-teacher-work></p><div role="alert" data-teacher-error hidden></div>
       <form data-settings-form="model" hidden>
@@ -642,7 +646,7 @@ export function settingsPage(classroom: Classroom): string {
         <button class="cl-button" type="submit">Save teacher model</button><p role="status" data-save-status></p>
       </form>
     </section>
-    <section class="cl-settings-section" aria-labelledby="connection-heading">
+    <section class="cl-settings-section cl-card-box" aria-labelledby="connection-heading">
       <h2 id="connection-heading">Connection</h2><p>Shared by your classrooms on this computer.</p><p data-connection-current></p>
       <form data-settings-form="connection">
         <label>Local port<input name="port" type="number" min="1" max="65535" step="1" placeholder="Automatic"></label>

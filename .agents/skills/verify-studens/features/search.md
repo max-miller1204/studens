@@ -5,6 +5,7 @@ Find public lesson passages, question threads, glossary terms, and learning reco
 ## Sub-features
 
 - Literal Unicode, HTML5 named entities and code-punctuation queries; escaped snippets and highlighted matches without double decoding.
+- Shared list rows highlight literal matches in titles and snippets with the selected accent.
 - Four source types, deterministic ordering, counts, and explicit pagination.
 - Canonical passage anchors, question-card links, accepted glossary term views, and record passages.
 - Honest context for orphaned questions and unavailable edited/deleted sources, including legacy lessons without a main element.
