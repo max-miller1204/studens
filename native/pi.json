@@ -1,0 +1,380 @@
+{
+  "verdict": "PASS",
+  "host": "pi",
+  "source": {
+    "src/review.ts": "918de283e8cafa6c74f8a8fddce77c57af98711f9f46d3e56d3f8600da57496b",
+    "src/review-pool.ts": "115eb15ec044c5f1deea10a7d703844aaa92f6f654df551aad443d118bf9c083",
+    "src/review-variants.ts": "2d4d93d2c79bc9f92c5640fc8f5b3f70f717294b649d739f539b5f7969b3f564",
+    "src/store/quizzes.ts": "591cc06030840c08f7048d87bbc1ad7f2292e0c43ad3434858a89e58e27cfba2"
+  },
+  "before": {
+    "key": "001-ownership/check-1/q1",
+    "lesson": "001-ownership",
+    "quizId": "check-1",
+    "questionId": "q1",
+    "questionKeys": [
+      "001-ownership/check-1/q1"
+    ],
+    "prompts": [
+      "Prompt for q1"
+    ],
+    "prompt": "Prompt for q1",
+    "box": 0,
+    "stability": 1,
+    "difficulty": 5.1618,
+    "memoryPolicy": "studens-fsrs45-v1",
+    "lastFeedbackAt": 1792616447570,
+    "dueAt": 1792702847570,
+    "context": "unknown",
+    "progress": "context-unknown",
+    "delayedSuccesses": 0,
+    "delayedTransfers": 0,
+    "evidenceSpanDays": 0,
+    "elapsedDays": 0,
+    "scheduleReason": "Unknown independence: keep the scheduled review; no retention claim.",
+    "schedulePolicy": "elapsed-independent-v1",
+    "lastAt": 1792616447569,
+    "lastCorrect": true,
+    "lastCredit": 1,
+    "lastAnswer": "owner",
+    "lastFeedback": "Right.",
+    "attempts": 1,
+    "misses": 0,
+    "gapOpen": false,
+    "needsReteach": false
+  },
+  "after": {
+    "key": "001-ownership/check-1/q1",
+    "lesson": "001-ownership",
+    "quizId": "check-1",
+    "questionId": "q1",
+    "questionKeys": [
+      "001-ownership/check-1/q1"
+    ],
+    "prompts": [
+      "Prompt for q1",
+      "A value moves into a new scope. Who releases it?"
+    ],
+    "prompt": "Prompt for q1",
+    "box": 1,
+    "stability": 7.090462057241789,
+    "difficulty": 5.1618,
+    "memoryPolicy": "studens-fsrs45-v1",
+    "lastFeedbackAt": 1792789258306,
+    "dueAt": 1793401874228,
+    "context": "unknown",
+    "progress": "context-unknown",
+    "delayedSuccesses": 0,
+    "delayedTransfers": 0,
+    "evidenceSpanDays": 0,
+    "elapsedDays": 2.000124178240741,
+    "scheduleReason": "Independent retrieval after 2.0 days: 7.09-day interval.",
+    "schedulePolicy": "elapsed-independent-v1",
+    "lastAt": 1792789258299,
+    "lastCorrect": true,
+    "lastCredit": 1,
+    "lastAnswer": "The new owner",
+    "lastFeedback": "The current owner releases the value.",
+    "attempts": 2,
+    "misses": 0,
+    "gapOpen": false,
+    "needsReteach": false
+  },
+  "review": {
+    "id": "ddd250c3-b470-4473-bf6b-9cf956bd4f91",
+    "owner": "service",
+    "ownerPid": 1635511,
+    "classroom": "rust",
+    "lesson": "review-ddd250c3-b470-4473-bf6b-9cf956bd4f91",
+    "at": 1792789257947,
+    "items": [
+      {
+        "key": "001-ownership/check-1/q1",
+        "lesson": "001-ownership",
+        "quizId": "check-1",
+        "questionId": "q1",
+        "questionKeys": [
+          "001-ownership/check-1/q1"
+        ],
+        "prompts": [
+          "Prompt for q1"
+        ],
+        "prompt": "Prompt for q1",
+        "box": 0,
+        "stability": 1,
+        "difficulty": 5.1618,
+        "memoryPolicy": "studens-fsrs45-v1",
+        "lastFeedbackAt": 1792616447570,
+        "dueAt": 1792702847570,
+        "context": "unknown",
+        "progress": "context-unknown",
+        "delayedSuccesses": 0,
+        "delayedTransfers": 0,
+        "evidenceSpanDays": 0,
+        "elapsedDays": 0,
+        "scheduleReason": "Unknown independence: keep the scheduled review; no retention claim.",
+        "schedulePolicy": "elapsed-independent-v1",
+        "lastAt": 1792616447569,
+        "lastCorrect": true,
+        "lastCredit": 1,
+        "lastAnswer": "owner",
+        "lastFeedback": "Right.",
+        "attempts": 1,
+        "misses": 0,
+        "gapOpen": false,
+        "needsReteach": false
+      }
+    ],
+    "options": {
+      "limit": 5,
+      "early": false
+    },
+    "status": "done",
+    "variants": {
+      "001-ownership/check-1/q1": "v1"
+    },
+    "document": {
+      "lesson_html": "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>Spaced review</title></head><body><main class=\"cl-lesson-shell\" data-cl-content><header><h1>Spaced review</h1><p class=\"cl-lede\">Recall these ideas before looking anything up.</p></header><form class=\"cl-quiz\" data-quiz-id=\"review\" data-kind=\"review\" data-title=\"Question 1\" data-evidence=\"report\" data-confidence=\"optional\"><ol class=\"cl-questions\"><li class=\"cl-q\" data-question-id=\"r1\" data-type=\"choice\" data-review-of=\"001-ownership/check-1/q1\"><p class=\"cl-q-prompt\">A value moves into a new scope. Who releases it?</p><ul class=\"cl-options\"><li><label><input type=\"radio\" name=\"r1-v1\" value=\"owner\">The new owner</label></li><li><label><input type=\"radio\" name=\"r1-v1\" value=\"old\">The old binding</label></li></ul></li></ol></form></main></body></html>",
+      "rubric_json": "{\"review\":{\"r1\":{\"expected\":\"owner\",\"points\":1,\"full\":\"The current owner releases the value.\",\"partial\":\"The old binding no longer owns it.\"}}}",
+      "teaching_plan_json": "{\"version\":1,\"objectives\":{\"r1\":{\"statement\":\"Explain ownership.\",\"application\":false}},\"quizzes\":{\"review\":{\"purpose\":\"assessment\",\"questions\":{\"r1\":{\"objective\":\"r1\",\"task\":\"retrieval\",\"support\":\"independent\"}}}}}"
+    }
+  },
+  "refills": [
+    {
+      "id": "refill:c5504ff74718ef5382e5e3982efc0a8a",
+      "classroom": "rust",
+      "lesson": "review-ddd250c3-b470-4473-bf6b-9cf956bd4f91",
+      "key": "001-ownership/check-1/q1",
+      "input": {
+        "key": "001-ownership/check-1/q1",
+        "lesson": "001-ownership",
+        "quizId": "check-1",
+        "questionId": "q1",
+        "questionKeys": [
+          "001-ownership/check-1/q1"
+        ],
+        "prompts": [
+          "Prompt for q1"
+        ],
+        "prompt": "Prompt for q1",
+        "box": 0,
+        "stability": 1,
+        "difficulty": 5.1618,
+        "memoryPolicy": "studens-fsrs45-v1",
+        "lastFeedbackAt": 1792616447570,
+        "dueAt": 1792702847570,
+        "context": "unknown",
+        "progress": "context-unknown",
+        "delayedSuccesses": 0,
+        "delayedTransfers": 0,
+        "evidenceSpanDays": 0,
+        "elapsedDays": 0,
+        "scheduleReason": "Unknown independence: keep the scheduled review; no retention claim.",
+        "schedulePolicy": "elapsed-independent-v1",
+        "lastAt": 1792616447569,
+        "lastCorrect": true,
+        "lastCredit": 1,
+        "lastAnswer": "owner",
+        "lastFeedback": "Right.",
+        "attempts": 1,
+        "misses": 0,
+        "gapOpen": false,
+        "needsReteach": false
+      },
+      "owner": "service",
+      "ownerPid": 1635511,
+      "reason": "low",
+      "at": 1792789257973,
+      "status": "done",
+      "prompt": "Background private review refill refill:c5504ff74718ef5382e5e3982efc0a8a for classroom rust, original item 001-ownership/check-1/q1.\n\nWrite two fresh variants to replenish this item's low pool.\n\nKeep the original objective and policy. Use new cases and independent retrieval. Do not include teaching, hints, or expected answers in question HTML. Use the private variant contract below: one complete li.cl-q, its unique id, complete controls, and its own rubric. Closed types need machine-checkable expected keys. Use classroom-absolute media links. Do not use data-review-of. Do not reuse any existing id or prompt.\n\nPrivate variant contract:\nEvery check question in a newly scaffolded lesson or quiz needs two or three private\nvariants. Pretests and review questions do not need pools. In the question's\n`quiz/key.json` entry, add a `variants` array. Each entry has `id`, `html`, and\n`rubric`; the rubric uses the same expected-answer and points contract as the\noriginal question. For example (provide two or three entries):\n\n```json\n{\n  \"id\": \"v1\",\n  \"html\": \"<li class=\\\"cl-q\\\" data-question-id=\\\"v1\\\" data-type=\\\"short\\\"><p class=\\\"cl-q-prompt\\\">Explain who releases a value moved into a new scope.</p><textarea></textarea></li>\",\n  \"rubric\": {\n    \"expected\": \"The new owner releases the value when its scope ends.\",\n    \"points\": 1,\n    \"full\": \"Identify the new owner and its scope.\",\n    \"partial\": \"Zero without the new owner or scope.\"\n  }\n}\n```\n\nEach fragment is one complete `li.cl-q`. Use the variant id as its question id.\nInclude the stimulus and controls. Omit `data-review-of`, forms, templates, scripts,\nevent handlers, teaching, hints, and answers. Media links must start with `/c/` so\nthat they resolve from a review page. Keep element ids and radio names unique\nwithin the fragment; the assembler namespaces them when combining questions.\n\nFor a runnable JavaScript `code` variant, include its labelled starter editor and\npublic `data-code` function-call tests, as in the quiz contract. Those input/output\nexamples are public debugging feedback, not private scoring answers. Keep the\nimplementation and teacher-judgment criteria in the private rubric; never award\npoints from browser pass flags or execute learner source on the host.\n\nIn the original question's `quiz/plan.json` mapping, add `variants` with the same\nids. Each mapping uses `objective: \"original\"`, `support: \"independent\"`, and a\nsuitable mental task. For example:\n\n```json\n{\n  \"variants\": {\n    \"v1\": { \"objective\": \"original\", \"task\": \"retrieval\", \"support\": \"independent\" },\n    \"v2\": { \"objective\": \"original\", \"task\": \"application\", \"support\": \"independent\" }\n  }\n}\n```\n\nThe reserved objective reference carries the source objective's full policy forward.\nUse fresh cases and solve each variant against its private rubric. Changing numbers\nalone does not establish transfer. All pool files stay off static HTTP routes.\nLegacy lessons without pools remain readable and keep their grades and schedules;\nprepare their pools explicitly to make them eligible for instant review.\n\nReviews select an unseen variant first, then the least-used variant in authored\norder. They can reuse prepared questions while a refill is pending. Repeated clicks\nand publication retries retain the original selection. A pool with at most one\nunseen question queues two fresh variants. A missed answer queues one variant aimed\nat that specific mistake. The teacher runs these durable requests after queued\nlearner work. Validated output is saved before `quiz/review-pool.json` is updated.\nThis private supplement preserves the original rubric and pending submissions.\nBackground failure leaves the ready review usable and appears in its teacher panel\nwith an explicit retry. No pool or refill error starts an on-demand review author.\n\nSupplemental variants use the original objective and question contract. Duplicate\nvariant ids and conflicting saved batches fail explicitly; replay is idempotent.\n\nOriginal objective: {\"statement\":\"Explain ownership.\",\"application\":false}\nOriginal prompt: Prompt for q1\n\nExisting private variants: [{\"id\":\"v1\",\"html\":\"<li class=\\\"cl-q\\\" data-question-id=\\\"v1\\\" data-type=\\\"choice\\\"><p class=\\\"cl-q-prompt\\\">A value moves into a new scope. Who releases it?</p><ul class=\\\"cl-options\\\"><li><label><input type=\\\"radio\\\" name=\\\"v1\\\" value=\\\"owner\\\">The new owner</label></li><li><label><input type=\\\"radio\\\" name=\\\"v1\\\" value=\\\"old\\\">The old binding</label></li></ul></li>\",\"rubric\":{\"expected\":\"owner\",\"points\":1,\"full\":\"The current owner releases the value.\",\"partial\":\"The old binding no longer owns it.\"},\"plan\":{\"objective\":\"original\",\"task\":\"retrieval\",\"support\":\"independent\"},\"objective\":{\"statement\":\"Explain ownership.\",\"application\":false}},{\"id\":\"v2\",\"html\":\"<li class=\\\"cl-q\\\" data-question-id=\\\"v2\\\" data-type=\\\"choice\\\"><p class=\\\"cl-q-prompt\\\">A value moves into a new scope. Who releases it?</p><ul class=\\\"cl-options\\\"><li><label><input type=\\\"radio\\\" name=\\\"v2\\\" value=\\\"owner\\\">The new owner</label></li><li><label><input type=\\\"radio\\\" name=\\\"v2\\\" value=\\\"old\\\">The old binding</label></li></ul></li>\",\"rubric\":{\"expected\":\"owner\",\"points\":1,\"full\":\"The current owner releases the value.\",\"partial\":\"The old binding no longer owns it.\"},\"plan\":{\"objective\":\"original\",\"task\":\"retrieval\",\"support\":\"independent\"},\"objective\":{\"statement\":\"Explain ownership.\",\"application\":false}}]\n\nReturn only typed refill data: classroom=\"rust\", request_id=\"refill:c5504ff74718ef5382e5e3982efc0a8a\" (including refill:), and exactly 2 variants. Each variant contains id, html, rubric, task. Give HTML as a direct string. The service builds its private plan with objective=original and support=independent and serializes the durable save_review_variants call. Do not return calls, arguments_json, message, learning_record, notes_markdown or a variant plan object. The private-file examples above describe the saved format, not the response envelope. Do not grade, write learner messages or edit files.",
+      "plan": [
+        {
+          "id": "v3",
+          "html": "<li class=\"cl-q\" data-question-id=\"v3\" data-type=\"choice\"><p class=\"cl-q-prompt\">Mira moves a <code>String</code> into <code>archive</code> with <code>let archive = note;</code>. When the scope containing <code>archive</code> ends, who releases the string?</p><ul class=\"cl-options\"><li><label><input type=\"radio\" name=\"v3\" value=\"archive\">The owner named <code>archive</code></label></li><li><label><input type=\"radio\" name=\"v3\" value=\"note\">The old binding <code>note</code></label></li></ul></li>",
+          "rubric": {
+            "criteria": [
+              {
+                "id": "owner",
+                "description": "Identifies the current owner, archive, as responsible for releasing the value.",
+                "points": 1
+              }
+            ],
+            "expected": "archive",
+            "points": 1,
+            "full": "Correctly identifies archive, the current owner, as responsible for releasing the value.",
+            "partial": "Does not identify the current owner as responsible.",
+            "grading": "exact"
+          },
+          "plan": {
+            "objective": "original",
+            "support": "independent",
+            "task": "application"
+          },
+          "objective": {
+            "statement": "Explain ownership.",
+            "application": false
+          }
+        },
+        {
+          "id": "v4",
+          "html": "<li class=\"cl-q\" data-question-id=\"v4\" data-type=\"short\"><p class=\"cl-q-prompt\">A Rust function takes ownership of a <code>String</code> passed to its parameter. Explain who releases that string and when.</p><textarea aria-label=\"Explain ownership and release\"></textarea></li>",
+          "rubric": {
+            "criteria": [
+              {
+                "id": "owner",
+                "description": "Identifies the function's parameter as the current owner.",
+                "points": 0.5
+              },
+              {
+                "id": "scope",
+                "description": "States that the value is released when the parameter's scope ends (normally when the function returns).",
+                "points": 0.5
+              }
+            ],
+            "expected": "The function's parameter owns the String and releases it when that parameter's scope ends, normally when the function returns.",
+            "points": 1,
+            "full": "Identifies the parameter as owner and explains release at the end of its scope.",
+            "partial": "Credit requires identifying the parameter as owner or naming the end of its scope as the release point.",
+            "grading": "teacher"
+          },
+          "plan": {
+            "objective": "original",
+            "support": "independent",
+            "task": "explanation"
+          },
+          "objective": {
+            "statement": "Explain ownership.",
+            "application": false
+          }
+        }
+      ]
+    }
+  ],
+  "teacher": {
+    "version": 1,
+    "identity": {
+      "backend": "pi",
+      "selectionRevision": 1,
+      "sessionId": "2026-10-23T21-00-50-782Z_01a16a91-02dd-73f5-8512-b7f8a4f8deb7.jsonl",
+      "activeModel": "openai-codex/gpt-6-luna",
+      "activeModelAt": 1792789269022,
+      "activeRequestedModel": null
+    },
+    "requests": [
+      {
+        "id": "refill:c5504ff74718ef5382e5e3982efc0a8a",
+        "classroom": "rust",
+        "lesson": "review-ddd250c3-b470-4473-bf6b-9cf956bd4f91",
+        "kind": "refill",
+        "target": "refill:c5504ff74718ef5382e5e3982efc0a8a",
+        "prompt": "Background private review refill refill:c5504ff74718ef5382e5e3982efc0a8a for classroom rust, original item 001-ownership/check-1/q1.\n\nWrite two fresh variants to replenish this item's low pool.\n\nKeep the original objective and policy. Use new cases and independent retrieval. Do not include teaching, hints, or expected answers in question HTML. Use the private variant contract below: one complete li.cl-q, its unique id, complete controls, and its own rubric. Closed types need machine-checkable expected keys. Use classroom-absolute media links. Do not use data-review-of. Do not reuse any existing id or prompt.\n\nPrivate variant contract:\nEvery check question in a newly scaffolded lesson or quiz needs two or three private\nvariants. Pretests and review questions do not need pools. In the question's\n`quiz/key.json` entry, add a `variants` array. Each entry has `id`, `html`, and\n`rubric`; the rubric uses the same expected-answer and points contract as the\noriginal question. For example (provide two or three entries):\n\n```json\n{\n  \"id\": \"v1\",\n  \"html\": \"<li class=\\\"cl-q\\\" data-question-id=\\\"v1\\\" data-type=\\\"short\\\"><p class=\\\"cl-q-prompt\\\">Explain who releases a value moved into a new scope.</p><textarea></textarea></li>\",\n  \"rubric\": {\n    \"expected\": \"The new owner releases the value when its scope ends.\",\n    \"points\": 1,\n    \"full\": \"Identify the new owner and its scope.\",\n    \"partial\": \"Zero without the new owner or scope.\"\n  }\n}\n```\n\nEach fragment is one complete `li.cl-q`. Use the variant id as its question id.\nInclude the stimulus and controls. Omit `data-review-of`, forms, templates, scripts,\nevent handlers, teaching, hints, and answers. Media links must start with `/c/` so\nthat they resolve from a review page. Keep element ids and radio names unique\nwithin the fragment; the assembler namespaces them when combining questions.\n\nFor a runnable JavaScript `code` variant, include its labelled starter editor and\npublic `data-code` function-call tests, as in the quiz contract. Those input/output\nexamples are public debugging feedback, not private scoring answers. Keep the\nimplementation and teacher-judgment criteria in the private rubric; never award\npoints from browser pass flags or execute learner source on the host.\n\nIn the original question's `quiz/plan.json` mapping, add `variants` with the same\nids. Each mapping uses `objective: \"original\"`, `support: \"independent\"`, and a\nsuitable mental task. For example:\n\n```json\n{\n  \"variants\": {\n    \"v1\": { \"objective\": \"original\", \"task\": \"retrieval\", \"support\": \"independent\" },\n    \"v2\": { \"objective\": \"original\", \"task\": \"application\", \"support\": \"independent\" }\n  }\n}\n```\n\nThe reserved objective reference carries the source objective's full policy forward.\nUse fresh cases and solve each variant against its private rubric. Changing numbers\nalone does not establish transfer. All pool files stay off static HTTP routes.\nLegacy lessons without pools remain readable and keep their grades and schedules;\nprepare their pools explicitly to make them eligible for instant review.\n\nReviews select an unseen variant first, then the least-used variant in authored\norder. They can reuse prepared questions while a refill is pending. Repeated clicks\nand publication retries retain the original selection. A pool with at most one\nunseen question queues two fresh variants. A missed answer queues one variant aimed\nat that specific mistake. The teacher runs these durable requests after queued\nlearner work. Validated output is saved before `quiz/review-pool.json` is updated.\nThis private supplement preserves the original rubric and pending submissions.\nBackground failure leaves the ready review usable and appears in its teacher panel\nwith an explicit retry. No pool or refill error starts an on-demand review author.\n\nSupplemental variants use the original objective and question contract. Duplicate\nvariant ids and conflicting saved batches fail explicitly; replay is idempotent.\n\nOriginal objective: {\"statement\":\"Explain ownership.\",\"application\":false}\nOriginal prompt: Prompt for q1\n\nExisting private variants: [{\"id\":\"v1\",\"html\":\"<li class=\\\"cl-q\\\" data-question-id=\\\"v1\\\" data-type=\\\"choice\\\"><p class=\\\"cl-q-prompt\\\">A value moves into a new scope. Who releases it?</p><ul class=\\\"cl-options\\\"><li><label><input type=\\\"radio\\\" name=\\\"v1\\\" value=\\\"owner\\\">The new owner</label></li><li><label><input type=\\\"radio\\\" name=\\\"v1\\\" value=\\\"old\\\">The old binding</label></li></ul></li>\",\"rubric\":{\"expected\":\"owner\",\"points\":1,\"full\":\"The current owner releases the value.\",\"partial\":\"The old binding no longer owns it.\"},\"plan\":{\"objective\":\"original\",\"task\":\"retrieval\",\"support\":\"independent\"},\"objective\":{\"statement\":\"Explain ownership.\",\"application\":false}},{\"id\":\"v2\",\"html\":\"<li class=\\\"cl-q\\\" data-question-id=\\\"v2\\\" data-type=\\\"choice\\\"><p class=\\\"cl-q-prompt\\\">A value moves into a new scope. Who releases it?</p><ul class=\\\"cl-options\\\"><li><label><input type=\\\"radio\\\" name=\\\"v2\\\" value=\\\"owner\\\">The new owner</label></li><li><label><input type=\\\"radio\\\" name=\\\"v2\\\" value=\\\"old\\\">The old binding</label></li></ul></li>\",\"rubric\":{\"expected\":\"owner\",\"points\":1,\"full\":\"The current owner releases the value.\",\"partial\":\"The old binding no longer owns it.\"},\"plan\":{\"objective\":\"original\",\"task\":\"retrieval\",\"support\":\"independent\"},\"objective\":{\"statement\":\"Explain ownership.\",\"application\":false}}]\n\nReturn only typed refill data: classroom=\"rust\", request_id=\"refill:c5504ff74718ef5382e5e3982efc0a8a\" (including refill:), and exactly 2 variants. Each variant contains id, html, rubric, task. Give HTML as a direct string. The service builds its private plan with objective=original and support=independent and serializes the durable save_review_variants call. Do not return calls, arguments_json, message, learning_record, notes_markdown or a variant plan object. The private-file examples above describe the saved format, not the response envelope. Do not grade, write learner messages or edit files.",
+        "status": "done",
+        "at": 1792789257974,
+        "startedAt": 1792789257975,
+        "requestedModel": null,
+        "originatingIdentity": {
+          "backend": "pi",
+          "selectionRevision": 1,
+          "sessionId": "2026-10-23T21-00-50-782Z_01a16a91-02dd-73f5-8512-b7f8a4f8deb7.jsonl",
+          "activeModel": "openai-codex/gpt-6-luna",
+          "activeModelAt": 1792789252382,
+          "activeRequestedModel": null
+        },
+        "modelOutput": {
+          "classroom": "rust",
+          "request_id": "refill:c5504ff74718ef5382e5e3982efc0a8a",
+          "variants": [
+            {
+              "id": "v3",
+              "html": "<li class=\"cl-q\" data-question-id=\"v3\" data-type=\"choice\"><p class=\"cl-q-prompt\">Mira moves a <code>String</code> into <code>archive</code> with <code>let archive = note;</code>. When the scope containing <code>archive</code> ends, who releases the string?</p><ul class=\"cl-options\"><li><label><input type=\"radio\" name=\"v3\" value=\"archive\">The owner named <code>archive</code></label></li><li><label><input type=\"radio\" name=\"v3\" value=\"note\">The old binding <code>note</code></label></li></ul></li>",
+              "rubric": {
+                "criteria": [
+                  {
+                    "id": "owner",
+                    "description": "Identifies the current owner, archive, as responsible for releasing the value.",
+                    "points": 1
+                  }
+                ],
+                "expected": "archive",
+                "points": 1,
+                "full": "Correctly identifies archive, the current owner, as responsible for releasing the value.",
+                "partial": "Does not identify the current owner as responsible.",
+                "grading": "exact"
+              },
+              "task": "application"
+            },
+            {
+              "id": "v4",
+              "html": "<li class=\"cl-q\" data-question-id=\"v4\" data-type=\"short\"><p class=\"cl-q-prompt\">A Rust function takes ownership of a <code>String</code> passed to its parameter. Explain who releases that string and when.</p><textarea aria-label=\"Explain ownership and release\"></textarea></li>",
+              "rubric": {
+                "criteria": [
+                  {
+                    "id": "owner",
+                    "description": "Identifies the function's parameter as the current owner.",
+                    "points": 0.5
+                  },
+                  {
+                    "id": "scope",
+                    "description": "States that the value is released when the parameter's scope ends (normally when the function returns).",
+                    "points": 0.5
+                  }
+                ],
+                "expected": "The function's parameter owns the String and releases it when that parameter's scope ends, normally when the function returns.",
+                "points": 1,
+                "full": "Identifies the parameter as owner and explains release at the end of its scope.",
+                "partial": "Credit requires identifying the parameter as owner or naming the end of its scope as the release point.",
+                "grading": "teacher"
+              },
+              "task": "explanation"
+            }
+          ]
+        },
+        "resolvedModel": "openai-codex/gpt-6-luna",
+        "plan": {
+          "calls": [
+            {
+              "name": "save_review_variants",
+              "arguments_json": "{\"classroom\":\"rust\",\"request_id\":\"refill:c5504ff74718ef5382e5e3982efc0a8a\",\"variants\":[{\"id\":\"v3\",\"html\":\"<li class=\\\"cl-q\\\" data-question-id=\\\"v3\\\" data-type=\\\"choice\\\"><p class=\\\"cl-q-prompt\\\">Mira moves a <code>String</code> into <code>archive</code> with <code>let archive = note;</code>. When the scope containing <code>archive</code> ends, who releases the string?</p><ul class=\\\"cl-options\\\"><li><label><input type=\\\"radio\\\" name=\\\"v3\\\" value=\\\"archive\\\">The owner named <code>archive</code></label></li><li><label><input type=\\\"radio\\\" name=\\\"v3\\\" value=\\\"note\\\">The old binding <code>note</code></label></li></ul></li>\",\"rubric\":{\"criteria\":[{\"id\":\"owner\",\"description\":\"Identifies the current owner, archive, as responsible for releasing the value.\",\"points\":1}],\"expected\":\"archive\",\"points\":1,\"full\":\"Correctly identifies archive, the current owner, as responsible for releasing the value.\",\"partial\":\"Does not identify the current owner as responsible.\",\"grading\":\"exact\"},\"plan\":{\"objective\":\"original\",\"support\":\"independent\",\"task\":\"application\"}},{\"id\":\"v4\",\"html\":\"<li class=\\\"cl-q\\\" data-question-id=\\\"v4\\\" data-type=\\\"short\\\"><p class=\\\"cl-q-prompt\\\">A Rust function takes ownership of a <code>String</code> passed to its parameter. Explain who releases that string and when.</p><textarea aria-label=\\\"Explain ownership and release\\\"></textarea></li>\",\"rubric\":{\"criteria\":[{\"id\":\"owner\",\"description\":\"Identifies the function's parameter as the current owner.\",\"points\":0.5},{\"id\":\"scope\",\"description\":\"States that the value is released when the parameter's scope ends (normally when the function returns).\",\"points\":0.5}],\"expected\":\"The function's parameter owns the String and releases it when that parameter's scope ends, normally when the function returns.\",\"points\":1,\"full\":\"Identifies the parameter as owner and explains release at the end of its scope.\",\"partial\":\"Credit requires identifying the parameter as owner or naming the end of its scope as the release point.\",\"grading\":\"teacher\"},\"plan\":{\"objective\":\"original\",\"support\":\"independent\",\"task\":\"explanation\"}}]}"
+            }
+          ],
+          "message": "",
+          "learning_record": "",
+          "notes_markdown": ""
+        },
+        "planVersion": 2,
+        "planValidated": true,
+        "finishedAt": 1792789262397
+      }
+    ],
+    "messages": []
+  },
+  "events": [
+    {
+      "key": "001-ownership/check-1/q1",
+      "questionKey": "001-ownership/check-1/q1",
+      "sourceQuestionKey": "001-ownership/check-1/q1",
+      "at": 1792616447569,
+      "attemptId": "e98bcbfe-38f7-4a88-94b7-fc47323e23dc",
+      "feedbackAt": 1792616447570,
+      "gapIndependent": false,
+      "correct": true,
+      "credit": 1,
+      "prompt": "Prompt for q1",
+      "answer": "owner",
+      "feedback": "Right."
+    },
+    {
+      "key": "001-ownership/check-1/q1",
+      "at": 1792789258299,
+      "attemptId": "4f09f468-9eba-453c-87c5-60c090260758",
+      "feedbackAt": 1792789258306,
+      "early": false,
+      "gapIndependent": true,
+      "correct": true,
+      "credit": 1,
+      "prompt": "A value moves into a new scope. Who releases it?",
+      "answer": "The new owner",
+      "feedback": "The current owner releases the value."
+    }
+  ]
+}

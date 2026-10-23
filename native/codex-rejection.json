@@ -1,0 +1,212 @@
+{
+  "error": "Error: codex model configured default refill request refill:55a603811017ec064da5563122dcf88d in rust/review-d0831659-09d8-4df2-9129-96f211ceeefb: Variant v4 needs exactly one matching question.",
+  "teacher": {
+    "version": 1,
+    "identity": {
+      "backend": "codex",
+      "selectionRevision": 1,
+      "sessionId": "01a16a92-407d-7c50-80be-8bc6e6eccb8b",
+      "activeModel": "gpt-6-luna",
+      "activeModelAt": 1792789344624,
+      "activeRequestedModel": null
+    },
+    "requests": [
+      {
+        "id": "refill:55a603811017ec064da5563122dcf88d",
+        "classroom": "rust",
+        "lesson": "review-d0831659-09d8-4df2-9129-96f211ceeefb",
+        "kind": "refill",
+        "target": "refill:55a603811017ec064da5563122dcf88d",
+        "prompt": "Background private review refill refill:55a603811017ec064da5563122dcf88d for classroom rust, original item 001-ownership/check-1/q1.\n\nWrite two fresh variants to replenish this item's low pool.\n\nKeep the original objective and policy. Use new cases and independent retrieval. Do not include teaching, hints, or expected answers in question HTML. Use the private variant contract below: one complete li.cl-q, its unique id, complete controls, and its own rubric. Closed types need machine-checkable expected keys. Use classroom-absolute media links. Do not use data-review-of. Do not reuse any existing id or prompt.\n\nPrivate variant contract:\nEvery check question in a newly scaffolded lesson or quiz needs two or three private\nvariants. Pretests and review questions do not need pools. In the question's\n`quiz/key.json` entry, add a `variants` array. Each entry has `id`, `html`, and\n`rubric`; the rubric uses the same expected-answer and points contract as the\noriginal question. For example (provide two or three entries):\n\n```json\n{\n  \"id\": \"v1\",\n  \"html\": \"<li class=\\\"cl-q\\\" data-question-id=\\\"v1\\\" data-type=\\\"short\\\"><p class=\\\"cl-q-prompt\\\">Explain who releases a value moved into a new scope.</p><textarea></textarea></li>\",\n  \"rubric\": {\n    \"expected\": \"The new owner releases the value when its scope ends.\",\n    \"points\": 1,\n    \"full\": \"Identify the new owner and its scope.\",\n    \"partial\": \"Zero without the new owner or scope.\"\n  }\n}\n```\n\nEach fragment is one complete `li.cl-q`. Use the variant id as its question id.\nInclude the stimulus and controls. Omit `data-review-of`, forms, templates, scripts,\nevent handlers, teaching, hints, and answers. Media links must start with `/c/` so\nthat they resolve from a review page. Keep element ids and radio names unique\nwithin the fragment; the assembler namespaces them when combining questions.\n\nFor a runnable JavaScript `code` variant, include its labelled starter editor and\npublic `data-code` function-call tests, as in the quiz contract. Those input/output\nexamples are public debugging feedback, not private scoring answers. Keep the\nimplementation and teacher-judgment criteria in the private rubric; never award\npoints from browser pass flags or execute learner source on the host.\n\nIn the original question's `quiz/plan.json` mapping, add `variants` with the same\nids. Each mapping uses `objective: \"original\"`, `support: \"independent\"`, and a\nsuitable mental task. For example:\n\n```json\n{\n  \"variants\": {\n    \"v1\": { \"objective\": \"original\", \"task\": \"retrieval\", \"support\": \"independent\" },\n    \"v2\": { \"objective\": \"original\", \"task\": \"application\", \"support\": \"independent\" }\n  }\n}\n```\n\nThe reserved objective reference carries the source objective's full policy forward.\nUse fresh cases and solve each variant against its private rubric. Changing numbers\nalone does not establish transfer. All pool files stay off static HTTP routes.\nLegacy lessons without pools remain readable and keep their grades and schedules;\nprepare their pools explicitly to make them eligible for instant review.\n\nReviews select an unseen variant first, then the least-used variant in authored\norder. They can reuse prepared questions while a refill is pending. Repeated clicks\nand publication retries retain the original selection. A pool with at most one\nunseen question queues two fresh variants. A missed answer queues one variant aimed\nat that specific mistake. The teacher runs these durable requests after queued\nlearner work. Validated output is saved before `quiz/review-pool.json` is updated.\nThis private supplement preserves the original rubric and pending submissions.\nBackground failure leaves the ready review usable and appears in its teacher panel\nwith an explicit retry. No pool or refill error starts an on-demand review author.\n\nSupplemental variants use the original objective and question contract. Duplicate\nvariant ids and conflicting saved batches fail explicitly; replay is idempotent.\n\nOriginal objective: {\"statement\":\"Explain ownership.\",\"application\":false}\nOriginal prompt: Prompt for q1\n\nExisting private variants: [{\"id\":\"v1\",\"html\":\"<li class=\\\"cl-q\\\" data-question-id=\\\"v1\\\" data-type=\\\"choice\\\"><p class=\\\"cl-q-prompt\\\">A value moves into a new scope. Who releases it?</p><ul class=\\\"cl-options\\\"><li><label><input type=\\\"radio\\\" name=\\\"v1\\\" value=\\\"owner\\\">The new owner</label></li><li><label><input type=\\\"radio\\\" name=\\\"v1\\\" value=\\\"old\\\">The old binding</label></li></ul></li>\",\"rubric\":{\"expected\":\"owner\",\"points\":1,\"full\":\"The current owner releases the value.\",\"partial\":\"The old binding no longer owns it.\"},\"plan\":{\"objective\":\"original\",\"task\":\"retrieval\",\"support\":\"independent\"},\"objective\":{\"statement\":\"Explain ownership.\",\"application\":false}},{\"id\":\"v2\",\"html\":\"<li class=\\\"cl-q\\\" data-question-id=\\\"v2\\\" data-type=\\\"choice\\\"><p class=\\\"cl-q-prompt\\\">A value moves into a new scope. Who releases it?</p><ul class=\\\"cl-options\\\"><li><label><input type=\\\"radio\\\" name=\\\"v2\\\" value=\\\"owner\\\">The new owner</label></li><li><label><input type=\\\"radio\\\" name=\\\"v2\\\" value=\\\"old\\\">The old binding</label></li></ul></li>\",\"rubric\":{\"expected\":\"owner\",\"points\":1,\"full\":\"The current owner releases the value.\",\"partial\":\"The old binding no longer owns it.\"},\"plan\":{\"objective\":\"original\",\"task\":\"retrieval\",\"support\":\"independent\"},\"objective\":{\"statement\":\"Explain ownership.\",\"application\":false}}]\n\nReturn only typed refill data: classroom=\"rust\", request_id=\"refill:55a603811017ec064da5563122dcf88d\" (including refill:), and exactly 2 variants. Each variant contains id, html, rubric, task. Give HTML as a direct string. The service builds its private plan with objective=original and support=independent and serializes the durable save_review_variants call. Do not return calls, arguments_json, message, learning_record, notes_markdown or a variant plan object. The private-file examples above describe the saved format, not the response envelope. Do not grade, write learner messages or edit files.",
+        "status": "failed",
+        "at": 1792789338719,
+        "startedAt": 1792789338720,
+        "requestedModel": null,
+        "originatingIdentity": {
+          "backend": "codex",
+          "selectionRevision": 1,
+          "sessionId": "01a16a92-407d-7c50-80be-8bc6e6eccb8b",
+          "activeModel": "gpt-6-luna",
+          "activeModelAt": 1792789335058,
+          "activeRequestedModel": null
+        },
+        "resolvedModel": "gpt-6-luna",
+        "modelOutput": {
+          "classroom": "rust",
+          "request_id": "refill:55a603811017ec064da5563122dcf88d",
+          "variants": [
+            {
+              "id": "v3",
+              "html": "<li class=\"cl-q\" data-question-id=\"v3\" data-type=\"choice\"><p class=\"cl-q-prompt\">A <code>String</code> is moved from <code>draft</code> into <code>archive</code>. When the scope containing <code>archive</code> ends, which binding is responsible for dropping the value?</p><ul class=\"cl-options\"><li><label><input type=\"radio\" name=\"v3\" value=\"archive\">The <code>archive</code> binding</label></li><li><label><input type=\"radio\" name=\"v3\" value=\"draft\">The old <code>draft</code> binding</label></li></ul></li>",
+              "rubric": {
+                "criteria": [
+                  {
+                    "id": "ownership",
+                    "description": "Identifies the new owner as responsible for releasing the moved value when its scope ends.",
+                    "points": 1
+                  }
+                ],
+                "expected": "archive",
+                "points": 1,
+                "full": "The archive binding owns the value after the move and drops it when that scope ends.",
+                "partial": "The old draft binding no longer owns the value.",
+                "grading": "exact"
+              },
+              "task": "application"
+            },
+            {
+              "id": "v4",
+              "html": "<li class=\"cl-q\" data-question-id=\"v4\" data-type\":\"short\"><p class=\"cl-q-prompt\">A function takes ownership of a <code>Vec&lt;i32&gt;</code> passed by value. Explain who releases the vector's allocation when the function returns.</p><textarea></textarea></li>",
+              "rubric": {
+                "criteria": [
+                  {
+                    "id": "owner",
+                    "description": "States that the function's parameter owns the vector after the move.",
+                    "points": 0.5
+                  },
+                  {
+                    "id": "release",
+                    "description": "Explains that the vector is dropped and its allocation released when the function scope ends.",
+                    "points": 0.5
+                  }
+                ],
+                "expected": "The function's parameter owns the vector after the move and drops it when the function returns, releasing its allocation.",
+                "points": 1,
+                "full": "Explains that ownership moves to the function parameter and that it releases the vector when its scope ends.",
+                "partial": "Credit only if it correctly identifies either the new owner or the release at function return.",
+                "grading": "teacher"
+              },
+              "task": "explanation"
+            }
+          ]
+        },
+        "plan": {
+          "calls": [
+            {
+              "name": "save_review_variants",
+              "arguments_json": "{\"classroom\":\"rust\",\"request_id\":\"refill:55a603811017ec064da5563122dcf88d\",\"variants\":[{\"id\":\"v3\",\"html\":\"<li class=\\\"cl-q\\\" data-question-id=\\\"v3\\\" data-type=\\\"choice\\\"><p class=\\\"cl-q-prompt\\\">A <code>String</code> is moved from <code>draft</code> into <code>archive</code>. When the scope containing <code>archive</code> ends, which binding is responsible for dropping the value?</p><ul class=\\\"cl-options\\\"><li><label><input type=\\\"radio\\\" name=\\\"v3\\\" value=\\\"archive\\\">The <code>archive</code> binding</label></li><li><label><input type=\\\"radio\\\" name=\\\"v3\\\" value=\\\"draft\\\">The old <code>draft</code> binding</label></li></ul></li>\",\"rubric\":{\"criteria\":[{\"id\":\"ownership\",\"description\":\"Identifies the new owner as responsible for releasing the moved value when its scope ends.\",\"points\":1}],\"expected\":\"archive\",\"points\":1,\"full\":\"The archive binding owns the value after the move and drops it when that scope ends.\",\"partial\":\"The old draft binding no longer owns the value.\",\"grading\":\"exact\"},\"plan\":{\"objective\":\"original\",\"support\":\"independent\",\"task\":\"application\"}},{\"id\":\"v4\",\"html\":\"<li class=\\\"cl-q\\\" data-question-id=\\\"v4\\\" data-type\\\":\\\"short\\\"><p class=\\\"cl-q-prompt\\\">A function takes ownership of a <code>Vec&lt;i32&gt;</code> passed by value. Explain who releases the vector's allocation when the function returns.</p><textarea></textarea></li>\",\"rubric\":{\"criteria\":[{\"id\":\"owner\",\"description\":\"States that the function's parameter owns the vector after the move.\",\"points\":0.5},{\"id\":\"release\",\"description\":\"Explains that the vector is dropped and its allocation released when the function scope ends.\",\"points\":0.5}],\"expected\":\"The function's parameter owns the vector after the move and drops it when the function returns, releasing its allocation.\",\"points\":1,\"full\":\"Explains that ownership moves to the function parameter and that it releases the vector when its scope ends.\",\"partial\":\"Credit only if it correctly identifies either the new owner or the release at function return.\",\"grading\":\"teacher\"},\"plan\":{\"objective\":\"original\",\"support\":\"independent\",\"task\":\"explanation\"}}]}"
+            }
+          ],
+          "message": "",
+          "learning_record": "",
+          "notes_markdown": ""
+        },
+        "planVersion": 2,
+        "planValidated": false,
+        "finishedAt": 1792789344637,
+        "error": "codex model configured default refill request refill:55a603811017ec064da5563122dcf88d in rust/review-d0831659-09d8-4df2-9129-96f211ceeefb: Variant v4 needs exactly one matching question."
+      }
+    ],
+    "messages": []
+  },
+  "review": {
+    "id": "d0831659-09d8-4df2-9129-96f211ceeefb",
+    "owner": "service",
+    "ownerPid": 1639123,
+    "classroom": "rust",
+    "lesson": "review-d0831659-09d8-4df2-9129-96f211ceeefb",
+    "at": 1792789338693,
+    "items": [
+      {
+        "key": "001-ownership/check-1/q1",
+        "lesson": "001-ownership",
+        "quizId": "check-1",
+        "questionId": "q1",
+        "questionKeys": [
+          "001-ownership/check-1/q1"
+        ],
+        "prompts": [
+          "Prompt for q1"
+        ],
+        "prompt": "Prompt for q1",
+        "box": 0,
+        "stability": 1,
+        "difficulty": 5.1618,
+        "memoryPolicy": "studens-fsrs45-v1",
+        "lastFeedbackAt": 1792616523759,
+        "dueAt": 1792702923759,
+        "context": "unknown",
+        "progress": "context-unknown",
+        "delayedSuccesses": 0,
+        "delayedTransfers": 0,
+        "evidenceSpanDays": 0,
+        "elapsedDays": 0,
+        "scheduleReason": "Unknown independence: keep the scheduled review; no retention claim.",
+        "schedulePolicy": "elapsed-independent-v1",
+        "lastAt": 1792616523758,
+        "lastCorrect": true,
+        "lastCredit": 1,
+        "lastAnswer": "owner",
+        "lastFeedback": "Right.",
+        "attempts": 1,
+        "misses": 0,
+        "gapOpen": false,
+        "needsReteach": false
+      }
+    ],
+    "options": {
+      "limit": 5,
+      "early": false
+    },
+    "status": "done",
+    "variants": {
+      "001-ownership/check-1/q1": "v1"
+    },
+    "document": {
+      "lesson_html": "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>Spaced review</title></head><body><main class=\"cl-lesson-shell\" data-cl-content><header><h1>Spaced review</h1><p class=\"cl-lede\">Recall these ideas before looking anything up.</p></header><form class=\"cl-quiz\" data-quiz-id=\"review\" data-kind=\"review\" data-title=\"Question 1\" data-evidence=\"report\" data-confidence=\"optional\"><ol class=\"cl-questions\"><li class=\"cl-q\" data-question-id=\"r1\" data-type=\"choice\" data-review-of=\"001-ownership/check-1/q1\"><p class=\"cl-q-prompt\">A value moves into a new scope. Who releases it?</p><ul class=\"cl-options\"><li><label><input type=\"radio\" name=\"r1-v1\" value=\"owner\">The new owner</label></li><li><label><input type=\"radio\" name=\"r1-v1\" value=\"old\">The old binding</label></li></ul></li></ol></form></main></body></html>",
+      "rubric_json": "{\"review\":{\"r1\":{\"expected\":\"owner\",\"points\":1,\"full\":\"The current owner releases the value.\",\"partial\":\"The old binding no longer owns it.\"}}}",
+      "teaching_plan_json": "{\"version\":1,\"objectives\":{\"r1\":{\"statement\":\"Explain ownership.\",\"application\":false}},\"quizzes\":{\"review\":{\"purpose\":\"assessment\",\"questions\":{\"r1\":{\"objective\":\"r1\",\"task\":\"retrieval\",\"support\":\"independent\"}}}}}"
+    }
+  },
+  "refills": [
+    {
+      "id": "refill:55a603811017ec064da5563122dcf88d",
+      "classroom": "rust",
+      "lesson": "review-d0831659-09d8-4df2-9129-96f211ceeefb",
+      "key": "001-ownership/check-1/q1",
+      "input": {
+        "key": "001-ownership/check-1/q1",
+        "lesson": "001-ownership",
+        "quizId": "check-1",
+        "questionId": "q1",
+        "questionKeys": [
+          "001-ownership/check-1/q1"
+        ],
+        "prompts": [
+          "Prompt for q1"
+        ],
+        "prompt": "Prompt for q1",
+        "box": 0,
+        "stability": 1,
+        "difficulty": 5.1618,
+        "memoryPolicy": "studens-fsrs45-v1",
+        "lastFeedbackAt": 1792616523759,
+        "dueAt": 1792702923759,
+        "context": "unknown",
+        "progress": "context-unknown",
+        "delayedSuccesses": 0,
+        "delayedTransfers": 0,
+        "evidenceSpanDays": 0,
+        "elapsedDays": 0,
+        "scheduleReason": "Unknown independence: keep the scheduled review; no retention claim.",
+        "schedulePolicy": "elapsed-independent-v1",
+        "lastAt": 1792616523758,
+        "lastCorrect": true,
+        "lastCredit": 1,
+        "lastAnswer": "owner",
+        "lastFeedback": "Right.",
+        "attempts": 1,
+        "misses": 0,
+        "gapOpen": false,
+        "needsReteach": false
+      },
+      "owner": "service",
+      "ownerPid": 1639123,
+      "reason": "low",
+      "at": 1792789338718,
+      "status": "failed",
+      "prompt": "Background private review refill refill:55a603811017ec064da5563122dcf88d for classroom rust, original item 001-ownership/check-1/q1.\n\nWrite two fresh variants to replenish this item's low pool.\n\nKeep the original objective and policy. Use new cases and independent retrieval. Do not include teaching, hints, or expected answers in question HTML. Use the private variant contract below: one complete li.cl-q, its unique id, complete controls, and its own rubric. Closed types need machine-checkable expected keys. Use classroom-absolute media links. Do not use data-review-of. Do not reuse any existing id or prompt.\n\nPrivate variant contract:\nEvery check question in a newly scaffolded lesson or quiz needs two or three private\nvariants. Pretests and review questions do not need pools. In the question's\n`quiz/key.json` entry, add a `variants` array. Each entry has `id`, `html`, and\n`rubric`; the rubric uses the same expected-answer and points contract as the\noriginal question. For example (provide two or three entries):\n\n```json\n{\n  \"id\": \"v1\",\n  \"html\": \"<li class=\\\"cl-q\\\" data-question-id=\\\"v1\\\" data-type=\\\"short\\\"><p class=\\\"cl-q-prompt\\\">Explain who releases a value moved into a new scope.</p><textarea></textarea></li>\",\n  \"rubric\": {\n    \"expected\": \"The new owner releases the value when its scope ends.\",\n    \"points\": 1,\n    \"full\": \"Identify the new owner and its scope.\",\n    \"partial\": \"Zero without the new owner or scope.\"\n  }\n}\n```\n\nEach fragment is one complete `li.cl-q`. Use the variant id as its question id.\nInclude the stimulus and controls. Omit `data-review-of`, forms, templates, scripts,\nevent handlers, teaching, hints, and answers. Media links must start with `/c/` so\nthat they resolve from a review page. Keep element ids and radio names unique\nwithin the fragment; the assembler namespaces them when combining questions.\n\nFor a runnable JavaScript `code` variant, include its labelled starter editor and\npublic `data-code` function-call tests, as in the quiz contract. Those input/output\nexamples are public debugging feedback, not private scoring answers. Keep the\nimplementation and teacher-judgment criteria in the private rubric; never award\npoints from browser pass flags or execute learner source on the host.\n\nIn the original question's `quiz/plan.json` mapping, add `variants` with the same\nids. Each mapping uses `objective: \"original\"`, `support: \"independent\"`, and a\nsuitable mental task. For example:\n\n```json\n{\n  \"variants\": {\n    \"v1\": { \"objective\": \"original\", \"task\": \"retrieval\", \"support\": \"independent\" },\n    \"v2\": { \"objective\": \"original\", \"task\": \"application\", \"support\": \"independent\" }\n  }\n}\n```\n\nThe reserved objective reference carries the source objective's full policy forward.\nUse fresh cases and solve each variant against its private rubric. Changing numbers\nalone does not establish transfer. All pool files stay off static HTTP routes.\nLegacy lessons without pools remain readable and keep their grades and schedules;\nprepare their pools explicitly to make them eligible for instant review.\n\nReviews select an unseen variant first, then the least-used variant in authored\norder. They can reuse prepared questions while a refill is pending. Repeated clicks\nand publication retries retain the original selection. A pool with at most one\nunseen question queues two fresh variants. A missed answer queues one variant aimed\nat that specific mistake. The teacher runs these durable requests after queued\nlearner work. Validated output is saved before `quiz/review-pool.json` is updated.\nThis private supplement preserves the original rubric and pending submissions.\nBackground failure leaves the ready review usable and appears in its teacher panel\nwith an explicit retry. No pool or refill error starts an on-demand review author.\n\nSupplemental variants use the original objective and question contract. Duplicate\nvariant ids and conflicting saved batches fail explicitly; replay is idempotent.\n\nOriginal objective: {\"statement\":\"Explain ownership.\",\"application\":false}\nOriginal prompt: Prompt for q1\n\nExisting private variants: [{\"id\":\"v1\",\"html\":\"<li class=\\\"cl-q\\\" data-question-id=\\\"v1\\\" data-type=\\\"choice\\\"><p class=\\\"cl-q-prompt\\\">A value moves into a new scope. Who releases it?</p><ul class=\\\"cl-options\\\"><li><label><input type=\\\"radio\\\" name=\\\"v1\\\" value=\\\"owner\\\">The new owner</label></li><li><label><input type=\\\"radio\\\" name=\\\"v1\\\" value=\\\"old\\\">The old binding</label></li></ul></li>\",\"rubric\":{\"expected\":\"owner\",\"points\":1,\"full\":\"The current owner releases the value.\",\"partial\":\"The old binding no longer owns it.\"},\"plan\":{\"objective\":\"original\",\"task\":\"retrieval\",\"support\":\"independent\"},\"objective\":{\"statement\":\"Explain ownership.\",\"application\":false}},{\"id\":\"v2\",\"html\":\"<li class=\\\"cl-q\\\" data-question-id=\\\"v2\\\" data-type=\\\"choice\\\"><p class=\\\"cl-q-prompt\\\">A value moves into a new scope. Who releases it?</p><ul class=\\\"cl-options\\\"><li><label><input type=\\\"radio\\\" name=\\\"v2\\\" value=\\\"owner\\\">The new owner</label></li><li><label><input type=\\\"radio\\\" name=\\\"v2\\\" value=\\\"old\\\">The old binding</label></li></ul></li>\",\"rubric\":{\"expected\":\"owner\",\"points\":1,\"full\":\"The current owner releases the value.\",\"partial\":\"The old binding no longer owns it.\"},\"plan\":{\"objective\":\"original\",\"task\":\"retrieval\",\"support\":\"independent\"},\"objective\":{\"statement\":\"Explain ownership.\",\"application\":false}}]\n\nReturn only typed refill data: classroom=\"rust\", request_id=\"refill:55a603811017ec064da5563122dcf88d\" (including refill:), and exactly 2 variants. Each variant contains id, html, rubric, task. Give HTML as a direct string. The service builds its private plan with objective=original and support=independent and serializes the durable save_review_variants call. Do not return calls, arguments_json, message, learning_record, notes_markdown or a variant plan object. The private-file examples above describe the saved format, not the response envelope. Do not grade, write learner messages or edit files.",
+      "error": "codex model configured default refill request refill:55a603811017ec064da5563122dcf88d in rust/review-d0831659-09d8-4df2-9129-96f211ceeefb: Variant v4 needs exactly one matching question."
+    }
+  ]
+}

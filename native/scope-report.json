@@ -1,0 +1,40 @@
+{
+  "verdict": "PASS scoped native product behavior; HTML reminder delivery unverified",
+  "native": {
+    "pi": "PASS",
+    "claude": "PASS",
+    "codex": "PASS on one explicitly authorized fresh-session retry"
+  },
+  "codex_initial_rejection": {
+    "result": "/tmp/studens-legacy-native-final/codex/failure.json",
+    "error": "Error: codex model configured default refill request refill:55a603811017ec064da5563122dcf88d in rust/review-d0831659-09d8-4df2-9129-96f211ceeefb: Variant v4 needs exactly one matching question.",
+    "request_id": "refill:55a603811017ec064da5563122dcf88d",
+    "plan_validated": false,
+    "applied": 0,
+    "malformed_attribute": "data-type\":\"short\"",
+    "retry_issued": false
+  },
+  "retry": {
+    "result": "codex-explicit-html-retry/result.json",
+    "automatic_retries": 0,
+    "fresh_isolated_session": true,
+    "valid_refill": true,
+    "source_html_corrected_before_run": true,
+    "format_reminder_reached_refill": false,
+    "reason": "Refill replays the historical submission prompt. The source-page correction did not change that snapshot. The successful retry used the original prompt.",
+    "final_harness_correction": "Save the same format example in both source HTML and termAnswer prompt. Types/format verified; no second native retry was run."
+  },
+  "product_hashes": {
+    "src/review.ts": "918de283e8cafa6c74f8a8fddce77c57af98711f9f46d3e56d3f8600da57496b",
+    "src/review-pool.ts": "115eb15ec044c5f1deea10a7d703844aaa92f6f654df551aad443d118bf9c083",
+    "src/review-variants.ts": "2d4d93d2c79bc9f92c5640fc8f5b3f70f717294b649d739f539b5f7969b3f564",
+    "src/store/quizzes.ts": "591cc06030840c08f7048d87bbc1ad7f2292e0c43ad3434858a89e58e27cfba2"
+  },
+  "scope": "Legacy numeric original rubric with strict new pool, closed independent spacing, real private refill, original key/grades preservation, HTTP privacy, restart without duplicate grading.",
+  "limitations": [
+    "Scoped native probes are not the full standard host suites.",
+    "Earlier unrelated Pi partial-write baseline failure retained outside this slice."
+  ],
+  "backup_ref": "refs/backup/legacy-review-pre-final-native",
+  "backup_directory": "/tmp/studens-legacy-final-backup"
+}
