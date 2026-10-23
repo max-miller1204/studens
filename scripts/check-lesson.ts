@@ -24,6 +24,7 @@ const [classroom, lesson] = process.argv.slice(2);
 if (!isValidSlug(classroom) || !isValidSlug(lesson))
   throw new Error("Usage: node scripts/check-lesson.ts <classroom> <lesson>");
 const source = classroomDir(classroom);
+const relativeLesson = path.relative(source, lessonDir(classroom, lesson));
 const inputs = readLessonInputs(classroom, lesson);
 preflightLessonInputs(inputs, classroom, lesson);
 const originalRoot = classroomsRoot();
@@ -32,9 +33,15 @@ const browser = `page-check-${process.pid}`;
 let opened = false;
 try {
   const copy = path.join(root, classroom);
-  fs.mkdirSync(path.join(copy, lesson), { recursive: true });
-  fs.writeFileSync(path.join(copy, lesson, "lesson.html"), inputs.html.bytes);
-  for (const file of ["classroom.json", "GLOSSARY.md", "assets", "reference", `${lesson}/media`]) {
+  fs.mkdirSync(path.join(copy, relativeLesson), { recursive: true });
+  fs.writeFileSync(path.join(copy, relativeLesson, "lesson.html"), inputs.html.bytes);
+  for (const file of [
+    "classroom.json",
+    "GLOSSARY.md",
+    "assets",
+    "reference",
+    `${relativeLesson}/media`,
+  ]) {
     const input = path.join(source, file);
     if (fs.existsSync(input)) fs.cpSync(input, path.join(copy, file), { recursive: true });
   }
