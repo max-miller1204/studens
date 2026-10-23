@@ -252,14 +252,16 @@ The default browser target includes `activity/`. Its fixture submits explanation
 on two lessons through their Save controls, follows classroom SSE, and verifies
 sequential running/queued transitions. It retains a failed request through reload,
 HTTP/service restart and keyboard navigation to its lesson panel, then presses
-`Retry activity` once and checks exactly one additional teacher turn. It also
+`Retry` (accessible name `Retry activity: …`) once and checks exactly one additional teacher turn. It also
 checks notes, reference, review history, learning records, course map, settings,
 root and daily history, an unrelated classroom, malformed request state, and
-375px/light/dark failure screens. A held response across disconnect and explicit
-reconnect must not restore stale work. Original question and follow-up failures
+1280px and 390px/light/dark idle, working, queued, failed and private-state
+error screens. A held response across disconnect and explicit reconnect must not restore stale work. Original question and follow-up failures
 survive reload, then each global retry adds one turn and preserves the original
 answer. Seven total fixture turns finish once. A corrupt private lesson-request
-file shows its file/category without quoting stored bytes. Reads leave it unchanged;
+file shows its file/category without quoting stored bytes. The top-bar pill opens a
+bounded request panel; Close, Escape (restoring pill focus), and an outside click
+dismiss it. Failed requests use inline errors with explicit Retry. Reads leave it unchanged;
 restoring it does not recover status until the learner explicitly retries. Inspect `activity/result.json`, `failed-desktop.png`,
 `failed-mobile.png`, `disconnected-mobile.png`, and `done-mobile.png`.
 

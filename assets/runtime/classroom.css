@@ -2855,45 +2855,111 @@ figure:has(> .cl-diagram) figcaption {
   min-width: 0;
 }
 
-/* The same persistent classroom status on shell, lesson, and review pages. */
+/* Persistent activity stays in the top bar; opening it never starts teacher work. */
 .cl-header {
   flex-wrap: wrap;
 }
 .cl-teacher-activity {
-  box-sizing: border-box;
-  flex: 0 0 100%;
-  padding: 0.45rem 0;
-  font-size: 0.85rem;
-  line-height: 1.45;
+  flex: 0 0 auto;
+  min-width: 0;
+  font: 400 0.8125rem/1.5 var(--cl-sans);
   overflow-wrap: anywhere;
 }
-body > .cl-teacher-activity {
-  position: sticky;
-  top: 0;
-  z-index: 40;
-  padding: 0.6rem 1rem;
-  background: var(--cl-bg);
+.cl-teacher-activity summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: var(--cl-surface);
+  box-shadow: var(--cl-shadow);
+  cursor: pointer;
+  list-style: none;
+  white-space: nowrap;
+}
+.cl-teacher-activity summary::-webkit-details-marker {
+  display: none;
+}
+.cl-teacher-activity summary::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--cl-text-muted);
+}
+.cl-teacher-activity:is([data-state="running"], [data-state="planned"], [data-state="queued"])
+  summary::before {
+  background: var(--cl-accent);
+}
+.cl-teacher-activity:is([data-state="failed"], [data-state="unavailable"]) summary {
+  color: var(--cl-danger);
+}
+.cl-teacher-activity:is([data-state="failed"], [data-state="unavailable"]) summary::before {
+  background: var(--cl-danger);
+}
+.cl-teacher-activity summary:focus-visible {
+  outline: 2px solid var(--cl-accent);
+  outline-offset: 3px;
+}
+.cl-activity-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 24px;
+  box-sizing: border-box;
+  width: min(420px, calc(100vw - 24px));
+  max-height: min(70vh, 560px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 16px;
+  border-radius: var(--cl-radius);
+  background: var(--cl-surface);
+  box-shadow: var(--cl-shadow-lifted);
+  color: var(--cl-text);
+  white-space: normal;
+}
+.cl-activity-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 .cl-teacher-activity p {
   margin: 0;
 }
-.cl-teacher-activity summary {
-  cursor: pointer;
+.cl-teacher-activity .cl-activity-identity {
+  color: var(--cl-text-muted);
+  margin-block: 8px 16px;
 }
 .cl-teacher-activity ul {
-  margin: 0.5rem 0 0;
-  padding-left: 1.25rem;
-  max-height: 35vh;
-  overflow: auto;
+  list-style: none;
+  margin: 0;
+  padding: 0;
 }
-.cl-teacher-activity li + li {
-  margin-top: 0.65rem;
+.cl-teacher-activity li {
+  padding-block: 12px;
+  border-top: 1px solid var(--cl-border);
 }
-.cl-teacher-activity .cl-button {
-  margin-top: 0.25rem;
+.cl-teacher-activity li > a {
+  color: var(--cl-text);
+  text-decoration: none;
 }
-.cl-teacher-activity[data-state="failed"] > p:first-child {
-  color: var(--cl-danger);
+.cl-teacher-activity li > a:hover {
+  text-decoration: underline;
+}
+.cl-teacher-activity .cl-inline-error {
+  margin-top: 10px;
+}
+@media (max-width: 760px) {
+  .cl-activity-panel {
+    right: 12px;
+  }
+  .cl-teacher-activity summary {
+    padding-inline: 8px;
+    gap: 6px;
+    font-size: 0.75rem;
+  }
 }
 
 /* Cross-classroom search uses ordinary public source navigation. */

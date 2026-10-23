@@ -52,6 +52,19 @@ export async function verifyActivityBrowser(artifacts: string | null): Promise<v
         `await page.screenshot({path:${JSON.stringify(path.join(artifacts, name + ".png"))}});return {};`,
       );
   };
+  const captureStates = async (state: string) => {
+    for (const width of [1280, 390]) {
+      for (const theme of ["light", "dark"]) {
+        await code(
+          `await page.setViewportSize({width:${width},height:800});await page.evaluate(theme=>{document.documentElement.dataset.theme=theme;document.documentElement.dataset.accent='indigo';},${JSON.stringify(theme)});const summary=page.locator('.cl-teacher-activity summary');if(${JSON.stringify(state)}!=='idle' && await summary.count() && !await summary.evaluate(el=>el.parentElement.open))await summary.click();return {};`,
+        );
+        await save(`${state}-${width}-${theme}`);
+      }
+    }
+    await code(
+      `await page.setViewportSize({width:1280,height:800});await page.evaluate(()=>document.documentElement.dataset.theme='light');return {};`,
+    );
+  };
   const snapshot = () => readTeacherState("rust");
   const plan = {
     calls: [],
@@ -66,9 +79,14 @@ export async function verifyActivityBrowser(artifacts: string | null): Promise<v
     await playwright(session, f.root, "open", `${base}/c/rust/001-ownership`);
     browserOpen = true;
     await code(
+      `await page.waitForFunction(()=>document.querySelector('.cl-teacher-activity')?.dataset.state==='idle');return {};`,
+    );
+    await captureStates("idle");
+    await code(
       `await page.setViewportSize({width:1280,height:800});await page.locator('form.cl-reflect textarea').fill('The owner drops its value.');await page.getByRole('button',{name:'Save',exact:true}).click();await page.waitForFunction(()=>document.querySelector('.cl-teacher-activity')?.dataset.state==='running');return {};`,
     );
     await save("running-lesson");
+    await captureStates("working");
     result.running = snapshot();
     await code(
       `await page.goto(${JSON.stringify(base + "/c/rust/002-borrowing")});await page.locator('form.cl-reflect textarea').fill('A borrow does not own it.');await page.getByRole('button',{name:'Save',exact:true}).click();await page.waitForFunction(()=>document.querySelector('.cl-teacher-activity')?.textContent.includes('1 queued'));await page.goto(${JSON.stringify(base + "/c/rust")});await page.waitForFunction(()=>document.querySelector('.cl-teacher-activity')?.textContent.includes('1 queued'));await page.locator('.cl-teacher-activity summary').click();return {};`,
@@ -77,6 +95,7 @@ export async function verifyActivityBrowser(artifacts: string | null): Promise<v
     if (Number(turns.length) !== 1 || snapshot()!.requests[1].status !== "queued")
       throw new Error("Teacher requests did not remain sequential.");
     await save("running-queued-classroom");
+    await captureStates("queued");
     turns[0].reject(
       new Error("Fixture teacher rejected this explanation: missing ownership context."),
     );
@@ -91,6 +110,7 @@ export async function verifyActivityBrowser(artifacts: string | null): Promise<v
     );
     result.failure = snapshot();
     await save("failed-desktop");
+    await captureStates("failed");
     await code(`await page.setViewportSize({width:375,height:812});return {};`);
     await save("failed-mobile");
     await code(`await page.evaluate(()=>document.documentElement.dataset.theme='dark');return {};`);
@@ -234,6 +254,7 @@ export async function verifyActivityBrowser(artifacts: string | null): Promise<v
       `await page.getByRole('button',{name:'Retry activity status',exact:true}).waitFor();const text=await page.locator('.cl-teacher-activity').innerText();if(!text.includes('malformed JSON') || text.includes('SECRET_ACT'))throw new Error('Private parse failure leaked or lost its category');for(const scope of ['classroom=rust','scope=root']){const r=await page.request.get(${JSON.stringify(base)}+'/api/activity?'+scope);if(r.status()!==500 || (await r.text()).includes('SECRET_ACT'))throw new Error('Private parse response leaked');}return {text};`,
     );
     await save("private-state-error-mobile");
+    await captureStates("private-error");
     if (fs.readFileSync(privateFile, "utf8") !== secret)
       throw new Error("Reading activity changed corrupt private state");
     if (oldPrivate) fs.writeFileSync(privateFile, oldPrivate);
@@ -247,6 +268,9 @@ export async function verifyActivityBrowser(artifacts: string | null): Promise<v
       if (response.status !== 404)
         throw new Error(`Private route returned ${response.status}: ${suffix}`);
     }
+    result.disclosure = await code(
+      `const summary=page.locator('.cl-teacher-activity summary');if(await summary.evaluate(el=>el.parentElement.open))await summary.click();await page.setViewportSize({width:390,height:800});await summary.focus();await page.keyboard.press('Enter');await page.getByRole('button',{name:'Close teacher activity',exact:true}).waitFor();await page.keyboard.press('Escape');if(await summary.evaluate(el=>el.parentElement.open) || !await summary.evaluate(el=>el===document.activeElement))throw new Error('Escape did not close activity and restore focus');await summary.click();await page.getByRole('button',{name:'Close teacher activity',exact:true}).click();if(await summary.evaluate(el=>el.parentElement.open))throw new Error('Close did not dismiss activity');await summary.click();await page.getByRole('button',{name:'Toggle colour theme',exact:true}).click();if(await summary.evaluate(el=>el.parentElement.open))throw new Error('Outside click did not dismiss activity');if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth))throw new Error('Activity overflowed viewport');return {keyboard:true,close:true,outside:true};`,
+    );
     result.turns = turns.length;
     console.log(
       "PASS: classroom activity SSE, sequential queue, failure, navigation, reload, restart, explicit retry, keyboard links, isolation, malformed state and privacy",
