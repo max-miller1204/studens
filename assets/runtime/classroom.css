@@ -786,10 +786,11 @@ mark.cl-hl.cl-hl-pending {
 }
 
 /*
- * A saved card sits in the document flow, directly after the block it asks about, so
- * it can never cover the passage. Only the transient composer floats.
+ * Cards and composers sit after their passage on narrow screens. The wide-screen
+ * dock preserves this reading order without covering lesson content.
  */
-.cl-card-inline {
+.cl-card-inline,
+.cl-card-composer {
   position: static;
   /* Quiz cards are flex items, so reset the floating panel's stacking order too. */
   z-index: auto;
@@ -2175,7 +2176,8 @@ figure:has(> .cl-diagram) figcaption {
 }
 
 /* A card about a quiz question sits after the question, lined up with its text. */
-.cl-questions > .cl-card-inline {
+.cl-questions > .cl-card-inline,
+.cl-questions > .cl-card-composer {
   margin: 0 0 0 2rem;
 }
 
@@ -2897,9 +2899,7 @@ body > .cl-teacher-activity {
   border: 1px solid var(--cl-border);
   border-radius: 10px;
   box-shadow: var(--cl-shadow-lifted);
-  font:
-    13px system-ui,
-    sans-serif;
+  font: 0.8125rem/1.5 var(--cl-sans);
 }
 .cl-selection-actions[hidden],
 .cl-learner-marks [hidden] {
@@ -2909,16 +2909,6 @@ body > .cl-teacher-activity {
   position: static;
   transform: none;
   box-shadow: none;
-}
-.cl-selection-actions button,
-.cl-learner-marks button {
-  cursor: pointer;
-  border: 1px solid var(--cl-border);
-  background: var(--cl-surface);
-  color: inherit;
-  padding: 6px 9px;
-  border-radius: 6px;
-  font: inherit;
 }
 .cl-selection-actions button:focus-visible,
 .cl-learner-marks :focus-visible {
@@ -2930,9 +2920,7 @@ body > .cl-teacher-activity {
   max-width: 66ch;
   margin: 12px auto;
   padding: 10px 16px;
-  font:
-    14px/1.5 system-ui,
-    sans-serif;
+  font: 0.875rem/1.5 var(--cl-sans);
   color: var(--cl-text);
 }
 .cl-learner-marks summary {
@@ -3579,6 +3567,91 @@ body.cl-app.cl-lesson-page {
 }
 .cl-daily-details summary {
   cursor: pointer;
+}
+
+/* Passage conversations share the lesson's reading order at every width. */
+.cl-card-panel.cl-card-box {
+  padding: 0;
+  border: 1px solid transparent;
+}
+.cl-card-head {
+  background: transparent;
+}
+.cl-card-panel.cl-card-docked {
+  position: absolute;
+  width: 20rem;
+  max-width: 20rem;
+  margin: 0;
+  z-index: 10;
+}
+@media (min-width: 1100px) {
+  .cl-lesson-page .cl-lesson-shell {
+    margin-left: max(0px, calc((100% - 1024px) / 2));
+    margin-right: 352px;
+  }
+}
+.cl-answer-arriving {
+  animation: cl-answer-arrival 300ms ease-out;
+}
+@keyframes cl-answer-arrival {
+  from {
+    opacity: 0;
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cl-answer-arriving {
+    animation-name: cl-answer-fade;
+  }
+}
+@keyframes cl-answer-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.cl-stepper-runtime.cl-card-box,
+.cl-faded-runtime.cl-card-box {
+  border-color: transparent;
+  border-radius: var(--cl-radius);
+}
+.cl-faded-label textarea,
+.cl-faded-label input {
+  font: 0.9375rem/1.5 var(--cl-sans);
+}
+.cl-lesson-shell .cl-diagram,
+.cl-lesson-shell .cl-math-display {
+  padding: 1rem;
+  border-radius: var(--cl-radius);
+  background: var(--cl-surface);
+  box-shadow: var(--cl-shadow);
+}
+@media print {
+  .cl-lesson-page .cl-lesson-shell {
+    margin: 0 auto;
+  }
+  .cl-card-panel.cl-card-docked {
+    position: static;
+    width: auto;
+    max-width: 100%;
+  }
+}
+
+.cl-lesson-page .cl-learner-marks {
+  max-width: calc(var(--cl-measure) + 6rem);
+  padding-inline: clamp(1rem, 4vw, 3rem);
+}
+@media (min-width: 1100px) {
+  .cl-lesson-page .cl-learner-marks {
+    margin-left: max(0px, calc((100% - 1024px) / 2));
+    margin-right: 352px;
+  }
 }
 
 /* Classroom: the next action precedes supporting evidence. */

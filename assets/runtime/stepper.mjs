@@ -137,7 +137,7 @@ function mount(widget, config) {
     failed = false;
   let drawing = new AbortController();
   const motion = matchMedia("(prefers-reduced-motion: reduce)");
-  const host = element("div", "cl-stepper-runtime");
+  const host = element("div", "cl-stepper-runtime cl-card-box");
   host.append(element("h3", "", config.title));
   host.append(
     element(

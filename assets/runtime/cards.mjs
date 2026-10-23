@@ -1,5 +1,6 @@
 /** Annotation threads, follow-ups, minimised cards, and deletion. */
 import { askConfirm, drawQuoteMath, placeCardInFlow, showDraftError } from "./lesson-dom.mjs";
+import { anchorPanel, releasePanel, refreshPanels } from "./ask-layout.mjs";
 import { draftStatus } from "./drafts.mjs";
 
 export function createCards({ config, contentRoot, drafts }) {
@@ -42,7 +43,7 @@ export function createCards({ config, contentRoot, drafts }) {
     const quote = panel.querySelector("[data-cl-quote]");
     quote.textContent = annotation.selection;
     drawQuoteMath(quote);
-    renderThread(panel.querySelector("[data-cl-thread]"), turns);
+    renderThread(panel.querySelector("[data-cl-thread]"), turns, existing?.annotation);
 
     // Following up needs something to follow up on, and the server refuses a follow-up on
     // a card whose first question is still spinning.
@@ -61,7 +62,7 @@ export function createCards({ config, contentRoot, drafts }) {
 
   function createPanel(annotationId, mark) {
     const panel = document.createElement("div");
-    panel.className = "cl-card-panel cl-card-inline cl-card-box";
+    panel.className = "cl-card-panel cl-card-inline cl-card-box cl-motion-enter";
     panel.dataset.annotationId = annotationId;
     panel.id = `cl-question-${annotationId}`;
     panel.hidden = true;
@@ -132,9 +133,15 @@ export function createCards({ config, contentRoot, drafts }) {
     ];
   }
 
-  function renderThread(container, turns) {
+  function renderThread(container, turns, previous) {
+    const oldTurns = previous ? threadTurns(previous) : [];
     container.textContent = "";
-    for (const turn of turns) container.appendChild(renderTurn(turn));
+    for (const [index, turn] of turns.entries()) {
+      const node = renderTurn(turn);
+      if (turn.status === "answered" && oldTurns[index]?.status === "pending")
+        node.querySelector(".cl-card-answer").classList.add("cl-answer-arriving");
+      container.appendChild(node);
+    }
   }
 
   function renderTurn(turn) {
@@ -236,6 +243,7 @@ export function createCards({ config, contentRoot, drafts }) {
     const card = cards.get(annotationId);
     if (!card) return;
     card.panel.hidden = false;
+    if (card.mark) anchorPanel(card.panel, card.mark);
     card.badge.hidden = true;
     minimised.delete(annotationId);
     saveMinimised(minimised);
@@ -248,6 +256,7 @@ export function createCards({ config, contentRoot, drafts }) {
     const card = cards.get(annotationId);
     if (!card) return;
     card.panel.hidden = true;
+    refreshPanels();
     card.badge.hidden = false;
     minimised.add(annotationId);
     saveMinimised(minimised);
@@ -308,6 +317,11 @@ export function createCards({ config, contentRoot, drafts }) {
       button.disabled = false;
     }
 
+    card.panel.hidden = true;
+    await Promise.all(
+      card.panel.getAnimations().map((animation) => animation.finished.catch(() => {})),
+    );
+    releasePanel(card.panel);
     card.panel.remove();
     card.badge.remove();
     cards.delete(annotationId);
