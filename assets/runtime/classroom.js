@@ -1,13 +1,13 @@
 import { lessonMarkupElements, lessonMarkupErrors } from "./lesson-markup.mjs";
 import { showErrors } from "./lesson-dom.mjs";
 /** The lesson entry point: compose feature modules and dispatch saved state and SSE. */
+import { initNavigation } from "./navigation.mjs";
 import { initTeacherActivity } from "./teacher-activity.mjs";
 import { draftId, draftKind } from "./draft.mjs";
 import { initDiagrams } from "./diagrams.mjs";
 import { initLinks } from "./links.mjs";
 import { initMath } from "./math.mjs";
 import { initTheme } from "./theme.mjs";
-import { icon } from "./icons.mjs";
 import { initSteppers } from "./stepper.mjs";
 import { initFaded } from "./faded.mjs";
 import { createReviewScreen } from "./review-screen.mjs";
@@ -106,27 +106,7 @@ function init() {
  * lesson has to remember to include.
  */
 function buildHeader() {
-  if (document.querySelector(".cl-header")) return;
-
-  const header = document.createElement("header");
-  header.className = "cl-header";
-  header.innerHTML = `
-    <nav class="cl-breadcrumb">
-      <a class="cl-crumb" href="/">Classrooms</a>
-      <span class="cl-crumb-sep" aria-hidden="true">/</span>
-      <a class="cl-crumb" href="/c/${encodeURIComponent(config.classroom)}"></a>
-      <span class="cl-crumb-sep" aria-hidden="true">/</span>
-      <span class="cl-crumb cl-crumb-current"></span>
-    </nav>
-    <button type="button" class="cl-theme-toggle" data-cl-theme-toggle aria-label="Toggle colour theme">
-      <span class="cl-theme-icon cl-theme-icon-light" aria-hidden="true">${icon("sun")}</span>
-      <span class="cl-theme-icon cl-theme-icon-dark" aria-hidden="true">${icon("moon")}</span>
-    </button>`;
-
-  // textContent, not innerHTML: these titles come from files on disk.
-  header.querySelectorAll(".cl-crumb")[1].textContent = config.classroomTitle;
-  header.querySelector(".cl-crumb-current").textContent = config.lessonTitle;
-  document.body.prepend(header);
+  initNavigation(config, contentRoot);
 }
 
 /** Put an explicitly declared teaching destination below the actual sticky header. */

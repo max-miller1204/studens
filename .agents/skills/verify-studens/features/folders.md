@@ -12,11 +12,11 @@ The learner groups classrooms in folders without changing lesson links.
 
 ## How to get to it (user POV)
 
-1. Open the Classrooms page at the server root.
+1. Open Today at the server root.
 2. Select `New folder`.
 3. Enter a folder name.
 4. Select `Create folder`.
-5. Select `Move to folder` on a classroom.
+5. Open `Classroom actions for <title>`, then select `Move to folder`.
 6. Select its destination.
 7. Select `Move classroom`.
 8. Open the folder to rename or delete it.
@@ -27,9 +27,10 @@ Run `npm run verify -- browser --artifacts /tmp/studens-folders`.
 
 The suite drives `New folder`, the `Folder name` input, and `Create folder`. It
 rejects a duplicate name. It opens each classroom's `Move <title> to folder`
-button, selects the `Folder` control, and submits `Move classroom`. The classroom
-must appear only in its saved destination after reload. Moving to `Unfiled` must
-return it to the Classrooms page.
+button from its classroom overflow, selects the `Folder` control, and submits
+`Move classroom`. The classroom must appear in its saved folder after reload and
+stay available in Today’s all-classroom grid. Moving to `Unfiled` must remove it
+from the folder while keeping it on Today.
 
 The suite opens `Rename folder` and saves a new name. The folder URL must stay
 unchanged. Its classroom link must still open the same lesson list. A refused

@@ -1,3 +1,4 @@
+import { handleNavigation } from "./navigation.ts";
 import type * as http from "node:http";
 import { handleExport } from "./exports.ts";
 import { handleActivity } from "./activity.ts";
@@ -21,6 +22,7 @@ export async function handleApi(
   url: URL,
 ): Promise<void> {
   const route = rest.join("/");
+  if (route === "navigation" && req.method === "GET") return handleNavigation(res);
   if (route === "export") return handleExport(req, res, url);
   if (route === "learner-marks") return handleLearnerMarks(req, res, url);
   if (route === "settings" || route === "settings/models")

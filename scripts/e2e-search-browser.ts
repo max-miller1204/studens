@@ -147,7 +147,7 @@ export async function verifySearchBrowser(artifacts: string | null): Promise<voi
       `async page=>{
   const errors=[],writes=[],dialogs=[];page.on('dialog',d=>dialogs.push(d.message()));page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>{if(!['GET','HEAD'].includes(r.method()))writes.push(r.url());});
   const shots=[];for(const [size,width,height]of [['desktop',1280,900],['mobile',390,844]])for(const theme of ['light','dark']){await page.setViewportSize({width,height});await page.evaluate(t=>localStorage.setItem('pi-classroom-theme',t),theme);await page.goto(${JSON.stringify(base)});await page.screenshot({path:${JSON.stringify(out)}+'/landing-'+size+'-'+theme+'.png',fullPage:true});shots.push({screen:'landing',size,theme});}
-  await page.getByRole('link',{name:'Search across classrooms',exact:true}).focus();await page.keyboard.press('Enter');
+  await page.getByRole('link',{name:'Search classrooms',exact:true}).focus();await page.keyboard.press('Enter');
   await page.getByRole('status').filter({hasText:'Enter a word'}).waitFor();
   const search=async q=>{await page.getByRole('searchbox').fill(q);await page.getByRole('button',{name:'Search',exact:true}).click();await page.getByRole('searchbox').waitFor();};
   await search('Borrow checker');const resultURL=page.url();

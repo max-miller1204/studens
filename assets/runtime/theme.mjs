@@ -27,11 +27,11 @@ function currentTheme() {
 /** Wire the header toggle and the device-local Settings selectors. */
 export function initTheme() {
   const theme = document.querySelector("[data-cl-theme-choice]");
-  const accent = document.querySelector("[data-cl-accent-choice]");
+  const accents = document.querySelectorAll("[data-cl-accent-choice]");
   const status = document.querySelector("[data-cl-appearance-status]");
   const sync = () => {
     if (theme) theme.value = root.dataset.theme ?? "system";
-    if (accent) accent.value = root.dataset.accent;
+    for (const accent of accents) accent.value = root.dataset.accent;
   };
   const save = (kind, value) => {
     withoutTransitions(() => {
@@ -56,7 +56,8 @@ export function initTheme() {
     });
   }
   theme?.addEventListener("change", () => save("theme", theme.value));
-  accent?.addEventListener("change", () => save("accent", accent.value));
+  for (const accent of accents)
+    accent.addEventListener("change", () => save("accent", accent.value));
   matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
     if (!root.hasAttribute("data-theme")) withoutTransitions(() => {});
   });

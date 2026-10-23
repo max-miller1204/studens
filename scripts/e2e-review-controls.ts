@@ -171,7 +171,7 @@ export async function verifyReviewControls(artifacts: string | null): Promise<vo
       await playwright(browser, fixture.root, "open", base);
       opened = true;
       await code(`
-        await page.locator('a[href="/c/rust"]').click();
+        await page.getByRole('main').locator('a[href="/c/rust"]').click();
         await page.evaluate(()=>sessionStorage.setItem('pi-classroom-review:rust:options','{invalid'));
         await page.reload();
         await page.getByText('Cannot read saved review options:',{exact:false}).waitFor();
@@ -306,7 +306,7 @@ export async function verifyReviewControls(artifacts: string | null): Promise<vo
       const savedControls = fs.readFileSync(controlsFile, "utf8");
       fs.writeFileSync(controlsFile, "{invalid");
       await code(
-        `await page.goto(${JSON.stringify(`${base}/c/rust`)});await page.getByRole('heading',{name:'Cannot load review state',exact:true}).waitFor();await page.getByText('Cannot read review controls:',{exact:false}).waitFor();${shot("controls-corrupt")}`,
+        `await page.goto(${JSON.stringify(`${base}/c/rust`)});await page.getByRole('heading',{name:'Cannot load review state',exact:true}).waitFor();await page.getByRole('main').getByText('Cannot read review controls:',{exact:false}).waitFor();${shot("controls-corrupt")}`,
       );
       fs.writeFileSync(controlsFile, savedControls);
       await code(
@@ -403,7 +403,7 @@ export async function verifyReviewControls(artifacts: string | null): Promise<vo
         });
       await code(`
         await page.goto(${JSON.stringify(base)});
-        await page.locator('a[href="/c/many"]').click();
+        await page.getByRole('main').locator('a[href="/c/many"]').click();
         await page.getByText('Manage review items',{exact:true}).click();
         await page.locator('[data-review-item="001-ownership/check-1/q1"] [data-review-retire]').click();
         await page.locator('[data-review-item="001-ownership/check-1/q1"][data-retired="true"]').waitFor({state:'attached'});

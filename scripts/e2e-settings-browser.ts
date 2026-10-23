@@ -90,7 +90,7 @@ require('node:readline').createInterface({input:process.stdin}).on('line',line=>
       `async page=>{
       await page.setViewportSize({width:1280,height:800});${shot("classroom-desktop")}
       await page.setViewportSize({width:375,height:812});${shot("classroom-mobile")}
-      await page.getByRole('link',{name:'Settings',exact:true}).click();
+      await page.getByRole('main').getByRole('link',{name:'Settings',exact:true}).click();
       await page.locator('[data-settings-content]').waitFor({state:'visible'});
       await page.getByLabel('Teacher model',{exact:true}).selectOption('fixture-next');
       await page.getByRole('button',{name:'Save teacher model',exact:true}).click();

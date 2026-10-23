@@ -37,7 +37,7 @@ their original host and recovery behavior.
 
 ## How to get to it (user POV)
 
-From Classrooms, read `N due across classrooms` and select `Start daily review`.
+From Today, read `N due across classrooms` and select `Start daily review`.
 The daily overview shows each classroom separately. Select `Continue <classroom>
 review`, answer all its cards, then use `Continue daily review` to return to the
 classroom groups. The next classroom starts only when all earlier cards are graded.

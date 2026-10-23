@@ -1,11 +1,13 @@
 /** Handle shell navigation, theme controls, and classroom review requests. */
 
+import { initNavigation } from "./navigation.mjs";
 import { wireRetirement } from "./review-controls.mjs";
 import { initDailyReview } from "./daily-review.mjs";
 import { initTeacherActivity, pageClassroom } from "./teacher-activity.mjs";
 import { initLinks } from "./links.mjs";
 import { initTheme } from "./theme.mjs";
 
+initNavigation();
 initTheme();
 initLinks();
 const dailyControl = document.querySelector("[data-cl-daily]");
@@ -220,9 +222,11 @@ function initFolders(control) {
   const save = dialog.querySelector("[data-cl-folder-save]");
   const cancel = dialog.querySelector("[data-cl-folder-cancel]");
   let command;
+  let opener;
   let busy = false;
 
   function open(action, classroom) {
+    opener = classroom?.closest("details")?.querySelector("summary") ?? document.activeElement;
     command = { action, id: control.dataset.folderId || null };
     error.hidden = true;
     error.textContent = "";
@@ -248,9 +252,10 @@ function initFolders(control) {
     } else if (action === "move") {
       command.classroom = classroom.dataset.clMove;
       title.textContent = `Move ${classroom.dataset.classroomTitle}`;
-      folder.value = control.dataset.folderId;
+      folder.value = classroom.dataset.currentFolder;
       save.textContent = "Move classroom";
     }
+    control.querySelectorAll(".cl-classroom-overflow[open]").forEach((menu) => (menu.open = false));
     dialog.showModal();
     if (!name.disabled) {
       name.focus();
@@ -263,7 +268,19 @@ function initFolders(control) {
   control.querySelectorAll("[data-cl-move]").forEach((button) => {
     button.addEventListener("click", () => open("move", button));
   });
+  dialog.addEventListener("close", () => opener?.focus());
   cancel.addEventListener("click", () => dialog.close());
+  for (const menu of control.querySelectorAll(".cl-classroom-overflow")) {
+    menu.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        menu.open = false;
+        menu.querySelector("summary").focus();
+      }
+    });
+    document.addEventListener("click", (event) => {
+      if (!menu.contains(event.target)) menu.open = false;
+    });
+  }
   dialog.addEventListener("cancel", (event) => {
     if (busy) event.preventDefault();
   });

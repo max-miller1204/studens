@@ -1,3 +1,4 @@
+import { verifyNavigationBrowser } from "./e2e-navigation-browser.ts";
 import { verifyOwnershipBrowser } from "./e2e-ownership-browser.ts";
 import { verifyAppearanceBrowser } from "./e2e-appearance-browser.ts";
 import { verifyReviewObserver } from "./e2e-review-observer.ts";
@@ -408,6 +409,8 @@ if (artifacts) fs.mkdirSync(path.join(artifacts, "resume"), { recursive: true })
 await verifyResumeBrowser(artifacts ? path.join(artifacts, "resume") : null);
 await verifyCardBrowser(artifacts ? path.join(artifacts, "cards") : null);
 await verifyQuestionErrorsBrowser(artifacts ? path.join(artifacts, "question-errors") : null);
+
+await verifyNavigationBrowser(path.join(artifacts ?? fixture.root, "navigation"));
 
 await verifyFoldersBrowser(artifacts ? path.join(artifacts, "folders") : null);
 
