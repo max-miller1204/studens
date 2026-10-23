@@ -5,6 +5,7 @@ import { wireRetirement } from "./review-controls.mjs";
 import { initDailyReview } from "./daily-review.mjs";
 import { initTeacherActivity, pageClassroom } from "./teacher-activity.mjs";
 import { initLinks } from "./links.mjs";
+import { initClassroomProgress } from "./classroom-progress.mjs";
 import { initTheme } from "./theme.mjs";
 
 initNavigation();
@@ -22,6 +23,7 @@ if (nextControl) initNextLesson(nextControl);
 
 const reviewControl = document.querySelector("[data-cl-review]");
 if (reviewControl) initReview(reviewControl);
+initClassroomProgress();
 for (const row of document.querySelectorAll("[data-review-item]")) {
   wireRetirement({
     button: row.querySelector("[data-review-retire]"),

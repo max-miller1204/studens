@@ -57,8 +57,11 @@ function date(at: number): string {
     year: "numeric",
   });
 }
-function time(at: number): string {
-  return `<time datetime="${new Date(at).toISOString()}">${date(at)} · ${new Date(at).toISOString().slice(11, 16)} UTC</time>`;
+export function memoryTime(at: number, now: number, compact = false): string {
+  const iso = new Date(at).toISOString();
+  const days = Math.ceil(Math.abs(at - now) / DAY_MS);
+  const relative = at <= now ? (days === 0 ? "Just now" : `${days} days ago`) : `In ${days} days`;
+  return `<time datetime="${iso}" tabindex="0" title="${iso}" data-exact-time="${iso}" data-cl-relative-time data-clock="${now}"${compact ? ' data-compact="true"' : ""}>${relative}</time>`;
 }
 
 function memoryItem(classroom: string, item: ReviewItem, now: number): string {
@@ -67,17 +70,20 @@ function memoryItem(classroom: string, item: ReviewItem, now: number): string {
     item.retiredAt !== undefined
       ? "Retired · not scheduled"
       : item.needsReteach
-        ? "Paused · open short re-teach"
-        : `${item.dueAt <= now ? "Due now · " : ""}${time(item.dueAt)}`;
+        ? "Paused · re-teach"
+        : item.dueAt <= now
+          ? "Due now"
+          : memoryTime(item.dueAt, now, true);
   const credit = Math.round(item.lastCredit * 100);
   const evidence = `${item.delayedSuccesses} qualifying delayed independent ${item.delayedSuccesses === 1 ? "success" : "successes"} · ${item.delayedTransfers} qualifying delayed transfers · ${item.evidenceSpanDays.toFixed(1)}-day evidence span`;
   return `<li class="cl-memory-item" data-memory-key="${escapeHtml(item.key)}">
-    <div class="cl-memory-heading"><h3><a href="${escapeHtml(original)}">${escapeHtml(item.objective?.statement ?? item.prompt)}</a></h3><span class="cl-memory-tag">${item.objective ? "Saved objective" : "Older question · objective not recorded"}${item.retiredAt === undefined ? "" : " · Retired"}</span></div>
+    <details class="cl-memory-row"><summary><span class="cl-memory-objective">${escapeHtml(item.objective?.statement ?? item.prompt)}</span><span class="cl-badge cl-memory-state">${escapeHtml(STRENGTH[item.progress])}</span><span class="cl-memory-due">${due}</span></summary>
+    <div class="cl-memory-heading"><span class="cl-memory-tag">${item.objective ? "Saved objective" : "Older question · objective not recorded"}${item.retiredAt === undefined ? "" : " · Retired"}</span></div>
     <dl class="cl-memory-facts">
       <div><dt>Strength of evidence</dt><dd>${item.lastAt > now ? "Saved evidence is dated in the future" : STRENGTH[item.progress]}</dd></div>
-      <div><dt>Last evidence</dt><dd>${time(item.lastAt)}<small>${escapeHtml(CONTEXT[item.context])} · ${credit}% credit${item.lastAt > now ? " · saved time is in the future" : ""}</small></dd></div>
+      <div><dt>Last evidence</dt><dd>${memoryTime(item.lastAt, now)}<small>${escapeHtml(CONTEXT[item.context])} · ${credit}% credit${item.lastAt > now ? " · saved time is in the future" : ""}</small></dd></div>
       <div><dt>Open gaps</dt><dd>${escapeHtml(memoryGap(item))}${item.progress === "transfer-needed" ? "<small>Try a new application without help.</small>" : !item.delayedSuccesses ? "<small>Delayed independent evidence is still needed.</small>" : ""}</dd></div>
-      <div><dt>Next due</dt><dd>${due}</dd></div>
+      <div><dt>Next due</dt><dd>${due}${item.dueAt <= now || item.needsReteach || item.retiredAt !== undefined ? ` · ${memoryTime(item.dueAt, now)}` : ""}</dd></div>
     </dl>
     <details class="cl-memory-why"><summary>Why is this due?</summary>
       <p>${escapeHtml(item.scheduleReason)}</p>
@@ -85,9 +91,10 @@ function memoryItem(classroom: string, item: ReviewItem, now: number): string {
       <p>${escapeHtml(evidence)}. ${item.attempts} saved ${item.attempts === 1 ? "exposure" : "exposures"}; probes from the same attempt count together.</p>
       <p>Qualifying delayed successes follow an earlier independent success. Retained evidence needs ${RETENTION_SUCCESSES} qualifying delayed successes, with at least ${RETENTION_SPAN_DAYS} days from the first independent success to the latest delayed one. Application objectives also need delayed transfer.</p>
       <p>Scheduling estimates: stability ${item.stability.toFixed(2)} days; difficulty ${item.difficulty.toFixed(2)} / 10. These estimates are not measured retention or a recall probability. Confidence and self-ratings do not change the schedule.</p>
-      <p>Latest answer: ${time(item.lastAt)}. Feedback/check boundary: ${time(item.lastFeedbackAt)}. Grade revisions keep the original attempt and first feedback time.</p>
+      <p>Latest answer: ${memoryTime(item.lastAt, now)}. Feedback/check boundary: ${memoryTime(item.lastFeedbackAt, now)}. Grade revisions keep the original attempt and first feedback time.</p>
       <p class="cl-memory-feedback">${escapeHtml(item.lastFeedback)}</p>
       <p><a href="${escapeHtml(original)}">Open original lesson</a> · ${escapeHtml(item.quizId)} / ${escapeHtml(item.questionId)}${item.learningRecord ? ` · <a href="/doc/${encodeURIComponent(classroom)}/learning-records/${encodeURIComponent(item.learningRecord)}">Read linked learning record</a>` : ""}</p>
+    </details>
     </details>
   </li>`;
 }
@@ -98,17 +105,14 @@ export function memoryMapSection(classroom: string, items: ReviewItem[], now: nu
   const dueNow = items.filter(
     (i) => i.retiredAt === undefined && !i.needsReteach && i.dueAt <= now,
   ).length;
-  return `<div class="cl-memory-map">
-    <p class="cl-memory-intro">What your saved answers show, and what to revisit next. Teaching coverage and <a href="/c/${encodeURIComponent(classroom)}/course-map">upcoming objectives</a> live in the course map.</p>
-    <p class="cl-progress-note">Strength describes evidence, not mastery. Immediate answers, help, notes and high scores alone do not show lasting recall.</p>
+  return `<section class="cl-section cl-memory-map" aria-label="Review next 14 days">
     <section class="cl-memory-forecast" aria-labelledby="memory-forecast-title">
-      <div class="cl-memory-forecast-heading"><h3 id="memory-forecast-title">Next 14 days</h3><span>${dueNow} due now</span></div>
-      <p id="memory-forecast-note">Saved due dates · UTC. Today includes overdue work and items due later today. Later dates show newly due items once, not a plan of completed reviews.</p>
-      <ol class="cl-memory-bars" aria-hidden="true">${days.map((day, index) => `<li><span>${day.count}</span><div><i style="height:${Math.round((day.count / maximum) * 100)}%"></i></div><span>${index === 0 ? "Today" : new Date(day.at).toISOString().slice(5, 10)}</span></li>`).join("")}</ol>
+      <div class="cl-memory-forecast-heading"><h2 class="cl-section-title" id="memory-forecast-title">Review next 14 days</h2><span>${dueNow} due now</span></div>
+      <p id="memory-forecast-note">Saved due dates · UTC. Today includes overdue work.</p>
+      <ol class="cl-memory-bars" aria-hidden="true">${days.map((day, index) => `<li><span>${day.count}</span><div><i style="height:${Math.round((day.count / maximum) * 100)}%"></i></div><span>${index === 0 ? "Today" : new Date(day.at).toISOString().slice(8, 10)}</span></li>`).join("")}</ol>
       <details><summary>Read forecast as a table</summary><table class="cl-memory-table"><caption>Saved due items by UTC date, including today's backlog</caption><thead><tr><th scope="col">Date (UTC)</th><th scope="col">Due items</th></tr></thead><tbody>${days.map((day) => `<tr><th scope="row">${date(day.at)}</th><td>${day.count}</td></tr>`).join("")}</tbody></table></details>
-      <p class="cl-progress-note">Paused and retired items are excluded. Due dates stay due when deferred. The shared allowance below limits new selections; prepared questions are required. Future completions, repeat reviews and allocations across classrooms are unknown.</p>
     </section>
-  </div>`;
+  </section>`;
 }
 
 export function memoryMapItems(classroom: string, items: ReviewItem[], now: number): string {
