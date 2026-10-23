@@ -163,5 +163,6 @@
   ],
   "errors": [],
   "teacherRequests": 0,
-  "hashesUnchanged": true
+  "hashesUnchanged": true,
+  "exportExplicitRetry": true
 }

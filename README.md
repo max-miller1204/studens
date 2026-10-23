@@ -1,8 +1,8 @@
 # Browser workspace pages — issue 148
 
-Matched captures from base `6bf58c397a0527ad5ed775756fac18225540f7d6` and the issue 148 implementation. Same seeded Rust classroom, query, appearance, state, and viewport. Desktop: 1280×900. Phone: 390×900. Default accent: Indigo, except the four explicitly named accent selections. The runtime-chosen loopback port in Connection necessarily differs. No new motion is introduced.
+Matched captures from base `6bf58c397a0527ad5ed775756fac18225540f7d6` and the issue 148 implementation. Same seeded Rust classroom, query, selected appearance, state, and viewport. Desktop: 1280×900. Phone: 390×900. Default accent: Indigo, except the four explicitly named accent selections. The runtime-chosen loopback port in Connection necessarily differs. No new motion is introduced.
 
-The fixture enters via Today and classroom links. Both runs pass theme assertions, accent reload, search highlights/source/Back/no-results, unchanged classroom hashes, and zero teacher requests. Review history contains one saved, ungraded review. Downloads and explicit source-error retries are covered separately by the repository browser suite.
+The fixture enters via Today and classroom links. Both runs pass theme assertions, accent reload, search highlights/source/Back/no-results, unchanged classroom hashes, and zero teacher requests. Review history contains one saved, ungraded review. The error probe opens the Export controls, corrupts saved publication state, opens the printable classroom through its button, repairs the source, and explicitly retries. The base export-error route does not apply saved themes or viewport metadata; head adds the shared shell. Captures wait for viewport transitions to finish. Successful portable print/Markdown/Anki content is unchanged.
 
 | Capture conditions | Before | After |
 | --- | --- | --- |
@@ -30,6 +30,10 @@ The fixture enters via Today and classroom links. Both runs pass theme assertion
 | export 1280 light | ![Before export 1280 light](before/export-1280-light.png) | ![After export 1280 light](after/export-1280-light.png) |
 | export 390 dark | ![Before export 390 dark](before/export-390-dark.png) | ![After export 390 dark](after/export-390-dark.png) |
 | export 390 light | ![Before export 390 light](before/export-390-light.png) | ![After export 390 light](after/export-390-light.png) |
+| export error 1280 dark | ![Before export error 1280 dark](before/export-error-1280-dark.png) | ![After export error 1280 dark](after/export-error-1280-dark.png) |
+| export error 1280 light | ![Before export error 1280 light](before/export-error-1280-light.png) | ![After export error 1280 light](after/export-error-1280-light.png) |
+| export error 390 dark | ![Before export error 390 dark](before/export-error-390-dark.png) | ![After export error 390 dark](after/export-error-390-dark.png) |
+| export error 390 light | ![Before export error 390 light](before/export-error-390-light.png) | ![After export error 390 light](after/export-error-390-light.png) |
 | learning records 1280 dark | ![Before learning records 1280 dark](before/learning-records-1280-dark.png) | ![After learning records 1280 dark](after/learning-records-1280-dark.png) |
 | learning records 1280 light | ![Before learning records 1280 light](before/learning-records-1280-light.png) | ![After learning records 1280 light](after/learning-records-1280-light.png) |
 | learning records 390 dark | ![Before learning records 390 dark](before/learning-records-390-dark.png) | ![After learning records 390 dark](after/learning-records-390-dark.png) |
