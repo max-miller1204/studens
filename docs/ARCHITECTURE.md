@@ -54,6 +54,46 @@ A list open reserves all classrooms and commits them together. Same-adapter open
 check readiness and retain the native session and model selection. Package, version,
 and configured port mismatches still require an explicit stop or error.
 
+Installed copies may attach from different package paths only when their schema-1
+runtime identities match. `service-main.ts` hashes the installed closure before
+importing `service-runtime.ts` and rechecks it before any ownership claim or restore.
+The service retains that startup digest. Both ordinary attachment and a simultaneous
+startup winner use the same root/port/version/content predicate; the private
+`/attachment` endpoint rehashes the owner's files before accepting attachment.
+The service's synchronous Node module hooks reject resolution outside the hashed
+closure, including undeclared development dependencies, and compare loaded module
+source bytes with the snapshot before evaluation (native addons have no loader
+source and use their installed binary bytes). Lazy imports retain that guard.
+Status stays cheap and reports the startup evidence; it is not an integrity probe.
+Older owners without supported evidence require an explicit stop with their owning
+package. No incompatibility stops, replaces, repairs, or retries a service.
+
+`service-identity.ts` declares the package closure: source, browser assets/templates,
+consumed teaching skills/docs, host manifests, entry points, packaged lesson-checker
+helpers, package manifest and lockfile. Production dependency locations come from
+the v3 lock, but identity hashes their actual installed bytes and checks their
+manifest dependency search paths remain inside that production closure. Nested
+`node_modules` trees are visited by their locked locations, not copied into parent
+hashes. Missing required paths, symbolic links and special files fail explicitly.
+Absent optional packages are allowed and their installed presence changes identity.
+Development packages, tests, verification recipes, Git state and npm's root cache
+metadata are excluded. Adding a runtime entry point or consumed document requires
+updating this explicit closure; future closure/algorithm changes require a schema
+bump rather than accepting older evidence.
+
+This is conservative byte equivalence, not a release signature or an install
+validator. Included dependency documentation and generated executables also affect
+identity. In particular, esbuild's postinstall replaces its launcher, so installs
+with different script policies can legitimately be incompatible even at the same
+version. Full and production-only installs attach when their production bytes
+match. Initial installation must be complete and quiescent: before/after import
+checks detect lasting changes, not an adversarial edit-and-restore during loading.
+Attachment detects later changes without replacing the startup digest; it does not
+freeze files or monitor already attached clients. External host executables, Node,
+configuration and account files are outside this package identity. Each validation
+reads the full closure (roughly 360 ms before module-source capture on the development Linux host); no persistent
+cache or metadata-only shortcut can mask changed dependency bytes.
+
 The teaching brief is read by skills and `begin_teaching`. Keep it out of the system
 prompt and MCP `instructions`. Wake-up prompts must include the classroom, lesson,
 request content, and answering tool because they can arrive many turns later.
