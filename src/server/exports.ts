@@ -5,6 +5,7 @@ import { exportAnki } from "../export-anki.ts";
 import { urlFor } from "../server.ts";
 import { isValidSlug } from "../paths.ts";
 import { escapeHtml } from "../markdown.ts";
+import { shell } from "../pages.ts";
 import { sendHtml, sendNotFound } from "./http.ts";
 export function handleExport(req: http.IncomingMessage, res: http.ServerResponse, url: URL): void {
   const classroom = url.searchParams.get("classroom") ?? "",
@@ -59,7 +60,12 @@ export function handleExport(req: http.IncomingMessage, res: http.ServerResponse
     const retry = `/api/export?${url.searchParams}`;
     sendHtml(
       res,
-      `<!doctype html><html lang="en"><meta charset="utf-8"><title>Cannot export classroom</title><h1>Cannot export classroom</h1><p role="alert">${escapeHtml(message)}</p><p><a href="${escapeHtml(retry)}">Retry export</a> · <a href="/c/${classroom}">Back to classroom</a></p></html>`,
+      shell({
+        title: "Cannot export classroom",
+        bodyClass: "cl-shell cl-workspace-page",
+        breadcrumb: `<a class="cl-crumb" href="/c/${encodeURIComponent(classroom)}">Back to classroom</a><span class="cl-crumb-sep" aria-hidden="true">/</span><span class="cl-crumb cl-crumb-current">Export</span>`,
+        body: `<div class="cl-hero"><h1>Cannot export classroom</h1><p class="cl-lede">Correct the saved source, then retry this export.</p></div><div class="cl-inline-error" role="alert"><span>${escapeHtml(message)}</span><a class="cl-button cl-button-secondary" href="${escapeHtml(retry)}">Retry export</a></div>`,
+      }),
       500,
     );
   }

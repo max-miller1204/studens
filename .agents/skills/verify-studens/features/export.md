@@ -26,7 +26,11 @@ The learner takes saved public classroom material into Anki, print, or Markdown.
 
 ## Driving it with playwright-cli
 
-The default browser suite includes this capability. For a focused check:
+The default browser suite includes this capability. The [document-page drive](documents.md)
+also captures the export panel and its specific source-error/explicit-retry page
+at 1280px and 390px in light/dark, through the actual Export controls.
+
+For a focused check:
 
 ```sh
 node --input-type=module -e 'import("./scripts/e2e-export-browser.ts").then(m=>m.verifyClassroomExportBrowser("/tmp/studens-export-browser"))'

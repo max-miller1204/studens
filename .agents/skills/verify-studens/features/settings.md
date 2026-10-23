@@ -4,6 +4,7 @@ Edit learner preferences, connection settings, and the model for a persistent cl
 
 ## Sub-features
 
+- Preview the selected accent in the Settings picker; use the shared sidebar to navigate.
 - Save a device-local theme (System, Light, Dark) and accent (Indigo, Copper, Green, Neutral).
 - Apply appearance before paint on shell, lesson, review, document, and reference pages.
 - Keep keyboard focus, suppress switch transitions for one frame, and retain visible forced-color boundaries.
