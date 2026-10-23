@@ -1607,6 +1607,19 @@ textarea.cl-input {
   resize: vertical;
 }
 
+/* Shared answer surfaces, including native selects and unit/blank controls. */
+.cl-q :where(textarea, input:not([type]), input[type="text"], input[type="number"], select) {
+  box-sizing: border-box;
+  max-width: 100%;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--cl-border-strong);
+  border-radius: var(--cl-radius-sm);
+  background: var(--cl-bg);
+  color: var(--cl-text);
+  font: inherit;
+  box-shadow: 0 0 0 1px var(--cl-border);
+}
+
 .cl-quiz-footer {
   display: flex;
   align-items: center;
@@ -1631,41 +1644,91 @@ textarea.cl-input {
 }
 
 .cl-grade-banner {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto 1fr;
   align-items: baseline;
-  gap: 0.75rem;
-  margin: 0 0 1.2rem;
-  padding: 0.85rem 1rem;
+  gap: 0.75rem 1rem;
+  margin: 0 0 1rem;
+  padding: 1.25rem;
+  border: 1px solid var(--cl-border);
   border-radius: var(--cl-radius-sm);
   background: var(--cl-surface-2);
+  color: var(--cl-text);
   font-family: var(--cl-sans);
 }
 
 .cl-grade-score {
-  font-size: 1.5rem;
-  font-weight: 700;
+  font-size: clamp(2rem, 6vw, 3rem);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.04em;
   line-height: 1;
 }
-
-.cl-grade-banner[data-tone="pass"] {
-  background: var(--cl-success-soft);
-  color: var(--cl-success);
+.cl-grade-score > span {
+  font-size: 0.5em;
+  margin-left: 0.15em;
+  color: var(--cl-text-muted);
+}
+.cl-grade-count {
+  font-size: 0.875rem;
+  color: var(--cl-text-muted);
+}
+.cl-grade-meter {
+  grid-column: 1 / -1;
+  height: 0.35rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--cl-border);
+}
+.cl-grade-meter > span {
+  display: block;
+  height: 100%;
+  background: var(--cl-accent);
+  transform-origin: left;
 }
 
-.cl-grade-banner[data-tone="mixed"] {
-  background: var(--cl-accent-soft);
-  color: var(--cl-accent);
+/* Only a newly completed attempt reveals. Restores and revisions stay still. */
+[data-cl-grade][data-reveal="true"] .cl-grade-banner,
+[data-cl-grade][data-reveal="true"] .cl-grade-feedback,
+.cl-q-verdict[data-reveal="true"] {
+  animation: cl-result-reveal 300ms ease-out both;
 }
-
-.cl-grade-banner[data-tone="fail"] {
-  background: var(--cl-danger-soft);
-  color: var(--cl-danger);
+[data-cl-grade][data-reveal="true"] .cl-grade-feedback {
+  animation-delay: 100ms;
 }
-
-/* A pretest score is information, not a verdict. */
-.cl-grade-banner[data-tone="info"] {
-  background: var(--cl-surface-2);
-  color: var(--cl-text);
+[data-cl-grade][data-reveal="true"] .cl-grade-meter > span {
+  animation: cl-score-fill 600ms cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+@keyframes cl-result-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(0.35rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes cl-score-fill {
+  from {
+    transform: scaleX(0);
+  }
+}
+@keyframes cl-result-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-cl-grade][data-reveal="true"] .cl-grade-banner,
+  [data-cl-grade][data-reveal="true"] .cl-grade-feedback,
+  .cl-q-verdict[data-reveal="true"],
+  [data-cl-grade][data-reveal="true"] .cl-grade-meter > span {
+    animation-name: cl-result-fade;
+  }
 }
 
 .cl-grade-feedback {
@@ -1682,8 +1745,10 @@ textarea.cl-input {
   gap: 0.25rem;
   margin-top: 0.6rem;
   padding: 0.75rem 0.85rem;
-  border-left: 3px solid currentColor;
+  border: 1px solid var(--cl-border);
   border-radius: var(--cl-radius-sm);
+  background: var(--cl-surface-2);
+  color: var(--cl-text);
   font-family: var(--cl-sans);
   font-size: 0.875rem;
   line-height: 1.5;
@@ -1691,7 +1756,24 @@ textarea.cl-input {
 }
 
 .cl-q-verdict-label {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
   font-weight: 600;
+}
+.cl-verdict-icon {
+  flex: none;
+  font-size: 1.1em;
+  line-height: 1;
+}
+.cl-q-verdict[data-outcome="correct"] .cl-q-verdict-label {
+  color: var(--cl-success);
+}
+.cl-q-verdict[data-outcome="incorrect"] .cl-q-verdict-label {
+  color: var(--cl-danger);
+}
+.cl-q-verdict[data-outcome="partial"] .cl-q-verdict-label {
+  color: var(--cl-accent);
 }
 
 .cl-q-verdict-feedback {
@@ -1704,16 +1786,6 @@ textarea.cl-input {
 
 .cl-q-verdict-feedback > :last-child {
   margin-bottom: 0;
-}
-
-.cl-q-verdict[data-correct="true"] {
-  background: var(--cl-success-soft);
-  color: var(--cl-success);
-}
-
-.cl-q-verdict[data-correct="false"] {
-  background: var(--cl-danger-soft);
-  color: var(--cl-danger);
 }
 
 /* ── Question types ───────────────────────────────────────────────────────── */
@@ -2090,12 +2162,6 @@ figure:has(> .cl-diagram) figcaption {
     background: #fff;
     color: #000;
   }
-}
-
-.cl-q-verdict[data-outcome="partial"] {
-  color: var(--cl-accent);
-  background: var(--cl-accent-soft);
-  border-left: 3px solid currentColor;
 }
 
 .cl-teacher {
@@ -3579,4 +3645,43 @@ body.cl-app.cl-lesson-page {
 }
 .cl-daily-details summary {
   cursor: pointer;
+}
+
+.cl-q :is(input, textarea, select, button, [role="button"]):focus-visible {
+  outline: 2px solid var(--cl-accent);
+  outline-offset: 3px;
+}
+.cl-q :is(textarea, input, select):disabled {
+  opacity: 1;
+  color: var(--cl-text-muted);
+  -webkit-text-fill-color: var(--cl-text-muted);
+  cursor: default;
+}
+.cl-q .cl-options label:has(input:checked) {
+  border-color: var(--cl-accent);
+  background: var(--cl-accent-soft);
+}
+.cl-quiz-footer {
+  flex-wrap: wrap;
+}
+.cl-quiz-status {
+  flex-wrap: wrap;
+}
+.cl-criteria-disclosure,
+.cl-expected {
+  border: 0;
+  border-top: 1px solid var(--cl-border);
+  border-radius: 0;
+  padding: 0.65rem 0 0;
+  margin-top: 0.65rem;
+  color: var(--cl-text);
+}
+:is(.cl-criteria-disclosure, .cl-expected, .cl-disputes) summary {
+  cursor: pointer;
+  font: 500 0.85rem/1.6 var(--cl-sans);
+  color: var(--cl-text-muted);
+}
+:is(.cl-criteria-disclosure, .cl-expected, .cl-disputes) summary:focus-visible {
+  outline: 2px solid var(--cl-accent);
+  outline-offset: 3px;
 }

@@ -9,7 +9,9 @@ The learner submits typed answers and reads grades on the lesson page.
 - Study a faded worked example, attempt one more step per new case, and compare reasoning locally.
 - Grade closed answers immediately without a teacher turn. Keep saved machine allocations through recovery.
 - Preserve drafts and optional assistance reports.
-- Lock a graded quiz. Display partial credit and saved criterion allocations.
+- Lock a graded quiz. Show the score meter, correct count, feedback and static verdict icons.
+- Reveal a newly completed attempt once; restore results immediately on reload.
+- Expand criterion, dispute and expected-answer rows beside each question.
 - Keep the newest attempt and grade revision across reload and two tabs.
 - Dispute a graded answer with a saved reason, teacher response and immutable grade history.
 - Release gated teaching after a pretest grade.
@@ -19,7 +21,9 @@ The learner submits typed answers and reads grades on the lesson page.
 1. Open a lesson.
 2. Answer its quiz.
 3. Select `Submit for grading`.
-4. Read the grade and feedback.
+4. Read the score block and per-question feedback.
+5. Open `Criterion breakdown`, `I think this deserves credit` or
+   `Expected answer and criteria` for supporting details.
 
 For practice between sections, answer the short check and select `Check answer`.
 Read the explanation, revise if needed, and continue to the next section.
@@ -28,15 +32,17 @@ Read the explanation, revise if needed, and continue to the next section.
 
 Run `npm run verify -- browser --artifacts /tmp/studens-quizzes`.
 
-The suite drives `form.cl-quiz` and checks `data-state`. It submits all contract examples, reloads, and compares stored answers with the page. It checks `Graded` is disabled, partial verdicts remain visible, and a stale grade cannot replace the active attempt.
+The suite drives `form.cl-quiz` and checks `data-state`. It submits all contract examples, reloads, and compares stored answers with the page. It checks `Graded` is disabled, partial verdicts remain visible, and a stale grade cannot replace the active attempt. A newly completed attempt reveals its score, summary and question feedback with 100ms staggering and 300ms reveals. The meter uses a 600ms fill; reduced motion uses opacity only. Reload restores the result without replaying the reveal. Inspect `all-types-new-result.png` and `partial-credit-and-all-types.png`.
 
+Open `Criterion breakdown` to read saved allocations; it starts collapsed.
 The criterion fixture submits a partially correct calculation against definitions
 saved before submission. It checks met and missed rows (2/2 and 0/2), the 2/4 total,
 private snapshots, locked controls, reload, and an explicit explanation revision
 that retains the original grade file. Inspect `criteria/partial.json`,
 `criteria/history.json`, and matching desktop/375px screenshots. Invalid rubric
 points refuse submission without saving an attempt. An incomplete teacher allocation
-keeps a specific error after reload and requires `Retry request`; the corrected plan
+shows `Grading your quiz` while running, then keeps its specific failure beside
+the saved answers after reload. It requires `Retry request`; the corrected plan
 saves one grade. Inspect `criteria/rejected-plan.json` and `criteria/retried-plan.json`.
 The component fixture also saves 1/2 on a partly met criterion and 0/2 on a missed
 criterion, then reloads the unchanged 1/4 total. Inspect `criteria/partly-met.json`
@@ -210,8 +216,8 @@ failed target and distinguish a corrected learner action from lesson regeneratio
 
 On a graded answer, open `I think this deserves credit`. Explain why the original
 answer meets the criteria, then select `Send grade dispute` or use Ctrl/Command +
-Enter. The answer remains locked. Read the linked response beside it and in the
-teacher panel. `Grade history` shows original and revised point allocations and
+Enter. The answer remains locked. Open `Dispute history` to read the linked response beside it, or read it in the
+teacher panel. Activity links open the matching dispute row before scrolling. `Grade history` shows original and revised point allocations and
 feedback. Machine points stay code-owned: the teacher can explain the result or flag
 an authoring defect. A judgment revision uses the original submission and rubric.
 Historical submissions without a saved rubric digest show a specific refusal.
@@ -239,8 +245,10 @@ retirement without another exposure or learning record.
 
 `node scripts/e2e-expected-answers.ts /tmp/studens-expected-answers` drives the
 actual lesson shell through saved grading, a new corrective panel task, the learner's
-reply, and a validated retrieval check. Correct original answers show the expected
-answer, full/partial credit guidance and declared criteria. Original misses wait
+reply, and a validated retrieval check. Open `Expected answer and criteria` on a graded question. Correct original answers
+show the expected answer, full/partial credit guidance and declared criteria.
+Availability refreshes preserve an opened disclosure; reload starts collapsed.
+Open an error row before using `Retry expected answer`. Original misses wait
 for an exact corrective check; disputes cannot bypass that wait. Graded pretests
 release without a corrective check. All ten supported response types render with
 readable option/item/pair/blank labels and numeric units/tolerance; code keys are

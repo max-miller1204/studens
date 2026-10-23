@@ -182,8 +182,11 @@ export async function driveDisputeProbe(
       root,
       `async page=>{
       await page.reload(); await page.locator('form[data-state="graded"]').waitFor();
+      await page.locator('.cl-q[data-question-id="mse"] .cl-dispute-history > summary').click();
       await page.locator('.cl-q[data-question-id="mse"] .cl-dispute-response').waitFor();
       if(!await page.locator('.cl-q[data-question-id="mse"] > textarea').isDisabled())throw new Error('Original answer unlocked');
+      await page.locator('.cl-expected').first().waitFor();
+      if(!await page.locator('.cl-q').evaluateAll(questions=>questions.every(q=>Boolean(q.querySelector('.cl-q-verdict').compareDocumentPosition(q.querySelector('.cl-expected')) & Node.DOCUMENT_POSITION_FOLLOWING))))throw new Error('A grade revision moved expected answers ahead of feedback');
       await page.getByText('Grade history (2)',{exact:true}).click();
       await page.getByRole('heading',{name:/Original grade/}).waitFor();
       await page.setViewportSize({width:1280,height:900});${shot("judgment-desktop")}
@@ -206,7 +209,8 @@ export async function driveDisputeProbe(
       session,
       root,
       `async page=>{
-      await page.reload(); await page.locator('.cl-q[data-question-id="exact"] .cl-dispute-response').waitFor();
+      await page.reload(); await page.locator('.cl-q[data-question-id="exact"] .cl-dispute-history > summary').click(); await page.locator('.cl-q[data-question-id="exact"] .cl-dispute-response').waitFor();
+      await page.locator('.cl-q[data-question-id="mse"] .cl-dispute-history > summary').click();
       await page.locator('.cl-q[data-question-id="mse"] .cl-dispute-response').waitFor();
       const state=await (await page.request.get(${JSON.stringify(stateUrl)})).text();
       for(const secret of ['rubricCriteria','deterministicGrades','privateRubric','"rubric":','"teachingPlan":'])if(state.includes(secret))throw new Error('Private dispute snapshot exposed: '+secret);
