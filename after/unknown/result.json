@@ -1,0 +1,194 @@
+{
+  "before": {
+    "key": "001-ownership/check-1/q1",
+    "lesson": "001-ownership",
+    "quizId": "check-1",
+    "questionId": "q1",
+    "questionKeys": [
+      "001-ownership/check-1/q1"
+    ],
+    "prompts": [
+      "Prompt for q1"
+    ],
+    "prompt": "Prompt for q1",
+    "box": 0,
+    "stability": 1,
+    "difficulty": 5.1618,
+    "memoryPolicy": "studens-fsrs45-v1",
+    "lastFeedbackAt": 1792614249857,
+    "dueAt": 1792700649857,
+    "context": "unknown",
+    "progress": "context-unknown",
+    "delayedSuccesses": 0,
+    "delayedTransfers": 0,
+    "evidenceSpanDays": 0,
+    "elapsedDays": 0,
+    "scheduleReason": "Unknown independence: keep the scheduled review; no retention claim.",
+    "schedulePolicy": "elapsed-independent-v1",
+    "lastAt": 1792614249856,
+    "lastCorrect": true,
+    "lastCredit": 1,
+    "lastAnswer": "owner",
+    "lastFeedback": "Right.",
+    "attempts": 1,
+    "misses": 0,
+    "gapOpen": false,
+    "needsReteach": false
+  },
+  "after": {
+    "key": "001-ownership/check-1/q1",
+    "lesson": "001-ownership",
+    "quizId": "check-1",
+    "questionId": "q1",
+    "questionKeys": [
+      "001-ownership/check-1/q1"
+    ],
+    "prompts": [
+      "Prompt for q1",
+      "A value moves into a new scope. Who releases it?"
+    ],
+    "prompt": "Prompt for q1",
+    "box": 0,
+    "stability": 1,
+    "difficulty": 5.1618,
+    "memoryPolicy": "studens-fsrs45-v1",
+    "lastFeedbackAt": 1792787052432,
+    "dueAt": 1792700649857,
+    "context": "unknown",
+    "progress": "context-unknown",
+    "delayedSuccesses": 0,
+    "delayedTransfers": 0,
+    "evidenceSpanDays": 0,
+    "elapsedDays": 2.0000297916666665,
+    "scheduleReason": "Unknown independence: keep the scheduled review; no retention claim.",
+    "schedulePolicy": "elapsed-independent-v1",
+    "lastAt": 1792787052431,
+    "lastCorrect": true,
+    "lastCredit": 1,
+    "lastAnswer": "The new owner",
+    "lastFeedback": "The current owner releases the value.",
+    "attempts": 2,
+    "misses": 0,
+    "gapOpen": false,
+    "needsReteach": false
+  },
+  "events": [
+    {
+      "key": "001-ownership/check-1/q1",
+      "questionKey": "001-ownership/check-1/q1",
+      "sourceQuestionKey": "001-ownership/check-1/q1",
+      "at": 1792614249856,
+      "attemptId": "31507265-ba4b-4de4-92fc-982e2ceac7e2",
+      "feedbackAt": 1792614249857,
+      "gapIndependent": false,
+      "correct": true,
+      "credit": 1,
+      "prompt": "Prompt for q1",
+      "answer": "owner",
+      "feedback": "Right."
+    },
+    {
+      "key": "001-ownership/check-1/q1",
+      "at": 1792787052431,
+      "attemptId": "4b2598cd-153d-48da-9677-ed894a511682",
+      "feedbackAt": 1792787052432,
+      "early": false,
+      "gapIndependent": false,
+      "correct": true,
+      "credit": 1,
+      "prompt": "A value moves into a new scope. Who releases it?",
+      "answer": "The new owner",
+      "feedback": "The current owner releases the value."
+    }
+  ],
+  "submission": [
+    {
+      "classroom": "rust",
+      "lesson": "review-40795e8d-a33a-4cca-a610-540bf7e826e5",
+      "quizId": "review",
+      "quizTitle": "Question 1",
+      "kind": "review",
+      "answers": [
+        {
+          "questionId": "r1",
+          "type": "choice",
+          "prompt": "A value moves into a new scope. Who releases it?",
+          "reviewOf": "001-ownership/check-1/q1",
+          "value": "owner",
+          "label": "The new owner",
+          "learning": {
+            "objectiveId": "r1",
+            "objective": {
+              "statement": "Explain ownership.",
+              "application": false
+            },
+            "task": "retrieval",
+            "support": "independent",
+            "assistance": "unknown"
+          }
+        }
+      ],
+      "earlyReviewKeys": [],
+      "teachingPlan": {
+        "version": 1,
+        "objectives": {
+          "r1": {
+            "statement": "Explain ownership.",
+            "application": false
+          }
+        },
+        "quizzes": {
+          "review": {
+            "purpose": "assessment",
+            "questions": {
+              "r1": {
+                "objective": "r1",
+                "task": "retrieval",
+                "support": "independent"
+              }
+            }
+          }
+        }
+      },
+      "deterministicGrades": [
+        {
+          "questionId": "r1",
+          "correct": true,
+          "pointsEarned": 1,
+          "pointsPossible": 1,
+          "feedback": "The current owner releases the value."
+        }
+      ],
+      "rubricCriteria": {},
+      "id": "4b2598cd-153d-48da-9677-ed894a511682",
+      "attempt": 1,
+      "submittedAt": 1792787052431,
+      "rubricDigest": "f95ec16ed9b9ab254d61dd8f57f5d4d424210728cf1435c493e139b205f527ef",
+      "answerSourceDigest": "23cbf648b681f205e7a7b7a72fe92051006ffe50cbecb0b56d1a3dd741d71c40",
+      "assessmentContract": 1,
+      "instructionalContract": 1
+    }
+  ],
+  "grades": [
+    {
+      "submissionId": "4b2598cd-153d-48da-9677-ed894a511682",
+      "classroom": "rust",
+      "lesson": "review-40795e8d-a33a-4cca-a610-540bf7e826e5",
+      "quizId": "review",
+      "score": 100,
+      "feedbackMarkdown": "Graded against the private answer key.",
+      "feedbackHtml": "<p>Graded against the private answer key.</p>\n",
+      "questions": [
+        {
+          "questionId": "r1",
+          "correct": true,
+          "pointsEarned": 1,
+          "pointsPossible": 1,
+          "feedback": "The current owner releases the value.",
+          "feedbackHtml": "<p>The current owner releases the value.</p>\n"
+        }
+      ],
+      "gradedAt": 1792787052432
+    }
+  ]
+}

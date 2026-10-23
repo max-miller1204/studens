@@ -1,0 +1,56 @@
+
+ RUN  v4.1.12 /home/maxmiller/.t3/worktrees/studens/t3-0d6b21d7
+
+ ❯ test/review.test.ts (27 tests | 1 failed) 245ms
+     × spaces answer-derived independent legacy retrieval without objective context 20ms
+ ❯ test/review-pool.test.ts (6 tests | 1 failed) 286ms
+   × reads legacy original numeric rubrics but keeps optional modern pools and all variants strict 8ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/review-pool.test.ts > reads legacy original numeric rubrics but keeps optional modern pools and all variants strict
+Error: Private rubric check-1/q1: Invalid machine-checkable expected answer for numeric.
+ ❯ parseRubric src/rubric.ts:79:15
+     77|         }
+     78|       } catch (error) {
+     79|         throw new Error(`Private rubric ${where}: ${(error as Error).m…
+       |               ^
+     80|       }
+     81|     }
+ ❯ authoredVariants src/review-variants.ts:93:15
+ ❯ lessonPools src/review-pool.ts:57:17
+ ❯ test/review-pool.test.ts:135:10
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  test/review.test.ts > scheduleItems > spaces answer-derived independent legacy retrieval without objective context
+AssertionError: expected { key: '001-cost/check/q1', …(33) } to match object { box: 1, context: 'unknown', …(2) }
+(30 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "box": 1,
++   "box": 0,
+    "context": "unknown",
+    "objective": undefined,
+    "progress": "context-unknown",
+  }
+
+ ❯ test/review.test.ts:48:18
+     46|     const history = [event(0, { evidence: undefined }), event(2, { evi…
+     47|     const item = scheduleItems(history)[0];
+     48|     expect(item).toMatchObject({ box: 1, context: "unknown", objective…
+       |                  ^
+     49|     expect(item.dueAt).toBeGreaterThan(T0 + 3 * DAY_MS);
+     50|     for (const gapIndependent of [false, undefined]) {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  2 failed (2)
+      Tests  2 failed | 31 passed (33)
+   Start at  16:22:17
+   Duration  3.40s (transform 2.73s, setup 0ms, import 3.39s, tests 531ms, environment 0ms)
+

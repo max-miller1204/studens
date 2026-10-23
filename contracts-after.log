@@ -1,0 +1,9 @@
+
+ RUN  v4.1.12 /home/maxmiller/.t3/worktrees/studens/t3-0d6b21d7
+
+
+ Test Files  5 passed (5)
+      Tests  76 passed (76)
+   Start at  16:23:01
+   Duration  1.19s (transform 1.61s, setup 0ms, import 2.56s, tests 427ms, environment 1ms)
+

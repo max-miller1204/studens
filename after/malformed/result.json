@@ -1,0 +1,40 @@
+{
+  "before": {
+    "key": "001-ownership/check-1/q1",
+    "lesson": "001-ownership",
+    "quizId": "check-1",
+    "questionId": "q1",
+    "questionKeys": [
+      "001-ownership/check-1/q1"
+    ],
+    "prompts": [
+      "Prompt for q1"
+    ],
+    "prompt": "Prompt for q1",
+    "box": 0,
+    "stability": 1,
+    "difficulty": 5.1618,
+    "memoryPolicy": "studens-fsrs45-v1",
+    "lastFeedbackAt": 1792614254805,
+    "dueAt": 1792700654805,
+    "context": "unknown",
+    "progress": "context-unknown",
+    "delayedSuccesses": 0,
+    "delayedTransfers": 0,
+    "evidenceSpanDays": 0,
+    "elapsedDays": 0,
+    "scheduleReason": "Unknown independence: keep the scheduled review; no retention claim.",
+    "schedulePolicy": "elapsed-independent-v1",
+    "lastAt": 1792614254804,
+    "lastCorrect": true,
+    "lastCredit": 1,
+    "lastAnswer": "owner",
+    "lastFeedback": "Right.",
+    "attempts": 1,
+    "misses": 0,
+    "gapOpen": false,
+    "needsReteach": false
+  },
+  "error": "Malformed new variant rejected before publication",
+  "review": null
+}
