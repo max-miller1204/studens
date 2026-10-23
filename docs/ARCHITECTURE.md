@@ -227,8 +227,10 @@ points. See [code exercises](CODE-EXERCISES.md) for the authoring and isolation 
   live-session requests, which must finish in their previous package. Only explicit
   authoring enables web research. Dedicated Codex processes disable
   installed plugins, connected apps, execution and other unrelated tools, disable
-  configured MCP servers, and require an empty per-thread MCP inventory before
-  inference. An empty configuration map alone does not remove plugin tools.
+  configured MCP servers, and require a per-thread MCP inventory with no accessible
+  tools, resources or resource templates before inference. Listed servers must
+  report an explicit disabled runtime status and no advertised capabilities. An empty
+  configuration map alone does not remove plugin tools.
   Provider lesson responses carry HTML, rubric entries, objective mappings and private
   variants as typed data. Code serializes both private JSON files and the canonical
   saved publication call; models never encode nested JSON strings. New lesson
