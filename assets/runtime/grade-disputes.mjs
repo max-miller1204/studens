@@ -21,6 +21,8 @@ export function createGradeDisputes(config) {
     // The browser could not scroll before the saved history arrived. Consume
     // this navigation once; normal state refreshes must leave the reader alone.
     pendingFragment = null;
+    const disclosure = target.closest("details");
+    if (disclosure) disclosure.open = true;
     target.scrollIntoView({ block: "center" });
   }
   window.addEventListener("hashchange", () => {
@@ -59,7 +61,10 @@ export function createGradeDisputes(config) {
       }
       let history = section.querySelector(".cl-dispute-history");
       if (!history) {
-        history = document.createElement("div");
+        history = document.createElement("details");
+        const toggle = document.createElement("summary");
+        toggle.textContent = "Dispute history";
+        history.append(toggle);
         history.className = "cl-dispute-history";
         history.setAttribute("aria-live", "polite");
         section.append(history);
@@ -67,7 +72,9 @@ export function createGradeDisputes(config) {
       const linked = saved.filter(
         (d) => d.submissionId === submission.id && d.questionId === q.questionId,
       );
-      history.replaceChildren();
+      const historyToggle = history.querySelector("summary");
+      history.replaceChildren(historyToggle);
+      history.hidden = linked.length === 0;
       for (const d of linked) {
         const item = document.createElement("div");
         item.className = "cl-dispute";

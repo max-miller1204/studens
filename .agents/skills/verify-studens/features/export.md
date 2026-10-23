@@ -81,7 +81,9 @@ node --input-type=module -e 'import("./scripts/e2e-export-template-browser.ts").
 ```
 
 This controlled fixture submits a real diagnostic, releases its original template,
-then grades choice/multi/order/match/locate answers through lesson controls. Inspect
+then grades choice/multi/order/match/locate answers through lesson controls. Open
+`Expected answer and criteria` on the choice question to compare its original public
+label before exporting. Inspect
 `learner.json`, `graded-{off,on}.{md,apkg,pdf}` and `graded-on-print.png`.
 Inspect `*-downloads.json`, `*-markdown-reading.json` and `*-reading.png` for
 the exact public choice/multi labels and non-overlapping text geometry. Checks

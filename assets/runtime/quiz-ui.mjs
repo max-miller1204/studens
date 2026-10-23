@@ -1,4 +1,5 @@
 /** Hydrate quiz controls, collect answers, and restore attempts, grades, and drafts. */
+import { TEACHER_WORKING } from "./teacher-status.mjs";
 import { createGradeDisputes } from "./grade-disputes.mjs";
 import { createExpectedAnswers } from "./expected-answers.mjs";
 import { gradePointsNotice, gradeSummary, questionGradeLabel, questionOutcome } from "./grade.mjs";
@@ -27,6 +28,8 @@ import { enhanceCode, collectCode, restoreCode, lockCode } from "./code-ui.mjs";
  */
 export function createQuizzes({ config, drafts, placeTeacherPanel }) {
   const { scheduleDraft, flushDraft } = drafts;
+  let teacherState = null;
+  const revealed = new Set();
   const disputes = createGradeDisputes(config);
   const expectedAnswers = createExpectedAnswers(config);
   /** Elements inside a question. */
@@ -593,7 +596,7 @@ export function createQuizzes({ config, drafts, placeTeacherPanel }) {
     // Save the last keystrokes before the submission. The server removes the draft
     // only when it accepts the submission.
     await flushDraft(`quiz:${form.dataset.quizId}`);
-    setQuizStatus(form, '<span class="cl-spinner"></span> Sent to your teacher for grading…', true);
+    setQuizStatus(form, '<span class="cl-spinner"></span> Saving your answers for grading…', true);
 
     let response;
     try {
@@ -795,6 +798,10 @@ export function createQuizzes({ config, drafts, placeTeacherPanel }) {
     // The grade can arrive through SSE before the submit response arrives.
     if (!grade && form.dataset.submissionId === submission.id && form.dataset.state === "graded")
       return;
+    const reveal = Boolean(
+      grade && form.dataset.state === "submitted" && !revealed.has(submission.id),
+    );
+    if (grade) revealed.add(submission.id);
     if (grade) form.dataset.activeGrade = String(grade.gradedAt);
     form.dataset.activeAttempt = String(attempts);
     form.dataset.submissionId = submission.id;
@@ -826,43 +833,61 @@ export function createQuizzes({ config, drafts, placeTeacherPanel }) {
         `<span class="cl-spinner"></span> Submission saved. Waiting for your teacher to grade it.${attemptNote}${config.delivery === "wait" ? " Your teacher receives page requests while listening. If no grade arrives, return to chat and ask them to listen." : ""}`,
         true,
       );
+      showGradingActivity(form);
       return;
     }
 
     setQuizState(form, "graded");
     setQuizStatus(form, `Graded ${new Date(grade.gradedAt).toLocaleString()}${attemptNote}`);
-    renderGrade(form, grade);
+    renderGrade(form, grade, reveal);
     disputes.history(form, state.history ?? [grade]);
     disputes.render(form, state);
     expectedAnswers.apply(form, state);
   }
 
-  function renderGrade(form, grade) {
+  function showGradingActivity(form) {
+    if (form.dataset.state !== "submitted") return;
+    const request = teacherState?.requests.find(
+      (r) => r.kind === "quiz" && r.target === form.dataset.submissionId && r.status !== "done",
+    );
+    if (!request) return;
+    if (request.status === "failed") {
+      setQuizStatus(
+        form,
+        `Grading failed: ${request.error}. Use Retry request in the teacher panel.`,
+      );
+      const link = document.createElement("a");
+      link.href = "#cl-teacher";
+      link.textContent = "View request";
+      form.querySelector(".cl-quiz-status").append(" ", link);
+    } else {
+      setQuizStatus(
+        form,
+        `${request.status === "queued" ? "Queued: " : ""}${TEACHER_WORKING.quiz}… Your answers are saved.`,
+      );
+    }
+  }
+
+  function renderGrade(form, grade, reveal) {
     form.querySelector("[data-cl-grade]")?.remove();
 
     const summary = document.createElement("div");
     summary.dataset.clGrade = "";
-    // A pretest comes before teaching, so its score is information, not a verdict.
-    const tone =
-      form.dataset.kind === "pretest"
-        ? "info"
-        : grade.score >= 80
-          ? "pass"
-          : grade.score >= 50
-            ? "mixed"
-            : "fail";
+    if (reveal) summary.dataset.reveal = "true";
+    const score = grade.score;
     summary.innerHTML = `
-    <div class="cl-grade-banner" data-tone="${tone}">
-      <span class="cl-grade-score">${Math.round(grade.score)}%</span>
-      <span>${gradeSummary(grade.questions)}</span>
+    <div class="cl-grade-banner">
+      <span class="cl-grade-score">${Math.round(score)}<span>%</span></span>
+      <span class="cl-grade-count">${escapeText(gradeSummary(grade.questions))}</span>
+      <div class="cl-grade-meter" role="meter" aria-label="Quiz score" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${score}"><span style="transform: scaleX(${score / 100})"></span></div>
     </div>
-    <div class="cl-grade-feedback">${grade.feedbackHtml || ""}</div>
+    <div class="cl-grade-feedback">${grade.feedbackHtml || escapeText(grade.feedbackMarkdown || "")}</div>
     ${gradePointsNotice(grade) ? `<p class="cl-quiz-status">${escapeText(gradePointsNotice(grade))}</p>` : ""}`;
     const anchor = form.querySelector(".cl-quiz-kind") ?? form.querySelector(".cl-quiz-title");
     if (anchor) anchor.after(summary);
     else form.prepend(summary);
 
-    for (const questionGrade of grade.questions) {
+    for (const [index, questionGrade] of grade.questions.entries()) {
       const question = form.querySelector(
         `.cl-q[data-question-id="${cssEscape(questionGrade.questionId)}"]`,
       );
@@ -871,10 +896,20 @@ export function createQuizzes({ config, drafts, placeTeacherPanel }) {
       const verdict = document.createElement("div");
       verdict.className = "cl-q-verdict";
       verdict.dataset.correct = String(questionGrade.correct);
-      verdict.dataset.outcome = questionOutcome(questionGrade);
-      verdict.innerHTML = `<div class="cl-q-verdict-label">${escapeText(questionGradeLabel(questionGrade))}</div><div class="cl-q-verdict-feedback">${
+      const outcome = questionOutcome(questionGrade);
+      verdict.dataset.outcome = outcome;
+      if (reveal) {
+        verdict.dataset.reveal = "true";
+        verdict.style.animationDelay = `${(index + 2) * 100}ms`;
+      }
+      verdict.innerHTML = `<div class="cl-q-verdict-label"><span class="cl-verdict-icon" aria-hidden="true">${outcome === "correct" ? "✓" : outcome === "partial" ? "◐" : "×"}</span>${escapeText(questionGradeLabel(questionGrade))}</div><div class="cl-q-verdict-feedback">${
         questionGrade.feedbackHtml || escapeText(questionGrade.feedback)
       }</div>`;
+      const details = document.createElement("details");
+      details.className = "cl-criteria-disclosure";
+      const toggle = document.createElement("summary");
+      toggle.textContent = "Criterion breakdown";
+      details.append(toggle);
       if (questionGrade.criteria?.length) {
         const list = document.createElement("ul");
         list.className = "cl-q-criteria";
@@ -890,14 +925,18 @@ export function createQuizzes({ config, drafts, placeTeacherPanel }) {
           item.innerHTML = `<div><strong>${escapeText(outcome)} · ${escapeText(criterion.description)}</strong> <span>(${escapeText(String(criterion.pointsEarned))}/${escapeText(String(criterion.pointsPossible))} points)</span></div><div>${criterion.feedbackHtml || escapeText(criterion.feedback)}</div>`;
           list.appendChild(item);
         }
-        verdict.appendChild(list);
+        details.append(list);
       } else {
         const notice = document.createElement("p");
         notice.className = "cl-quiz-status";
         notice.textContent = "No criterion breakdown was recorded for this answer.";
-        verdict.appendChild(notice);
+        details.append(notice);
       }
-      question.appendChild(verdict);
+      verdict.append(details);
+      // A grade revision must keep the primary feedback before existing disclosures.
+      const expected = question.querySelector(".cl-expected");
+      if (expected) expected.before(verdict);
+      else question.append(verdict);
     }
   }
   /** The unsubmitted answers of a quiz, or null when it has none. */
@@ -1033,6 +1072,8 @@ export function createQuizzes({ config, drafts, placeTeacherPanel }) {
     applyQuizState,
     restoreDraft,
     updateTeacher(state) {
+      teacherState = state;
+      for (const form of quizForms()) showGradingActivity(form);
       disputes.updateTeacher(state);
       expectedAnswers.updateTeacher();
     },

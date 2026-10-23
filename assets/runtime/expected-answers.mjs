@@ -57,12 +57,13 @@ export function createExpectedAnswers(config) {
     const signature = JSON.stringify(answer);
     if (prior?.dataset.value === signature) return;
     prior?.remove();
-    const section = document.createElement("section");
+    const section = document.createElement("details");
     section.className = "cl-expected";
+    section.open = prior?.open ?? false;
     section.dataset.value = signature;
     section.dataset.status = answer.status;
     section.setAttribute("aria-label", "Expected answer and criteria");
-    const heading = document.createElement("p");
+    const heading = document.createElement("summary");
     const strong = document.createElement("strong");
     strong.textContent = "Expected answer and criteria";
     heading.append(strong);

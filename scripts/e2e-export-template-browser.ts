@@ -108,6 +108,7 @@ export async function verifyExportTemplateBrowser(artifacts: string | null): Pro
       for(const id of ['corrective','locked'])await check.locator('[data-question-id="'+id+'"] .cl-number').fill('0');
       const response=page.waitForResponse(r=>r.url().endsWith('/api/quiz/submit')&&r.request().method()==='POST');await check.getByRole('button',{name:'Submit for grading',exact:true}).click();const r=await response;if(r.status()!==201)throw new Error(await r.text());
       await page.locator('[data-quiz-id="check"][data-state="graded"]').waitFor();await check.locator('[data-question-id="choice"] .cl-expected[data-status="available"]').waitFor();
+      await check.locator('[data-question-id="choice"] .cl-expected > summary').click();
       const value=await check.locator('[data-question-id="choice"] .cl-expected-value').innerText();if(value!=='New owner — café λ')throw new Error('Visible original answer mismatch: '+value);
       await page.evaluate(()=>scrollTo(0,0));await page.locator('.cl-lesson-shell').waitFor();await page.screenshot({fullPage:true,path:${JSON.stringify(out + "/lesson.png")}});
       return {visibleAnswer:value,graded:true,pendingDiagnostic:await page.locator('[data-quiz-id="later"] .cl-number').isEnabled(),available:await check.locator('.cl-expected[data-status="available"]').count(),waiting:await check.locator('.cl-expected[data-status="waiting"]').count()};

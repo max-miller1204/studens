@@ -81,7 +81,7 @@ export async function verifyCriteriaBrowser(artifacts: string | null): Promise<v
   };
   const shot = (name: string) =>
     artifacts
-      ? `await page.screenshot({path:${JSON.stringify(path.join(artifacts, `${name}.png`))},fullPage:true});`
+      ? `await page.locator("[data-cl-grade], .cl-q-verdict").evaluateAll(elements=>Promise.all(elements.flatMap(el=>el.getAnimations({subtree:true})).map(a=>a.finished)));await page.evaluate(()=>window.scrollTo({top:0,behavior:"instant"}));await page.screenshot({path:${JSON.stringify(path.join(artifacts, `${name}.png`))},fullPage:true});`
       : "";
   let opened = false,
     teacher: TeacherService | undefined;
@@ -122,6 +122,7 @@ export async function verifyCriteriaBrowser(artifacts: string | null): Promise<v
       `async page=>{
       await page.getByRole('button',{name:'Submit for grading',exact:true}).click();
       await page.locator('form[data-state="graded"]').waitFor();
+      await page.locator('.cl-criteria-disclosure > summary').click();
       const criteria=page.locator('.cl-q-criteria li');
       if(await criteria.count()!==2) throw new Error('Missing criterion rows');
       if(!await criteria.nth(0).innerText().then(t=>t.includes('Met')&&t.includes('2/2 points'))) throw new Error('Met allocation missing');
@@ -131,6 +132,7 @@ export async function verifyCriteriaBrowser(artifacts: string | null): Promise<v
       if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth)) throw new Error('Mobile overflow');
       const first=await criteria.allTextContents();
       await page.reload();await page.locator('form[data-state="graded"]').waitFor();
+      await page.locator('.cl-criteria-disclosure > summary').click();
       if(JSON.stringify(first)!==JSON.stringify(await page.locator('.cl-q-criteria li').allTextContents()))throw new Error('Reload changed criteria');
       if(!await page.getByRole('button',{name:'Graded',exact:true}).isDisabled())throw new Error('Graded form unlocked');
       ${shot("reload-mobile")}
@@ -164,6 +166,7 @@ export async function verifyCriteriaBrowser(artifacts: string | null): Promise<v
       f.root,
       `async page=>{
       await page.reload();await page.locator('form[data-state="graded"]').waitFor();
+      await page.locator('.cl-criteria-disclosure > summary').click();
       await page.locator('.cl-q-criteria').getByText('The averaging step is missing:',{exact:false}).waitFor();
       ${shot("revision-desktop")}
       await page.setViewportSize({width:375,height:812});${shot("revision-mobile")}
@@ -210,10 +213,12 @@ export async function verifyCriteriaBrowser(artifacts: string | null): Promise<v
       await page.locator('form.cl-quiz textarea').fill('2 squared is 4. I did not finish the other residual or the average.');
       await page.getByRole('button',{name:'Submit for grading',exact:true}).click();
       await page.locator('form[data-state="graded"]').waitFor();
+      await page.locator('.cl-criteria-disclosure > summary').click();
       await page.locator('.cl-q-criteria li').first().getByText('Partly met',{exact:false}).waitFor();
       if(!await page.locator('.cl-q-criteria li').first().innerText().then(t=>t.includes('1/2 points')))throw new Error('Partial component allocation missing');
       await page.setViewportSize({width:375,height:812});${shot("partly-met-mobile")}
       await page.reload();await page.locator('form[data-state="graded"]').waitFor();
+      await page.locator('.cl-criteria-disclosure > summary').click();
       return (await page.request.get(${JSON.stringify(base)}+'/api/state?classroom=rust&lesson=003-component')).json();
     }`,
     );
@@ -234,6 +239,7 @@ export async function verifyCriteriaBrowser(artifacts: string | null): Promise<v
       if (!id) throw new Error("Missing submission id");
       const { score, ...args } = input(id);
       turns++;
+      await new Promise((resolve) => setTimeout(resolve, 700));
       if (turns === 1) args.questions[0].criteria.pop();
       return {
         calls: [{ name: "grade_quiz_answers", arguments_json: JSON.stringify(args) }],
@@ -252,7 +258,9 @@ export async function verifyCriteriaBrowser(artifacts: string | null): Promise<v
       await page.goto(${JSON.stringify(base)}+'/c/rust/002-retry');
       await page.locator('form.cl-quiz textarea').fill('The squared errors sum to 5. Therefore the mean squared error is 5.');
       await page.getByRole('button',{name:'Submit for grading',exact:true}).click();
+      await page.locator('[data-cl-quiz-status]').filter({hasText:'Grading your quiz… Your answers are saved.'}).waitFor();
       await page.getByRole('button',{name:'Retry request',exact:true}).waitFor();
+      await page.locator('[data-cl-quiz-status]').filter({hasText:'Grading failed:'}).waitFor();
       await page.locator('.cl-teacher-requests').getByText('allocate every declared criterion exactly once.',{exact:false}).waitFor();
       await page.setViewportSize({width:1280,height:900});${shot("teacher-error-desktop")}
       await page.setViewportSize({width:375,height:812});${shot("teacher-error-mobile")}
@@ -269,10 +277,12 @@ export async function verifyCriteriaBrowser(artifacts: string | null): Promise<v
       `async page=>{
       await page.getByRole('button',{name:'Retry request',exact:true}).click();
       await page.locator('form[data-state="graded"]').waitFor();
+      await page.locator('.cl-criteria-disclosure > summary').click();
       await page.locator('.cl-q-criteria li').nth(1).waitFor();
       await page.getByText('The squared sum earns credit;',{exact:false}).waitFor();
       ${shot("teacher-retried-mobile")}
-      await page.reload();await page.locator('form[data-state="graded"]').waitFor();return true;
+      await page.reload();await page.locator('form[data-state="graded"]').waitFor();
+      await page.locator('.cl-criteria-disclosure > summary').click();return true;
     }`,
     );
     await teacher.idle();

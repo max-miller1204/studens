@@ -107,7 +107,7 @@ export async function verifyDisputesBrowser(artifacts: string | null) {
       `async page=>{
       await page.goto(${JSON.stringify(base + "/c/rust/" + lesson)}); await page.locator('form[data-state="graded"]').waitFor();
       const second=await page.context().newPage(); await second.goto(page.url()); await second.locator('form[data-state="graded"]').waitFor();
-      await page.locator('.cl-q[data-question-id="mse"] summary').first().click();
+      await page.locator('.cl-q[data-question-id="mse"] .cl-dispute-compose > summary').click();
       await page.locator('.cl-q[data-question-id="mse"]').getByLabel('Why does your original answer deserve credit?').fill('The original answer already divides by two.');
       await page.locator('.cl-q[data-question-id="mse"]').getByRole('button',{name:'Send grade dispute',exact:true}).click();
       await page.getByRole('button',{name:'Retry request',exact:true}).waitFor();
@@ -173,10 +173,10 @@ export async function verifyDisputesBrowser(artifacts: string | null) {
       f.root,
       `async page=>{
       await page.locator('.cl-teacher-activity').getByRole('button',{name:/^Retry activity:/}).click();
-      await page.locator('.cl-q[data-question-id="mse"] .cl-dispute-response').waitFor();
-      await page.reload(); await page.locator('.cl-q[data-question-id="mse"] .cl-dispute-response').waitFor();
+      await page.locator('.cl-q[data-question-id="mse"] .cl-dispute-response').waitFor({state:'attached'}); if(await page.locator('.cl-q[data-question-id="mse"] .cl-dispute-history').getAttribute('open')===null)await page.locator('.cl-q[data-question-id="mse"] .cl-dispute-history > summary').click(); await page.locator('.cl-q[data-question-id="mse"] .cl-dispute-response').waitFor();
+      await page.reload(); await page.locator('.cl-q[data-question-id="mse"] .cl-dispute-response').waitFor({state:'attached'}); if(await page.locator('.cl-q[data-question-id="mse"] .cl-dispute-history').getAttribute('open')===null)await page.locator('.cl-q[data-question-id="mse"] .cl-dispute-history > summary').click(); await page.locator('.cl-q[data-question-id="mse"] .cl-dispute-response').waitFor();
       const second=page.context().pages().find(p=>p!==page);
-      await second.reload(); await second.locator('.cl-q[data-question-id="mse"] .cl-dispute-response').waitFor();
+      await second.reload(); await second.locator('.cl-q[data-question-id="mse"] .cl-dispute-history > summary').click(); await second.locator('.cl-q[data-question-id="mse"] .cl-dispute-response').waitFor();
       if(!await second.locator('.cl-q[data-question-id="mse"] > textarea').isDisabled())throw new Error('Second tab unlocked answer');
       const target=${JSON.stringify({ classroom: "rust", lesson, quizId: "check", submissionId: submission.id, gradedAt: original.gradedAt, questionId: "mse", reason: "stale reason" })};
       const probes=[];

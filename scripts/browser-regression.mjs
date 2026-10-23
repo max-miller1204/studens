@@ -476,10 +476,48 @@ export async function browserRegression(page, highlightText) {
     pairs: [...form.querySelectorAll("select")].map((field) => field.value),
   }));
   await grade(typedSubmission.id, "All types grade", true);
+  await page.waitForFunction(
+    () => document.querySelector('[data-quiz-id="all-types"]').dataset.state === "graded",
+  );
+  const reveal = await allTypes.evaluate((form) => {
+    const summary = form.querySelector("[data-cl-grade]");
+    const verdicts = [...form.querySelectorAll(".cl-q-verdict")];
+    return {
+      reveal: summary.dataset.reveal,
+      score: form.querySelector('[role="meter"]').getAttribute("aria-valuenow"),
+      meterDuration: getComputedStyle(form.querySelector(".cl-grade-meter > span"))
+        .animationDuration,
+      meterEasing: getComputedStyle(form.querySelector(".cl-grade-meter > span"))
+        .animationTimingFunction,
+      durations: verdicts.map((v) => getComputedStyle(v).animationDuration),
+      delays: verdicts.map((v) => getComputedStyle(v).animationDelay),
+      icons: verdicts.every((v) => v.querySelector('.cl-verdict-icon[aria-hidden="true"]')),
+    };
+  });
+  assert(
+    reveal.reveal === "true" && reveal.icons && reveal.score === "100",
+    "Missing new-result reveal, static icons or accessible meter",
+  );
+  assert(
+    reveal.durations.every((d) => d === "0.3s") &&
+      reveal.delays[0] === "0.2s" &&
+      reveal.delays[1] === "0.3s",
+    "Result stagger changed",
+  );
+  assert(
+    reveal.meterDuration === "0.6s" && reveal.meterEasing === "cubic-bezier(0.23, 1, 0.32, 1)",
+    "Score meter timing changed",
+  );
+  await screenshot("all-types-new-result");
   await page.reload();
   await page.waitForFunction(
     () => document.querySelector('[data-quiz-id="all-types"]').dataset.state === "graded",
   );
+  assert(
+    (await allTypes.locator('[data-reveal="true"]').count()) === 0,
+    "Reload replayed result reveal",
+  );
+  await page.emulateMedia({ reducedMotion: "reduce" });
   const restored = await allTypes.evaluate((form) => ({
     text: [...form.querySelectorAll('input[type="text"], textarea')].map((field) => field.value),
     order: [...form.querySelectorAll(".cl-order > li")].map((li) => li.dataset.item),
@@ -531,6 +569,18 @@ export async function browserRegression(page, highlightText) {
     (await partialForm.locator('[data-outcome="partial"]').count()) === 2,
     "Partial answers have the wrong verdict",
   );
+  const reduced = await partialForm
+    .locator(".cl-q-verdict")
+    .first()
+    .evaluate((el) => getComputedStyle(el).animationName);
+  assert(reduced === "cl-result-fade", "Reduced motion still moves results");
+  assert(
+    (await partialForm
+      .locator(".cl-grade-meter > span")
+      .evaluate((el) => getComputedStyle(el).animationName)) === "cl-result-fade",
+    "Reduced motion still scales the meter",
+  );
+  await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.reload();
   await page.waitForFunction(
     () => document.querySelector('[data-quiz-id="partial"]').dataset.state === "graded",
