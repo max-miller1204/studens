@@ -12,10 +12,10 @@ import { sendHtml, sendNotFound } from "./http.ts";
 function form(query: string): string {
   return `<form action="/search" method="get" role="search" class="cl-search-form"><label for="cl-search-query">Search across classrooms</label><div><input id="cl-search-query" name="q" type="search" value="${escapeHtml(query)}" maxlength="200" placeholder="A phrase, term, or question"><button class="cl-button" type="submit">Search</button></div></form>`;
 }
-function snippet(text: string, query: string): string {
+function snippet(text: string, query: string, truncate = true): string {
   const index = text.toLowerCase().indexOf(query.toLowerCase()),
-    start = Math.max(0, index - 80),
-    end = Math.min(text.length, Math.max(index, 0) + query.length + 160);
+    start = truncate ? Math.max(0, index - 80) : 0,
+    end = truncate ? Math.min(text.length, Math.max(index, 0) + query.length + 160) : text.length;
   const part = text.slice(start, end),
     at = part.toLowerCase().indexOf(query.toLowerCase());
   const safe =
@@ -31,9 +31,10 @@ function resultPage(result: SearchResponse): string {
   const pageLink = (n: number) => `/search?q=${encodeURIComponent(query)}&page=${n}`;
   return shell({
     title: "Search across classrooms",
+    bodyClass: "cl-shell cl-workspace-page",
     breadcrumb:
       '<a class="cl-crumb" href="/">Classrooms</a><span class="cl-crumb-sep" aria-hidden="true">/</span><span class="cl-crumb cl-crumb-current">Search</span>',
-    body: `<div class="cl-search"><h1>Search across classrooms</h1><p>Find published lesson passages, saved question threads, glossary terms, and learning records.</p>${form(query)}
+    body: `<div class="cl-search"><div class="cl-hero"><h1>Search across classrooms</h1><p class="cl-lede">Find published lesson passages, saved question threads, glossary terms, and learning records.</p></div>${form(query)}
 ${
   !query
     ? '<p role="status">Enter a word or exact phrase to search all classrooms.</p>'
@@ -43,7 +44,7 @@ ${
         .map(([kind, count]) => `${escapeHtml(kind)}: ${count}`)
         .join(
           " · ",
-        )}</p>${total ? `<p>Showing ${(page - 1) * SEARCH_PAGE_SIZE + 1}–${Math.min(page * SEARCH_PAGE_SIZE, total)}. Ordered by classroom, lesson, then source passage; question threads follow their lesson. Glossary terms and learning records follow lessons.</p><ol class="cl-search-results" start="${(page - 1) * SEARCH_PAGE_SIZE + 1}">${results.map((r) => `<li><p class="cl-search-source">${escapeHtml(r.classroom)} · ${r.kind}</p><h2><a href="${escapeHtml(r.url)}">${escapeHtml(r.title)}</a></h2><p>${snippet(r.text, query)}</p>${r.context ? `<p class="cl-progress-note">${escapeHtml(r.context)}</p>` : ""}</li>`).join("")}</ol><nav aria-label="Search pages">${page > 1 ? `<a href="${pageLink(page - 1)}">Previous results</a>` : ""} <span>Page ${page} of ${pages}</span> ${page < pages ? `<a href="${pageLink(page + 1)}">Next results</a>` : ""}</nav>` : "<p>Try another word or a shorter phrase. Search matches literal text, including punctuation.</p>"}`
+        )}</p>${total ? `<p>Showing ${(page - 1) * SEARCH_PAGE_SIZE + 1}–${Math.min(page * SEARCH_PAGE_SIZE, total)}. Ordered by classroom, lesson, then source passage; question threads follow their lesson. Glossary terms and learning records follow lessons.</p><ol class="cl-search-results cl-card-box" start="${(page - 1) * SEARCH_PAGE_SIZE + 1}">${results.map((r) => `<li class="cl-list-row cl-search-result"><div><p class="cl-search-source">${escapeHtml(r.classroom)} · ${r.kind}</p><h2><a href="${escapeHtml(r.url)}">${snippet(r.title, query, false)}</a></h2><p>${snippet(r.text, query)}</p>${r.context ? `<p class="cl-progress-note">${escapeHtml(r.context)}</p>` : ""}</div></li>`).join("")}</ol><nav aria-label="Search pages">${page > 1 ? `<a href="${pageLink(page - 1)}">Previous results</a>` : ""} <span>Page ${page} of ${pages}</span> ${page < pages ? `<a href="${pageLink(page + 1)}">Next results</a>` : ""}</nav>` : "<p>Try another word or a shorter phrase. Search matches literal text, including punctuation.</p>"}`
 }</div>`,
   });
 }
@@ -68,8 +69,9 @@ export function handleSearch(res: http.ServerResponse, url: URL): void {
         res,
         shell({
           title: term,
+          bodyClass: "cl-shell cl-workspace-page",
           breadcrumb: `<a class="cl-crumb" href="/search">Search</a><span class="cl-crumb-sep">/</span><a class="cl-crumb" href="/c/${encodeURIComponent(classroom)}">Classroom</a>`,
-          body: `<article class="cl-doc"><h1>Glossary term</h1>${searchPassages(source).html}${origin ? originHtml(origin, url.pathname + url.search) : ""}<p><a href="/doc/${encodeURIComponent(classroom)}/GLOSSARY.md">Read full glossary</a></p></article>`,
+          body: `<article class="cl-doc cl-card-box"><h1>Glossary term</h1>${searchPassages(source).html}${origin ? originHtml(origin, url.pathname + url.search) : ""}<p><a href="/doc/${encodeURIComponent(classroom)}/GLOSSARY.md">Read full glossary</a></p></article>`,
         }),
       );
     }
@@ -79,6 +81,7 @@ export function handleSearch(res: http.ServerResponse, url: URL): void {
       res,
       shell({
         title: "Cannot load search",
+        bodyClass: "cl-shell cl-workspace-page",
         breadcrumb: '<a class="cl-crumb" href="/">Classrooms</a>',
         body: `<div class="cl-search"><h1>Cannot load search</h1>${form(query)}<p role="alert">${escapeHtml(error instanceof StateReadError ? error.message : "Cannot search public sources: unreadable or malformed content. Correct the source, then retry explicitly.")}</p><p>Correct the saved source, then retry. No partial results are shown.</p><a class="cl-button" href="${escapeHtml(url.pathname + url.search)}">Retry search</a></div>`,
       }),
