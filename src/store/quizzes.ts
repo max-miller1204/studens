@@ -71,6 +71,7 @@ export function createSubmission(
       ),
       fs.readFileSync(page.htmlPath, "utf8"),
       true,
+      page.assessmentContract === 1 ? "machine" : "legacy",
     );
   const privateKey =
     page?.assessmentContract === 1

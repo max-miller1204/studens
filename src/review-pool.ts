@@ -2,6 +2,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { classroomDir, isValidSlug, safeStaticFile, lessonDir } from "./paths.ts";
+import { readLesson } from "./store/lessons.ts";
 import { authoredVariants, validateVariant } from "./review-variants.ts";
 import type { PreparedVariant } from "./review-variants.ts";
 import type { ReviewDocument } from "./review-session.ts";
@@ -54,7 +55,13 @@ export function lessonPools(
     path.relative(classroomDir(classroom), path.join(lessonDir(classroom, lesson), "lesson.html")),
   );
   if (!html) throw new Error(`Missing or unsafe variant source lesson: ${lesson}.`);
-  const pools = authoredVariants(keyText, planText, fs.readFileSync(html, "utf8"), required);
+  const pools = authoredVariants(
+    keyText,
+    planText,
+    fs.readFileSync(html, "utf8"),
+    required,
+    readLesson(classroom, lesson)?.assessmentContract === 1 ? "machine" : "legacy",
+  );
   const supplement = privatePoolPath(classroom, lesson, "review-pool.json");
   if (fs.existsSync(supplement)) {
     const saved = JSON.parse(fs.readFileSync(supplement, "utf8"));

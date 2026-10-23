@@ -250,7 +250,7 @@ export function scheduleItems(events: ReviewEvent[]): ReviewItem[] {
       elapsedDays = elapsed / DAY_MS;
       context = evidenceContext(event.evidence, elapsed);
       const full = event.correct && (event.credit === undefined || event.credit === 1);
-      const independentFull = full && independent(event.evidence);
+      const independentFull = full && (event.gapIndependent ?? independent(event.evidence));
       if (!full) gapOpen = true;
       else if (event.gapIndependent ?? independent(event.evidence)) gapOpen = false;
       const feedbackAt = Math.max(event.at, event.feedbackAt ?? event.at);

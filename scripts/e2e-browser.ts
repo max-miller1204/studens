@@ -31,6 +31,7 @@ import { verifyLessonSources } from "./e2e-lesson-sources.ts";
 import { verifyResumeBrowser } from "./e2e-resume-browser.ts";
 import { verifyCardBrowser } from "./e2e-card-browser.ts";
 import { verifyQuestionErrorsBrowser } from "./e2e-question-errors-browser.ts";
+import { verifyLegacyReview } from "./e2e-legacy-review.ts";
 import { verifyReviewBrowser } from "./e2e-review-browser.ts";
 /** Check browser state against the real HTTP server and grading tool. */
 import { browserRegression } from "./browser-regression.mjs";
@@ -404,6 +405,7 @@ await verifyOwnershipBrowser(path.join(artifacts ?? fixture.root, "ownership"));
 await verifyServiceBrowser(artifacts ? path.join(artifacts, "service") : null);
 
 await verifyReviewBrowser(artifacts ? path.join(artifacts, "review") : null);
+if (artifacts) await verifyLegacyReview(path.join(artifacts, "legacy-review"));
 
 if (artifacts) fs.mkdirSync(path.join(artifacts, "resume"), { recursive: true });
 await verifyResumeBrowser(artifacts ? path.join(artifacts, "resume") : null);
