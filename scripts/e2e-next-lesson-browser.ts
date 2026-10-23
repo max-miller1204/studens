@@ -74,7 +74,7 @@ export async function verifyNextLessonBrowser(artifacts: string | null): Promise
         fixture.root,
         `async page=>{
         await page.getByLabel('What would you like to learn next?').fill('Track moves between scopes');
-        await page.getByRole('button',{name:'Next lesson',exact:true}).click();
+        await page.getByRole('button',{name:'Start next lesson',exact:true}).click();
         await page.getByRole('button',{name:'Retry lesson',exact:true}).waitFor({timeout:120000});
         if(!(await page.locator('[data-cl-next-status]').innerText()).includes('publication conflicts')) throw new Error('Missing concrete publication error');
         await page.screenshot({path:${JSON.stringify(path.join(evidence, "failed.png"))},fullPage:true});

@@ -3653,3 +3653,139 @@ body.cl-app.cl-lesson-page {
     margin-right: 352px;
   }
 }
+
+/* Classroom: the next action precedes supporting evidence. */
+.cl-up-next {
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+.cl-up-next .cl-section-title {
+  margin: 0;
+}
+.cl-up-next > p {
+  margin: 0.65rem 0;
+}
+.cl-up-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+}
+.cl-classroom-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  gap: 1.5rem;
+}
+.cl-classroom-columns > .cl-section {
+  margin: 0;
+  min-width: 0;
+}
+.cl-classroom-columns .cl-memory-forecast {
+  margin: 0;
+  padding: 1rem;
+}
+.cl-classroom-columns .cl-memory-bars {
+  gap: 0.2rem;
+}
+.cl-classroom-columns .cl-memory-bars li > span:last-child {
+  font-size: 0.55rem;
+}
+.cl-memory-forecast-heading h2 {
+  margin: 0;
+}
+.cl-classroom-columns .cl-lesson-link {
+  padding: 0.85rem;
+  flex-wrap: wrap;
+}
+.cl-classroom-columns .cl-lesson-title {
+  overflow-wrap: anywhere;
+}
+.cl-classroom-columns .cl-lesson-badges {
+  flex-wrap: wrap;
+}
+.cl-scheduling {
+  margin: 1rem 0;
+}
+.cl-memory-items {
+  gap: 0;
+  border: 1px solid var(--cl-border);
+  border-radius: var(--cl-radius);
+  overflow: clip;
+}
+.cl-memory-item {
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+}
+.cl-memory-item + .cl-memory-item {
+  border-top: 1px solid var(--cl-border);
+}
+.cl-memory-row > summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(8rem, 0.7fr) minmax(7rem, 0.5fr);
+  gap: 1rem;
+  align-items: center;
+  padding: 1rem;
+  cursor: pointer;
+}
+.cl-memory-objective::before {
+  content: "›";
+  display: inline-block;
+  margin-right: 0.5rem;
+}
+.cl-memory-row[open] .cl-memory-objective::before {
+  transform: rotate(90deg);
+}
+.cl-memory-state {
+  white-space: normal;
+  justify-self: start;
+}
+.cl-memory-due {
+  font-size: 0.85rem;
+  color: var(--cl-text-muted);
+}
+.cl-memory-row > :not(summary) {
+  margin-left: 1rem;
+  margin-right: 1rem;
+}
+.cl-memory-row > .cl-memory-why {
+  margin-bottom: 1rem;
+}
+time[data-exact-time] {
+  position: relative;
+}
+time[data-exact-time]:focus::after {
+  content: attr(data-exact-time);
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  z-index: 5;
+  padding: 0.4rem;
+  background: var(--cl-surface);
+  border: 1px solid var(--cl-border);
+  border-radius: var(--cl-radius-sm);
+  font-size: 0.75rem;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  min-width: 12rem;
+  box-shadow: var(--cl-shadow);
+}
+@media (max-width: 800px) {
+  .cl-classroom-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .cl-memory-row > summary {
+    grid-template-columns: minmax(0, 1fr) minmax(6rem, 0.6fr);
+    gap: 0.5rem;
+  }
+  .cl-memory-objective {
+    grid-column: 1 / -1;
+  }
+  .cl-memory-state {
+    font-size: 0.75rem;
+  }
+}
+
+.cl-up-actions > [hidden] {
+  display: none;
+}
