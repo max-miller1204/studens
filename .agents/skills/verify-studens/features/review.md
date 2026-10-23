@@ -7,7 +7,8 @@ their original host and recovery behavior.
 
 ## Sub-features
 
-- Read per-objective evidence strength, latest answer time/context/credit, open or resolved gaps, and next due time. Older question identities keep original lesson links.
+- Use classroom **Up next** to resume saved unfinished work, otherwise review due items or start the next lesson. Lessons and the compact forecast precede the memory rows.
+- Expand an objective row to read per-objective evidence strength, latest answer time/context/credit, open or resolved gaps, and next due time. Older question identities keep original lesson links.
 - Expand **Why is this due?** for the replayed schedule reason, saved source, evidence counts and explicitly estimated stability/difficulty.
 - Read fourteen UTC saved-due dates visually or in a keyboard-accessible table; compare today’s backlog with the actual shared allowance and deferred count.
 
@@ -83,10 +84,10 @@ Run `npm run verify -- browser --artifacts /tmp/studens-review-browser`.
 The memory-map drive uses production saved-attempt replay and isolated Pi, Claude
 and Codex service-owner fixtures. No model connection is claimed. Inspect
 `memory-map/<owner>/result.json`, `source-before.json` and `read-only-hashes.json`.
-It compares every row’s latest answer time and expanded schedule reason to replay,
+It expands rows with Enter and compares every row’s latest answer time and expanded schedule reason to replay,
 and table counts to fourteen saved UTC due dates. It follows legacy original lesson
-links and the course map, uses Enter for explanations/table, and captures 1280×900
-and 390×844 in both themes, including long unbroken objective text. Reads make no
+links and the course map, uses Enter for explanations/table, and captures 1280×800
+and 390×844 in both themes, including long unbroken objective text. The primary action stays above the fold at both sizes, with exactly one visible primary control. Visiting an unfinished lesson switches Up next to Resume and retains it after reload; completed lessons leave review as the next step. Evidence times show relative/local text and expose exact UTC on hover or keyboard focus. Expand **How review is scheduled** for the allowance and scheduling details. Reads make no
 non-GET/HEAD requests and leave classroom hashes unchanged. An explicit native
 retire/restore and prepared closed review correction update the map after reload;
 restart retains one grade. Malformed saved timing gives a specific error and explicit

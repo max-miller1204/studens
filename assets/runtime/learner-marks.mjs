@@ -154,6 +154,7 @@ export function createLearnerMarks({ config, contentRoot }) {
   function button(label, action) {
     const b = document.createElement("button");
     b.type = "button";
+    b.className = "cl-button cl-button-quiet cl-button-sm";
     b.textContent = label;
     b.addEventListener("click", action);
     return b;
@@ -247,10 +248,13 @@ export function createLearnerMarks({ config, contentRoot }) {
   }
   function init() {
     panel = document.createElement("details");
-    panel.className = "cl-learner-marks";
+    panel.className = "cl-learner-marks cl-disclosure";
     panel.innerHTML = `<summary>Saved marks</summary><p class="cl-hint">For your own reading. Only Ask sends a question to your teacher.</p><button type="button" data-mark-refresh>Refresh saved marks</button><p role="status" aria-live="polite" data-mark-status></p><p role="alert" data-mark-error hidden></p><form data-mark-editor hidden><p data-mark-quote></p><label>Margin note<textarea data-mark-note maxlength="4000" rows="3"></textarea></label><div class="cl-mark-actions"><button type="submit" data-mark-save>Save note</button><button type="button" data-mark-discard>Discard draft</button><button type="button" data-mark-rebase hidden>Use refreshed revision</button></div></form><ul data-mark-list></ul>`;
     // Never nest note fields in authored quizzes, even when the content root is body.
     document.querySelector(".cl-header").after(panel);
+    for (const button of panel.querySelectorAll("button"))
+      button.classList.add("cl-button", "cl-button-quiet", "cl-button-sm");
+    panel.querySelector("textarea").classList.add("cl-input");
     list = panel.querySelector("[data-mark-list]");
     editor = panel.querySelector("[data-mark-editor]");
     field = panel.querySelector("[data-mark-note]");

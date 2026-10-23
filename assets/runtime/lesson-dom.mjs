@@ -148,15 +148,7 @@ export function position(element, viewportLeft, viewportTop) {
   element.style.top = `${Math.max(8, viewportTop) + window.scrollY}px`;
 }
 
-/**
- * Insert a card into the document flow, just after the block the highlight sits in.
- *
- * Transient UI (the ask pill, the composer) floats over the page; a card does not.
- * A floating card covers the very passage the learner is asking about, which is the
- * one thing it must not do, and lessons are set to a reading measure so there is
- * rarely margin wide enough to escape into. In the flow it never occludes anything,
- * needs no repositioning on scroll or resize, and works the same at every width.
- */
+/** Keep panels after their passage in DOM order, outside authored answer controls. */
 export function placeCardInFlow(panel, mark, contentRoot) {
   // In a quiz, a card goes after the whole question. Inside it, the card's fields
   // would be locked, cleared, and read as answers along with the question's own.

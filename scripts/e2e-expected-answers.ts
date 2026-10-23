@@ -278,6 +278,7 @@ export async function verifyExpectedAnswers(artifacts: string): Promise<void> {
         `async page=>{
       await page.locator('.cl-expected[data-status="available"]').waitFor();
       if(await page.locator('.cl-expected[data-status="waiting"]').count()!==1)throw new Error('Miss released early');
+      for(const summary of await page.locator('.cl-expected > summary').all())await summary.click();
       const screenshots=[];for(const [name,width,height] of [['desktop',1280,900],['mobile',375,812]]){await page.setViewportSize({width,height});for(const colorScheme of ['light','dark']){await page.emulateMedia({colorScheme});const file=${JSON.stringify(artifacts)}+'/after-'+name+'-'+colorScheme+'.png';await page.screenshot({path:file,fullPage:true});screenshots.push(file);}}
       return {screenshots,text:await page.locator('.cl-expected').allTextContents()};
     }`,
@@ -328,7 +329,7 @@ export async function verifyExpectedAnswers(artifacts: string): Promise<void> {
     await playwrightCode(
       session,
       f.root,
-      `async page=>{await page.reload();await page.getByRole('button',{name:'Retry expected answer',exact:true}).first().waitFor();return true;}`,
+      `async page=>{await page.reload();await page.locator('.cl-expected[data-status="error"] > summary').first().click();await page.getByRole('button',{name:'Retry expected answer',exact:true}).first().waitFor();return true;}`,
     );
     fs.writeFileSync(keyFile, original);
     await playwrightCode(

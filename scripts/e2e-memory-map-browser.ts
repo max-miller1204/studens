@@ -144,12 +144,16 @@ export async function verifyMemoryMapBrowser(artifacts: string | null): Promise<
           if(await page.locator('[data-memory-key]').count()!==expected.length)throw Error('Memory rows lost or duplicated objectives.');
           for(const item of expected){
             const target=page.locator('[data-memory-key='+JSON.stringify(item.key)+']');
-            if(await target.locator('time').first().getAttribute('datetime')!==new Date(item.lastAt).toISOString())throw Error('Latest evidence time differs from production replay.');
+            await target.locator('.cl-memory-row > summary').focus();await page.keyboard.press('Enter');
+            if(await target.locator('.cl-memory-facts time').first().getAttribute('datetime')!==new Date(item.lastAt).toISOString())throw Error('Latest evidence time differs from production replay.');
+            const evidenceTime=target.locator('.cl-memory-facts time').first();await evidenceTime.focus();
+            if(!(await evidenceTime.getAttribute('aria-label')).includes('Exact UTC:'))throw Error('Missing exact UTC label');
+            if(!(await evidenceTime.evaluate(el=>getComputedStyle(el,'::after').content)).includes(await evidenceTime.getAttribute('datetime')))throw Error('Keyboard focus lost exact UTC');
             const why=target.getByText('Why is this due?',{exact:true});await why.focus();await page.keyboard.press('Enter');
             if(!(await target.innerText()).includes(item.scheduleReason))throw Error('Why due lost real scheduleReason.');
             if(!(await target.innerText()).includes(item.stability.toFixed(2)))throw Error('Memory estimate lost.');
             if(await target.locator('a').last().getAttribute('href')!==${JSON.stringify("/c/rust/001-ownership")})throw Error('Original source link lost.');
-            await why.press('Enter');
+            await why.press('Enter');await target.locator('.cl-memory-row > summary').click();
           }
           await page.getByText('Read forecast as a table',{exact:true}).focus();await page.keyboard.press('Enter');
           const counts=await page.locator('.cl-memory-table tbody td').allTextContents();
@@ -158,24 +162,42 @@ export async function verifyMemoryMapBrowser(artifacts: string | null): Promise<
         };
         await check();
         const shots=[];
-        for(const [size,width,height]of [['desktop',1280,900],['mobile',390,844]])for(const theme of ['light','dark']){
+        for(const [size,width,height]of [['desktop',1280,800],['mobile',390,844]])for(const theme of ['light','dark']){
           await page.setViewportSize({width,height});await page.evaluate(t=>localStorage.setItem('pi-classroom-theme',t),theme);await page.reload();await page.getByRole('heading',{name:'Memory map',exact:true}).waitFor();
+          await page.locator('[data-cl-up-start]:visible').waitFor({state:'visible'});
+          if(await page.locator('.cl-up-actions > .cl-button:visible').count()!==1)throw Error('Expected one primary action');const primary=await page.locator('[data-cl-up-start]:visible').boundingBox();if(!primary||primary.y<0||primary.y+primary.height>height)throw Error('Primary action below fold');
           await page.evaluate(()=>window.scrollTo(0,0));if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth))throw Error('Memory map clips viewport.');
           const file=${JSON.stringify(dir)}+'/after-'+size+'-'+theme+'.png';await page.screenshot({path:file,fullPage:true});shots.push(file);
         }
         const legacy=page.locator('[data-memory-key="001-ownership/check-1/legacy"]');
-        await legacy.getByRole('link').first().click();await page.locator('[data-question-id="legacy"]').waitFor();await page.goBack();
+        await legacy.locator('.cl-memory-row > summary').click();await legacy.getByText('Why is this due?',{exact:true}).click();await legacy.getByRole('link',{name:'Open original lesson',exact:true}).click();await page.locator('[data-question-id="legacy"]').waitFor();await page.goBack();
         await page.getByRole('link',{name:'upcoming objectives',exact:true}).click();await page.getByRole('heading',{name:'Course map',exact:true}).waitFor();await page.goBack();
         await page.goto(${JSON.stringify(base + "/c/empty")});await page.getByText('No saved answer evidence yet.',{exact:false}).waitFor();await page.screenshot({path:${JSON.stringify(path.join(dir, "empty-mobile-dark.png"))},fullPage:true});
         await page.goto(${JSON.stringify(base + "/c/many")});if(await page.locator('[data-memory-key]').count()!==20)throw Error('Many evidence rows lost.');
-        if(!(await page.locator('[data-review-workload]').innerText()).includes('15 due items deferred'))throw Error('Actual cap/deferred count lost.');
+        await page.getByText('How review is scheduled',{exact:true}).click();if(!(await page.locator('[data-review-workload]').innerText()).includes('15 due items deferred'))throw Error('Actual cap/deferred count lost.');
         await page.goto(${JSON.stringify(base + "/c/long")});
         for(const [width,height]of [[1280,900],[390,844]])for(const theme of ['light','dark']){await page.setViewportSize({width,height});await page.evaluate(t=>document.documentElement.dataset.theme=t,theme);if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth))throw Error('Long objective clips.');await page.screenshot({path:${JSON.stringify(dir)}+'/long-'+width+'-'+theme+'.png',fullPage:true});}
-        await page.goto(${JSON.stringify(base + "/c/future")});await page.getByText('Saved evidence is dated in the future',{exact:true}).waitFor();
+        await page.goto(${JSON.stringify(base + "/c/future")});await page.locator('.cl-memory-row > summary').first().click();await page.getByText('Saved evidence is dated in the future',{exact:true}).waitFor();
         await page.goto(${JSON.stringify(base + "/c/rust")});
         if(errors.length||writes.length)throw Error(JSON.stringify({errors,writes}));
         return {shots,errors,writes,keyboardWhy:true,keyboardTable:true,legacySource:true,courseCoverageSeparate:true,empty:true,many:true};
       `);
+      const nextStep = await code(`
+        // A real read stores a resume anchor; grading remains the source of completion.
+        await page.goto(${JSON.stringify(base + "/c/empty")});
+        await page.getByRole('button',{name:'Start next lesson',exact:true}).waitFor();
+        await page.locator('.cl-lesson-link').first().click();
+        await page.locator('[data-cl-content]').waitFor();
+        await page.waitForFunction(()=>JSON.parse(localStorage.getItem('studens-recent-lessons')||'[]').some(h=>h.url==='/c/empty/001-ownership'));
+        await page.goto(${JSON.stringify(base + "/c/empty")});
+        await page.getByRole('link',{name:'Resume lesson',exact:true}).waitFor();
+        if(await page.locator('[data-cl-lesson-status]').innerText()!=='In progress')throw Error('Visited lesson not in progress');
+        await page.reload();await page.getByRole('link',{name:'Resume lesson',exact:true}).waitFor();
+        await page.goto(${JSON.stringify(base + "/c/rust")});
+        await page.getByRole('button',{name:'Review due items',exact:true}).waitFor();
+        return {notStartedNext:true,visitedResume:true,resumeReload:true,completedLessonReview:true};
+      `);
+      save("up-next", nextStep);
       const viewed = hashes(f.root);
       save("read-only-hashes", { before, after: viewed });
       if (JSON.stringify(before) !== JSON.stringify(viewed))
@@ -194,7 +216,7 @@ export async function verifyMemoryMapBrowser(artifacts: string | null): Promise<
         throw Error("Restore did not persist.");
       // Real prepared review, native closed grading, then reload: no teacher/model turn.
       await code(
-        `await page.locator('[data-cl-review-topic]').selectOption(${JSON.stringify(reviewTopic(partial).id)});await page.getByRole('button',{name:'Start review',exact:true}).click();await page.waitForFunction(()=>document.querySelector('[data-review-active="true"]')?.dataset.state==='fresh');await page.locator('form.cl-quiz:visible input[value="owner"]').check();await page.locator('form.cl-quiz:visible [data-cl-assistance]').selectOption('none');await page.locator('form.cl-quiz:visible button[type="submit"]').click();await page.waitForFunction(()=>document.querySelector('[data-review-active="true"]')?.dataset.state==='graded');await page.goto(${JSON.stringify(base + "/c/rust")});await page.reload();return true;`,
+        `await page.locator('[data-cl-review-topic]').selectOption(${JSON.stringify(reviewTopic(partial).id)});await page.getByRole('button',{name:'Review due items',exact:true}).click();await page.waitForFunction(()=>document.querySelector('[data-review-active="true"]')?.dataset.state==='fresh');await page.locator('form.cl-quiz:visible input[value="owner"]').check();await page.locator('form.cl-quiz:visible [data-cl-assistance]').selectOption('none');await page.locator('form.cl-quiz:visible button[type="submit"]').click();await page.waitForFunction(()=>document.querySelector('[data-review-active="true"]')?.dataset.state==='graded');await page.goto(${JSON.stringify(base + "/c/rust")});await page.reload();return true;`,
       );
       const after = store.reviewItems("rust"),
         corrected = after.find((i) => i.key === partial.key)!;
@@ -205,7 +227,7 @@ export async function verifyMemoryMapBrowser(artifacts: string | null): Promise<
       )
         throw Error("Accepted correction did not revise memory projection.");
       const correctedDisplay = await code(
-        `const row=page.locator('[data-memory-key='+JSON.stringify(${JSON.stringify(partial.key)})+']');if(!(await row.innerText()).includes('Earlier answer gap resolved'))throw Error('Saved correction missing after reload');await row.getByText('Why is this due?',{exact:true}).click();await page.screenshot({path:${JSON.stringify(path.join(dir, "corrected.png"))},fullPage:true});return {strength:await row.locator(".cl-memory-facts > div").first().innerText(),latestEvidence:await row.locator(".cl-memory-facts > div").nth(1).innerText(),expanded:await row.locator("details").innerText()};`,
+        `const row=page.locator('[data-memory-key='+JSON.stringify(${JSON.stringify(partial.key)})+']');await row.locator('.cl-memory-row > summary').click();if(!(await row.innerText()).includes('Earlier answer gap resolved'))throw Error('Saved correction missing after reload');await row.getByText('Why is this due?',{exact:true}).click();await page.screenshot({path:${JSON.stringify(path.join(dir, "corrected.png"))},fullPage:true});return {strength:await row.locator(".cl-memory-facts > div").first().innerText(),latestEvidence:await row.locator(".cl-memory-facts > div").nth(1).innerText(),expanded:await row.locator(".cl-memory-why").innerText()};`,
       );
       save("correction-display", correctedDisplay);
       const review = currentReview("rust")!;
@@ -240,7 +262,7 @@ export async function verifyMemoryMapBrowser(artifacts: string | null): Promise<
         throw Error("Teacher receipt latency became delayed evidence.");
       const linkedBefore = hashes(f.root);
       await code(
-        `await page.goto(${JSON.stringify(base + "/c/long")});await page.getByText('Why is this due?',{exact:true}).click();await page.getByRole('link',{name:'Read linked learning record',exact:true}).click();await page.getByRole('heading',{name:'Ownership correction',exact:true}).waitFor();await page.goto(${JSON.stringify(base + "/c/rust")});return true;`,
+        `await page.goto(${JSON.stringify(base + "/c/long")});await page.locator('.cl-memory-row > summary').first().click();await page.getByText('Why is this due?',{exact:true}).click();await page.getByRole('link',{name:'Read linked learning record',exact:true}).click();await page.getByRole('heading',{name:'Ownership correction',exact:true}).waitFor();await page.goto(${JSON.stringify(base + "/c/rust")});return true;`,
       );
       if (JSON.stringify(linkedBefore) !== JSON.stringify(hashes(f.root)))
         throw Error("Reading linked record wrote evidence.");

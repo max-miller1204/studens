@@ -305,7 +305,7 @@ export async function verifyLearnerMarksBrowser(artifacts: string | null): Promi
       if(await page.locator('form.cl-quiz .cl-learner-marks,form.cl-quiz [data-mark-note]').count())throw Error('Note UI nested in assessment');
       await page.reload();await page.locator('form.cl-quiz[data-state="graded"]').waitFor();
       if(await page.getByLabel('Margin note',{exact:true}).inputValue()!=='Unsent private margin draft')throw Error('Reload lost note draft');
-      const expected=page.locator('.cl-expected-value').first();await expected.waitFor();
+      await page.locator('.cl-expected > summary').first().click();const expected=page.locator('.cl-expected-value').first();await expected.waitFor();
       await (${highlightText.toString()})(page,'.cl-expected-value',await expected.innerText());
       await page.waitForTimeout(50);if(await page.locator('.cl-selection-actions').isVisible())throw Error('Expected-answer runtime text offered passage actions');
       const excluded=await page.evaluate(async()=>{const {buildTextIndex}=await import('/static/lesson-dom.mjs');return buildTextIndex(document.body).segments.every(s=>!s.node.parentElement.closest('.cl-expected,.cl-learner-marks'));});

@@ -786,10 +786,11 @@ mark.cl-hl.cl-hl-pending {
 }
 
 /*
- * A saved card sits in the document flow, directly after the block it asks about, so
- * it can never cover the passage. Only the transient composer floats.
+ * Cards and composers sit after their passage on narrow screens. The wide-screen
+ * dock preserves this reading order without covering lesson content.
  */
-.cl-card-inline {
+.cl-card-inline,
+.cl-card-composer {
   position: static;
   /* Quiz cards are flex items, so reset the floating panel's stacking order too. */
   z-index: auto;
@@ -1607,6 +1608,19 @@ textarea.cl-input {
   resize: vertical;
 }
 
+/* Shared answer surfaces, including native selects and unit/blank controls. */
+.cl-q :where(textarea, input:not([type]), input[type="text"], input[type="number"], select) {
+  box-sizing: border-box;
+  max-width: 100%;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--cl-border-strong);
+  border-radius: var(--cl-radius-sm);
+  background: var(--cl-bg);
+  color: var(--cl-text);
+  font: inherit;
+  box-shadow: 0 0 0 1px var(--cl-border);
+}
+
 .cl-quiz-footer {
   display: flex;
   align-items: center;
@@ -1631,41 +1645,91 @@ textarea.cl-input {
 }
 
 .cl-grade-banner {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto 1fr;
   align-items: baseline;
-  gap: 0.75rem;
-  margin: 0 0 1.2rem;
-  padding: 0.85rem 1rem;
+  gap: 0.75rem 1rem;
+  margin: 0 0 1rem;
+  padding: 1.25rem;
+  border: 1px solid var(--cl-border);
   border-radius: var(--cl-radius-sm);
   background: var(--cl-surface-2);
+  color: var(--cl-text);
   font-family: var(--cl-sans);
 }
 
 .cl-grade-score {
-  font-size: 1.5rem;
-  font-weight: 700;
+  font-size: clamp(2rem, 6vw, 3rem);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.04em;
   line-height: 1;
 }
-
-.cl-grade-banner[data-tone="pass"] {
-  background: var(--cl-success-soft);
-  color: var(--cl-success);
+.cl-grade-score > span {
+  font-size: 0.5em;
+  margin-left: 0.15em;
+  color: var(--cl-text-muted);
+}
+.cl-grade-count {
+  font-size: 0.875rem;
+  color: var(--cl-text-muted);
+}
+.cl-grade-meter {
+  grid-column: 1 / -1;
+  height: 0.35rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--cl-border);
+}
+.cl-grade-meter > span {
+  display: block;
+  height: 100%;
+  background: var(--cl-accent);
+  transform-origin: left;
 }
 
-.cl-grade-banner[data-tone="mixed"] {
-  background: var(--cl-accent-soft);
-  color: var(--cl-accent);
+/* Only a newly completed attempt reveals. Restores and revisions stay still. */
+[data-cl-grade][data-reveal="true"] .cl-grade-banner,
+[data-cl-grade][data-reveal="true"] .cl-grade-feedback,
+.cl-q-verdict[data-reveal="true"] {
+  animation: cl-result-reveal 300ms ease-out both;
 }
-
-.cl-grade-banner[data-tone="fail"] {
-  background: var(--cl-danger-soft);
-  color: var(--cl-danger);
+[data-cl-grade][data-reveal="true"] .cl-grade-feedback {
+  animation-delay: 100ms;
 }
-
-/* A pretest score is information, not a verdict. */
-.cl-grade-banner[data-tone="info"] {
-  background: var(--cl-surface-2);
-  color: var(--cl-text);
+[data-cl-grade][data-reveal="true"] .cl-grade-meter > span {
+  animation: cl-score-fill 600ms cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+@keyframes cl-result-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(0.35rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes cl-score-fill {
+  from {
+    transform: scaleX(0);
+  }
+}
+@keyframes cl-result-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-cl-grade][data-reveal="true"] .cl-grade-banner,
+  [data-cl-grade][data-reveal="true"] .cl-grade-feedback,
+  .cl-q-verdict[data-reveal="true"],
+  [data-cl-grade][data-reveal="true"] .cl-grade-meter > span {
+    animation-name: cl-result-fade;
+  }
 }
 
 .cl-grade-feedback {
@@ -1682,8 +1746,10 @@ textarea.cl-input {
   gap: 0.25rem;
   margin-top: 0.6rem;
   padding: 0.75rem 0.85rem;
-  border-left: 3px solid currentColor;
+  border: 1px solid var(--cl-border);
   border-radius: var(--cl-radius-sm);
+  background: var(--cl-surface-2);
+  color: var(--cl-text);
   font-family: var(--cl-sans);
   font-size: 0.875rem;
   line-height: 1.5;
@@ -1691,7 +1757,24 @@ textarea.cl-input {
 }
 
 .cl-q-verdict-label {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
   font-weight: 600;
+}
+.cl-verdict-icon {
+  flex: none;
+  font-size: 1.1em;
+  line-height: 1;
+}
+.cl-q-verdict[data-outcome="correct"] .cl-q-verdict-label {
+  color: var(--cl-success);
+}
+.cl-q-verdict[data-outcome="incorrect"] .cl-q-verdict-label {
+  color: var(--cl-danger);
+}
+.cl-q-verdict[data-outcome="partial"] .cl-q-verdict-label {
+  color: var(--cl-accent);
 }
 
 .cl-q-verdict-feedback {
@@ -1704,16 +1787,6 @@ textarea.cl-input {
 
 .cl-q-verdict-feedback > :last-child {
   margin-bottom: 0;
-}
-
-.cl-q-verdict[data-correct="true"] {
-  background: var(--cl-success-soft);
-  color: var(--cl-success);
-}
-
-.cl-q-verdict[data-correct="false"] {
-  background: var(--cl-danger-soft);
-  color: var(--cl-danger);
 }
 
 /* ── Question types ───────────────────────────────────────────────────────── */
@@ -2092,12 +2165,6 @@ figure:has(> .cl-diagram) figcaption {
   }
 }
 
-.cl-q-verdict[data-outcome="partial"] {
-  color: var(--cl-accent);
-  background: var(--cl-accent-soft);
-  border-left: 3px solid currentColor;
-}
-
 .cl-teacher {
   max-width: 52rem;
   margin: 2rem auto;
@@ -2175,7 +2242,8 @@ figure:has(> .cl-diagram) figcaption {
 }
 
 /* A card about a quiz question sits after the question, lined up with its text. */
-.cl-questions > .cl-card-inline {
+.cl-questions > .cl-card-inline,
+.cl-questions > .cl-card-composer {
   margin: 0 0 0 2rem;
 }
 
@@ -2901,9 +2969,7 @@ body > .cl-teacher-activity {
   border: 1px solid var(--cl-border);
   border-radius: 10px;
   box-shadow: var(--cl-shadow-lifted);
-  font:
-    13px system-ui,
-    sans-serif;
+  font: 0.8125rem/1.5 var(--cl-sans);
 }
 .cl-selection-actions[hidden],
 .cl-learner-marks [hidden] {
@@ -2913,16 +2979,6 @@ body > .cl-teacher-activity {
   position: static;
   transform: none;
   box-shadow: none;
-}
-.cl-selection-actions button,
-.cl-learner-marks button {
-  cursor: pointer;
-  border: 1px solid var(--cl-border);
-  background: var(--cl-surface);
-  color: inherit;
-  padding: 6px 9px;
-  border-radius: 6px;
-  font: inherit;
 }
 .cl-selection-actions button:focus-visible,
 .cl-learner-marks :focus-visible {
@@ -2934,9 +2990,7 @@ body > .cl-teacher-activity {
   max-width: 66ch;
   margin: 12px auto;
   padding: 10px 16px;
-  font:
-    14px/1.5 system-ui,
-    sans-serif;
+  font: 0.875rem/1.5 var(--cl-sans);
   color: var(--cl-text);
 }
 .cl-learner-marks summary {
@@ -3583,4 +3637,264 @@ body.cl-app.cl-lesson-page {
 }
 .cl-daily-details summary {
   cursor: pointer;
+}
+
+.cl-q :is(input, textarea, select, button, [role="button"]):focus-visible {
+  outline: 2px solid var(--cl-accent);
+  outline-offset: 3px;
+}
+.cl-q :is(textarea, input, select):disabled {
+  opacity: 1;
+  color: var(--cl-text-muted);
+  -webkit-text-fill-color: var(--cl-text-muted);
+  cursor: default;
+}
+.cl-q .cl-options label:has(input:checked) {
+  border-color: var(--cl-accent);
+  background: var(--cl-accent-soft);
+}
+.cl-quiz-footer {
+  flex-wrap: wrap;
+}
+.cl-quiz-status {
+  flex-wrap: wrap;
+}
+.cl-criteria-disclosure,
+.cl-expected {
+  border: 0;
+  border-top: 1px solid var(--cl-border);
+  border-radius: 0;
+  padding: 0.65rem 0 0;
+  margin-top: 0.65rem;
+  color: var(--cl-text);
+}
+:is(.cl-criteria-disclosure, .cl-expected, .cl-disputes) summary {
+  cursor: pointer;
+  font: 500 0.85rem/1.6 var(--cl-sans);
+  color: var(--cl-text-muted);
+}
+:is(.cl-criteria-disclosure, .cl-expected, .cl-disputes) summary:focus-visible {
+  outline: 2px solid var(--cl-accent);
+  outline-offset: 3px;
+}
+
+/* Passage conversations share the lesson's reading order at every width. */
+.cl-card-panel.cl-card-box {
+  padding: 0;
+  border: 1px solid transparent;
+}
+.cl-card-head {
+  background: transparent;
+}
+.cl-card-panel.cl-card-docked {
+  position: absolute;
+  width: 20rem;
+  max-width: 20rem;
+  margin: 0;
+  z-index: 10;
+}
+@media (min-width: 1100px) {
+  .cl-lesson-page .cl-lesson-shell {
+    margin-left: max(0px, calc((100% - 1024px) / 2));
+    margin-right: 352px;
+  }
+}
+.cl-answer-arriving {
+  animation: cl-answer-arrival 300ms ease-out;
+}
+@keyframes cl-answer-arrival {
+  from {
+    opacity: 0;
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cl-answer-arriving {
+    animation-name: cl-answer-fade;
+  }
+}
+@keyframes cl-answer-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.cl-stepper-runtime.cl-card-box,
+.cl-faded-runtime.cl-card-box {
+  border-color: transparent;
+  border-radius: var(--cl-radius);
+}
+.cl-faded-label textarea,
+.cl-faded-label input {
+  font: 0.9375rem/1.5 var(--cl-sans);
+}
+.cl-lesson-shell .cl-diagram,
+.cl-lesson-shell .cl-math-display {
+  padding: 1rem;
+  border-radius: var(--cl-radius);
+  background: var(--cl-surface);
+  box-shadow: var(--cl-shadow);
+}
+@media print {
+  .cl-lesson-page .cl-lesson-shell {
+    margin: 0 auto;
+  }
+  .cl-card-panel.cl-card-docked {
+    position: static;
+    width: auto;
+    max-width: 100%;
+  }
+}
+
+.cl-lesson-page .cl-learner-marks {
+  max-width: calc(var(--cl-measure) + 6rem);
+  padding-inline: clamp(1rem, 4vw, 3rem);
+}
+@media (min-width: 1100px) {
+  .cl-lesson-page .cl-learner-marks {
+    margin-left: max(0px, calc((100% - 1024px) / 2));
+    margin-right: 352px;
+  }
+}
+
+/* Classroom: the next action precedes supporting evidence. */
+.cl-up-next {
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+.cl-up-next .cl-section-title {
+  margin: 0;
+}
+.cl-up-next > p {
+  margin: 0.65rem 0;
+}
+.cl-up-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+}
+.cl-classroom-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  gap: 1.5rem;
+}
+.cl-classroom-columns > .cl-section {
+  margin: 0;
+  min-width: 0;
+}
+.cl-classroom-columns .cl-memory-forecast {
+  margin: 0;
+  padding: 1rem;
+}
+.cl-classroom-columns .cl-memory-bars {
+  gap: 0.2rem;
+}
+.cl-classroom-columns .cl-memory-bars li > span:last-child {
+  font-size: 0.55rem;
+}
+.cl-memory-forecast-heading h2 {
+  margin: 0;
+}
+.cl-classroom-columns .cl-lesson-link {
+  padding: 0.85rem;
+  flex-wrap: wrap;
+}
+.cl-classroom-columns .cl-lesson-title {
+  overflow-wrap: anywhere;
+}
+.cl-classroom-columns .cl-lesson-badges {
+  flex-wrap: wrap;
+}
+.cl-scheduling {
+  margin: 1rem 0;
+}
+.cl-memory-items {
+  gap: 0;
+  border: 1px solid var(--cl-border);
+  border-radius: var(--cl-radius);
+  overflow: clip;
+}
+.cl-memory-item {
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+}
+.cl-memory-item + .cl-memory-item {
+  border-top: 1px solid var(--cl-border);
+}
+.cl-memory-row > summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(8rem, 0.7fr) minmax(7rem, 0.5fr);
+  gap: 1rem;
+  align-items: center;
+  padding: 1rem;
+  cursor: pointer;
+}
+.cl-memory-objective::before {
+  content: "›";
+  display: inline-block;
+  margin-right: 0.5rem;
+}
+.cl-memory-row[open] .cl-memory-objective::before {
+  transform: rotate(90deg);
+}
+.cl-memory-state {
+  white-space: normal;
+  justify-self: start;
+}
+.cl-memory-due {
+  font-size: 0.85rem;
+  color: var(--cl-text-muted);
+}
+.cl-memory-row > :not(summary) {
+  margin-left: 1rem;
+  margin-right: 1rem;
+}
+.cl-memory-row > .cl-memory-why {
+  margin-bottom: 1rem;
+}
+time[data-exact-time] {
+  position: relative;
+}
+time[data-exact-time]:focus::after {
+  content: attr(data-exact-time);
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  z-index: 5;
+  padding: 0.4rem;
+  background: var(--cl-surface);
+  border: 1px solid var(--cl-border);
+  border-radius: var(--cl-radius-sm);
+  font-size: 0.75rem;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  min-width: 12rem;
+  box-shadow: var(--cl-shadow);
+}
+@media (max-width: 800px) {
+  .cl-classroom-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .cl-memory-row > summary {
+    grid-template-columns: minmax(0, 1fr) minmax(6rem, 0.6fr);
+    gap: 0.5rem;
+  }
+  .cl-memory-objective {
+    grid-column: 1 / -1;
+  }
+  .cl-memory-state {
+    font-size: 0.75rem;
+  }
+}
+
+.cl-up-actions > [hidden] {
+  display: none;
 }

@@ -19,7 +19,7 @@ and opens it after the teacher finishes authoring and checking it.
 
 1. Open a classroom whose persistent teacher service is running. The initiating host may be closed.
 2. Optionally enter `What would you like to learn next?`.
-3. Select `Next lesson`. The request remains saved if you leave or reload.
+3. Select `Next lesson`, or the **Up next** `Start next lesson` shortcut when no lesson is in progress and no review is due. The request remains saved if you leave or reload.
 4. Read a specific failure and select `Retry lesson` after correcting its cause.
 5. The finished lesson opens automatically in the requesting tab. `Open lesson`
    remains available from the classroom page.
@@ -30,7 +30,7 @@ and opens it after the teacher finishes authoring and checking it.
 Run `npm run verify -- browser --artifacts /tmp/studens-next-lesson-browser`.
 
 Inspect `next-lesson/{pi,claude,codex}/result.json` and the desktop, mobile, failed,
-and opened screenshots. The fixture drives the optional topic, failed publication,
+and opened screenshots. The fixture drives the Up next shortcut with the optional topic, failed publication,
 reload, explicit retry, and automatic opening. It checks repeated requests, invalid
 topic length, private routes, unpublished lessons, and unchanged source material.
 Service publication retry follows a service restart and uses one model-plan turn.
