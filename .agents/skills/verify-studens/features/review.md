@@ -112,6 +112,27 @@ grades its prepared independent transfer. Publication contracts reject retrieval
 or assisted tasks for that objective before writes. Its background refill retry
 must append to the original question pool while retaining the objective key.
 
+The legacy-pool drive uses original prose rubrics with newly added strict private
+variants. It starts reviews from the classroom, completes a closed independent
+answer, reloads, and restarts the owned loopback server. The saved historical key
+and unknown objective context remain, while a delayed independent answer extends
+the due date. Assisted and unreported answers keep the original due date; malformed
+new variant keys fail before publication. Original grades stay unchanged and each
+review has one grade. Inspect `legacy-review/{short,numeric,assisted,unknown,malformed}`
+for screenshots, saved timestamps, due dates, and scratch state. The focused command is
+`node --input-type=module -e 'import {verifyLegacyReview} from "./scripts/e2e-legacy-review.ts";await verifyLegacyReview("/tmp/studens-legacy-review")'`.
+This drive uses preauthored closed grading and no model connection.
+For a scoped native check, run
+`node scripts/e2e-legacy-review-host.ts <pi|claude|codex> <artifacts>`.
+It checks the loaded product hashes, real initiating host, persistent teacher,
+legacy numeric pool, independent closed review, real refill, private routes,
+original assessments, and restart. Its fixture includes an HTML format example
+in the saved historical answer prompt because refill replays that immutable
+prompt. This is verification input only; product prompts and strict validation
+are unchanged. Inspect native `result.json` or retained `failure.json`, raw
+initiator output, service log, and private classroom state. A failed native turn
+requires an explicit retry decision; this harness never retries model failures.
+
 The control fixtures exercise both Pi and service queues. They choose Quick 3 and request 12 through the browser with paused and retired items excluded even for early review,
 navigate classrooms, pick a saved objective group, reload
 options, answer early with assistance and compare the original due date, retire and
@@ -133,7 +154,8 @@ private files, and startup without duplicate grades or reports. Inspect
 
 The workload fixtures drive 20 overdue items with 5 available slots and 15 deferred,
 then complete 3 and 2 unique closed cards. Another start shows the explicit shared
-allowance error; reload/restart preserve dates and grades. They also drive seven
+allowance error. All five completed overdue independent answers extend their intervals;
+the fifteen deferred dates stay unchanged. Reload/restart preserve schedules and grades. They also drive seven
 classrooms through the daily landing: only five total new cards are saved, an
 individual early start cannot bypass those reservations, and midnight/reload keep
 unfinished plans. After completing carried cards, an explicit classroom takes three

@@ -1,5 +1,5 @@
 import { verifyRootWorkload } from "./e2e-review-workload-root.ts";
-/** Observe workload slots and unchanged overdue history through classroom controls. */
+/** Observe workload slots, independent completion, and unchanged deferred history. */
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { DAY_MS, summarize } from "../src/review.ts";
@@ -109,15 +109,36 @@ export async function verifyReviewWorkload(artifacts: string | null): Promise<vo
       throw new Error("Cap/reload changed selection or woke a teacher.");
     if (JSON.stringify(store.listGrades("rust", "001-ownership")) !== original)
       throw new Error("Workload policy mutated original grades.");
-    if (
-      store
-        .reviewItems("rust")
-        .some((i) => i.dueAt !== originalDates.find((d) => d.key === i.key)!.dueAt)
-    )
-      throw new Error("Unknown context was postponed by workload.");
+    const completedKeys = new Set([...first.items, ...second.items].map((item) => item.key));
+    const afterItems = store.reviewItems("rust");
+    if (completedKeys.size !== 5 || afterItems.length !== 20)
+      throw new Error("Workload lost completed or deferred items.");
+    for (const item of afterItems) {
+      const originalDate = originalDates.find((date) => date.key === item.key)!;
+      if (item.context !== "unknown" || item.objective !== undefined)
+        throw new Error(`Workload invented historical objective context: ${item.key}.`);
+      if (completedKeys.has(item.key)) {
+        // Enabling early selection does not make an already overdue item early.
+        const event = store
+          .reviewEvents("rust")
+          .find((event) => event.key === item.key && !event.questionKey);
+        if (!event?.gapIndependent || event.early || !event.correct || event.credit !== 1)
+          throw new Error(
+            `Completed workload answer was not full overdue independent retrieval: ${item.key}.`,
+          );
+        if (item.dueAt <= originalDate.dueAt || item.dueAt <= item.lastFeedbackAt + DAY_MS)
+          throw new Error(
+            `Independent workload completion did not extend its interval: ${item.key}.`,
+          );
+      } else if (item.dueAt !== originalDate.dueAt) {
+        throw new Error(`Workload postponed a deferred item: ${item.key}.`);
+      }
+    }
     const counts = reviewSessions("rust").map((r) => store.listGrades("rust", r.lesson).length);
     await server.close();
     const restarted = await server.start(0);
+    if (JSON.stringify(store.reviewItems("rust")) !== JSON.stringify(afterItems))
+      throw new Error("Restart changed completed or deferred schedules.");
     if (
       JSON.stringify(counts) !==
       JSON.stringify(reviewSessions("rust").map((r) => store.listGrades("rust", r.lesson).length))
@@ -137,6 +158,7 @@ export async function verifyReviewWorkload(artifacts: string | null): Promise<vo
             counts,
             teacherTurns,
             originalDates,
+            afterItems,
             summary: summarize(store.reviewItems("rust"), Date.now()),
             privateLockDenied: true,
             restartPreserved: true,
@@ -147,7 +169,7 @@ export async function verifyReviewWorkload(artifacts: string | null): Promise<vo
         ),
       );
     console.log(
-      "PASS: workload 20 overdue -> 5 available / 15 deferred; 3+2 unique closed cards, explicit cap error/reload, unchanged due history and restart",
+      "PASS: workload 20 overdue -> 5 available / 15 deferred; 3+2 unique independent completions extend, 15 deferred dates unchanged, explicit cap error/reload and restart",
     );
   } catch (error) {
     if (artifacts)

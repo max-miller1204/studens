@@ -89,8 +89,9 @@ export function authoredVariants(
   planText: string,
   html: string,
   required = false,
+  format: "machine" | "legacy" = "machine",
 ): Map<string, PreparedVariant[]> {
-  const key = parseRubric(keyText, html);
+  const key = parseRubric(keyText, html, format);
   const plan = parseTeachingPlan(planText, html);
   const pools = new Map<string, PreparedVariant[]>();
   for (const quiz of authoredQuizzes(html)) {
