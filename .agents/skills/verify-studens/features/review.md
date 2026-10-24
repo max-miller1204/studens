@@ -112,6 +112,27 @@ grades its prepared independent transfer. Publication contracts reject retrieval
 or assisted tasks for that objective before writes. Its background refill retry
 must append to the original question pool while retaining the objective key.
 
+The legacy-pool drive uses original prose rubrics with newly added strict private
+variants. It starts reviews from the classroom, completes a closed independent
+answer, reloads, and restarts the owned loopback server. The saved historical key
+and unknown objective context remain, while a delayed correct answer extends
+the due date. Historical assistance reports do not control scheduling; malformed
+new variant keys fail before publication. Original grades stay unchanged and each
+review has one grade. Inspect `legacy-review/{short,numeric,assisted,unknown,malformed}`
+for screenshots, saved timestamps, due dates, and scratch state. The focused command is
+`node --input-type=module -e 'import {verifyLegacyReview} from "./scripts/e2e-legacy-review.ts";await verifyLegacyReview("/tmp/studens-legacy-review")'`.
+This drive uses preauthored closed grading and no model connection.
+For a scoped native check, run
+`node scripts/e2e-legacy-review-host.ts <pi|claude|codex> <artifacts>`.
+It checks the loaded product hashes, real initiating host, persistent teacher,
+legacy numeric pool, independent closed review, real refill, private routes,
+original assessments, and restart. Its fixture includes an HTML format example
+in the saved historical answer prompt because refill replays that immutable
+prompt. This is verification input only; product prompts and strict validation
+are unchanged. Inspect native `result.json` or retained `failure.json`, raw
+initiator output, service log, and private classroom state. A failed native turn
+requires an explicit retry decision; this harness never retries model failures.
+
 The control fixtures exercise both Pi and service queues. They choose Quick 3 and request 12 through the browser with paused and retired items excluded even for early review,
 navigate classrooms, pick a saved objective group, reload
 options, answer early and compare the original due date, retire and

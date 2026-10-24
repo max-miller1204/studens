@@ -111,13 +111,18 @@ export async function verifyReviewWorkload(artifacts: string | null): Promise<vo
       throw new Error("Workload policy mutated original grades.");
     const selectedKeys = new Set([...first.items, ...second.items].map((item) => item.key));
     const scheduled = store.reviewItems("rust");
-    if (selectedKeys.size !== 5) throw new Error("Workload selection lost unique keys.");
+    if (selectedKeys.size !== 5 || scheduled.length !== 20)
+      throw new Error("Workload selection lost unique keys.");
     for (const item of scheduled) {
       const originalDue = originalDates.find((date) => date.key === item.key)!.dueAt;
       if (selectedKeys.has(item.key)) {
         if (item.dueAt <= Date.now() || item.dueAt <= originalDue || item.gapOpen)
           throw new Error(`Correct delayed answer did not extend ${item.key}.`);
-        if (item.context !== "unknown" || item.delayedSuccesses !== 0)
+        if (
+          item.context !== "unknown" ||
+          item.objective !== undefined ||
+          item.delayedSuccesses !== 0
+        )
           throw new Error("Historical workload answer invented independent-task evidence.");
       } else if (item.dueAt !== originalDue) {
         throw new Error(`Workload postponed unselected item ${item.key}.`);
@@ -126,6 +131,8 @@ export async function verifyReviewWorkload(artifacts: string | null): Promise<vo
     const counts = reviewSessions("rust").map((r) => store.listGrades("rust", r.lesson).length);
     await server.close();
     const restarted = await server.start(0);
+    if (JSON.stringify(store.reviewItems("rust")) !== JSON.stringify(scheduled))
+      throw new Error("Restart changed completed or deferred schedules.");
     if (
       JSON.stringify(counts) !==
       JSON.stringify(reviewSessions("rust").map((r) => store.listGrades("rust", r.lesson).length))

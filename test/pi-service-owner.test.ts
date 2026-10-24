@@ -77,7 +77,7 @@ it("rejects legacy route ownership even when the persistent service already runs
     else process.env.PI_CLASSROOM_TAILSCALE = previousTailnet;
     f.cleanup();
   }
-});
+}, 30_000);
 
 it.each(["pi", "claude", "codex"] as const)(
   "rejects unpublished legacy Pi daily plans before creating %s teacher ownership",

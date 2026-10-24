@@ -42,6 +42,33 @@ describe("scheduleItems", () => {
     });
     expect(item.dueAt).toBeGreaterThan(T0 + 21 * DAY_MS);
   });
+  it("spaces correct legacy retrieval without inventing objective context", () => {
+    const history = [event(0, { evidence: undefined }), event(2, { evidence: undefined })];
+    const item = scheduleItems(history)[0];
+    expect(item).toMatchObject({
+      box: 1,
+      context: "unknown",
+      objective: undefined,
+      progress: "context-unknown",
+    });
+    expect(item.dueAt).toBeGreaterThan(T0 + 3 * DAY_MS);
+    const aggregated = scheduleItems([
+      history[0],
+      { ...history[1], attemptId: "same" },
+      { ...history[1], attemptId: "same" },
+    ])[0];
+    expect(aggregated).toMatchObject({ attempts: 2, box: 1, dueAt: item.dueAt });
+    const early = scheduleItems([
+      history[0],
+      { ...history[1], early: true, earlyDueAt: T0 + DAY_MS },
+    ])[0];
+    expect(early.dueAt).toBe(T0 + DAY_MS);
+    const waiting = scheduleItems([
+      { ...history[0], feedbackAt: T0 + 2 * DAY_MS },
+      { ...history[1], at: T0 + 2.5 * DAY_MS },
+    ])[0];
+    expect(waiting).toMatchObject({ box: 0, dueAt: T0 + 3 * DAY_MS });
+  });
   it("does not promote or postpone immediate independent corrections", () => {
     const [item] = scheduleItems([event(0), event(0.001, { source: "chat" }), event(0.002)]);
     expect(item).toMatchObject({ box: 0, progress: "immediate-success", delayedSuccesses: 0 });

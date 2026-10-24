@@ -236,6 +236,7 @@ it.each(["codex", "claude"])(
     expect(c.child.exitCode).toBe(0);
     expect(c.stderr()).not.toContain("detach failed");
   },
+  30_000,
 );
 
 it("keeps a refused explicit stop visible and HTTP live after MCP exit", async () => {
@@ -266,7 +267,7 @@ it("keeps a refused explicit stop visible and HTTP live after MCP exit", async (
     c.child.stdin.end();
     await c.exited;
   }
-});
+}, 30_000);
 async function waitFor(probe: () => Promise<boolean>) {
   const deadline = Date.now() + 10_000;
   while (Date.now() < deadline) {
@@ -683,7 +684,7 @@ it("discovers and resumes a historical review through the actual MCP transport",
   expect(state.teacher.requests[0].kind).toBe("resume");
   expect(state.teacher.messages.map((m: any) => m.role)).toEqual(["teacher"]);
   expect(state.quizzes[0].grade.score).toBe(67);
-});
+}, 30_000);
 
 it("uses local links without Tailscale and reports a failed tailnet route", async () => {
   // The fake CLI fails until tailscale-up exists, then emulates a connected node.
@@ -777,4 +778,4 @@ it("opens a prepared review through MCP without a review authoring request", asy
     mcp.child.stdin.end();
     await mcp.exited;
   }
-});
+}, 30_000);

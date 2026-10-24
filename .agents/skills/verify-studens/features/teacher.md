@@ -79,6 +79,20 @@ with HTTP live. Release the loser, require its actual exit and both successful
 same-owner replies, then stop publicly and require natural owner exit and absent
 owner/socket without another start. A matching winner must not complete a start
 while that invocation's child can still claim ownership later.
+For installed-copy compatibility, run
+`node scripts/verify-service-copies.ts /tmp/studens-service-copies`.
+It installs full and production-only copies with the same `--ignore-scripts` policy,
+starts actual Codex/Claude MCP clients concurrently, and checks one PID, private
+socket and loopback HTTP owner across detach/reconnect. It changes runtime and
+production dependency bytes separately: attachment must reject both without a
+service spawn or saved-state change. It also rejects post-startup mutation and an
+unequal simultaneous contender. Inspect `copies.json`, `service-spawns.jsonl`, the
+install logs and `service.log`. Successful runs stop the exact owned process and
+remove scratch installs; failures retain their scratch path for diagnosis. This
+proves actual MCP transport with host client identities, not native agent inference.
+Different install-script policies can produce different production bytes (esbuild's
+launcher is one example); those installs are intentionally incompatible.
+
 For a control-only service change, also drive the actual Pi extension in RPC mode
 with an isolated `PI_CODING_AGENT_DIR` and offline resource loading: use
 `/classroom start`, `/classroom status`, `/classroom rust`, initiating Pi exit,
@@ -190,8 +204,16 @@ app-server with the packaged `CODEX_TEACHER_ARGS` and use
 `CODEX_TEACHER_FEATURES` in its thread settings, with configured MCP servers
 disabled and `web_search=disabled`. Check `mcpServerStatus/list` with `detail=full`
 for a fresh `thread/start` and a copied saved `thread/resume`, without `turn/start`.
-Both must expose zero servers/tools. Preserve paginated raw catalogs, source hashes
-and the original rollout bytes. An empty MCP config, a mock transport assertion or
+Accept an empty catalog or rows with explicit `runtimeStatus: "disabled"`, empty
+`tools` maps and empty `resources`/`resourceTemplates` arrays, and no advertised
+`serverCapabilities`. Missing/null statuses and active states must fail before
+`turn/start`. Preserve paginated raw catalogs, source hashes and the original
+rollout bytes. Copy only auth, config and session files into the scratch resume
+home; a copied Codex state database can retain the original rollout path.
+`npx vitest run test/teacher-models.test.ts` covers disabled rows across pages on
+start/resume, malformed or contradictory inventories, unsafe statuses and no
+inference on rejection. These transport contracts do not replace the native check.
+An empty MCP config, a mock transport assertion or
 a passing model turn alone does not prove this boundary. Apps and plugins must be
 disabled before process discovery as well as in thread settings.
 

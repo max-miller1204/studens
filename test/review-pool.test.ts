@@ -125,3 +125,34 @@ it("namespaces radio groups, labels and accessible references across selected qu
   expect(document.lesson_html).not.toContain("The new owner releases the value");
   expect(document.rubric_json).toContain('"expected":"a"');
 });
+
+it("reads legacy original numeric rubrics but keeps optional modern pools and all variants strict", () => {
+  const root = "rust/001-ownership/";
+  const htmlFile = path.join(fixture.root, root, "lesson.html");
+  const html = fs
+    .readFileSync(htmlFile, "utf8")
+    .replace('data-type="short"', 'data-type="numeric"')
+    .replace("<textarea></textarea>", '<input class="cl-number" type="number">');
+  fixture.write(root + "lesson.html", html);
+  fixture.write(root + "lesson.json", JSON.stringify({ title: "Legacy", createdAt: 2 }));
+  expect(lessonPools("rust", "001-ownership").get("check-1/q1")).toHaveLength(2);
+  // Requiring pools is independent of the assessment format.
+  expect(lessonPools("rust", "001-ownership", true).size).toBe(1);
+  fixture.write(
+    root + "lesson.json",
+    JSON.stringify({ title: "Modern", createdAt: 2, assessmentContract: 1 }),
+  );
+  expect(() => lessonPools("rust", "001-ownership", false)).toThrow(
+    "Invalid machine-checkable expected answer for numeric",
+  );
+  fixture.write(root + "lesson.json", JSON.stringify({ title: "Legacy", createdAt: 2 }));
+  const keyFile = path.join(fixture.root, root, "quiz/key.json");
+  const key = JSON.parse(fs.readFileSync(keyFile, "utf8"));
+  key["check-1"].q1.variants[0].html = key["check-1"].q1.variants[0].html
+    .replace('data-type="short"', 'data-type="numeric"')
+    .replace("<textarea></textarea>", '<input class="cl-number" type="number">');
+  fixture.write(root + "quiz/key.json", JSON.stringify(key));
+  expect(() => lessonPools("rust", "001-ownership")).toThrow(
+    "Invalid machine-checkable expected answer for numeric",
+  );
+});

@@ -579,10 +579,35 @@ async function runCodex(
         )
       )
         throw new Error("Codex returned an invalid dedicated-teacher MCP inventory.");
-      if (page.data.length)
-        throw new Error(
-          `Codex dedicated teacher still exposes MCP servers: ${page.data.map((server: any) => server.name).join(", ")}. No model turn was started.`,
-        );
+      for (const server of page.data) {
+        if (
+          !server ||
+          typeof server !== "object" ||
+          Array.isArray(server) ||
+          typeof server.name !== "string" ||
+          !server.name.trim() ||
+          !server.tools ||
+          typeof server.tools !== "object" ||
+          Array.isArray(server.tools) ||
+          !Array.isArray(server.resources) ||
+          !Array.isArray(server.resourceTemplates)
+        )
+          throw new Error(
+            "Codex returned an invalid dedicated-teacher MCP inventory entry. No model turn was started.",
+          );
+        // Codex lists configured servers even when the thread explicitly disables them.
+        // Missing/null runtime status cannot establish that isolation boundary.
+        if (
+          server.runtimeStatus !== "disabled" ||
+          Object.keys(server.tools).length > 0 ||
+          server.resources.length > 0 ||
+          server.resourceTemplates.length > 0 ||
+          server.serverCapabilities != null
+        )
+          throw new Error(
+            `Codex dedicated teacher still exposes MCP servers or an unverified state: ${server.name} (${server.runtimeStatus ?? "unknown"}). No model turn was started.`,
+          );
+      }
       inventoryCursor = page.nextCursor;
       if (inventoryCursor && inventoryCursors.has(inventoryCursor))
         throw new Error("Codex MCP inventory repeated a pagination cursor.");

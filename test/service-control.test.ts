@@ -1,7 +1,7 @@
 import * as fs from "node:fs";
 import * as http from "node:http";
 import { afterEach, expect, it, vi } from "vitest";
-import { control, servicePaths } from "../src/service-client.ts";
+import { control, servicePaths, ensureService } from "../src/service-client.ts";
 import { makeFixture } from "./helpers.ts";
 
 afterEach(() => vi.restoreAllMocks());
@@ -44,3 +44,27 @@ it("keeps ordered opens connected while ordinary control calls retain their time
     fixture.cleanup();
   }
 });
+
+it.each([undefined, { schema: 2, sha256: "a".repeat(64) }, { schema: 1, sha256: "invalid" }])(
+  "refuses an older or unsupported owner without creating service state: %j",
+  async (identity) => {
+    const fixture = makeFixture();
+    const paths = servicePaths();
+    const endpoints: string[] = [];
+    const listener = http.createServer((req, res) => {
+      endpoints.push(req.url!);
+      res.end(JSON.stringify({ running: true, identity }));
+    });
+    try {
+      await new Promise<void>((resolve) => listener.listen(paths.socket, resolve));
+      await expect(ensureService()).rejects.toThrow(
+        "missing, malformed, or unsupported runtime package identity",
+      );
+      expect(endpoints).toEqual(["/status"]);
+      expect(fs.existsSync(paths.dir)).toBe(false);
+    } finally {
+      await new Promise<void>((resolve) => listener.close(() => resolve()));
+      fixture.cleanup();
+    }
+  },
+);
