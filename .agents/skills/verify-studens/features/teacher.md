@@ -190,8 +190,16 @@ app-server with the packaged `CODEX_TEACHER_ARGS` and use
 `CODEX_TEACHER_FEATURES` in its thread settings, with configured MCP servers
 disabled and `web_search=disabled`. Check `mcpServerStatus/list` with `detail=full`
 for a fresh `thread/start` and a copied saved `thread/resume`, without `turn/start`.
-Both must expose zero servers/tools. Preserve paginated raw catalogs, source hashes
-and the original rollout bytes. An empty MCP config, a mock transport assertion or
+Accept an empty catalog or rows with explicit `runtimeStatus: "disabled"`, empty
+`tools` maps and empty `resources`/`resourceTemplates` arrays, and no advertised
+`serverCapabilities`. Missing/null statuses and active states must fail before
+`turn/start`. Preserve paginated raw catalogs, source hashes and the original
+rollout bytes. Copy only auth, config and session files into the scratch resume
+home; a copied Codex state database can retain the original rollout path.
+`npx vitest run test/teacher-models.test.ts` covers disabled rows across pages on
+start/resume, malformed or contradictory inventories, unsafe statuses and no
+inference on rejection. These transport contracts do not replace the native check.
+An empty MCP config, a mock transport assertion or
 a passing model turn alone does not prove this boundary. Apps and plugins must be
 disabled before process discovery as well as in thread settings.
 

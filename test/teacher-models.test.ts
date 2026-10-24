@@ -44,7 +44,7 @@ if(backend==='claude'&&!process.argv.includes('--input-format')) {
  if(!m.id)return;
  if(m.method==='initialize')send({id:m.id,result:{}});
  else if(m.method==='config/read')send({id:m.id,result:{config:{model:'configured-custom',mcp_servers:behavior.mcpServers??{}}}});
- else if(m.method==='mcpServerStatus/list')send({id:m.id,result:{data:behavior.exposeMcp?[{name:'unexpected-server'}]:behavior.invalidInventory?{}:[],nextCursor:behavior.repeatInventory?'again':null}});
+ else if(m.method==='mcpServerStatus/list')send({id:m.id,result:{...(behavior.inventoryPages?behavior.inventoryPages[m.params.cursor?1:0]:{data:behavior.exposeMcp?[{name:'unexpected-server'}]:behavior.invalidInventory?{}:[],nextCursor:behavior.repeatInventory?'again':null})}});
  else if(m.method==='model/list')send({id:m.id,result:{data:[{id:'catalog-'+(m.params.cursor||'first'),model:'catalog-'+(m.params.cursor||'first'),displayName:'Catalog',isDefault:false}],nextCursor:m.params.cursor?null:'second'}});
  else if(m.method==='thread/start'||m.method==='thread/resume')send({id:m.id,result:{model:m.params.model,thread:{id:m.params.threadId||'same-thread'}}});
  else if(m.method==='turn/start') {
@@ -420,8 +420,80 @@ it("disables inherited MCP servers, installed plugins and connected apps before 
   );
   expect(all.find((m) => m.method === "mcpServerStatus/list").params.threadId).toBe("same-thread");
 });
+const disabledMcpServer = {
+  name: "configured",
+  runtimeStatus: "disabled",
+  tools: {},
+  resources: [],
+  resourceTemplates: [],
+  serverCapabilities: null,
+};
+it.each([undefined, "saved-thread"])(
+  "accepts explicitly disabled MCP servers across pages on start/resume (%s)",
+  async (sessionId) => {
+    f.write(
+      "behavior.json",
+      JSON.stringify({
+        mcpServers: { configured: { command: "must-not-run" } },
+        inventoryPages: [
+          { data: [disabledMcpServer], nextCursor: "second" },
+          { data: [{ ...disabledMcpServer, name: "other" }], nextCursor: null },
+        ],
+      }),
+    );
+    await runStructured({ backend: "codex", sessionId }, "Return data", f.root, () => {}, {
+      type: "object",
+    });
+    const all = messages();
+    expect(
+      all.filter((m) => m.method === "mcpServerStatus/list").map((m) => m.params.cursor),
+    ).toEqual([null, "second"]);
+    expect(all.findIndex((m) => m.method === "turn/start")).toBeGreaterThan(
+      all.map((m) => m.method).lastIndexOf("mcpServerStatus/list"),
+    );
+    const start = all.find((m) => m.method === (sessionId ? "thread/resume" : "thread/start"));
+    expect(start.params.config.mcp_servers).toEqual({ configured: { enabled: false } });
+  },
+);
 it.each([
-  [{ exposeMcp: true }, /still exposes MCP servers/],
+  null,
+  [],
+  "disabled",
+  {},
+  ...[
+    undefined,
+    null,
+    "unknown",
+    "notStarted",
+    "starting",
+    "connected",
+    "authenticationRequired",
+    "failed",
+    "cancelled",
+  ].map((runtimeStatus) => ({ ...disabledMcpServer, runtimeStatus })),
+  ...[undefined, null, [], { exposed: {} }].map((tools) => ({ ...disabledMcpServer, tools })),
+  ...["resources", "resourceTemplates"].flatMap((key) =>
+    [undefined, null, {}, [{}]].map((value) => ({ ...disabledMcpServer, [key]: value })),
+  ),
+  ...[undefined, null, "", 42].map((name) => ({ ...disabledMcpServer, name })),
+  { ...disabledMcpServer, serverCapabilities: { tools: {} } },
+])("rejects unsafe or ambiguous MCP row before inference: %j", async (server) => {
+  f.write(
+    "behavior.json",
+    JSON.stringify({
+      inventoryPages: [
+        { data: [disabledMcpServer], nextCursor: "second" },
+        { data: [server], nextCursor: null },
+      ],
+    }),
+  );
+  await expect(
+    runStructured({ backend: "codex" }, "Return data", f.root, () => {}, { type: "object" }),
+  ).rejects.toThrow(/MCP/);
+  expect(messages().some((m) => m.method === "turn/start")).toBe(false);
+});
+it.each([
+  [{ exposeMcp: true }, /invalid dedicated-teacher MCP inventory entry/],
   [{ invalidInventory: true }, /MCP inventory/],
   [{ repeatInventory: true }, /repeated a pagination cursor/],
   [{ mcpServers: [] }, /invalid MCP server configuration/],
