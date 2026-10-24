@@ -104,7 +104,7 @@ export async function verifyRootWorkload(artifacts: string | null): Promise<void
     );
     for (const [i, g] of first.groups.entries()) {
       await code(
-        `await page.goto(${JSON.stringify(`${base}/reviews/daily/${first.id}`)});await page.getByRole('button',{name:${JSON.stringify(`${i === 0 ? "Continue" : "Start"} Subject ${i} review`)},exact:true}).click();await page.waitForFunction(()=>document.querySelector('[data-review-active="true"]')?.dataset.state==='fresh');await page.locator('form.cl-quiz:visible input[value="owner"]').check();await page.locator('form.cl-quiz:visible [data-cl-assistance]').selectOption('none');await page.locator('form.cl-quiz:visible button[type="submit"]').click();await page.getByText('Review complete · 1 of 1 answered',{exact:true}).waitFor();`,
+        `await page.goto(${JSON.stringify(`${base}/reviews/daily/${first.id}`)});await page.getByRole('button',{name:${JSON.stringify(`${i === 0 ? "Continue" : "Start"} Subject ${i} review`)},exact:true}).click();await page.waitForFunction(()=>document.querySelector('[data-review-active="true"]')?.dataset.state==='fresh');await page.locator('form.cl-quiz:visible input[value="owner"]').check();await page.locator('form.cl-quiz:visible button[type="submit"]').click();await page.getByText('Review complete · 1 of 1 answered',{exact:true}).waitFor();`,
       );
       if (store.listGrades(g.classroom, g.plan.lesson).length !== 1)
         throw new Error("A root card lost its one grade.");

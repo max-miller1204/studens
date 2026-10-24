@@ -1,15 +1,10 @@
 /** Derive review schedules and evidence labels from immutable attempt history. */
-import {
-  evidenceContext,
-  independent,
-  type EvidenceContext,
-  type PerformanceEvidence,
-} from "./evidence.ts";
+import { evidenceContext, type EvidenceContext, type PerformanceEvidence } from "./evidence.ts";
 import { objectiveReviewKey, reviewKey } from "../assets/runtime/quiz.mjs";
 import { initialMemory, recallMemory, incompleteMemory, MEMORY_POLICY } from "./review-memory.ts";
 import type { Objective } from "./teaching-plan.ts";
 
-export const REVIEW_POLICY = "elapsed-independent-v1";
+export const REVIEW_POLICY = "elapsed-correctness-v2";
 export const RETENTION_SPAN_DAYS = 7;
 export const RETENTION_SUCCESSES = 2;
 /** Cumulative incomplete exposures while the latest performance remains unresolved. */
@@ -36,8 +31,6 @@ export interface ReviewEvent {
   /** Fraction of credit. Absent on historical binary events. */
   credit?: number;
   evidence?: PerformanceEvidence;
-  /** Saved independence can resolve a gap without inventing an old objective context. */
-  gapIndependent?: boolean;
   /** First feedback time for the attempt. A regrade does not create a new exposure. */
   feedbackAt?: number;
   /** Selected before its due date; replay must never extend this interval. */
@@ -97,7 +90,7 @@ export interface ReviewItem {
   lastAnswer: string;
   lastFeedback: string;
   attempts: number;
-  /** An incomplete exposure remains open until a full independent answer. */
+  /** An incomplete exposure remains open until a fully correct answer. */
   gapOpen: boolean;
   misses?: number;
   needsReteach?: boolean;
@@ -135,7 +128,6 @@ function eventTie(event: ReviewEvent): string {
     event.feedbackAt,
     event.early,
     event.earlyDueAt,
-    event.gapIndependent,
     e?.objectiveId,
     e?.task,
     e?.support,
@@ -186,7 +178,7 @@ export function scheduleItems(events: ReviewEvent[]): ReviewItem[] {
     const source = probes.find((event) => event.sourceQuestionKey)?.sourceQuestionKey;
     const [lesson, quizId, questionId] = (source ?? questionKeys[0] ?? key).split("/");
     // Several probes in one attempt are one exposure. Every probe must succeed
-    // independently; a later correct answer must not erase an incomplete one.
+    // with full credit; a later correct answer must not erase an incomplete one.
     const list: ReviewEvent[] = [];
     for (const event of probes) {
       const previous = list.at(-1);
@@ -201,19 +193,19 @@ export function scheduleItems(events: ReviewEvent[]): ReviewItem[] {
       }
       const credit = (e: ReviewEvent) => e.credit ?? (e.correct ? 1 : 0);
       const weaker = credit(event) < credit(previous) || (!event.correct && previous.correct);
-      const evidence = !independent(previous.evidence)
-        ? previous.evidence
-        : !independent(event.evidence)
-          ? event.evidence
-          : event.evidence?.task === "transfer"
+      // Keep the least supported task context for evidence labels. Assistance is
+      // historical context only; it cannot veto correctness or timing progression.
+      const evidence =
+        !previous.evidence || previous.evidence.support === "assisted"
+          ? previous.evidence
+          : !event.evidence || event.evidence.support === "assisted"
             ? event.evidence
-            : previous.evidence;
+            : event.evidence.task === "transfer"
+              ? event.evidence
+              : previous.evidence;
       list[list.length - 1] = {
         ...(weaker ? event : previous),
         correct: previous.correct && event.correct,
-        gapIndependent:
-          (previous.gapIndependent ?? independent(previous.evidence)) &&
-          (event.gapIndependent ?? independent(event.evidence)),
         early: previous.early || event.early,
         earlyDueAt:
           previous.earlyDueAt === undefined
@@ -250,9 +242,7 @@ export function scheduleItems(events: ReviewEvent[]): ReviewItem[] {
       elapsedDays = elapsed / DAY_MS;
       context = evidenceContext(event.evidence, elapsed);
       const full = event.correct && (event.credit === undefined || event.credit === 1);
-      const independentFull = full && (event.gapIndependent ?? independent(event.evidence));
-      if (!full) gapOpen = true;
-      else if (event.gapIndependent ?? independent(event.evidence)) gapOpen = false;
+      gapOpen = !full;
       const feedbackAt = Math.max(event.at, event.feedbackAt ?? event.at);
       const scheduledDueAt = dueAt;
       if (i === 0) dueAt = feedbackAt + DAY_MS;
@@ -275,13 +265,15 @@ export function scheduleItems(events: ReviewEvent[]): ReviewItem[] {
           (event.credit ?? 0) > 0
             ? `Partial retrieval: small stability setback; ${interval.toFixed(2)}-day interval after feedback.`
             : `Missed retrieval: ${interval.toFixed(2)}-day interval after feedback.`;
-      } else if (independentFull) {
-        if (baselineAt !== undefined && elapsed >= DAY_MS) {
+      } else {
+        // Retention labels require saved task context, not a self-report of help.
+        const retrieval = event.evidence?.support === "independent";
+        if (retrieval && baselineAt !== undefined && elapsed >= DAY_MS) {
           delayedSuccesses++;
           lastDelayedAt = event.at;
-          if (context === "delayed-transfer") delayedTransfers++;
+          if (event.evidence?.task === "transfer") delayedTransfers++;
         }
-        baselineAt ??= event.at;
+        if (retrieval) baselineAt ??= event.at;
         if (i > 0 && !event.early && elapsed >= DAY_MS && event.at >= dueAt) {
           box = Math.min(box + 1, 4);
           memory = recallMemory(memory, elapsedDays);
@@ -291,17 +283,12 @@ export function scheduleItems(events: ReviewEvent[]): ReviewItem[] {
               ? base
               : Math.min(base, Math.max(1, Math.floor(objective.retentionDays / 4)));
           dueAt = feedbackAt + Math.ceil(interval * DAY_MS);
-          scheduleReason = `Independent retrieval after ${elapsedDays.toFixed(1)} days: ${interval.toFixed(2)}-day interval${objective?.retentionDays === undefined ? "." : `; retention-duration cap ${objective.retentionDays} days (not a deadline).`}`;
+          scheduleReason = `Correct retrieval after ${elapsedDays.toFixed(1)} days: ${interval.toFixed(2)}-day interval${objective?.retentionDays === undefined ? "." : `; retention-duration cap ${objective.retentionDays} days (not a deadline).`}`;
         } else if (i === 0) {
           dueAt = feedbackAt + DAY_MS;
         } else {
-          scheduleReason = "Early independent success: keep the scheduled review.";
+          scheduleReason = "Early correct answer: keep the scheduled review.";
         }
-      } else {
-        scheduleReason =
-          context === "assisted"
-            ? "Assisted performance: keep the scheduled independent review."
-            : "Unknown independence: keep the scheduled review; no retention claim.";
       }
       if (event.early) {
         dueAt = Math.min(scheduledDueAt, dueAt, event.earlyDueAt ?? Infinity);
@@ -328,11 +315,7 @@ export function scheduleItems(events: ReviewEvent[]): ReviewItem[] {
             ? "transfer-needed"
             : delayedSuccesses > 0
               ? "delayed-success"
-              : independent(last.evidence)
-                ? "immediate-success"
-                : context === "unknown"
-                  ? "context-unknown"
-                  : "needs-practice";
+              : "immediate-success";
     items.push({
       key,
       lesson,
@@ -369,11 +352,7 @@ export function scheduleItems(events: ReviewEvent[]): ReviewItem[] {
       gapOpen,
       needsReteach:
         misses >= RETEACH_MISSES &&
-        !(
-          last.correct &&
-          (last.credit === undefined || last.credit === 1) &&
-          (last.gapIndependent ?? independent(last.evidence))
-        ),
+        !(last.correct && (last.credit === undefined || last.credit === 1)),
     });
   }
   return items.sort((a, b) => a.dueAt - b.dueAt || a.key.localeCompare(b.key));

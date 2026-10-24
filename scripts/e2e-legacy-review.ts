@@ -21,7 +21,6 @@ export async function verifyLegacyReview(artifacts: string, baseline = false): P
   for (const scenario of ["short", "numeric", "assisted", "unknown", "malformed"] as const) {
     if (baseline && !["short", "numeric"].includes(scenario)) continue;
     const numeric = scenario === "numeric";
-    const assistance = scenario === "assisted" ? "hint" : scenario === "unknown" ? "" : "none";
     const f = makeFixture();
     const session = `studens-legacy-${scenario}-${process.pid}`;
     const evidence = path.join(artifacts, scenario);
@@ -53,7 +52,12 @@ export async function verifyLegacyReview(artifacts: string, baseline = false): P
       }
       writeGradedAttempt({
         at: Date.now() - 2 * DAY_MS,
-        answers: [termAnswer("q1", "owner")],
+        answers: [
+          termAnswer("q1", "owner", {
+            assistance:
+              scenario === "assisted" ? "hint" : scenario === "unknown" ? undefined : "none",
+          }),
+        ],
         correct: { q1: true },
       });
       const before = store.reviewItems("rust")[0];
@@ -106,16 +110,12 @@ export async function verifyLegacyReview(artifacts: string, baseline = false): P
       }
       const review = currentReview("rust")!;
       await code(
-        `await page.waitForURL(${JSON.stringify(`${base}${lessonUrl("rust", review.lesson)}*`)}); await page.waitForFunction(()=>document.querySelector('form.cl-quiz')?.dataset.state==='fresh'); await page.getByLabel('The new owner',{exact:true}).check(); await page.locator('[data-cl-assistance]').selectOption(${JSON.stringify(assistance)}); ${shot("review-answer")} await page.getByRole('button',{name:'Submit for grading',exact:true}).click(); await page.waitForFunction(()=>document.querySelector('form.cl-quiz')?.dataset.state==='graded'); await page.reload(); await page.waitForFunction(()=>document.querySelector('form.cl-quiz')?.dataset.state==='graded'); ${shot("review-complete")} await page.goto(${JSON.stringify(`${base}/c/rust`)}); await page.getByRole('button',{name:'Start review',exact:true}).waitFor(); await page.reload(); await page.getByRole('button',{name:'Start review',exact:true}).waitFor(); ${shot("due-after")}`,
+        `await page.waitForURL(${JSON.stringify(`${base}${lessonUrl("rust", review.lesson)}*`)}); await page.waitForFunction(()=>document.querySelector('form.cl-quiz')?.dataset.state==='fresh'); await page.getByLabel('The new owner',{exact:true}).check(); if (await page.locator('[data-cl-assistance]').count()) throw new Error('Removed assistance selector returned.'); ${shot("review-answer")} await page.getByRole('button',{name:'Submit for grading',exact:true}).click(); await page.waitForFunction(()=>document.querySelector('form.cl-quiz')?.dataset.state==='graded'); await page.reload(); await page.waitForFunction(()=>document.querySelector('form.cl-quiz')?.dataset.state==='graded'); ${shot("review-complete")} await page.goto(${JSON.stringify(`${base}/c/rust`)}); await page.getByRole('button',{name:'Start review',exact:true}).waitFor(); await page.reload(); await page.getByRole('button',{name:'Start review',exact:true}).waitFor(); ${shot("due-after")}`,
       );
       const after = store.reviewItems("rust")[0];
       if (after.context !== "unknown" || after.objective !== undefined || after.key !== before.key)
         throw new Error("Historical context was invented.");
-      if (
-        baseline || assistance !== "none"
-          ? after.dueAt !== before.dueAt
-          : after.dueAt <= after.lastFeedbackAt + DAY_MS
-      )
+      if (baseline ? after.dueAt !== before.dueAt : after.dueAt <= after.lastFeedbackAt + DAY_MS)
         throw new Error("Legacy interval does not match the expected scheduler.");
       if (
         store.listGrades("rust", review.lesson).length !== 1 ||

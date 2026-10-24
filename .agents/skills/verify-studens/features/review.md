@@ -115,8 +115,8 @@ must append to the original question pool while retaining the objective key.
 The legacy-pool drive uses original prose rubrics with newly added strict private
 variants. It starts reviews from the classroom, completes a closed independent
 answer, reloads, and restarts the owned loopback server. The saved historical key
-and unknown objective context remain, while a delayed independent answer extends
-the due date. Assisted and unreported answers keep the original due date; malformed
+and unknown objective context remain, while a delayed correct answer extends
+the due date. Historical assistance reports do not control scheduling; malformed
 new variant keys fail before publication. Original grades stay unchanged and each
 review has one grade. Inspect `legacy-review/{short,numeric,assisted,unknown,malformed}`
 for screenshots, saved timestamps, due dates, and scratch state. The focused command is
@@ -135,7 +135,7 @@ requires an explicit retry decision; this harness never retries model failures.
 
 The control fixtures exercise both Pi and service queues. They choose Quick 3 and request 12 through the browser with paused and retired items excluded even for early review,
 navigate classrooms, pick a saved objective group, reload
-options, answer early with assistance and compare the original due date, retire and
+options, answer early and compare the original due date, retire and
 restore while preserving evidence, and flag a question. Each report deliberately
 fails once, stays failed on reload, and reaches the fixture teacher only after
 `Retry request`. The service fixture changes the model in Settings while the report
@@ -154,8 +154,8 @@ private files, and startup without duplicate grades or reports. Inspect
 
 The workload fixtures drive 20 overdue items with 5 available slots and 15 deferred,
 then complete 3 and 2 unique closed cards. Another start shows the explicit shared
-allowance error. All five completed overdue independent answers extend their intervals;
-the fifteen deferred dates stay unchanged. Reload/restart preserve schedules and grades. They also drive seven
+allowance error; selected correct delayed answers extend their schedules while the 15
+unselected items keep their due dates. Reload/restart preserve grades and reservations. They also drive seven
 classrooms through the daily landing: only five total new cards are saved, an
 individual early start cannot bypass those reservations, and midnight/reload keep
 unfinished plans. After completing carried cards, an explicit classroom takes three
@@ -206,7 +206,11 @@ a partial publication conflict, explicit retry after reload, unchanged original
 grade revisions, one grade per card, corrective replies on the relevant review
 page, empty due work, malformed daily state, and private routes. Inspect
 `daily-review/pi/` and `daily-review/service/`, including `result.json`,
-`selected-before-progress.json`, and `partial-failure.json`. The service fixture
+`selected-before-progress.json`, `scheduling.json`, and `partial-failure.json`.
+Correct delayed cards grow their intervals with unknown help context; the missed
+Biology card keeps its gap and next-day date because the fixture reply saves no
+retrieval check. Retirement uses each saved `data-review-item` key, waits for the
+reload, and reopens `Manage review items` before the next action. The service fixture
 keeps Biology on Claude and Rust on Codex; these fixture teachers prove routing,
 not real model access. Contract tests additionally reject foreign ownership and
 competing unfinished reviews. Daily selections use the same prepared-variant boundary as the classroom memory map and one root-wide allowance. The daily fixtures
@@ -305,8 +309,9 @@ Each new card is its own quiz; completing one card cannot finish the other cards
 Consecutive Pi misses queue separate durable corrections behind the active turn;
 recovery keeps one grade and one corrective request per submission.
 
-Miss counts remain cumulative. An independently demonstrated latest result can resolve the current gap
-under existing evidence rules; assisted or unknown-independence replies keep the pause, including historical questions without an objective snapshot; opening a re-teach never resets the count. The two-miss
+Miss counts remain cumulative. A saved fully correct answer resolves the current gap,
+regardless of help reports, including historical questions without an objective snapshot.
+Opening a re-teach or receiving teacher prose without an accepted check does not resolve it. The two-miss
 health warning remains earlier than the three-miss review pause. Private request
 instructions and variant keys must not appear in the learner's help message.
 Daily plans live privately at the classrooms root. GET status never publishes a
@@ -325,3 +330,9 @@ without publishing it or replaying completed groups. Repair the cause (for examp
 restore the selected item), then explicitly retry the same saved plan. Already
 published cards remain available. A queued early review retains its saved early
 option while applying all other canonical exclusions.
+
+Review answers no longer request confidence or help-used reports. The browser drives
+compare stored/reloaded schedules: due full-credit answers extend intervals and
+resolve answer gaps while omitted assistance remains unknown. Immediate corrections
+resolve gaps without counting delayed retention; early selections keep their saved
+cap. Historical objective context stays unknown and saved help history remains readable.

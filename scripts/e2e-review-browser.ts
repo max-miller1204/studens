@@ -281,7 +281,6 @@ export async function verifyReviewBrowser(artifacts: string | null): Promise<voi
       await code(`
         await page.getByRole('button', {name:'Continue review',exact:true}).click();
         await page.waitForFunction(() => document.querySelector('form.cl-quiz')?.dataset.state === 'fresh');
-        await page.locator('[data-cl-assistance]').selectOption('none');
         const response = page.waitForResponse(r => r.url().endsWith('/api/quiz/submit'));
         await page.getByRole('button', {name:'Submit for grading',exact:true}).click();
         if ((await response).status() !== 201) throw new Error('The generated review could not be submitted.');
@@ -312,7 +311,7 @@ export async function verifyReviewBrowser(artifacts: string | null): Promise<voi
         ${shot("graded-review")}
         await page.goto(${JSON.stringify(`${base}/c/rust`)});
         await page.getByRole('button', {name:'Start review',exact:true}).waitFor();
-        if (await page.getByRole('button', {name:'Start review',exact:true}).isDisabled() !== true) throw new Error('Review availability contradicts the saved evidence.');
+        if (!await page.getByRole('button', {name:'Start review',exact:true}).isDisabled()) throw new Error('Review availability contradicts the saved evidence.');
       `);
       const grade = store.latestGrades("rust", request.lesson)[0];
       const reviewedItem = store
@@ -323,9 +322,13 @@ export async function verifyReviewBrowser(artifacts: string | null): Promise<voi
         (reviewedItem.objective !== undefined || reviewedItem.context !== "unknown")
       )
         throw new Error("A historical question acquired invented objective context.");
-      if (host === "service" && reviewedItem.progress !== "retained-evidence")
+      if (
+        reviewedItem.context !== "unknown" ||
+        (host === "service" && reviewedItem.progress !== "retained-evidence") ||
+        reviewedItem.dueAt <= Date.now()
+      )
         throw new Error(
-          "The delayed independent transfer did not complete the objective evidence.",
+          "Correct delayed review failed to progress while preserving unknown assistance.",
         );
       if (
         !grade ||

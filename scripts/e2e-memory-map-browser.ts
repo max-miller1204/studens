@@ -216,20 +216,28 @@ export async function verifyMemoryMapBrowser(artifacts: string | null): Promise<
         throw Error("Restore did not persist.");
       // Real prepared review, native closed grading, then reload: no teacher/model turn.
       await code(
-        `await page.locator('[data-cl-review-topic]').selectOption(${JSON.stringify(reviewTopic(partial).id)});await page.getByRole('button',{name:'Review due items',exact:true}).click();await page.waitForFunction(()=>document.querySelector('[data-review-active="true"]')?.dataset.state==='fresh');await page.locator('form.cl-quiz:visible input[value="owner"]').check();await page.locator('form.cl-quiz:visible [data-cl-assistance]').selectOption('none');await page.locator('form.cl-quiz:visible button[type="submit"]').click();await page.waitForFunction(()=>document.querySelector('[data-review-active="true"]')?.dataset.state==='graded');await page.goto(${JSON.stringify(base + "/c/rust")});await page.reload();return true;`,
+        `await page.locator('[data-cl-review-topic]').selectOption(${JSON.stringify(reviewTopic(partial).id)});await page.getByRole('button',{name:'Review due items',exact:true}).click();await page.waitForFunction(()=>document.querySelector('[data-review-active="true"]')?.dataset.state==='fresh');await page.locator('form.cl-quiz:visible input[value="owner"]').check();await page.locator('form.cl-quiz:visible button[type="submit"]').click();await page.waitForFunction(()=>document.querySelector('[data-review-active="true"]')?.dataset.state==='graded');await page.goto(${JSON.stringify(base + "/c/rust")});await page.reload();return true;`,
       );
       const after = store.reviewItems("rust"),
         corrected = after.find((i) => i.key === partial.key)!;
       if (
         corrected.gapOpen ||
+        corrected.context !== "unknown" ||
+        corrected.dueAt <= NOW ||
+        corrected.stability <= partial.stability ||
         corrected.attempts !== partial.attempts + 1 ||
         corrected.lastAt !== NOW
       )
-        throw Error("Accepted correction did not revise memory projection.");
+        throw Error("Correct answer did not resolve the gap and extend the due interval.");
       const correctedDisplay = await code(
         `const row=page.locator('[data-memory-key='+JSON.stringify(${JSON.stringify(partial.key)})+']');await row.locator('.cl-memory-row > summary').click();if(!(await row.innerText()).includes('Earlier answer gap resolved'))throw Error('Saved correction missing after reload');await row.getByText('Why is this due?',{exact:true}).click();await page.screenshot({path:${JSON.stringify(path.join(dir, "corrected.png"))},fullPage:true});return {strength:await row.locator(".cl-memory-facts > div").first().innerText(),latestEvidence:await row.locator(".cl-memory-facts > div").nth(1).innerText(),expanded:await row.locator(".cl-memory-why").innerText()};`,
       );
       save("correction-display", correctedDisplay);
+      save("correction-scheduling", {
+        before: partial,
+        after: corrected,
+        events: store.reviewEvents("rust").filter((e) => e.key === partial.key),
+      });
       const review = currentReview("rust")!;
       if (store.listGrades("rust", review.lesson).length !== 1)
         throw Error("Correction graded twice.");

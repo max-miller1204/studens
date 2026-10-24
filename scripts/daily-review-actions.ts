@@ -75,7 +75,6 @@ export function finishDailyActions(screenshot: string | null): string {
     await page.waitForFunction(()=>document.querySelector('[data-review-active="true"]')?.dataset.state==='fresh');
     if(!(await page.locator('form.cl-quiz:visible').innerText()).includes('cell')) throw new Error('Daily group mixed unrelated subjects.');
     await page.locator('form.cl-quiz:visible input[value="owner"]').check();
-    await page.locator('form.cl-quiz:visible [data-cl-assistance]').selectOption('none');
     await page.locator('form.cl-quiz:visible button[type="submit"]').click();
     await page.waitForFunction(()=>document.querySelector('[data-review-active="true"]')?.dataset.state==='graded');
     await page.getByRole('link', {name:'Continue daily review',exact:true}).click();

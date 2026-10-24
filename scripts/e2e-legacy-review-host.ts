@@ -135,7 +135,7 @@ try {
     await page.waitForURL('**/c/rust/reviews/**');
     await page.waitForFunction(()=>document.querySelector('form.cl-quiz')?.dataset.state==='fresh');
     await page.getByLabel('The new owner',{exact:true}).check();
-    await page.locator('[data-cl-assistance]').selectOption('none');
+    if (await page.locator('[data-cl-assistance]').count()) throw new Error('Removed assistance selector returned.');
     await page.screenshot({path:${JSON.stringify(path.join(artifacts, "review-answer.png"))},fullPage:true});
     await page.getByRole('button',{name:'Submit for grading',exact:true}).click();
     await page.waitForFunction(()=>document.querySelector('form.cl-quiz')?.dataset.state==='graded');

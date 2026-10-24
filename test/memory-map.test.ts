@@ -29,19 +29,19 @@ const event = (day: number, extra: Partial<ReviewEvent> = {}): ReviewEvent => ({
 });
 
 describe("memory map replay contract", () => {
-  it("keeps unresolved misses open through supported or unknown success, and resolves independently", () => {
+  it("resolves answer gaps on full credit regardless of historical help", () => {
     const miss = event(0, { correct: false, credit: 0.5 });
     for (const assistance of ["hint", "unknown"] as const) {
       const history = [miss, event(2, { evidence: { ...evidence, assistance } })];
       expect(scheduleItems(history)[0]).toMatchObject({
-        gapOpen: true,
+        gapOpen: false,
         misses: 1,
         delayedSuccesses: 0,
       });
       expect(scheduleItems([...history, event(4)])[0]).toMatchObject({ gapOpen: false, misses: 1 });
     }
   });
-  it("groups probes and uses weakest credit and independence for a gap", () => {
+  it("groups probes and uses weakest credit for a gap", () => {
     const history = [
       event(0, { attemptId: "one", correct: false, credit: 0.5 }),
       event(0, { attemptId: "one", questionKey: "001-owner/check/q2" }),
@@ -61,7 +61,7 @@ describe("memory map replay contract", () => {
     ];
     expect(scheduleItems([...history, ...correction])[0]).toMatchObject({
       attempts: 2,
-      gapOpen: true,
+      gapOpen: false,
     });
   });
   it("keeps independent immediate corrections separate from delayed or transfer evidence", () => {
@@ -125,13 +125,12 @@ describe("memory map replay contract", () => {
       f.cleanup();
     }
   });
-  it("preserves historical context even when saved independence resolves its answer gap", () => {
+  it("preserves historical context when full credit resolves its answer gap", () => {
     const history = [
       event(0, { key: "001-owner/check/q1", evidence: undefined, correct: false }),
       event(2, {
         key: "001-owner/check/q1",
         evidence: undefined,
-        gapIndependent: true,
         source: "chat",
       }),
     ];

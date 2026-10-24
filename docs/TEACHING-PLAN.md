@@ -63,8 +63,11 @@ or assessment need both when the page has a teaching gate.
 
 Set `support` to `assisted` for hints, supplied method steps, or faded completion.
 Use `independent` for questions that require unaided work. This author setting alone
-cannot prove independence. The learner also reports assistance on the page.
-Confidence is optional and does not affect credit or retention evidence.
+cannot prove independence. Quiz answers do not collect confidence or help-used
+reports; missing assistance stays unknown. Historical reports remain readable.
+Correctness and elapsed time drive scheduling and answer-gap resolution regardless
+of help reports. Retention/transfer labels still use saved task and authored support
+context; they do not prove unaided work. Confidence does not affect credit or scheduling.
 
 `retentionDays` is an optional duration goal. Ask about it when useful. Omit it when
 none exists. It is not a deadline. Set both `interleaveGroup` and `strategy` only
@@ -79,7 +82,7 @@ method in the learner's prompt. Use fresh scenarios and accept equivalent soluti
 Review schedules use `<lesson>/@objective/<objective id>`. Objective ids are local to
 the original lesson; sharing an id across lessons does not combine their schedules.
 All questions mapped to one objective probe the same schedule. Several probes in
-one attempt count as one exposure, and every probe must succeed independently to
+one attempt count as one exposure, and every probe must receive full credit to
 advance it. The server replays the objective snapshot saved with each attempt, not
 the current plan. Historical attempts without that snapshot retain their original
 `<lesson>/<quiz id>/<question id>` keys and unknown context. Previously saved review

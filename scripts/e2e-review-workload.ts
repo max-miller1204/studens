@@ -1,5 +1,5 @@
 import { verifyRootWorkload } from "./e2e-review-workload-root.ts";
-/** Observe workload slots, independent completion, and unchanged deferred history. */
+/** Observe workload slots and correctness scheduling through classroom controls. */
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { DAY_MS, summarize } from "../src/review.ts";
@@ -81,7 +81,7 @@ export async function verifyReviewWorkload(artifacts: string | null): Promise<vo
     const answer = async (count: number) => {
       for (let i = 0; i < count; i++)
         await code(
-          `await page.locator('form.cl-quiz:visible input[value="owner"]').check();await page.locator('form.cl-quiz:visible [data-cl-assistance]').selectOption('none');await page.locator('form.cl-quiz:visible button[type="submit"]').click();await page.waitForFunction(()=>document.querySelector('[data-review-active="true"]')?.dataset.state==='graded');${i < count - 1 ? "await page.getByRole('button',{name:'Next question',exact:true}).click();" : ""}`,
+          `await page.locator('form.cl-quiz:visible input[value="owner"]').check();await page.locator('form.cl-quiz:visible button[type="submit"]').click();await page.waitForFunction(()=>document.querySelector('[data-review-active="true"]')?.dataset.state==='graded');${i < count - 1 ? "await page.getByRole('button',{name:'Next question',exact:true}).click();" : ""}`,
         );
       await code(
         `await page.getByText('Review complete · ${count} of ${count} answered',{exact:true}).waitFor();`,
@@ -109,35 +109,29 @@ export async function verifyReviewWorkload(artifacts: string | null): Promise<vo
       throw new Error("Cap/reload changed selection or woke a teacher.");
     if (JSON.stringify(store.listGrades("rust", "001-ownership")) !== original)
       throw new Error("Workload policy mutated original grades.");
-    const completedKeys = new Set([...first.items, ...second.items].map((item) => item.key));
-    const afterItems = store.reviewItems("rust");
-    if (completedKeys.size !== 5 || afterItems.length !== 20)
-      throw new Error("Workload lost completed or deferred items.");
-    for (const item of afterItems) {
-      const originalDate = originalDates.find((date) => date.key === item.key)!;
-      if (item.context !== "unknown" || item.objective !== undefined)
-        throw new Error(`Workload invented historical objective context: ${item.key}.`);
-      if (completedKeys.has(item.key)) {
-        // Enabling early selection does not make an already overdue item early.
-        const event = store
-          .reviewEvents("rust")
-          .find((event) => event.key === item.key && !event.questionKey);
-        if (!event?.gapIndependent || event.early || !event.correct || event.credit !== 1)
-          throw new Error(
-            `Completed workload answer was not full overdue independent retrieval: ${item.key}.`,
-          );
-        if (item.dueAt <= originalDate.dueAt || item.dueAt <= item.lastFeedbackAt + DAY_MS)
-          throw new Error(
-            `Independent workload completion did not extend its interval: ${item.key}.`,
-          );
-      } else if (item.dueAt !== originalDate.dueAt) {
-        throw new Error(`Workload postponed a deferred item: ${item.key}.`);
+    const selectedKeys = new Set([...first.items, ...second.items].map((item) => item.key));
+    const scheduled = store.reviewItems("rust");
+    if (selectedKeys.size !== 5 || scheduled.length !== 20)
+      throw new Error("Workload selection lost unique keys.");
+    for (const item of scheduled) {
+      const originalDue = originalDates.find((date) => date.key === item.key)!.dueAt;
+      if (selectedKeys.has(item.key)) {
+        if (item.dueAt <= Date.now() || item.dueAt <= originalDue || item.gapOpen)
+          throw new Error(`Correct delayed answer did not extend ${item.key}.`);
+        if (
+          item.context !== "unknown" ||
+          item.objective !== undefined ||
+          item.delayedSuccesses !== 0
+        )
+          throw new Error("Historical workload answer invented independent-task evidence.");
+      } else if (item.dueAt !== originalDue) {
+        throw new Error(`Workload postponed unselected item ${item.key}.`);
       }
     }
     const counts = reviewSessions("rust").map((r) => store.listGrades("rust", r.lesson).length);
     await server.close();
     const restarted = await server.start(0);
-    if (JSON.stringify(store.reviewItems("rust")) !== JSON.stringify(afterItems))
+    if (JSON.stringify(store.reviewItems("rust")) !== JSON.stringify(scheduled))
       throw new Error("Restart changed completed or deferred schedules.");
     if (
       JSON.stringify(counts) !==
@@ -158,7 +152,7 @@ export async function verifyReviewWorkload(artifacts: string | null): Promise<vo
             counts,
             teacherTurns,
             originalDates,
-            afterItems,
+            scheduled,
             summary: summarize(store.reviewItems("rust"), Date.now()),
             privateLockDenied: true,
             restartPreserved: true,
@@ -169,7 +163,7 @@ export async function verifyReviewWorkload(artifacts: string | null): Promise<vo
         ),
       );
     console.log(
-      "PASS: workload 20 overdue -> 5 available / 15 deferred; 3+2 unique independent completions extend, 15 deferred dates unchanged, explicit cap error/reload and restart",
+      "PASS: workload 20 overdue -> 5 available / 15 deferred; 3+2 unique closed cards, explicit cap error/reload, correct delayed schedules, unchanged deferred dates and restart",
     );
   } catch (error) {
     if (artifacts)

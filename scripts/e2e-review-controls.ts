@@ -350,7 +350,6 @@ export async function verifyReviewControls(artifacts: string | null): Promise<vo
         await page.getByRole('button',{name:'Start review',exact:true}).click();
         await page.waitForFunction(()=>document.querySelector('[data-review-active="true"]')?.dataset.state==='fresh');
         await page.locator('form.cl-quiz:visible input[value="old"]').check();
-        await page.locator('form.cl-quiz:visible [data-cl-assistance]').selectOption('hint');
         await page.locator('form.cl-quiz:visible button[type="submit"]').click();
         await page.waitForFunction(()=>document.querySelector('[data-review-active="true"]')?.dataset.state==='graded');
         await page.getByRole('button',{name:'Next question',exact:true}).click();

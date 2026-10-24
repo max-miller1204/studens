@@ -58,9 +58,9 @@
                  this content until grading. Do not nest pretest gates.
         review   a spaced review. Made by scaffold_review. Every question needs
                  data-review-of (see below).
-    * Answer each question directly. Use data-evidence="report" on new quizzes.
-      Use data-confidence="optional" when it helps feedback. The runtime adds
-      optional reports. Confidence never changes correctness or points.
+    * Answer each question directly. The runtime does not ask for confidence or
+      help-used reports. Legacy data-evidence and data-confidence attributes are
+      ignored. Missing assistance stays unknown.
     * Do not add your own submit button. The runtime adds one. If you add one, it is
       used instead.
 
@@ -442,11 +442,9 @@ function total(values) {
 </form>
 
 <!--
-  Evidence contract. Add data-evidence="report" to each new form.cl-quiz.
-  The runtime asks how the learner answered. Missing assistance stays unknown.
-  Add data-confidence="optional" to a form or a question when feedback benefits
-  from confidence. It never changes correctness, points, or review intervals.
-  Both reports are optional. They survive drafts and saved attempts.
+  Evidence contract. The runtime does not collect confidence or help-used reports.
+  Missing assistance stays unknown; correctness alone does not prove independence.
+  Historical reports remain readable in saved attempts.
   Write private quiz/plan.json. Read docs/TEACHING-PLAN.md.
   Map questions to objectives, mental tasks, and authored support levels.
   For upcoming prequestions, map each question to teaching inside its server gate.

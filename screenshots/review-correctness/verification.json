@@ -1,0 +1,110 @@
+{
+  "base": "6f622b99bdce496328af8a2594542dd09c90a017",
+  "sourceMatch": {
+    "files": 1281,
+    "mismatches": []
+  },
+  "changedSourceSha256": {
+    ".agents/skills/verify-studens/features/quizzes.md": "e9646d2956d504edf81c87a46b1adae98ff0d078b0fcf340246b60b0c99a6c4e",
+    ".agents/skills/verify-studens/features/review.md": "63dd2bd55c6d5fa04eabd3c8b052fe3077de3f877d7e7c4144f2a14cf609b44c",
+    "assets/runtime/quiz-ui.mjs": "6d467dd85200cc376d75d65f0b1a0151868c7da1ad848b869cba46041d949291",
+    "assets/templates/quiz.html": "0460abc10e585128488b0caa2a993035c9abeeae66b238b42bba310483882664",
+    "docs/EVIDENCE.md": "7242720db050aab4113248a60e77508dd91a10479dfdae45081337057c6eddcc",
+    "docs/TEACHING-PLAN.md": "fc082e27df061d76a084e95f5143f200c77566af2440b83262cb6f9efcbef08d",
+    "docs/TEACHING.md": "30de6555fb154d7502839250d9b85dc4360e39eab977fe25541fbd7152c316d4",
+    "scripts/browser-regression.mjs": "c87eae085e4435b05e8983f507b594029f906ea26db9a58424c1521824dd8015",
+    "scripts/daily-review-actions.ts": "ee622d61369eda4acef8689e948c6080ac9626408dbc51c699a7578d529345ab",
+    "scripts/e2e-daily-review.ts": "c5e28115282f8a1f34b7e9a32dac5fe5b66cd198249c4bc2a83653589b44557e",
+    "scripts/e2e-memory-map-browser.ts": "98a61ac332f93945bec157ac99b53f6d0288be5992887d285ebe0edd2c0fb377",
+    "scripts/e2e-review-browser.ts": "e3015960019f4e2e14f34ae997442390825439d5a91c9e09c190a991f0b57884",
+    "scripts/e2e-review-controls.ts": "2908f7639561adae030cf6444c6c3c517a9ab1e8a0139032b436b1704f978958",
+    "scripts/e2e-review-workload-root.ts": "0f9d007c382c6860fd31ede130b778343d3e9b598621bd03e517f1bd72a53ab6",
+    "scripts/e2e-review-workload.ts": "b51c396bf791322cba8526c4f39822aadd65e363f749b491682b7fdb5c6e5954",
+    "scripts/review-card-actions.ts": "ce0506e0220243a7479641bd7c27d16da638dfe510b0311daecd9a1cf13b7434",
+    "src/memory-map.ts": "68330997b5bc485f7ea28a9ab3d8802251d65a5bd662bcd50a93b6e73e520ce7",
+    "src/pages.ts": "ef5a5dc9f4e7dedfb714c425ef13dd93aabddc10e5914d08c708cf2979ed7f1c",
+    "src/prompts.ts": "6334a2e4f142f0e43184f5c0785a7419bd882bfe188f1415b0abc76919715ad2",
+    "src/review.ts": "c73de1042a9458fedc09b763874d4c6bc93b3000201ae3e5dce1ff735d73b6b6",
+    "src/store/review.ts": "39d7f3a055b876049e7d24bea9f4ead90d556a3baf969fafa4f2a97200824c93",
+    "test/memory-map.test.ts": "87611dcb615bf3b705fc888d86a92a14f19dda077c8950013ac330756eb5d34a",
+    "test/reteach.test.ts": "ac57859a9551b7add933b58979be4313c83eb72acefe5a3c41ada324cfaef401",
+    "test/review-timing.test.ts": "caf7a9c61f0a23b7c8b6742409539e566958c659cb5c838804c0fbc16d2c0552",
+    "test/review.test.ts": "53fa826208016dd65a275e538b3dec390d445f10c9fbc4ced6d8abe121521d38"
+  },
+  "verification": {
+    "target": "local",
+    "verdict": "PASS",
+    "revision": "6f622b99bdce496328af8a2594542dd09c90a017",
+    "changes": "M .agents/skills/verify-studens/features/quizzes.md\n M .agents/skills/verify-studens/features/review.md\n M assets/runtime/quiz-ui.mjs\n M assets/templates/quiz.html\n M docs/EVIDENCE.md\n M docs/TEACHING-PLAN.md\n M docs/TEACHING.md\n M scripts/browser-regression.mjs\n M scripts/daily-review-actions.ts\n M scripts/e2e-daily-review.ts\n M scripts/e2e-memory-map-browser.ts\n M scripts/e2e-review-browser.ts\n M scripts/e2e-review-controls.ts\n M scripts/e2e-review-workload-root.ts\n M scripts/e2e-review-workload.ts\n M scripts/review-card-actions.ts\n M src/memory-map.ts\n M src/pages.ts\n M src/prompts.ts\n M src/review.ts\n M src/store/review.ts\n M test/memory-map.test.ts\n M test/reteach.test.ts\n M test/review-timing.test.ts\n M test/review.test.ts",
+    "results": [
+      {
+        "command": ["npm", "run", "version:check"],
+        "exitCode": 0
+      },
+      {
+        "command": ["npm", "run", "format:check"],
+        "exitCode": 0
+      },
+      {
+        "command": ["npm", "run", "check"],
+        "exitCode": 0
+      },
+      {
+        "command": ["npm", "run", "test"],
+        "exitCode": 0
+      },
+      {
+        "command": [
+          "/home/maxmiller/.local/share/mise/installs/node/24.22.0/bin/node",
+          "scripts/e2e-browser.ts",
+          "/tmp/studens-remove-reports/continuation-verify/browser"
+        ],
+        "exitCode": 0
+      }
+    ]
+  },
+  "tests": {
+    "filesPassed": 103,
+    "testsPassed": 1434
+  },
+  "focused": "PASS: workload, root workload, daily Pi and service fixtures",
+  "unverified": [
+    "Real Pi, Claude and Codex model connections",
+    "Native authoring",
+    "Human learning and model quality"
+  ],
+  "captures": {
+    "quiz-before-desktop.png": {
+      "source": "before/desktop.png",
+      "sha256": "7c2a3493972e69ce3a6423b526a7df21fdb488c5725c5a59bdc8aebc2128e6a9"
+    },
+    "quiz-after-desktop.png": {
+      "source": "after/desktop.png",
+      "sha256": "bb04244666835b99afd5694f9557ac5ec1336b75d84c427eb7eb7f9b849c23cb"
+    },
+    "quiz-before-phone.png": {
+      "source": "before/mobile.png",
+      "sha256": "1e8f696509ad825644cf61c6f3d69c5912b18b55cbba4b33eb9a041bd00dc3da"
+    },
+    "quiz-after-phone.png": {
+      "source": "after/mobile.png",
+      "sha256": "23dd283436280617761e5d40fb8c5f7748b93d05f720ad01eb7c10b6990b8194"
+    },
+    "review-before-desktop.png": {
+      "source": "before-review/pi/first-card-1280.png",
+      "sha256": "807bd4ea6c88374835a65c143b5e3c2a8fe59b9c43fedbc01cb491b7eba24ac7"
+    },
+    "review-after-desktop.png": {
+      "source": "continuation-verify/browser/review-cards/pi/first-card-1280.png",
+      "sha256": "72b907ace9c0f2b0cd1191f604631ad97c1ff5acbb368dd8350bfb96231c013c"
+    },
+    "review-before-phone.png": {
+      "source": "before-review/pi/first-card-390.png",
+      "sha256": "7338d024ecc4f78087519c71c4ecb605b91d4c64ecfdc6b6f7691cdbf1d130ec"
+    },
+    "review-after-phone.png": {
+      "source": "continuation-verify/browser/review-cards/pi/first-card-390.png",
+      "sha256": "9aaa0e4786fa2fb4976840ba754cb8678c74c99dc05f2655f0ddeaa62568cb91"
+    }
+  }
+}

@@ -257,7 +257,6 @@ export async function verifyDailyReview(artifacts: string | null): Promise<void>
         await page.reload();await page.getByRole('button',{name:'Continue Biology review',exact:true}).click();
         await page.waitForFunction(()=>document.querySelector('[data-review-active="true"]')?.dataset.state==='fresh');
         await page.locator('form.cl-quiz:visible input[value="owner"]').check();
-        await page.locator('form.cl-quiz:visible [data-cl-assistance]').selectOption('none');
         await page.locator('form.cl-quiz:visible button[type="submit"]').click();
         await page.getByText('Question 1 of 2 · 1 answered',{exact:true}).waitFor();
         if(await page.locator('form.cl-quiz:visible .cl-q-criteria li').count()!==1)throw new Error('Daily closed criterion allocation missing.');
@@ -267,7 +266,6 @@ export async function verifyDailyReview(artifacts: string | null): Promise<void>
         await page.getByRole('button',{name:'Continue Biology review',exact:true}).click();
         await page.getByText('Question 2 of 2 · 1 answered',{exact:true}).waitFor();
         await page.locator('form.cl-quiz:visible input[value="old"]').check();
-        await page.locator('form.cl-quiz:visible [data-cl-assistance]').selectOption('none');
         await page.waitForFunction(()=>document.querySelector('form.cl-quiz:not([hidden]) .cl-quiz-status')?.textContent==='Draft saved.');
         await page.reload();
         await page.getByText('Question 2 of 2 · 1 answered',{exact:true}).waitFor();
@@ -321,7 +319,6 @@ export async function verifyDailyReview(artifacts: string | null): Promise<void>
         await page.waitForFunction(()=>document.querySelector('[data-review-active="true"]')?.dataset.state==='fresh');
         for(let i=0;i<2;i++){
           await page.locator('form.cl-quiz:visible input[value="owner"]').check();
-          await page.locator('form.cl-quiz:visible [data-cl-assistance]').selectOption('none');
           await page.locator('form.cl-quiz:visible button[type="submit"]').click();
           await page.waitForFunction(()=>document.querySelector('[data-review-active="true"]')?.dataset.state==='graded');
           if(i===0) await page.getByRole('button',{name:'Next question',exact:true}).click();
@@ -336,6 +333,24 @@ export async function verifyDailyReview(artifacts: string | null): Promise<void>
         await page.goto(${JSON.stringify(`${base}/reviews/daily`)});
         await page.getByRole('heading',{name:'Daily review history',exact:true}).waitFor();
         await page.getByText('2 classrooms · 2 complete',{exact:true}).waitFor();${shot("daily-history")}
+        await page.goto(${JSON.stringify(base)});
+        await page.getByRole('heading',{name:'0 due across classrooms',exact:true}).waitFor();
+        if(!await page.getByRole('button',{name:'Start daily review',exact:true}).isDisabled()) throw new Error('Completed daily cards left items due today.');
+        ${stateShots("scheduled")}
+        // Full delayed answers move due dates forward. Teacher prose without a saved
+        // retrieval check keeps the miss open with next-day due. Bind retirement by
+        // saved key because the active-item selector changes after each action.
+        for(const classroom of ['biology','rust']) {
+          await page.goto(${JSON.stringify(base)} + '/c/' + classroom);
+          await page.getByText('Manage review items',{exact:true}).click();
+          const keys=await page.locator('[data-review-item][data-retired="false"]').evaluateAll(items=>items.map(item=>item.dataset.reviewItem));
+          for(const key of keys) {
+            const item=page.locator('[data-review-item='+JSON.stringify(key)+']');
+            await Promise.all([page.waitForEvent('load'),item.getByRole('button',{name:'Retire item',exact:true}).click()]);
+            await page.getByText('Manage review items',{exact:true}).click();
+            await item.getByRole('button',{name:'Restore item',exact:true}).waitFor();
+          }
+        }
         await page.goto(${JSON.stringify(base)});
         await page.getByRole('heading',{name:'0 due across classrooms',exact:true}).waitFor();
         if(!await page.getByRole('button',{name:'Start daily review',exact:true}).isDisabled()) throw new Error('Empty due start enabled.');
@@ -381,6 +396,36 @@ export async function verifyDailyReview(artifacts: string | null): Promise<void>
         ])
           if ((await fetch(base + route)).status !== 404)
             throw new Error(`Private route leaked ${route}`);
+      }
+      const scheduling = Object.fromEntries(
+        ["biology", "rust"].map((c) => [
+          c,
+          {
+            items: store.reviewItems(c),
+            events: store.reviewEvents(c),
+          },
+        ]),
+      );
+      save("scheduling.json", scheduling);
+      for (const [classroom, state] of Object.entries(scheduling)) {
+        for (const item of state.items) {
+          if (item.dueAt <= Date.now() || item.context !== "unknown")
+            throw new Error(`Daily scheduling failed for ${classroom}/${item.key}.`);
+          const events = state.events.filter((e) => e.key === item.key);
+          const miss = events.find((e) => !e.correct);
+          if (
+            miss &&
+            (!item.gapOpen ||
+              item.lastCorrect ||
+              item.delayedSuccesses !== 0 ||
+              item.dueAt !== Math.max(miss.at, miss.feedbackAt ?? miss.at) + DAY_MS)
+          )
+            throw new Error(
+              "Teacher prose without a saved check resolved the miss or changed its interval.",
+            );
+          if (!miss && (item.gapOpen || item.stability <= 1))
+            throw new Error("Due correct answer did not grow stability.");
+        }
       }
       const state = fs.readFileSync(path.join(fixture.root, ".daily-reviews.json"), "utf8");
       fixture.write(".daily-reviews.json", "{invalid");

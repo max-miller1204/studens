@@ -139,8 +139,8 @@ export async function browserRegression(page, highlightText) {
     "A page without optional confidence unexpectedly requests it",
   );
   assert(
-    (await page.locator('[data-quiz-id="instant"] [data-cl-confidence]').count()) === 1,
-    "The optional confidence control is missing",
+    (await page.locator("[data-cl-confidence], [data-cl-assistance]").count()) === 0,
+    "A quiz still requests confidence or assistance",
   );
   const invalidOptions = page.locator('[data-quiz-id="invalid-options"]');
   assert(
@@ -293,24 +293,29 @@ export async function browserRegression(page, highlightText) {
   });
   const instant = page.locator('[data-quiz-id="instant"]');
   await instant.locator('input[type="text"]').fill("owner");
-  await instant.locator("[data-cl-confidence]").selectOption("unsure");
-  await instant.locator("[data-cl-assistance]").selectOption("hint");
   await waitDrafts(
-    (drafts) =>
-      drafts["quiz:instant"]?.q1?.confidence === "unsure" &&
-      drafts["quiz:instant"]?.q1?.assistance === "hint",
-    "Optional reports were not saved in the draft",
+    (drafts) => drafts["quiz:instant"]?.q1?.text === "owner",
+    "The answer draft was not saved",
   );
+  // A draft saved by an older page must restore its answer without restoring reports.
+  const legacyDraft = await page.request.put(new URL("/api/draft", page.url()).href, {
+    data: {
+      classroom: "rust",
+      lesson: "001-ownership",
+      key: "quiz:instant",
+      value: { q1: { text: "owner", confidence: "unsure", assistance: "hint" } },
+    },
+  });
+  assert(legacyDraft.ok(), await legacyDraft.text());
   await page.reload();
   await page.waitForFunction(
-    () =>
-      document.querySelector('[data-quiz-id="instant"] [data-cl-confidence]')?.value === "unsure",
+    () => document.querySelector('[data-quiz-id="instant"] input[type="text"]')?.value === "owner",
   );
   assert(
-    (await instant.locator("[data-cl-assistance]").inputValue()) === "hint",
-    "Reload lost the assistance draft",
+    (await instant.locator("[data-cl-confidence], [data-cl-assistance]").count()) === 0,
+    "Reload restored removed reports",
   );
-  await screenshot("confidence-assistance-draft");
+  await screenshot("answer-draft-without-reports");
   const response = page.waitForResponse(
     (r) => r.url().endsWith("/api/quiz/submit") && r.request().method() === "POST",
   );
@@ -319,14 +324,9 @@ export async function browserRegression(page, highlightText) {
   await (await response).finished();
   const instantSubmission = await (await response).json();
   assert(
-    instantSubmission.answers[0].confidence === "unsure" &&
-      instantSubmission.answers[0].assistance === "hint",
-    "Submission lost confidence or assistance",
-  );
-  assert(
-    (await instant.locator("[data-cl-confidence]").inputValue()) === "unsure" &&
-      (await instant.locator("[data-cl-assistance]").inputValue()) === "hint",
-    "Grade state lost optional reports",
+    !Object.hasOwn(instantSubmission.answers[0], "confidence") &&
+      !Object.hasOwn(instantSubmission.answers[0], "assistance"),
+    "Submission invented confidence or assistance",
   );
   assert(
     await instant.getByRole("button", { name: "Graded", exact: true }).isDisabled(),
@@ -816,7 +816,7 @@ export async function browserRegression(page, highlightText) {
     passed: [
       "self-explanation Save and draft reload",
       "saved card follow-up draft reload",
-      "optional confidence and assistance survive drafts, submit, and grade state",
+      "answer drafts and historical reports restore safely without inventing submission evidence",
       "glossary",
       "locked graded quiz",
       "pending saved attempt",
