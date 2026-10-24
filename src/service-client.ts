@@ -5,6 +5,7 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { createHash } from "node:crypto";
 import { spawn } from "node:child_process";
+import { runtimeIdentity, sameRuntimeIdentity, validRuntimeIdentity } from "./service-identity.ts";
 import { readConfig } from "./config.ts";
 import { classroomsRoot, packageRoot } from "./paths.ts";
 
@@ -90,6 +91,25 @@ export async function ensureService(): Promise<any> {
       version: string;
     }
   ).version;
+  const identity = runtimeIdentity(packageRoot());
+  async function compatible(status: any): Promise<void> {
+    if (!validRuntimeIdentity(status.identity))
+      throw new Error(
+        "Existing service has missing, malformed, or unsupported runtime package identity. Stop it explicitly before retrying; no replacement was started.",
+      );
+    if (
+      status.root !== path.resolve(classroomsRoot()) ||
+      status.port !== servicePort() ||
+      status.version !== version ||
+      !sameRuntimeIdentity(status.identity, identity)
+    )
+      throw new Error(
+        "Existing service has a different root, port, version, or runtime package content. Stop it explicitly before retrying; no replacement was started.",
+      );
+    const checked = await control<any>("/attachment");
+    if (checked.pid !== status.pid || !sameRuntimeIdentity(checked.identity, identity))
+      throw new Error("Service ownership changed during attachment. Retry explicitly.");
+  }
   const legacyRoute = path.join(classroomsRoot(), ".pi-teach-pi", "phone.json");
   if (fs.existsSync(legacyRoute))
     throw new Error(
@@ -97,14 +117,7 @@ export async function ensureService(): Promise<any> {
     );
   const status = await serviceStatus();
   if (status.running) {
-    if (
-      status.port !== servicePort() ||
-      status.packageRoot !== path.resolve(packageRoot()) ||
-      status.version !== version
-    )
-      throw new Error(
-        "An existing service has a different port, package path, or version. Stop it explicitly before starting this version.",
-      );
+    await compatible(status);
     return status;
   }
   const paths = servicePaths();
@@ -127,16 +140,12 @@ export async function ensureService(): Promise<any> {
     if (spawnError) throw spawnError;
     const current = await serviceStatus();
     if (current.running) {
-      if (
-        current.port !== servicePort() ||
-        current.packageRoot !== path.resolve(packageRoot()) ||
-        current.version !== version
-      )
-        throw new Error("A different service won startup ownership. Stop it explicitly.");
       // A matching winner may be ready while our own child is still importing.
       // Finish this start only after our child owns the service or has exited.
-      if (current.pid === child.pid || child.exitCode !== null || child.signalCode !== null)
+      if (current.pid === child.pid || child.exitCode !== null || child.signalCode !== null) {
+        await compatible(current);
         return current;
+      }
     }
     if (child.exitCode !== null && !fs.existsSync(paths.lock))
       throw new Error(`Classroom service failed to start. Read ${paths.log}.`);

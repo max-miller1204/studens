@@ -8,8 +8,10 @@ import { createHash } from "node:crypto";
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, expect, it } from "vitest";
+import { runtimeIdentity } from "../src/service-identity.ts";
 
 const source = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const identity = runtimeIdentity(source);
 const version = JSON.parse(fs.readFileSync(path.join(source, "package.json"), "utf8")).version;
 let root: string, socket: string, boundary: http.Server;
 let calls: Array<{ endpoint: string; body: any }>;
@@ -35,9 +37,19 @@ beforeEach(async () => {
       const body = text ? JSON.parse(text) : undefined;
       calls.push({ endpoint: req.url!, body });
       res.setHeader("Content-Type", "application/json");
-      if (req.url === "/status") {
-        res.end(JSON.stringify({ running: true, root, packageRoot: source, version, port: 43123 }));
-        afterStatus?.();
+      if (req.url === "/status" || req.url === "/attachment") {
+        res.end(
+          JSON.stringify({
+            running: true,
+            pid: process.pid,
+            identity,
+            root,
+            packageRoot: source,
+            version,
+            port: 43123,
+          }),
+        );
+        if (req.url === "/status") afterStatus?.();
       } else if (req.url === "/disconnect") res.end(JSON.stringify({ detached: true }));
       else rpc(body, res);
     })();

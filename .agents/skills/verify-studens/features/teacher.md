@@ -79,6 +79,20 @@ with HTTP live. Release the loser, require its actual exit and both successful
 same-owner replies, then stop publicly and require natural owner exit and absent
 owner/socket without another start. A matching winner must not complete a start
 while that invocation's child can still claim ownership later.
+For installed-copy compatibility, run
+`node scripts/verify-service-copies.ts /tmp/studens-service-copies`.
+It installs full and production-only copies with the same `--ignore-scripts` policy,
+starts actual Codex/Claude MCP clients concurrently, and checks one PID, private
+socket and loopback HTTP owner across detach/reconnect. It changes runtime and
+production dependency bytes separately: attachment must reject both without a
+service spawn or saved-state change. It also rejects post-startup mutation and an
+unequal simultaneous contender. Inspect `copies.json`, `service-spawns.jsonl`, the
+install logs and `service.log`. Successful runs stop the exact owned process and
+remove scratch installs; failures retain their scratch path for diagnosis. This
+proves actual MCP transport with host client identities, not native agent inference.
+Different install-script policies can produce different production bytes (esbuild's
+launcher is one example); those installs are intentionally incompatible.
+
 For a control-only service change, also drive the actual Pi extension in RPC mode
 with an isolated `PI_CODING_AGENT_DIR` and offline resource loading: use
 `/classroom start`, `/classroom status`, `/classroom rust`, initiating Pi exit,
