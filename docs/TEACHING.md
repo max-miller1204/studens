@@ -491,19 +491,21 @@ ended up producing.
 ## Spaced review
 
 Every graded question in a check or review enters a history-derived schedule.
-Pretests never enter it. The base intervals are 1, 3, 7, 21, and 60 days. They are
-implementation choices, not a proven optimum. The first attempt starts at one day.
-Only a due, fully correct, independent answer after at least one day since the last
-practice or feedback extends the interval. Early success keeps the due date.
-Incomplete retrieval schedules one day after feedback. Assisted or unknown work
-cannot extend the interval. Confidence never changes credit or the schedule.
+Pretests never enter it. Intervals use the frozen Studens FSRS-4.5 adaptation
+documented in EVIDENCE.md P5, not fixed boxes. The first attempt starts at one day.
+Only a due, fully correct answer after at least one day since the last practice or
+feedback grows stability and extends the interval. Early success keeps the due date.
+Incomplete retrieval reduces stability and schedules from feedback. Full credit
+resolves answer gaps and resumes paused items. Confidence and assistance never gate
+credit, interval growth, or gap resolution; omitted assistance stays unknown.
 
 An optional retention duration caps intervals at one quarter of that duration, with
 a one-day minimum. This is a policy to evaluate. Omit the duration when no goal exists.
 `scaffold_review` reports the policy and its reason. Do not edit a stored schedule.
 
-Progress counts retained evidence only after two delayed independent successes with
-at least seven days from the first independent success to the latest delayed success.
+Progress counts retained evidence only after two delayed fully correct answers to
+tasks authored for independent work, with at least seven days from the first qualifying
+correct answer to the latest delayed success. These labels do not establish unaided work.
 Application objectives also need delayed transfer. These are product thresholds.
 They are not a definition of universal mastery. Old records retain their grades.
 Missing evidence stays unknown. Immediate panel checks can document correction,
@@ -670,7 +672,7 @@ source. The nine question types are capabilities. There is no variety quota.
 
 Confidence is optional (P7). Use it for feedback only. Explain a correct but uncertain
 answer. Keep useful correction for wrong answers. Never change credit from confidence.
-New pages ask how the learner answered. A hint, reference, or solution is assistance.
+Quiz pages do not collect confidence or help-used reports. A hint, reference, or solution is assistance.
 Missing reports stay unknown. An authored assisted question cannot prove independence
 even when the learner reports no extra help. Self-reports are evidence limits, not
 proof that no help occurred. Label supported completion and immediate checks honestly.

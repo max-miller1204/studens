@@ -8,7 +8,7 @@ The learner submits typed answers and reads grades on the lesson page.
 - Check inline ungraded practice locally, revise an answer, and start fresh on reload.
 - Study a faded worked example, attempt one more step per new case, and compare reasoning locally.
 - Grade closed answers immediately without a teacher turn. Keep saved machine allocations through recovery.
-- Preserve drafts and optional assistance reports.
+- Preserve answer drafts, including drafts saved with historical confidence/help reports.
 - Lock a graded quiz. Show the score meter, correct count, feedback and static verdict icons.
 - Reveal a newly completed attempt once; restore results immediately on reload.
 - Expand criterion, dispute and expected-answer rows beside each question.
@@ -57,6 +57,11 @@ teacher message for the retrieval task; it may use an imperative sentence. These
 runs do not establish human retention.
 
 The math quiz stores its prompt, stimulus, and choice label as TeX. Its grade feedback draws as MathML after reload. Inspect `stored-math.json` for the saved submission, grade, and review prompt.
+
+Quizzes do not ask for confidence or help-used reports, including pages with legacy
+report attributes. Restoring an older draft keeps its answer without restoring the
+reports. New submissions omit both fields; missing assistance stays unknown.
+Inspect `answer-draft-without-reports.png` and the saved submission assertions.
 
 Invalid option values must show contract errors and block submission. A grade that arrives before the submit response must keep the quiz graded. A pretest grade must release teaching through one reload and preserve a reflection draft.
 

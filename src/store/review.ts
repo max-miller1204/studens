@@ -5,7 +5,7 @@ import { questionCredit } from "../../assets/runtime/grade.mjs";
 import { reviewKey } from "../../assets/runtime/quiz.mjs";
 import type { Assistance } from "../evidence.ts";
 import { reviewSessions } from "../review-session.ts";
-import { isAssistance, independent } from "../evidence.ts";
+import { isAssistance } from "../evidence.ts";
 import { classroomDir, isValidSlug } from "../paths.ts";
 import type { QuizAnswer } from "../quiz.ts";
 import { answerSummary, answersByQuestion, kindOf } from "../quiz.ts";
@@ -65,7 +65,6 @@ export function reviewEvents(classroom: string): ReviewEvent[] {
             ),
           earlyDueAt: selectedEarly ? selectedItem.dueAt : undefined,
           evidence: group[0].learning,
-          gapIndependent: independent(group[0].learning),
           correct: verdict.correct,
           credit: credit.earned / credit.possible,
           prompt: group[0].prompt ?? "",
@@ -109,7 +108,6 @@ export function reviewEvents(classroom: string): ReviewEvent[] {
       source: "chat",
       learningRecord: check.learningRecord,
       evidence: canonical(check.key).split("/")[1] === "@objective" ? check.learning : undefined,
-      gapIndependent: check.learning ? independent(check.learning) : check.assistance === "none",
     });
   }
   return events;

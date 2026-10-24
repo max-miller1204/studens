@@ -35,12 +35,12 @@ describe("scheduleItems", () => {
     const events = [0, 3, 7, 21].map((day) => event(day, { evidence: undefined }));
     const [item] = scheduleItems(events);
     expect(item).toMatchObject({
-      box: 0,
+      box: 2,
       attempts: 4,
       progress: "context-unknown",
       delayedSuccesses: 0,
     });
-    expect(item.dueAt).toBe(T0 + DAY_MS);
+    expect(item.dueAt).toBeGreaterThan(T0 + 21 * DAY_MS);
   });
   it("does not promote or postpone immediate independent corrections", () => {
     const [item] = scheduleItems([event(0), event(0.001, { source: "chat" }), event(0.002)]);
@@ -85,18 +85,38 @@ describe("scheduleItems", () => {
       scheduleItems([...events, event(9, { evidence: { ...e, task: "transfer" } })])[0].progress,
     ).toBe("retained-evidence");
   });
-  it("does not promote assisted retrieval", () => {
-    const [item] = scheduleItems([
+  it.each(["none", "hint", "solution", "unknown"] as const)(
+    "progresses from correctness and timing with %s assistance without inventing independence",
+    (assistance) => {
+      const history = [0, 1, 8].map((day) => event(day, { evidence: evidence({ assistance }) }));
+      const item = scheduleItems(history)[0];
+      const unaided = scheduleItems([0, 1, 8].map((day) => event(day)))[0];
+      expect(item).toMatchObject({
+        dueAt: unaided.dueAt,
+        stability: unaided.stability,
+        difficulty: unaided.difficulty,
+        delayedSuccesses: 2,
+        progress: "retained-evidence",
+        gapOpen: false,
+      });
+      expect(item.context).toBe(
+        assistance === "unknown"
+          ? "unknown"
+          : assistance === "none"
+            ? "delayed-retrieval"
+            : "assisted",
+      );
+      expect(history.at(-1)!.evidence!.assistance).toBe(assistance);
+    },
+  );
+  it("schedules authored supported work but does not relabel it as independent retention", () => {
+    const item = scheduleItems([
       event(0),
-      event(7, { evidence: evidence({ assistance: "hint" }) }),
-    ]);
-    expect(item).toMatchObject({ box: 0, delayedSuccesses: 0 });
-    expect(item.dueAt).toBe(T0 + DAY_MS);
-  });
-  it("does not promote authored assisted work even if the learner reports no help", () => {
-    expect(
-      scheduleItems([event(0), event(7, { evidence: evidence({ support: "assisted" }) })])[0].box,
-    ).toBe(0);
+      event(7, { evidence: evidence({ support: "assisted" }) }),
+    ])[0];
+    expect(item.box).toBe(1);
+    expect(item.delayedSuccesses).toBe(0);
+    expect(item.context).toBe("assisted");
   });
   it("resets retained evidence after incomplete retrieval and records partial credit", () => {
     const [item] = scheduleItems([
@@ -227,9 +247,8 @@ it("counts simultaneous objective probes as one conservative exposure", () => {
   expect(scheduleItems(events)).toEqual(scheduleItems([...events].reverse()));
   mixed[1] = { ...mixed[1], correct: true, credit: 1, evidence: evidence({ assistance: "hint" }) };
   expect(scheduleItems([...initial, ...mixed])[0]).toMatchObject({
-    box: 0,
-    delayedSuccesses: 0,
-    context: "assisted",
+    box: 1,
+    delayedSuccesses: 1,
   });
 });
 
@@ -258,17 +277,17 @@ it("rejects non-finite timestamps and out-of-range credit explicitly", () => {
   for (const extra of [{ at: NaN }, { feedbackAt: Infinity }, { credit: -0.1 }, { credit: 1.1 }])
     expect(() => scheduleItems([event(0, extra)])).toThrow("Invalid review event");
 });
-it("keeps supported, unknown and explicit early answers from growing memory", () => {
+it("keeps explicit early answers from growing memory regardless of help context", () => {
   const base = [event(0), event(1)];
   const before = scheduleItems(base)[0];
-  for (const extra of [
-    { early: true },
-    { evidence: undefined },
-    { evidence: evidence({ assistance: "hint" }) },
-    { evidence: evidence({ support: "assisted" }) },
-    { evidence: evidence({ assistance: "unknown" }) },
+  for (const evidenceValue of [
+    undefined,
+    evidence(),
+    evidence({ assistance: "unknown" }),
+    evidence({ assistance: "hint" }),
+    evidence({ support: "assisted" }),
   ]) {
-    const after = scheduleItems([...base, event(40, extra)])[0];
+    const after = scheduleItems([...base, event(40, { early: true, evidence: evidenceValue })])[0];
     expect(after.stability).toBe(before.stability);
     expect(after.difficulty).toBe(before.difficulty);
     expect(after.dueAt).toBe(before.dueAt);
@@ -298,13 +317,15 @@ it("separates selected exposure delay from a current corrective reply", () => {
     evidenceSpanDays: 0,
   });
 });
-it("does not let supported success resolve a paused objective", () => {
+it("resolves a paused objective on full credit without a help report", () => {
   const history = [0, 1, 2].map((day) => event(day, { correct: false, credit: 0 }));
   expect(
     scheduleItems([...history, event(5, { evidence: evidence({ assistance: "hint" }) })])[0]
       .needsReteach,
-  ).toBe(true);
-  expect(scheduleItems([...history, event(5)])[0].needsReteach).toBe(false);
+  ).toBe(false);
+  expect(scheduleItems([...history, event(5, { evidence: undefined })])[0].needsReteach).toBe(
+    false,
+  );
 });
 
 it("never uses confidence or self-ratings to break simultaneous probe ties", () => {

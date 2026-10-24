@@ -58,7 +58,7 @@ Supported completion and reflection cannot count as independent retention.
 **Sources:** P2 and P5. Immediate performance can differ from delayed performance.
 **Behavior:** Preserve grades. Label prior knowledge, assisted work, immediate
 independent work, delayed retrieval, and transfer separately. Mark old context unknown.
-**Choice:** The progress labels require independent delayed successes on two occasions,
+**Choice:** The progress labels require fully correct delayed answers on tasks authored for independent work on two occasions,
 with a total span of at least seven days. Application objectives also require delayed
 transfer. These thresholds are conservative product choices, not scientific constants.
 The UI says retained evidence, not mastery. A reflection or confidence rating is no proof.
@@ -82,20 +82,21 @@ FSRS models difficulty, stability and elapsed time rather than fixed boxes.
 This adaptation is not upstream-compatible FSRS, fitted personalization, a calibrated
 recall probability, or evidence of improved human learning.
 
-**Behavior:** `elapsed-independent-v1` remains the evidence boundary. Replay saved
+**Behavior:** `elapsed-correctness-v2` schedules from correctness and elapsed time. Replay saved
 latest grade revisions, first feedback times and linked checks, never the current
 plan or model narrative. Regrading is not another exposure. Same-attempt objective
-probes use their weakest credit and independence. Only full independent retrieval
+probes use their weakest credit. Only fully correct retrieval
 on or after the due time, at least 24 actual hours after the latest feedback/check,
 can grow stability and extend the interval. Explicitly selected early reviews never
 postpone their saved original due date, even if answered later. Replay also honors
-the due-time cap in immutable selections created under the earlier scheduler. Supported, unknown,
-and immediate success cannot grow memory. Incomplete work resets delayed evidence;
-three unresolved misses pause review for re-teaching. A supported or unknown-independence success cannot
-resolve a paused item, including historical questions with no objective snapshot.
-Saved assistance/support can resolve an independently demonstrated gap while the
-historical objective context and retention claim remain unknown. Historical context stays unknown. Confidence and
-self-ratings have no scheduling input; confidence may shape feedback only.
+the due-time cap in immutable selections created under the earlier scheduler. Immediate success cannot grow memory. Incomplete work resets delayed evidence;
+three unresolved misses pause review for re-teaching. A fully correct answer resolves
+an answer gap and resumes a paused item, including historical questions without an
+objective snapshot. Assistance and confidence do not gate scheduling or gap resolution.
+Historical assistance/support remain available as context; omitted assistance stays
+unknown and correctness never proves unaided work. Historical objective context stays
+unknown. Retention labels require saved task/support context; authored supported tasks
+cannot supply delayed independent-task or transfer evidence. Confidence may shape feedback only.
 
 **Memory choices (`studens-fsrs45-v1`):** Start stability S at 1 day and difficulty D
 at 5.1618. Use the published 4.5 parameters, frozen in `src/review-memory.ts`:
@@ -143,8 +144,7 @@ A prepared private variant is still required; a slot does not promise a usable v
 The classroom memory map projects the same saved replay, without scheduling or
 inference on reads. Per-objective strength describes observed evidence, with latest
 answer context and credit separate from estimated stability/difficulty. Incomplete
-answer gaps remain open through assisted or unknown success and close on a full
-independent answer; immediate correction is still not delayed retention. Historical
+answer gaps close on a fully correct answer regardless of help reports; immediate correction is still not delayed retention. Historical
 question evidence retains its original lesson, quiz and question identity. Grade
 revisions use the original answer and first feedback boundary. The displayed reason
 is the scheduler's saved replay reason, not an explanation invented by a model.
@@ -212,10 +212,11 @@ Check that prompts do not announce the method.
 
 **Finding:** Feedback benefited low-confidence correct responses in the studied task.
 **Limits:** Confidence does not determine correctness or demonstrate understanding.
-**Behavior:** Offer optional confidence. Explain correct but uncertain answers. Give
-useful correction and one fresh follow-up after errors. Record assistance separately.
+**Behavior:** Explain correct but uncertain answers when uncertainty is known. Give
+useful correction and one fresh follow-up after errors. Quiz pages do not collect
+confidence or help-used reports; missing assistance remains unknown.
 **Verify:** Equal credit at all confidence levels, useful uncertain-correct feedback,
-and assisted answers excluded from independent retention evidence.
+and historical help context preserved separately from correctness/timing scheduling.
 
 ## P8: Use representations for a task
 

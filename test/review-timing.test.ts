@@ -149,7 +149,7 @@ it("preserves the original due cap of an early selection saved under an older sc
   }
 });
 
-it("keeps a historical item paused after an explicitly assisted linked check", () => {
+it("resolves historical gaps from correct linked checks while keeping assistance history", () => {
   const fixture = makeFixture();
   try {
     seedClassroom(fixture);
@@ -177,11 +177,13 @@ it("keeps a historical item paused after an explicitly assisted linked check", (
     const assisted = store.reviewItems("rust")[0];
     expect(assisted).toMatchObject({
       lastCorrect: true,
-      needsReteach: true,
+      needsReteach: false,
+      gapOpen: false,
       context: "unknown",
       delayedSuccesses: 0,
     });
-    expect(assisted.dueAt).toBe(item.dueAt);
+    expect(assisted.dueAt).toBeGreaterThanOrEqual(item.dueAt);
+    expect(check.assistance).toBe("solution");
     expect(check.learning).toBeUndefined();
     fixture.write(
       "rust/learning-records/0002-independent.md",

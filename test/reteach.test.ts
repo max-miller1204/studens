@@ -94,10 +94,10 @@ describe("re-teaching replay", () => {
       ...events.filter((e) => e.key === paused.key),
       event(6, { correct: true }),
     ])[0];
-    expect(unknown.needsReteach).toBe(true);
+    expect(unknown.needsReteach).toBe(false);
     const [resolved] = scheduleItems([
       ...events.filter((e) => e.key === paused.key),
-      event(6, { correct: true, gapIndependent: true }),
+      event(6, { correct: true }),
     ]);
     expect(resolved).toMatchObject({ misses: 3, needsReteach: false, box: 0, delayedSuccesses: 0 });
   });

@@ -256,36 +256,6 @@ export function createQuizzes({ config, drafts, placeTeacherPanel }) {
 
   /** Add the controls a question type needs. */
   function enhanceQuestion(form, question) {
-    const addReport = (name, title, options) => {
-      const label = document.createElement("label");
-      label.className = "cl-answer-report";
-      label.append(document.createTextNode(title + " "));
-      const select = document.createElement("select");
-      select.className = "cl-input";
-      select.dataset[name] = "";
-      for (const [value, text] of options) {
-        const option = document.createElement("option");
-        option.value = value;
-        option.textContent = text;
-        select.append(option);
-      }
-      label.append(select);
-      question.append(label);
-    };
-    if (form.dataset.evidence === "report")
-      addReport("clAssistance", "How did you answer?", [
-        ["", "Not reported"],
-        ["none", "Without help"],
-        ["hint", "With a hint or reference"],
-        ["solution", "After seeing a solution"],
-      ]);
-    if (question.dataset.confidence === "optional" || form.dataset.confidence === "optional")
-      addReport("clConfidence", "Confidence (optional)", [
-        ["", "Not reported"],
-        ["guess", "Guess"],
-        ["unsure", "Unsure"],
-        ["sure", "Sure"],
-      ]);
     switch (question.dataset.type) {
       case "code":
         enhanceCode(question);
@@ -445,10 +415,6 @@ export function createQuizzes({ config, drafts, placeTeacherPanel }) {
       type,
       prompt: textOf(question.querySelector(".cl-q-prompt")),
     };
-    const confidence = question.querySelector("[data-cl-confidence]")?.value;
-    const assistance = question.querySelector("[data-cl-assistance]")?.value;
-    if (confidence) answer.confidence = confidence;
-    if (assistance) answer.assistance = assistance;
     const stimulus = question.querySelector(".cl-q-stimulus");
     if (stimulus) answer.stimulus = stimulusText(stimulus);
     if (question.dataset.reviewOf) answer.reviewOf = question.dataset.reviewOf;
@@ -684,10 +650,6 @@ export function createQuizzes({ config, drafts, placeTeacherPanel }) {
   /** Put a saved answer back into its question. */
   function restoreAnswer(question, group) {
     const answer = group[0];
-    const confidence = question.querySelector("[data-cl-confidence]");
-    const assistance = question.querySelector("[data-cl-assistance]");
-    if (confidence) confidence.value = answer.confidence ?? "";
-    if (assistance) assistance.value = answer.assistance ?? "";
     const byValue = (selector, value) =>
       own(question, selector).find((input) => input.value === value);
 
@@ -951,15 +913,6 @@ export function createQuizzes({ config, drafts, placeTeacherPanel }) {
 
   /** One question's answer as the learner left it, or null when it is untouched. */
   function questionDraft(question) {
-    const entry = questionResponseDraft(question) ?? {};
-    const confidence = question.querySelector("[data-cl-confidence]")?.value;
-    const assistance = question.querySelector("[data-cl-assistance]")?.value;
-    if (confidence) entry.confidence = confidence;
-    if (assistance) entry.assistance = assistance;
-    return Object.keys(entry).length ? entry : null;
-  }
-
-  function questionResponseDraft(question) {
     const some = (entry) => (Object.keys(entry).length > 0 ? entry : null);
     const filled = (pairs) => Object.fromEntries(pairs.filter(([, value]) => value));
     switch (question.dataset.type) {
@@ -1026,10 +979,6 @@ export function createQuizzes({ config, drafts, placeTeacherPanel }) {
         );
         continue;
       }
-      if (entry.confidence !== undefined)
-        question.querySelector("[data-cl-confidence]").value = entry.confidence;
-      if (entry.assistance !== undefined)
-        question.querySelector("[data-cl-assistance]").value = entry.assistance;
       for (const value of entry.checked ?? []) {
         const choice = own(question, "input[type=radio], input[type=checkbox]").find(
           (input) => input.value === value,

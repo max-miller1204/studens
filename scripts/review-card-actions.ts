@@ -21,7 +21,6 @@ export function closedReviewActions(screenshot: string | null): string {
     if (await page.locator('form.cl-quiz:visible').count() !== 1) throw new Error('Review shows multiple cards.');
     const previousTeacherCount = await page.locator('.cl-teacher-message[data-role="teacher"]').count();
     await page.locator('form.cl-quiz:visible input[value="old"]').check();
-    await page.locator('form.cl-quiz:visible [data-cl-assistance]').selectOption('none');
     const response = page.waitForResponse(r => r.url().endsWith('/api/quiz/submit'));
     await page.locator('form.cl-quiz:visible button[type="submit"]').click();
     if ((await response).status() !== 201) throw new Error('Closed review submission failed.');
